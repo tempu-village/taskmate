@@ -1,0 +1,29 @@
+# TaskMate
+
+TaskMate is a local-first task system in which Markdown remains inspectable and portable while Obsidian and agents provide complementary interfaces.
+
+## Language
+
+**Task**:
+A single independently completable action stored as one Markdown file.
+_Avoid_: Item, card, task note
+
+**Smart view**:
+A built-in projection of tasks selected by a fixed date or completion rule.
+_Avoid_: Filter, saved search
+
+**Unplanned**:
+An incomplete task without a date.
+_Avoid_: Inbox, unscheduled bucket
+
+**Source note**:
+An ordinary Obsidian note explicitly placed in scope for task extraction by a folder rule or note property.
+_Avoid_: AI note, import file
+
+**Coverage review**:
+The user confirmation in which every candidate from a source note is accounted for as a new task, a merge, or an explicit exclusion.
+_Avoid_: Import preview, AI summary
+
+**Manual order**:
+One global user-defined task sequence preserved across every smart view.
+_Avoid_: View order, local order

@@ -1,0 +1,24 @@
+{
+  "name": "obsidian-taskmate",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A simple, local-first Todoist-style task list for Obsidian.",
+  "main": "main.js",
+  "scripts": {
+    "build": "node esbuild.config.mjs production",
+    "dev": "node esbuild.config.mjs",
+    "typecheck": "tsc --noEmit --skipLibCheck",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "sortablejs": "^1.15.6"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "@types/sortablejs": "^1.15.8",
+    "esbuild": "^0.25.9",
+    "obsidian": "^1.8.7",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}
