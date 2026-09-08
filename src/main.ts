@@ -1,19 +1,22 @@
 import { Notice, Plugin, TFile, normalizePath } from "obsidian";
 import { TaskRepository } from "./repository";
-import { BennrinaTodoSettingTab, DEFAULT_SETTINGS } from "./settings";
-import type { BennrinaTodoSettings } from "./settings";
+import { ProjectRepository } from "./project-repository";
+import { DEFAULT_SETTINGS, TaskMateSettingTab } from "./settings";
+import type { TaskMateSettings } from "./settings";
 import { TODO_VIEW_TYPE, TodoListView } from "./view";
 
-export default class BennrinaTodoPlugin extends Plugin {
-  settings: BennrinaTodoSettings = DEFAULT_SETTINGS;
+export default class TaskMatePlugin extends Plugin {
+  settings: TaskMateSettings = DEFAULT_SETTINGS;
   repository!: TaskRepository;
+  projects!: ProjectRepository;
   private refreshTimer: number | null = null;
 
   async onload(): Promise<void> {
     await this.loadSettings();
     this.repository = new TaskRepository(this.app, () => this.settings.taskFolder);
+    this.projects = new ProjectRepository(this.app, () => this.settings.projectFolder);
     this.registerView(TODO_VIEW_TYPE, (leaf) => new TodoListView(leaf, this));
-    this.addSettingTab(new BennrinaTodoSettingTab(this.app, this));
+    this.addSettingTab(new TaskMateSettingTab(this.app, this));
 
     this.addRibbonIcon("circle-check-big", "TaskMateを開く", () => void this.activateView());
     this.addCommand({ id: "open-todo-list", name: "タスク一覧を開く", callback: () => void this.activateView() });
@@ -34,8 +37,9 @@ export default class BennrinaTodoPlugin extends Plugin {
     });
 
     const scheduleRefresh = (file: TFile) => {
-      const prefix = `${normalizePath(this.settings.taskFolder)}/`;
-      if (!file.path.startsWith(prefix)) return;
+      const taskPrefix = `${normalizePath(this.settings.taskFolder)}/`;
+      const projectPrefix = `${normalizePath(this.settings.projectFolder)}/`;
+      if (!file.path.startsWith(taskPrefix) && !file.path.startsWith(projectPrefix)) return;
       if (this.refreshTimer !== null) window.clearTimeout(this.refreshTimer);
       this.refreshTimer = window.setTimeout(() => this.refreshViews(), 100);
     };
@@ -65,7 +69,7 @@ export default class BennrinaTodoPlugin extends Plugin {
   }
 
   async loadSettings(): Promise<void> {
-    this.settings = { ...DEFAULT_SETTINGS, ...(await this.loadData() as Partial<BennrinaTodoSettings> | null) };
+    this.settings = { ...DEFAULT_SETTINGS, ...(await this.loadData() as Partial<TaskMateSettings> | null) };
   }
 
   async saveSettings(): Promise<void> {

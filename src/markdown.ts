@@ -1,4 +1,4 @@
-import type { Task, TaskDraft } from "./domain";
+import type { Priority, Task, TaskDraft } from "./domain";
 
 const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
 
@@ -8,15 +8,15 @@ function scalar(value: string | null | boolean | number): string {
   return String(value);
 }
 
-function parseScalar(value: string): string | number | boolean | null {
+function parseScalar(value: string): string | string[] | number | boolean | null {
   const trimmed = value.trim();
   if (trimmed === "null" || trimmed === "") return null;
   if (trimmed === "true") return true;
   if (trimmed === "false") return false;
   if (/^-?\d+(?:\.\d+)?$/.test(trimmed)) return Number(trimmed);
-  if (trimmed.startsWith('"')) {
+  if (trimmed.startsWith('"') || trimmed.startsWith("[")) {
     try {
-      return JSON.parse(trimmed) as string;
+      return JSON.parse(trimmed) as string | string[];
     } catch {
       return trimmed.slice(1, -1);
     }
@@ -24,10 +24,10 @@ function parseScalar(value: string): string | number | boolean | null {
   return trimmed;
 }
 
-function readFrontmatter(content: string): Record<string, string | number | boolean | null> {
+function readFrontmatter(content: string): Record<string, string | string[] | number | boolean | null> {
   const match = content.match(FRONTMATTER);
   if (!match) return {};
-  const result: Record<string, string | number | boolean | null> = {};
+  const result: Record<string, string | string[] | number | boolean | null> = {};
   for (const line of match[1].split(/\r?\n/)) {
     const separator = line.indexOf(":");
     if (separator < 1 || line.startsWith(" ")) continue;
@@ -55,7 +55,11 @@ export function parseTaskMarkdown(path: string, content: string): Task | null {
     title,
     completed: properties.completed === true,
     date: typeof properties.date === "string" ? properties.date : null,
-    important: properties.important === true,
+    priority: properties.priority === 1 || properties.priority === 2 || properties.priority === 3
+      ? properties.priority as Priority
+      : properties.important === true ? 1 : null,
+    labels: Array.isArray(properties.labels) ? properties.labels.filter((label): label is string => typeof label === "string") : [],
+    projectId: typeof properties.project === "string" ? properties.project : null,
     rank: typeof properties.rank === "number" ? properties.rank : 0,
     createdAt: typeof properties["created-at"] === "string" ? properties["created-at"] : "",
     updatedAt: typeof properties["updated-at"] === "string" ? properties["updated-at"] : "",
@@ -72,7 +76,9 @@ export function encodeTask(task: Task): string {
     `id: ${scalar(task.id)}`,
     `completed: ${scalar(task.completed)}`,
     `date: ${scalar(task.date)}`,
-    `important: ${scalar(task.important)}`,
+    `priority: ${scalar(task.priority)}`,
+    `labels: ${JSON.stringify(task.labels)}`,
+    `project: ${scalar(task.projectId)}`,
     `rank: ${scalar(task.rank)}`,
     `created-at: ${scalar(task.createdAt)}`,
     `updated-at: ${scalar(task.updatedAt)}`,
@@ -91,7 +97,9 @@ export function taskFromDraft(id: string, path: string, draft: TaskDraft, rank: 
     title: draft.title.trim(),
     completed: false,
     date: draft.date,
-    important: draft.important,
+    priority: draft.priority,
+    labels: draft.labels,
+    projectId: draft.projectId,
     rank,
     createdAt: now,
     updatedAt: now,

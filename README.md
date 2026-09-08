@@ -4,18 +4,23 @@ TaskMate is a simple, local-first Todoist-style task list for Obsidian, paired w
 
 Tasks stay in your vault as readable Markdown. There is no TaskMate account, hosted database, or synchronization server.
 
-## Current MVP
+## Current features
 
-- Today, Next 7 days, Upcoming, All, Unplanned, and Completed smart views
+- Four focused screens: Date, Search, Projects, and Filters
+- Today, Next 7 days, Upcoming, All, Unplanned, and Completed date views
+- Search with up to 10 recent search terms
+- Markdown-backed projects, five recently used projects, rename, and safe deletion
+- Priority 1–3 and up to 500 searchable, collapsible, favorite labels
 - Manual drag ordering shared by every view
-- Date, importance, and creation-date sorting without destroying manual order
-- Importance, no-date, and text filters
+- Date, priority, and creation-date sorting without destroying manual order
 - Desktop and mobile Obsidian support
 - One readable Markdown file per task, with a stable ID in frontmatter
 - Explicit AI source folders with per-note include and exclude overrides
 - Coverage review before an agent may omit a possible action
 
-Calendar, Kanban, recurrence, reminders, and a hosted sync service are intentionally outside the MVP.
+Calendar, Kanban, recurrence, reminders, and a hosted sync service are intentionally outside the current release.
+
+The bottom navigation is designed for both desktop and mobile Obsidian. Project deletion never deletes tasks: assigned tasks become unassigned and remain in the vault.
 
 ## Install the Obsidian plugin for development
 

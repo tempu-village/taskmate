@@ -1,20 +1,26 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
-import type BennrinaTodoPlugin from "./main";
+import type TaskMatePlugin from "./main";
 
-export interface BennrinaTodoSettings {
+export interface TaskMateSettings {
   taskFolder: string;
+  projectFolder: string;
   sourceFolders: string[];
   includeSourceSubfolders: boolean;
+  recentSearches: string[];
+  favoriteLabels: string[];
 }
 
-export const DEFAULT_SETTINGS: BennrinaTodoSettings = {
+export const DEFAULT_SETTINGS: TaskMateSettings = {
   taskFolder: "TaskMate/Tasks",
+  projectFolder: "TaskMate/Projects",
   sourceFolders: [],
-  includeSourceSubfolders: true
+  includeSourceSubfolders: true,
+  recentSearches: [],
+  favoriteLabels: []
 };
 
-export class BennrinaTodoSettingTab extends PluginSettingTab {
-  constructor(app: App, private readonly plugin: BennrinaTodoPlugin) {
+export class TaskMateSettingTab extends PluginSettingTab {
+  constructor(app: App, private readonly plugin: TaskMatePlugin) {
     super(app, plugin);
   }
 
@@ -28,6 +34,15 @@ export class BennrinaTodoSettingTab extends PluginSettingTab {
       .setDesc("One Markdown file is stored here for each task.")
       .addText((text) => text.setValue(this.plugin.settings.taskFolder).onChange(async (value) => {
         this.plugin.settings.taskFolder = value.trim() || DEFAULT_SETTINGS.taskFolder;
+        await this.plugin.saveSettings();
+        this.plugin.refreshViews();
+      }));
+
+    new Setting(containerEl)
+      .setName("Project folder")
+      .setDesc("One Markdown file is stored here for each project.")
+      .addText((text) => text.setValue(this.plugin.settings.projectFolder).onChange(async (value) => {
+        this.plugin.settings.projectFolder = value.trim() || DEFAULT_SETTINGS.projectFolder;
         await this.plugin.saveSettings();
         this.plugin.refreshViews();
       }));

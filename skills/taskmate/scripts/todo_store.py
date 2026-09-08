@@ -57,7 +57,7 @@ def parse_scalar(raw: str) -> Any:
         return value == "true"
     if re.fullmatch(r"-?\d+(?:\.\d+)?", value):
         return float(value) if "." in value else int(value)
-    if value.startswith('"'):
+    if value.startswith(('"', '[')):
         try:
             return json.loads(value)
         except json.JSONDecodeError:
@@ -107,13 +107,18 @@ def parse_task(path: Path, vault: Path) -> Optional[Dict[str, Any]]:
     heading = next((line[2:].strip() for line in body.splitlines() if line.startswith("# ")), "Untitled task")
     body_lines = body.strip().splitlines()
     notes = "\n".join(line for line in body_lines if not line.startswith("# ")).strip()
+    raw_priority = props.get("priority")
+    priority = raw_priority if raw_priority in (1, 2, 3) else (1 if props.get("important") is True else None)
+    labels = props.get("labels")
     return {
         "path": path.relative_to(vault).as_posix(),
         "id": props["id"],
         "title": heading,
         "completed": props.get("completed") is True,
         "date": props.get("date") if isinstance(props.get("date"), str) else None,
-        "important": props.get("important") is True,
+        "priority": priority,
+        "labels": [label for label in labels if isinstance(label, str)] if isinstance(labels, list) else [],
+        "project": props.get("project") if isinstance(props.get("project"), str) else None,
         "rank": props.get("rank") if isinstance(props.get("rank"), (int, float)) else 0,
         "created-at": props.get("created-at") or "",
         "updated-at": props.get("updated-at") or "",
@@ -130,11 +135,13 @@ def quote(value: Any) -> str:
         return "true" if value else "false"
     if isinstance(value, (int, float)):
         return str(value)
+    if isinstance(value, list):
+        return json.dumps(value, ensure_ascii=False)
     return json.dumps(str(value), ensure_ascii=False)
 
 
 def encode_task(task: Dict[str, Any]) -> str:
-    keys = ["id", "completed", "date", "important", "rank", "created-at", "updated-at", "completed-at", "source-note"]
+    keys = ["id", "completed", "date", "priority", "labels", "project", "rank", "created-at", "updated-at", "completed-at", "source-note"]
     frontmatter = ["---", "type: todo"] + [f"{key}: {quote(task.get(key))}" for key in keys] + ["---"]
     notes = str(task.get("notes") or "").strip()
     suffix = f"\n\n{notes}" if notes else ""
@@ -151,13 +158,14 @@ def task_file_name(title: str, identifier: str) -> str:
 def plugin_settings(vault: Path) -> Dict[str, Any]:
     path = vault / ".obsidian" / "plugins" / "taskmate" / "data.json"
     if not path.exists():
-        return {"taskFolder": "TaskMate/Tasks", "sourceFolders": [], "includeSourceSubfolders": True}
+        return {"taskFolder": "TaskMate/Tasks", "projectFolder": "TaskMate/Projects", "sourceFolders": [], "includeSourceSubfolders": True}
     try:
         loaded = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError) as error:
         fail(f"cannot read plugin settings: {error}")
     return {
         "taskFolder": loaded.get("taskFolder") or "TaskMate/Tasks",
+        "projectFolder": loaded.get("projectFolder") or "TaskMate/Projects",
         "sourceFolders": loaded.get("sourceFolders") or [],
         "includeSourceSubfolders": loaded.get("includeSourceSubfolders", True),
     }
@@ -185,12 +193,29 @@ def validate_date(value: Optional[str]) -> None:
         fail("date must be YYYY-MM-DD")
 
 
+def validate_priority(value: Optional[int]) -> None:
+    if value is not None and value not in (1, 2, 3):
+        fail("priority must be 1, 2, 3, or none")
+
+
+def normalized_labels(values: Iterable[str]) -> List[str]:
+    labels: List[str] = []
+    for raw in values:
+        label = raw.strip()
+        if label and label not in labels:
+            labels.append(label)
+    if len(labels) > 500:
+        fail("a task cannot contain more than 500 labels")
+    return labels
+
+
 def command_list(args: argparse.Namespace) -> None:
     print(json.dumps(all_tasks(args.vault, args.task_folder), ensure_ascii=False, indent=2))
 
 
 def command_create(args: argparse.Namespace) -> None:
     validate_date(args.date)
+    validate_priority(args.priority)
     folder = task_folder(args.vault, args.task_folder)
     tasks = all_tasks(args.vault, args.task_folder)
     identifier = str(uuid.uuid4())
@@ -200,7 +225,9 @@ def command_create(args: argparse.Namespace) -> None:
         "title": args.title,
         "completed": False,
         "date": args.date,
-        "important": args.important,
+        "priority": args.priority,
+        "labels": normalized_labels(args.label),
+        "project": args.project,
         "rank": max((float(task["rank"]) for task in tasks), default=0) + 1024,
         "created-at": timestamp,
         "updated-at": timestamp,
@@ -231,8 +258,13 @@ def command_update(args: argparse.Namespace) -> None:
     if args.date is not None:
         task["date"] = None if args.date == "none" else args.date
         validate_date(task["date"])
-    if args.important is not None:
-        task["important"] = args.important == "true"
+    if args.priority is not None:
+        task["priority"] = None if args.priority == "none" else int(args.priority)
+        validate_priority(task["priority"])
+    if args.label is not None:
+        task["labels"] = normalized_labels(args.label)
+    if args.project is not None:
+        task["project"] = None if args.project == "none" else args.project
     if args.notes is not None:
         task["notes"] = args.notes
     task["updated-at"] = now_iso()
@@ -296,16 +328,16 @@ def included_by_folder(relative: Path, folders: List[str], include_subfolders: b
 
 def command_sources(args: argparse.Namespace) -> None:
     settings = plugin_settings(args.vault)
-    task_root = safe_path(args.vault, str(settings["taskFolder"]))
+    managed_roots = [
+        safe_path(args.vault, str(settings["taskFolder"])),
+        safe_path(args.vault, str(settings["projectFolder"])),
+    ]
     results: List[Dict[str, Any]] = []
     for path in sorted(args.vault.rglob("*.md")):
         if ".obsidian" in path.parts:
             continue
-        try:
-            path.relative_to(task_root)
+        if any(path == root or root in path.parents for root in managed_roots):
             continue
-        except ValueError:
-            pass
         relative = path.relative_to(args.vault)
         text = path.read_text(encoding="utf-8")
         explicit = frontmatter_boolean(text, "taskmate-source")
@@ -357,6 +389,9 @@ def command_validate(args: argparse.Namespace) -> None:
             if not str(task["title"]).strip():
                 errors.append(f"{path.name}: empty title")
             validate_date(task["date"])
+            validate_priority(task["priority"])
+            if not isinstance(task["labels"], list) or any(not isinstance(label, str) for label in task["labels"]):
+                errors.append(f"{path.name}: labels must be a string array")
     result = {"valid": not errors, "tasks": len(seen), "errors": errors}
     print(json.dumps(result, ensure_ascii=False, indent=2))
     if errors:
@@ -375,7 +410,9 @@ def parser() -> argparse.ArgumentParser:
     create = commands.add_parser("create")
     create.add_argument("--title", required=True)
     create.add_argument("--date")
-    create.add_argument("--important", action="store_true")
+    create.add_argument("--priority", type=int, choices=(1, 2, 3))
+    create.add_argument("--label", action="append", default=[])
+    create.add_argument("--project")
     create.add_argument("--notes")
     create.add_argument("--source-note")
     create.set_defaults(run=command_create)
@@ -384,7 +421,9 @@ def parser() -> argparse.ArgumentParser:
     update.add_argument("--id", required=True)
     update.add_argument("--title")
     update.add_argument("--date", help="YYYY-MM-DD or none")
-    update.add_argument("--important", choices=("true", "false"))
+    update.add_argument("--priority", choices=("1", "2", "3", "none"))
+    update.add_argument("--label", action="append", default=None, help="replace labels; repeat for multiple labels")
+    update.add_argument("--project", help="project ID or none")
     update.add_argument("--notes")
     update.set_defaults(run=command_update)
 

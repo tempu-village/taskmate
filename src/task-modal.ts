@@ -1,15 +1,23 @@
 import { App, Modal, Setting } from "obsidian";
-import type { Task, TaskDraft } from "./domain";
+import type { Project, Task, TaskDraft } from "./domain";
 
 export class TaskModal extends Modal {
   private draft: TaskDraft;
 
-  constructor(app: App, task: Task | null, private readonly onSave: (draft: TaskDraft) => Promise<void>) {
+  constructor(
+    app: App,
+    task: Task | null,
+    private readonly projects: Project[],
+    defaultProjectId: string | null,
+    private readonly onSave: (draft: TaskDraft) => Promise<void>
+  ) {
     super(app);
     this.draft = {
       title: task?.title ?? "",
       date: task?.date ?? null,
-      important: task?.important ?? false,
+      priority: task?.priority ?? null,
+      labels: task?.labels ?? [],
+      projectId: task?.projectId ?? defaultProjectId,
       notes: task?.notes ?? "",
       sourceNote: task?.sourceNote ?? null
     };
@@ -33,9 +41,31 @@ export class TaskModal extends Modal {
       });
     });
 
-    new Setting(contentEl).setName("重要").addToggle((toggle) => toggle.setValue(this.draft.important).onChange((value) => {
-      this.draft.important = value;
-    }));
+    new Setting(contentEl).setName("プロジェクト").addDropdown((dropdown) => {
+      dropdown.addOption("", "未所属");
+      for (const project of this.projects) dropdown.addOption(project.id, project.name);
+      dropdown.setValue(this.draft.projectId ?? "").onChange((value) => {
+        this.draft.projectId = value || null;
+      });
+    });
+
+    new Setting(contentEl).setName("優先度").addDropdown((dropdown) => {
+      dropdown
+        .addOption("", "なし")
+        .addOption("1", "優先度 1")
+        .addOption("2", "優先度 2")
+        .addOption("3", "優先度 3")
+        .setValue(this.draft.priority ? String(this.draft.priority) : "")
+        .onChange((value) => {
+          this.draft.priority = value ? Number(value) as 1 | 2 | 3 : null;
+        });
+    });
+
+    new Setting(contentEl).setName("ラベル").setDesc("カンマ区切り、最大500種類").addText((text) => {
+      text.setPlaceholder("仕事, 連絡").setValue(this.draft.labels.join(", ")).onChange((value) => {
+        this.draft.labels = [...new Set(value.split(",").map((label) => label.trim().replace(/^#/, "")).filter(Boolean))].slice(0, 500);
+      });
+    });
 
     new Setting(contentEl).setName("メモ").addTextArea((area) => {
       area.inputEl.rows = 5;

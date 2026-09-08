@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { filterTasks, sortTasks, taskMatchesView } from "../src/domain";
-import type { Task } from "../src/domain";
+import type { Project, Task } from "../src/domain";
 import { encodeTask, parseTaskMarkdown, taskFileName } from "../src/markdown";
+import { encodeProject, parseProjectMarkdown, projectFileName } from "../src/project-markdown";
 
 function task(overrides: Partial<Task> = {}): Task {
   return {
@@ -10,7 +11,9 @@ function task(overrides: Partial<Task> = {}): Task {
     title: "One",
     completed: false,
     date: null,
-    important: false,
+    priority: null,
+    labels: [],
+    projectId: null,
     rank: 1024,
     createdAt: "2026-09-01T00:00:00.000Z",
     updatedAt: "2026-09-01T00:00:00.000Z",
@@ -40,9 +43,12 @@ describe("smart views", () => {
 });
 
 describe("filters and sorting", () => {
-  it("combines important and text filters", () => {
-    const tasks = [task({ title: "Call Mina", important: true }), task({ id: "two", title: "Call Jo" })];
-    expect(filterTasks(tasks, "all", { importantOnly: true, noDateOnly: false, search: "mina" })).toHaveLength(1);
+  it("combines priority, label, and text filters", () => {
+    const tasks = [
+      task({ title: "Call Mina", priority: 1, labels: ["連絡"] }),
+      task({ id: "two", title: "Call Jo", priority: 2, labels: ["連絡"] })
+    ];
+    expect(filterTasks(tasks, "all", { priorities: [1], labels: ["連絡"], search: "mina" })).toHaveLength(1);
   });
 
   it("preserves global rank in manual mode", () => {
@@ -53,11 +59,26 @@ describe("filters and sorting", () => {
 
 describe("task Markdown", () => {
   it("round trips the canonical task shape", () => {
-    const original = task({ title: "日本語のタスク", date: "2026-09-12", important: true, notes: "補足\n二行目" });
+    const original = task({ title: "日本語のタスク", date: "2026-09-12", priority: 1, labels: ["仕事", "連絡"], projectId: "project-1", notes: "補足\n二行目" });
     expect(parseTaskMarkdown(original.path, encodeTask(original))).toEqual(original);
   });
 
   it("uses a readable collision-resistant file name", () => {
     expect(taskFileName("見積書を送る / 最終版", "12345678-abcd")).toBe("見積書を送る - 最終版--12345678.md");
+  });
+});
+
+describe("project Markdown", () => {
+  it("round trips a project and keeps its filename readable", () => {
+    const project: Project = {
+      path: "TaskMate/Projects/仕事--project1.md",
+      id: "project1-abcd",
+      name: "仕事",
+      createdAt: "2026-09-07T00:00:00.000Z",
+      updatedAt: "2026-09-07T00:00:00.000Z",
+      lastUsedAt: null
+    };
+    expect(parseProjectMarkdown(project.path, encodeProject(project))).toEqual(project);
+    expect(projectFileName(project.name, project.id)).toBe("仕事--project1.md");
   });
 });

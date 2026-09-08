@@ -4,7 +4,7 @@ description: Turn explicitly selected Obsidian notes into complete, reviewable T
 license: MIT
 metadata:
   author: infoNitobe
-  version: "0.1.0"
+  version: "0.2.0"
 ---
 
 # TaskMate
@@ -14,6 +14,7 @@ Manage a local-first task store while keeping the user in control of source scop
 ## Choose the workflow
 
 - For direct task operations, read [references/task-schema.md](references/task-schema.md).
+- For creating, renaming, or deleting projects, read [references/project-schema.md](references/project-schema.md).
 - For turning existing notes into tasks, read [references/import-workflow.md](references/import-workflow.md) before inspecting source content.
 
 Use `scripts/todo_store.py` for deterministic discovery, validation, and task-file changes when Python is available. Otherwise follow the same schema with the environment's ordinary file tools. Obtain the vault and task-folder paths from user scope or the TaskMate plugin settings; never invent or search outside that scope.
@@ -26,4 +27,4 @@ Re-read every file immediately before modifying it. Preserve unrelated frontmatt
 
 ## Completion criteria
 
-Finish an import when every eligible changed source note has a coverage review, every approved task has one valid Markdown file and a source link, every exclusion was explicitly approved, source processing metadata names all created task IDs, and `scripts/todo_store.py validate` reports no duplicate IDs or invalid task files.
+Finish an import when every eligible changed source note has a coverage review, every approved task has one valid Markdown file and a source link, every exclusion was explicitly approved, source processing metadata names all created task IDs, and `scripts/todo_store.py validate` reports no duplicate IDs or invalid task files. Preserve existing priority, labels, and project assignments unless the user asks to change them.

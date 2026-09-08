@@ -6,7 +6,17 @@ export type SmartView =
   | "unplanned"
   | "completed";
 
-export type SortMode = "manual" | "date" | "important" | "created";
+export type SortMode = "manual" | "date" | "priority" | "created";
+export type Priority = 1 | 2 | 3;
+
+export interface Project {
+  path: string;
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  lastUsedAt: string | null;
+}
 
 export interface Task {
   path: string;
@@ -14,7 +24,9 @@ export interface Task {
   title: string;
   completed: boolean;
   date: string | null;
-  important: boolean;
+  priority: Priority | null;
+  labels: string[];
+  projectId: string | null;
   rank: number;
   createdAt: string;
   updatedAt: string;
@@ -26,14 +38,16 @@ export interface Task {
 export interface TaskDraft {
   title: string;
   date: string | null;
-  important: boolean;
+  priority: Priority | null;
+  labels: string[];
+  projectId: string | null;
   notes: string;
   sourceNote?: string | null;
 }
 
 export interface TaskFilters {
-  importantOnly: boolean;
-  noDateOnly: boolean;
+  priorities: Priority[];
+  labels: string[];
   search: string;
 }
 
@@ -88,9 +102,9 @@ export function filterTasks(tasks: Task[], view: SmartView, filters: TaskFilters
   const needle = filters.search.trim().toLocaleLowerCase();
   return tasks.filter((task) => {
     if (!taskMatchesView(task, view, today)) return false;
-    if (filters.importantOnly && !task.important) return false;
-    if (filters.noDateOnly && task.date !== null) return false;
-    return needle.length === 0 || `${task.title}\n${task.notes}`.toLocaleLowerCase().includes(needle);
+    if (filters.priorities.length > 0 && (task.priority === null || !filters.priorities.includes(task.priority))) return false;
+    if (filters.labels.length > 0 && !filters.labels.some((label) => task.labels.includes(label))) return false;
+    return needle.length === 0 || `${task.title}\n${task.notes}\n${task.labels.join(" ")}`.toLocaleLowerCase().includes(needle);
   });
 }
 
@@ -101,8 +115,8 @@ export function sortTasks(tasks: Task[], mode: SortMode): Task[] {
   switch (mode) {
     case "date":
       return result.sort((a, b) => (a.date ?? "9999-12-31").localeCompare(b.date ?? "9999-12-31") || rankThenCreated(a, b));
-    case "important":
-      return result.sort((a, b) => Number(b.important) - Number(a.important) || rankThenCreated(a, b));
+    case "priority":
+      return result.sort((a, b) => (a.priority ?? 4) - (b.priority ?? 4) || rankThenCreated(a, b));
     case "created":
       return result.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
     case "manual":

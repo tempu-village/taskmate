@@ -27,3 +27,15 @@ _Avoid_: Import preview, AI summary
 **Manual order**:
 One global user-defined task sequence preserved across every smart view.
 _Avoid_: View order, local order
+
+**Project**:
+A named collection referenced by task ID. It groups tasks but does not own their lifecycle.
+_Avoid_: Folder, task container
+
+**Label**:
+A user-defined cross-project classification attached directly to a task.
+_Avoid_: Tag, category
+
+**Priority**:
+An optional urgency rank from 1 through 3, where 1 is highest.
+_Avoid_: Important flag, severity

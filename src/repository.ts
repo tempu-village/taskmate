@@ -44,7 +44,7 @@ export class TaskRepository {
     return task;
   }
 
-  async update(task: Task, patch: Partial<Pick<Task, "title" | "date" | "important" | "notes" | "completed" | "rank">>): Promise<Task> {
+  async update(task: Task, patch: Partial<Pick<Task, "title" | "date" | "priority" | "labels" | "projectId" | "notes" | "completed" | "rank">>): Promise<Task> {
     const file = this.app.vault.getAbstractFileByPath(task.path);
     if (!(file instanceof TFile)) throw new Error(`Task file not found: ${task.path}`);
     let updated = task;
@@ -72,6 +72,11 @@ export class TaskRepository {
   async remove(task: Task): Promise<void> {
     const file = this.app.vault.getAbstractFileByPath(task.path);
     if (file instanceof TFile) await this.app.vault.trash(file, true);
+  }
+
+  async clearProject(projectId: string): Promise<void> {
+    const tasks = await this.list();
+    await Promise.all(tasks.filter((task) => task.projectId === projectId).map((task) => this.update(task, { projectId: null })));
   }
 
   async reorder(taskId: string, previousId: string | null, nextId: string | null): Promise<void> {

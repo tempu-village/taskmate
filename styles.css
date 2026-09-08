@@ -1,73 +1,104 @@
 .taskmate-view {
-  --bennrina-gap: 0.75rem;
-  padding: 1rem 1.1rem 4rem;
+  --taskmate-gap: 0.75rem;
+  position: relative;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+}
+
+.taskmate-page {
+  height: 100%;
+  padding: 1rem 1.1rem 5.5rem;
   overflow: auto;
 }
 
 .taskmate-header,
-.taskmate-controls,
 .taskmate-task,
-.taskmate-modal-actions {
+.taskmate-modal-actions,
+.taskmate-section-heading,
+.taskmate-project-row,
+.taskmate-filter-result-heading {
   display: flex;
   align-items: center;
 }
 
 .taskmate-header {
-  justify-content: space-between;
-  gap: var(--bennrina-gap);
+  justify-content: flex-end;
+  gap: var(--taskmate-gap);
+  min-height: 42px;
+  margin-bottom: 0.8rem;
 }
 
-.taskmate-header h2 { margin: 0; }
+.taskmate-header h2 { margin: 0 auto 0 0; }
+.taskmate-header .taskmate-back + h2 { margin-left: 0; }
 .taskmate-add { min-height: 36px; }
 
-.taskmate-tabs {
-  display: flex;
-  gap: 0.35rem;
-  overflow-x: auto;
-  padding: 1rem 0 0.65rem;
-  scrollbar-width: none;
+.taskmate-smart-views {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
 }
 
-.taskmate-tabs::-webkit-scrollbar { display: none; }
-.taskmate-tabs button { flex: 0 0 auto; border-radius: 999px; }
-.taskmate-tabs button.is-active,
-.taskmate-controls button.is-active {
+.taskmate-smart-views button {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.4rem;
+  min-height: 42px;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+}
+
+.taskmate-smart-views button.is-active,
+.taskmate-filter-buttons button.is-active,
+.taskmate-label-select.is-active {
   color: var(--text-on-accent);
   background: var(--interactive-accent);
 }
 
-.taskmate-controls {
+.taskmate-view-count { opacity: 0.7; }
+.taskmate-sort { display: flex; justify-content: flex-end; margin-bottom: 0.45rem; }
+.taskmate-sort select { min-height: 34px; }
+
+.taskmate-search-input,
+.taskmate-label-search,
+.taskmate-project-editor input {
+  width: 100%;
+  min-height: 42px;
+}
+
+.taskmate-section { margin: 1.15rem 0; }
+.taskmate-section h3 { margin: 0.2rem 0 0.7rem; font-size: var(--font-ui-medium); }
+.taskmate-section-heading,
+.taskmate-filter-result-heading { justify-content: space-between; gap: 0.5rem; }
+.taskmate-section-heading h3,
+.taskmate-filter-result-heading h3 { margin-right: auto; }
+
+.taskmate-recent-searches,
+.taskmate-filter-buttons {
+  display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
-  margin-bottom: 1rem;
 }
 
-.taskmate-controls input[type="search"] {
-  flex: 1 1 14rem;
-  min-height: 36px;
-}
+.taskmate-recent-searches button,
+.taskmate-filter-buttons button { border-radius: 999px; }
 
-.taskmate-controls button,
-.taskmate-controls select { min-height: 36px; }
-
-.taskmate-list {
-  display: grid;
-  gap: 0.35rem;
-}
-
+.taskmate-list { display: grid; gap: 0.35rem; }
 .taskmate-task {
   gap: 0.6rem;
-  min-height: 50px;
+  min-height: 52px;
   padding: 0.45rem 0.35rem;
   border-bottom: 1px solid var(--background-modifier-border);
 }
 
 .taskmate-task.sortable-ghost { opacity: 0.35; }
 .taskmate-task.is-completed .taskmate-title { text-decoration: line-through; color: var(--text-muted); }
-
 .taskmate-drag,
 .taskmate-more,
-.taskmate-title {
+.taskmate-title,
+.taskmate-project-open,
+.taskmate-label-favorite {
   background: transparent;
   border: 0;
   box-shadow: none;
@@ -77,15 +108,79 @@
 .taskmate-drag:disabled { visibility: hidden; }
 .taskmate-task-body { flex: 1; min-width: 0; }
 .taskmate-title { display: block; width: 100%; padding: 0; color: var(--text-normal); text-align: left; font-weight: 600; }
-.taskmate-metadata { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.2rem; color: var(--text-muted); font-size: var(--font-smallest); }
+.taskmate-metadata { display: flex; flex-wrap: wrap; gap: 0.55rem; margin-top: 0.2rem; color: var(--text-muted); font-size: var(--font-smallest); }
+.taskmate-priority { font-weight: 700; }
+.taskmate-priority-1 { color: var(--color-red); }
+.taskmate-priority-2 { color: var(--color-orange); }
+.taskmate-priority-3 { color: var(--color-blue); }
 .taskmate-more { color: var(--text-muted); padding: 0.5rem; }
-.taskmate-empty { padding: 3rem 1rem; text-align: center; color: var(--text-muted); }
+.taskmate-empty { padding: 2.5rem 1rem; text-align: center; color: var(--text-muted); }
+.taskmate-empty-compact { padding: 0.8rem 0; color: var(--text-muted); }
+
+.taskmate-project-list,
+.taskmate-label-list { display: grid; gap: 0.4rem; }
+.taskmate-project-row,
+.taskmate-label-row { display: flex; gap: 0.45rem; }
+.taskmate-project-open {
+  display: flex;
+  justify-content: space-between;
+  flex: 1;
+  min-height: 44px;
+  padding: 0.55rem;
+  color: var(--text-normal);
+  text-align: left;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+.taskmate-project-count { color: var(--text-muted); }
+.taskmate-project-edit { flex: 0 0 auto; }
+.taskmate-project-editor { display: grid; gap: 0.8rem; max-width: 32rem; }
+.taskmate-project-editor label { display: grid; gap: 0.4rem; font-weight: 600; }
+.taskmate-project-editor .mod-warning { color: var(--text-error); margin-top: 1rem; }
+
+.taskmate-label-search { margin-bottom: 0.7rem; }
+.taskmate-label-row { display: flex; }
+.taskmate-label-select { flex: 1; min-height: 40px; text-align: left; }
+.taskmate-label-favorite { flex: 0 0 42px; color: var(--text-accent); font-size: 1.1rem; }
+
+.taskmate-navigation {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  min-height: 58px;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--background-primary);
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.taskmate-navigation button {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.1rem;
+  min-width: 0;
+  height: 58px;
+  padding: 0.3rem;
+  color: var(--text-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  font-size: var(--font-smallest);
+}
+
+.taskmate-navigation button.is-active { color: var(--interactive-accent); font-weight: 700; }
+.taskmate-nav-icon { font-size: 1.2rem; line-height: 1; }
+.taskmate-back { flex: 0 0 38px; font-size: 1.5rem; }
 .taskmate-modal-actions { justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
 .taskmate-folder-list { width: min(32rem, 100%); }
 
 @media (max-width: 600px) {
-  .taskmate-view { padding: 0.8rem 0.65rem 5rem; }
+  .taskmate-page { padding: 0.75rem 0.65rem calc(5rem + env(safe-area-inset-bottom)); }
+  .taskmate-smart-views { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .taskmate-task { min-height: 56px; }
-  .taskmate-controls input[type="search"] { flex-basis: 100%; }
   .taskmate-drag { touch-action: none; }
 }

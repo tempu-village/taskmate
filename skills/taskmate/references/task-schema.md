@@ -12,7 +12,9 @@ type: todo
 id: "stable-id"
 completed: false
 date: "2026-09-12"
-important: false
+priority: 1
+labels: ["仕事", "連絡"]
+project: "project-stable-id"
 rank: 1024
 created-at: "2026-09-06T10:00:00+09:00"
 updated-at: "2026-09-06T10:00:00+09:00"
@@ -25,7 +27,9 @@ source-note: "Notes/meeting.md"
 Optional context, acceptance details, or steps.
 ```
 
-Use one `date` with `YYYY-MM-DD` semantics. `completed-at` is an ISO timestamp when completed and `null` otherwise. `rank` is the single global manual order; automatic sorting is display-only and must not rewrite it.
+Use one `date` with `YYYY-MM-DD` semantics. `priority` is `1`, `2`, `3`, or `null`; 1 is highest. `labels` is an inline JSON string array with no more than 500 distinct labels exposed by the plugin. `project` is a project ID or `null`, never a display name. `completed-at` is an ISO timestamp when completed and `null` otherwise. `rank` is the single global manual order; automatic sorting is display-only and must not rewrite it.
+
+Older files with `important: true` are read as priority 1 for migration compatibility. New writes must use `priority`.
 
 ## Task boundaries
 
