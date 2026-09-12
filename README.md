@@ -35,6 +35,8 @@ Copy `main.js`, `manifest.json`, and `styles.css` into `<vault>/.obsidian/plugin
 
 Open TaskMate from its ribbon icon or run **TaskMate: タスク一覧を開く** from the command palette.
 
+To use an unpublished TaskMate build on both desktop and Android through Obsidian Sync, see the [Japanese desktop and Android sync guide](docs/ANDROID_SYNC_JA.md).
+
 ## Select notes for the agent
 
 Run **TaskMate: 現在のフォルダをAI対象にする**, or add one vault-relative folder per line under **Settings → TaskMate → AI source folders**.
