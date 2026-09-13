@@ -83,13 +83,13 @@ export class TodoListView extends ItemView {
     root.empty();
     root.addClass("taskmate-view");
     const page = root.createDiv({ cls: "taskmate-page" });
+    this.renderNavigation(page);
+    const content = page.createDiv({ cls: "taskmate-content" });
 
-    if (this.screen === "date") this.renderDateScreen(page, tasks, projects);
-    else if (this.screen === "search") this.renderSearchScreen(page, tasks, projects);
-    else if (this.screen === "projects") this.renderProjectsScreen(page, tasks, projects);
-    else this.renderFilterScreen(page, tasks, projects);
-
-    this.renderNavigation(root);
+    if (this.screen === "date") this.renderDateScreen(content, tasks, projects);
+    else if (this.screen === "search") this.renderSearchScreen(content, tasks, projects);
+    else if (this.screen === "projects") this.renderProjectsScreen(content, tasks, projects);
+    else this.renderFilterScreen(content, tasks, projects);
   }
 
   private renderHeader(container: HTMLElement, title: string, addTaskProjectId?: string | null): HTMLElement {
@@ -423,7 +423,10 @@ export class TodoListView extends ItemView {
   private renderNavigation(root: HTMLElement): void {
     const navigation = root.createDiv({ cls: "taskmate-navigation", attr: { "aria-label": "メインナビゲーション" } });
     NAV_ITEMS.forEach((item) => {
-      const button = navigation.createEl("button", { cls: item.screen === this.screen ? "is-active" : "" });
+      const button = navigation.createEl("button", {
+        cls: item.screen === this.screen ? "is-active" : "",
+        attr: { "aria-current": item.screen === this.screen ? "page" : "false" }
+      });
       button.createSpan({ text: item.icon, cls: "taskmate-nav-icon" });
       button.createSpan({ text: item.label });
       button.addEventListener("click", () => {

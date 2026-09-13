@@ -8,9 +8,10 @@
 
 .taskmate-page {
   height: 100%;
-  padding: 1rem 1.1rem 5.5rem;
   overflow: auto;
 }
+
+.taskmate-content { padding: 1rem 1.1rem; }
 
 .taskmate-header,
 .taskmate-task,
@@ -143,17 +144,14 @@
 .taskmate-label-favorite { flex: 0 0 42px; color: var(--text-accent); font-size: 1.1rem; }
 
 .taskmate-navigation {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  position: sticky;
+  top: 0;
   z-index: 10;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  min-height: 58px;
-  padding-bottom: env(safe-area-inset-bottom);
+  min-height: 52px;
   background: var(--background-primary);
-  border-top: 1px solid var(--background-modifier-border);
+  border-bottom: 1px solid var(--background-modifier-border);
 }
 
 .taskmate-navigation button {
@@ -162,7 +160,7 @@
   justify-items: center;
   gap: 0.1rem;
   min-width: 0;
-  height: 58px;
+  height: 52px;
   padding: 0.3rem;
   color: var(--text-muted);
   background: transparent;
@@ -179,7 +177,7 @@
 .taskmate-folder-list { width: min(32rem, 100%); }
 
 @media (max-width: 600px) {
-  .taskmate-page { padding: 0.75rem 0.65rem calc(5rem + env(safe-area-inset-bottom)); }
+  .taskmate-content { padding: 0.75rem 0.65rem 1rem; }
   .taskmate-smart-views { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .taskmate-task { min-height: 56px; }
   .taskmate-drag { touch-action: none; }

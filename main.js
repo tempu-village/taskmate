@@ -2828,11 +2828,12 @@ var TodoListView = class extends import_obsidian6.ItemView {
     root.empty();
     root.addClass("taskmate-view");
     const page = root.createDiv({ cls: "taskmate-page" });
-    if (this.screen === "date") this.renderDateScreen(page, tasks, projects);
-    else if (this.screen === "search") this.renderSearchScreen(page, tasks, projects);
-    else if (this.screen === "projects") this.renderProjectsScreen(page, tasks, projects);
-    else this.renderFilterScreen(page, tasks, projects);
-    this.renderNavigation(root);
+    this.renderNavigation(page);
+    const content = page.createDiv({ cls: "taskmate-content" });
+    if (this.screen === "date") this.renderDateScreen(content, tasks, projects);
+    else if (this.screen === "search") this.renderSearchScreen(content, tasks, projects);
+    else if (this.screen === "projects") this.renderProjectsScreen(content, tasks, projects);
+    else this.renderFilterScreen(content, tasks, projects);
   }
   renderHeader(container, title, addTaskProjectId) {
     const header = container.createDiv({ cls: "taskmate-header" });
@@ -3140,7 +3141,10 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
   renderNavigation(root) {
     const navigation = root.createDiv({ cls: "taskmate-navigation", attr: { "aria-label": "\u30E1\u30A4\u30F3\u30CA\u30D3\u30B2\u30FC\u30B7\u30E7\u30F3" } });
     NAV_ITEMS.forEach((item) => {
-      const button = navigation.createEl("button", { cls: item.screen === this.screen ? "is-active" : "" });
+      const button = navigation.createEl("button", {
+        cls: item.screen === this.screen ? "is-active" : "",
+        attr: { "aria-current": item.screen === this.screen ? "page" : "false" }
+      });
       button.createSpan({ text: item.icon, cls: "taskmate-nav-icon" });
       button.createSpan({ text: item.label });
       button.addEventListener("click", () => {
