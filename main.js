@@ -391,6 +391,7 @@ var import_obsidian3 = require("obsidian");
 var DEFAULT_SETTINGS = {
   taskFolder: "TaskMate/Tasks",
   projectFolder: "TaskMate/Projects",
+  proposalFolder: "TaskMate/Proposals",
   sourceFolders: [],
   includeSourceSubfolders: true,
   recentSearches: [],
@@ -415,6 +416,10 @@ var TaskMateSettingTab = class extends import_obsidian3.PluginSettingTab {
       this.plugin.settings.projectFolder = value.trim() || DEFAULT_SETTINGS.projectFolder;
       await this.plugin.saveSettings();
       this.plugin.refreshViews();
+    }));
+    new import_obsidian3.Setting(containerEl).setName("Proposal folder").setDesc("AI import proposals are reviewed here before approved items become tasks.").addText((text) => text.setValue(this.plugin.settings.proposalFolder).onChange(async (value) => {
+      this.plugin.settings.proposalFolder = value.trim() || DEFAULT_SETTINGS.proposalFolder;
+      await this.plugin.saveSettings();
     }));
     new import_obsidian3.Setting(containerEl).setName("AI source folders").setDesc("One vault-relative folder per line. Notes inherit inclusion from these folders.").addTextArea((text) => {
       text.inputEl.rows = 6;

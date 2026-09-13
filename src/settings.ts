@@ -4,6 +4,7 @@ import type TaskMatePlugin from "./main";
 export interface TaskMateSettings {
   taskFolder: string;
   projectFolder: string;
+  proposalFolder: string;
   sourceFolders: string[];
   includeSourceSubfolders: boolean;
   recentSearches: string[];
@@ -14,6 +15,7 @@ export interface TaskMateSettings {
 export const DEFAULT_SETTINGS: TaskMateSettings = {
   taskFolder: "TaskMate/Tasks",
   projectFolder: "TaskMate/Projects",
+  proposalFolder: "TaskMate/Proposals",
   sourceFolders: [],
   includeSourceSubfolders: true,
   recentSearches: [],
@@ -47,6 +49,14 @@ export class TaskMateSettingTab extends PluginSettingTab {
         this.plugin.settings.projectFolder = value.trim() || DEFAULT_SETTINGS.projectFolder;
         await this.plugin.saveSettings();
         this.plugin.refreshViews();
+      }));
+
+    new Setting(containerEl)
+      .setName("Proposal folder")
+      .setDesc("AI import proposals are reviewed here before approved items become tasks.")
+      .addText((text) => text.setValue(this.plugin.settings.proposalFolder).onChange(async (value) => {
+        this.plugin.settings.proposalFolder = value.trim() || DEFAULT_SETTINGS.proposalFolder;
+        await this.plugin.saveSettings();
       }));
 
     new Setting(containerEl)

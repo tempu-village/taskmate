@@ -18,6 +18,7 @@ class TodoStoreTest(unittest.TestCase):
         (settings / "data.json").write_text(json.dumps({
             "taskFolder": "TaskMate/Tasks",
             "projectFolder": "TaskMate/Projects",
+            "proposalFolder": "TaskMate/Proposals",
             "sourceFolders": ["Notes"],
             "includeSourceSubfolders": True,
         }), encoding="utf-8")
@@ -56,6 +57,7 @@ class TodoStoreTest(unittest.TestCase):
         settings.write_text(json.dumps(values), encoding="utf-8")
         self.write_note("TaskMate/Tasks/task.md", "---\ntype: todo\nid: \"task-1\"\n---\n# Task\n")
         self.write_note("TaskMate/Projects/project.md", "---\ntype: taskmate-project\nid: \"project-1\"\n---\n")
+        self.write_note("TaskMate/Proposals/Active/session/Tasks/proposal.md", "---\ntype: taskmate-proposal\nproposal-id: \"proposal-1\"\n---\n")
         self.write_note("TaskMate/Notes/source.md", "# Included source\n")
 
         self.assertEqual([item["path"] for item in self.run_store("sources")], ["TaskMate/Notes/source.md"])

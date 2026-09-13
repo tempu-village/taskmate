@@ -1,7 +1,7 @@
 {
   "id": "taskmate",
   "name": "TaskMate",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "minAppVersion": "1.5.0",
   "description": "A simple local-first task list with manual ordering and agent-friendly Markdown.",
   "author": "infoNitobe",

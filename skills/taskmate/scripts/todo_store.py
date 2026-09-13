@@ -58,7 +58,7 @@ def parse_scalar(raw: str) -> Any:
         return value == "true"
     if re.fullmatch(r"-?\d+(?:\.\d+)?", value):
         return float(value) if "." in value else int(value)
-    if value.startswith(('"', '[')):
+    if value.startswith(('"', '[', '{')):
         try:
             return json.loads(value)
         except json.JSONDecodeError:
@@ -136,7 +136,7 @@ def quote(value: Any) -> str:
         return "true" if value else "false"
     if isinstance(value, (int, float)):
         return str(value)
-    if isinstance(value, list):
+    if isinstance(value, (list, dict)):
         return json.dumps(value, ensure_ascii=False)
     return json.dumps(str(value), ensure_ascii=False)
 
@@ -178,7 +178,7 @@ def available_task_path(folder: Path, title: str, current: Optional[Path] = None
 def plugin_settings(vault: Path) -> Dict[str, Any]:
     path = vault / ".obsidian" / "plugins" / "taskmate" / "data.json"
     if not path.exists():
-        return {"taskFolder": "TaskMate/Tasks", "projectFolder": "TaskMate/Projects", "sourceFolders": [], "includeSourceSubfolders": True}
+        return {"taskFolder": "TaskMate/Tasks", "projectFolder": "TaskMate/Projects", "proposalFolder": "TaskMate/Proposals", "sourceFolders": [], "includeSourceSubfolders": True}
     try:
         loaded = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError) as error:
@@ -186,6 +186,7 @@ def plugin_settings(vault: Path) -> Dict[str, Any]:
     return {
         "taskFolder": loaded.get("taskFolder") or "TaskMate/Tasks",
         "projectFolder": loaded.get("projectFolder") or "TaskMate/Projects",
+        "proposalFolder": loaded.get("proposalFolder") or "TaskMate/Proposals",
         "sourceFolders": loaded.get("sourceFolders") or [],
         "includeSourceSubfolders": loaded.get("includeSourceSubfolders", True),
     }
@@ -233,32 +234,46 @@ def command_list(args: argparse.Namespace) -> None:
     print(json.dumps(all_tasks(args.vault, args.task_folder), ensure_ascii=False, indent=2))
 
 
-def command_create(args: argparse.Namespace) -> None:
-    validate_date(args.date)
-    validate_priority(args.priority)
-    folder = task_folder(args.vault, args.task_folder)
-    tasks = all_tasks(args.vault, args.task_folder)
+def create_task(vault: Path, override: Optional[str], draft: Dict[str, Any]) -> Dict[str, Any]:
+    title = str(draft.get("title") or "").strip()
+    if not title:
+        fail("title is required")
+    date = draft.get("date")
+    priority = draft.get("priority")
+    validate_date(date)
+    validate_priority(priority)
+    folder = task_folder(vault, override)
+    tasks = all_tasks(vault, override)
     identifier = str(uuid.uuid4())
     timestamp = now_iso()
     task = {
         "id": identifier,
-        "title": args.title,
+        "title": title,
         "completed": False,
-        "date": args.date,
-        "priority": args.priority,
-        "labels": normalized_labels(args.label),
-        "project": args.project,
+        "date": date,
+        "priority": priority,
+        "labels": normalized_labels(draft.get("labels") or []),
+        "project": draft.get("project"),
         "rank": max((float(task["rank"]) for task in tasks), default=0) + 1024,
         "created-at": timestamp,
         "updated-at": timestamp,
         "completed-at": None,
-        "source-note": args.source_note,
-        "notes": args.notes or "",
+        "source-note": draft.get("source-note"),
+        "notes": draft.get("notes") or "",
     }
-    path = available_task_path(folder, args.title)
+    path = available_task_path(folder, title)
     atomic_write(path, encode_task(task))
     result = dict(task)
-    result["path"] = path.relative_to(args.vault).as_posix()
+    result["path"] = path.relative_to(vault).as_posix()
+    return result
+
+
+def command_create(args: argparse.Namespace) -> None:
+    result = create_task(args.vault, args.task_folder, {
+        "title": args.title, "date": args.date, "priority": args.priority,
+        "labels": args.label, "project": args.project,
+        "source-note": args.source_note, "notes": args.notes,
+    })
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
@@ -269,29 +284,41 @@ def find_task(vault: Path, override: Optional[str], identifier: str) -> Tuple[Pa
     return matches[0]
 
 
-def command_update(args: argparse.Namespace) -> None:
-    path, task = find_task(args.vault, args.task_folder, args.id)
-    if args.title is not None:
-        task["title"] = args.title
-    if args.date is not None:
-        task["date"] = None if args.date == "none" else args.date
-        validate_date(task["date"])
-    if args.priority is not None:
-        task["priority"] = None if args.priority == "none" else int(args.priority)
-        validate_priority(task["priority"])
-    if args.label is not None:
-        task["labels"] = normalized_labels(args.label)
-    if args.project is not None:
-        task["project"] = None if args.project == "none" else args.project
-    if args.notes is not None:
-        task["notes"] = args.notes
+def update_task(vault: Path, override: Optional[str], identifier: str, patch: Dict[str, Any]) -> Dict[str, Any]:
+    path, task = find_task(vault, override, identifier)
+    for key in ("title", "date", "priority", "project", "notes"):
+        if key in patch:
+            task[key] = patch[key]
+    if "labels" in patch:
+        task["labels"] = normalized_labels(patch["labels"] or [])
+    if not str(task["title"]).strip():
+        fail("title is required")
+    validate_date(task["date"])
+    validate_priority(task["priority"])
     task["updated-at"] = now_iso()
     atomic_write(path, encode_task(task))
     desired = available_task_path(path.parent, str(task["title"]), path)
     if desired != path:
         path.replace(desired)
-        task["path"] = desired.relative_to(args.vault).as_posix()
-    print(json.dumps(task, ensure_ascii=False, indent=2))
+        task["path"] = desired.relative_to(vault).as_posix()
+    return task
+
+
+def command_update(args: argparse.Namespace) -> None:
+    patch: Dict[str, Any] = {}
+    if args.title is not None:
+        patch["title"] = args.title
+    if args.date is not None:
+        patch["date"] = None if args.date == "none" else args.date
+    if args.priority is not None:
+        patch["priority"] = None if args.priority == "none" else int(args.priority)
+    if args.label is not None:
+        patch["labels"] = args.label
+    if args.project is not None:
+        patch["project"] = None if args.project == "none" else args.project
+    if args.notes is not None:
+        patch["notes"] = args.notes
+    print(json.dumps(update_task(args.vault, args.task_folder, args.id, patch), ensure_ascii=False, indent=2))
 
 
 def command_complete(args: argparse.Namespace) -> None:
@@ -342,19 +369,20 @@ def included_by_folder(relative: Path, folders: List[str], include_subfolders: b
     return False
 
 
-def command_sources(args: argparse.Namespace) -> None:
-    settings = plugin_settings(args.vault)
+def source_records(vault: Path) -> List[Dict[str, Any]]:
+    settings = plugin_settings(vault)
     managed_roots = [
-        safe_path(args.vault, str(settings["taskFolder"])),
-        safe_path(args.vault, str(settings["projectFolder"])),
+        safe_path(vault, str(settings["taskFolder"])),
+        safe_path(vault, str(settings["projectFolder"])),
+        safe_path(vault, str(settings["proposalFolder"])),
     ]
     results: List[Dict[str, Any]] = []
-    for path in sorted(args.vault.rglob("*.md")):
+    for path in sorted(vault.rglob("*.md")):
         if ".obsidian" in path.parts:
             continue
         if any(path == root or root in path.parents for root in managed_roots):
             continue
-        relative = path.relative_to(args.vault)
+        relative = path.relative_to(vault)
         text = path.read_text(encoding="utf-8")
         explicit = frontmatter_boolean(text, "taskmate-source")
         inherited = included_by_folder(relative, list(settings["sourceFolders"]), bool(settings["includeSourceSubfolders"]))
@@ -367,25 +395,33 @@ def command_sources(args: argparse.Namespace) -> None:
         imported_hash = props.get("taskmate-imported-hash")
         state = "processed" if imported_hash == current_hash else ("changed" if imported_hash else "pending")
         results.append({"path": relative.as_posix(), "state": state, "hash": current_hash, "taskIds": yaml_list(lines, "taskmate-task-ids")})
-    print(json.dumps(results, ensure_ascii=False, indent=2))
+    return results
 
 
-def command_mark_source(args: argparse.Namespace) -> None:
-    path = safe_path(args.vault, args.source)
+def command_sources(args: argparse.Namespace) -> None:
+    print(json.dumps(source_records(args.vault), ensure_ascii=False, indent=2))
+
+
+def mark_source(vault: Path, source: str, status: str, task_ids: List[str]) -> Dict[str, Any]:
+    path = safe_path(vault, source)
     text = path.read_text(encoding="utf-8")
     digest = source_hash(text)
     lines, body = split_document(text)
     lines = strip_yaml_keys(lines, IMPORT_KEYS)
     lines.extend([
-        f"taskmate-import-status: {quote(args.status)}",
+        f"taskmate-import-status: {quote(status)}",
         f"taskmate-imported-at: {quote(now_iso())}",
         f"taskmate-imported-hash: {quote(digest)}",
         "taskmate-task-ids:",
-        *[f"  - {quote(identifier)}" for identifier in args.task_id],
+        *[f"  - {quote(identifier)}" for identifier in task_ids],
     ])
     updated = "---\n" + "\n".join(lines) + "\n---\n" + body
     atomic_write(path, updated)
-    print(json.dumps({"path": args.source, "status": args.status, "hash": digest, "taskIds": args.task_id}, ensure_ascii=False, indent=2))
+    return {"path": source, "status": status, "hash": digest, "taskIds": task_ids}
+
+
+def command_mark_source(args: argparse.Namespace) -> None:
+    print(json.dumps(mark_source(args.vault, args.source, args.status, args.task_id), ensure_ascii=False, indent=2))
 
 
 def command_validate(args: argparse.Namespace) -> None:

@@ -10,7 +10,7 @@ Use `python3 scripts/todo_store.py sources --vault <vault>` when available. It r
 - `taskmate-source: false` excludes a note inside a selected folder.
 - no property inherits the selected-folder rule.
 
-The folder setting may include subfolders. Exclude the task folder and `.obsidian`. Discovery may inspect frontmatter to apply these deterministic rules; it does not authorize interpreting unrelated notes.
+The folder setting may include subfolders. Exclude the task, project, proposal, and `.obsidian` folders. Discovery may inspect frontmatter to apply these deterministic rules; it does not authorize interpreting unrelated notes.
 
 ## Build a coverage review
 
@@ -21,7 +21,7 @@ Read each eligible new or changed note completely. Produce two sections:
 
 Default every ambiguous action to **Add**. Pure headings and connective prose need not become candidates, but background facts, decisions, promises, questions, and dependencies must be accounted for whenever they could imply follow-up work.
 
-Wait for the user's coverage-review decision before writing task files. Apply the task-boundary rules in [task-schema.md](task-schema.md); the agent may decide whether related statements become one task or several.
+Write the complete review to a proposal session before asking for a decision. Do not create or change canonical task files during staging. Follow [proposal-workflow.md](proposal-workflow.md) to obtain explicit decisions and promote approved or revised proposals. Apply the task-boundary rules in [task-schema.md](task-schema.md); the agent may decide whether related statements become one task or several.
 
 ## Record provenance
 

@@ -4,7 +4,7 @@ description: Turn explicitly selected Obsidian notes into complete, reviewable T
 license: MIT
 metadata:
   author: infoNitobe
-  version: "0.3.0"
+  version: "0.4.0"
 ---
 
 # TaskMate
@@ -16,12 +16,13 @@ Manage a local-first task store while keeping the user in control of source scop
 - For direct task operations, read [references/task-schema.md](references/task-schema.md).
 - For creating, renaming, or deleting projects, read [references/project-schema.md](references/project-schema.md).
 - For turning existing notes into tasks, read [references/import-workflow.md](references/import-workflow.md) before inspecting source content.
+- For staging and approving import proposals, also read [references/proposal-workflow.md](references/proposal-workflow.md).
 
-Use `scripts/todo_store.py` for deterministic discovery, validation, and task-file changes when Python is available. Otherwise follow the same schema with the environment's ordinary file tools. Obtain the vault and task-folder paths from user scope or the TaskMate plugin settings; never invent or search outside that scope.
+Use `scripts/todo_store.py` for deterministic direct task operations and `scripts/proposal_store.py` for staged imports when Python is available. Otherwise follow the same schemas with the environment's ordinary file tools. Obtain vault and managed-folder paths from user scope or the TaskMate plugin settings; never invent or search outside that scope.
 
 ## Preserve control
 
-Treat selected source folders and `taskmate-source` properties as an allowlist, not as hints. Present a coverage review before importing: every candidate must be accounted for as a new task, a merge into an existing task, or an exclusion that requires the user's confirmation. Default to creating a task. Never silently omit a candidate because it looks informational, redundant, trivial, or difficult to schedule.
+Treat selected source folders and `taskmate-source` properties as an allowlist, not as hints. Stage a coverage review before importing: every candidate must be accounted for as a new task, a merge into an existing task, or an exclusion that requires the user's confirmation. Default to creating a task. Never silently omit a candidate because it looks informational, redundant, trivial, or difficult to schedule.
 
 Re-read every file immediately before modifying it. Preserve unrelated frontmatter and prose in source notes. Use recoverable deletion when the environment supports it, and request confirmation immediately before deletion or another destructive bulk change.
 

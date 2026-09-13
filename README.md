@@ -18,7 +18,8 @@ Tasks stay in your vault as readable Markdown. There is no TaskMate account, hos
 - Desktop and mobile Obsidian support
 - One readable Markdown file per task, with a stable ID in frontmatter
 - Explicit AI source folders with per-note include and exclude overrides
-- Coverage review before an agent may omit a possible action
+- Coverage review staged outside the task folder before an agent may create, merge, or omit an action
+- Visible approval, revision, and exclusion records retained in a configurable proposal archive
 
 Calendar, Kanban, recurrence, reminders, and a hosted sync service are intentionally outside the current release.
 
@@ -67,7 +68,11 @@ Then open the vault as the Codex project and ask:
 $taskmate Review the selected source notes and propose every Todo candidate.
 ```
 
-The skill presents a coverage review before writing. Every candidate is added, merged, or explicitly excluded with user approval.
+The skill first writes review artifacts under `TaskMate/Proposals/Active`; it does not write canonical tasks at this stage. Review every candidate in the Codex conversation and approve, revise, or exclude it explicitly. Approved and revised proposals then become tasks, while the completed review moves to `TaskMate/Proposals/Archive` with visible and machine-readable decision markers. Archived reviews remain until you delete them manually.
+
+Change the proposal location under **Settings → TaskMate → Proposal folder** when the default does not suit your vault. Proposal files are an approval boundary, not a security sandbox: source-note access remains limited by **AI source folders** and `taskmate-source` overrides.
+
+For the deterministic CLI and JSON formats, see [the proposal workflow](skills/taskmate/references/proposal-workflow.md).
 
 ## Repository structure
 
