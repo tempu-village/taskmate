@@ -176,9 +176,36 @@
 .taskmate-modal-actions { justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
 .taskmate-folder-list { width: min(32rem, 100%); }
 
+.taskmate-date-setting .setting-item-control { flex-wrap: wrap; }
+.taskmate-date-presets,
+.taskmate-suggestion-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  width: 100%;
+}
+.taskmate-date-input { margin-top: 0.35rem; }
+.taskmate-suggestion-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-height: 40px;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+}
+.taskmate-suggestion-chip.is-active {
+  color: var(--text-on-accent);
+  background: var(--interactive-accent);
+}
+.taskmate-suggestion-detail { font-size: var(--font-smallest); opacity: 0.75; }
+.taskmate-recent-labels { margin: -0.45rem 0 1rem; }
+.taskmate-suggestion-heading { margin-bottom: 0.4rem; color: var(--text-muted); font-size: var(--font-smallest); }
+
 @media (max-width: 600px) {
   .taskmate-content { padding: 0.75rem 0.65rem 1rem; }
   .taskmate-smart-views { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .taskmate-task { min-height: 56px; }
   .taskmate-drag { touch-action: none; }
+  .taskmate-suggestion-chip { min-height: 44px; }
 }

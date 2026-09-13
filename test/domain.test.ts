@@ -3,6 +3,7 @@ import { filterTasks, sortTasks, taskMatchesView } from "../src/domain";
 import type { Project, Task } from "../src/domain";
 import { encodeTask, parseTaskMarkdown, taskFileName } from "../src/markdown";
 import { encodeProject, parseProjectMarkdown, projectFileName } from "../src/project-markdown";
+import { recordRecentLabels, recentLabelSuggestions, taskDateSuggestions } from "../src/task-input-suggestions";
 
 function task(overrides: Partial<Task> = {}): Task {
   return {
@@ -80,5 +81,24 @@ describe("project Markdown", () => {
     };
     expect(parseProjectMarkdown(project.path, encodeProject(project))).toEqual(project);
     expect(projectFileName(project.name, project.id)).toBe("仕事--project1.md");
+  });
+});
+
+describe("task input suggestions", () => {
+  it("offers today, tomorrow, seven days later, and no date", () => {
+    expect(taskDateSuggestions("2026-09-13")).toEqual([
+      { id: "today", label: "今日", date: "2026-09-13" },
+      { id: "tomorrow", label: "明日", date: "2026-09-14" },
+      { id: "seven-days", label: "7日後", date: "2026-09-20" },
+      { id: "none", label: "日付なし", date: null }
+    ]);
+  });
+
+  it("keeps ten unique recent labels with newly saved labels first", () => {
+    const history = Array.from({ length: 10 }, (_, index) => `label-${index + 1}`);
+    expect(recordRecentLabels(history, ["仕事", "label-2", "#連絡", "仕事"])).toEqual([
+      "仕事", "label-2", "連絡", "label-1", "label-3", "label-4", "label-5", "label-6", "label-7", "label-8"
+    ]);
+    expect(recentLabelSuggestions(["仕事", "仕事", " 連絡 "])).toEqual(["仕事", "連絡"]);
   });
 });

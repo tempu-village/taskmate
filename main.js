@@ -358,6 +358,7 @@ var DEFAULT_SETTINGS = {
   sourceFolders: [],
   includeSourceSubfolders: true,
   recentSearches: [],
+  recentLabels: [],
   favoriteLabels: []
 };
 var TaskMateSettingTab = class extends import_obsidian3.PluginSettingTab {
@@ -2691,10 +2692,43 @@ var ProjectModal = class extends import_obsidian4.Modal {
 
 // src/task-modal.ts
 var import_obsidian5 = require("obsidian");
+
+// src/task-input-suggestions.ts
+function taskDateSuggestions(today = todayKey()) {
+  return [
+    { id: "today", label: "\u4ECA\u65E5", date: today },
+    { id: "tomorrow", label: "\u660E\u65E5", date: addDays(today, 1) },
+    { id: "seven-days", label: "7\u65E5\u5F8C", date: addDays(today, 7) },
+    { id: "none", label: "\u65E5\u4ED8\u306A\u3057", date: null }
+  ];
+}
+function normalizeLabels(labels) {
+  const result = [];
+  for (const raw of labels) {
+    const label = raw.trim().replace(/^#/, "");
+    if (label && !result.includes(label)) result.push(label);
+  }
+  return result;
+}
+function recentLabelSuggestions(history, limit = 10) {
+  return normalizeLabels(history).slice(0, limit);
+}
+function recordRecentLabels(history, savedLabels, limit = 10) {
+  const used = normalizeLabels(savedLabels);
+  if (used.length === 0) return recentLabelSuggestions(history, limit);
+  return normalizeLabels([...used, ...history]).slice(0, limit);
+}
+
+// src/task-modal.ts
+function shortDate(date) {
+  const [, month, day] = date.split("-").map(Number);
+  return `${month}/${day}`;
+}
 var TaskModal = class extends import_obsidian5.Modal {
-  constructor(app, task, projects, defaultProjectId, onSave) {
+  constructor(app, task, projects, recentLabels, defaultProjectId, onSave) {
     super(app);
     this.projects = projects;
+    this.recentLabels = recentLabels;
     this.onSave = onSave;
     this.draft = {
       title: task?.title ?? "",
@@ -2716,12 +2750,43 @@ var TaskModal = class extends import_obsidian5.Modal {
       });
       window.setTimeout(() => text.inputEl.focus(), 0);
     });
-    new import_obsidian5.Setting(contentEl).setName("\u65E5\u4ED8").addText((text) => {
+    const dateSetting = new import_obsidian5.Setting(contentEl).setName("\u65E5\u4ED8");
+    dateSetting.settingEl.addClass("taskmate-date-setting");
+    const datePresets = dateSetting.controlEl.createDiv({ cls: "taskmate-date-presets" });
+    const dateButtons = [];
+    let dateInput;
+    const refreshDateSelection = () => {
+      for (const button of dateButtons) {
+        const selected = button.dataset.date === (this.draft.date ?? "");
+        button.toggleClass("is-active", selected);
+        button.setAttribute("aria-pressed", String(selected));
+      }
+    };
+    for (const suggestion of taskDateSuggestions()) {
+      const button = datePresets.createEl("button", {
+        cls: "taskmate-suggestion-chip",
+        attr: { type: "button", "aria-pressed": "false" }
+      });
+      button.dataset.date = suggestion.date ?? "";
+      button.createSpan({ text: suggestion.label });
+      if (suggestion.date) button.createSpan({ text: shortDate(suggestion.date), cls: "taskmate-suggestion-detail" });
+      button.addEventListener("click", () => {
+        this.draft.date = suggestion.date;
+        dateInput.value = suggestion.date ?? "";
+        refreshDateSelection();
+      });
+      dateButtons.push(button);
+    }
+    dateSetting.addText((text) => {
       text.inputEl.type = "date";
+      text.inputEl.addClass("taskmate-date-input");
+      dateInput = text.inputEl;
       text.setValue(this.draft.date ?? "").onChange((value) => {
         this.draft.date = value || null;
+        refreshDateSelection();
       });
     });
+    refreshDateSelection();
     new import_obsidian5.Setting(contentEl).setName("\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8").addDropdown((dropdown) => {
       dropdown.addOption("", "\u672A\u6240\u5C5E");
       for (const project of this.projects) dropdown.addOption(project.id, project.name);
@@ -2734,11 +2799,44 @@ var TaskModal = class extends import_obsidian5.Modal {
         this.draft.priority = value ? Number(value) : null;
       });
     });
-    new import_obsidian5.Setting(contentEl).setName("\u30E9\u30D9\u30EB").setDesc("\u30AB\u30F3\u30DE\u533A\u5207\u308A\u3001\u6700\u5927500\u7A2E\u985E").addText((text) => {
+    const labelSetting = new import_obsidian5.Setting(contentEl).setName("\u30E9\u30D9\u30EB").setDesc("\u30AB\u30F3\u30DE\u533A\u5207\u308A\u3001\u6700\u5927500\u7A2E\u985E");
+    let labelInput;
+    const recentLabelButtons = [];
+    const refreshLabelSelection = () => {
+      for (const button of recentLabelButtons) {
+        const selected = this.draft.labels.includes(button.dataset.label ?? "");
+        button.toggleClass("is-active", selected);
+        button.setAttribute("aria-pressed", String(selected));
+      }
+    };
+    labelSetting.addText((text) => {
       text.setPlaceholder("\u4ED5\u4E8B, \u9023\u7D61").setValue(this.draft.labels.join(", ")).onChange((value) => {
-        this.draft.labels = [...new Set(value.split(",").map((label) => label.trim().replace(/^#/, "")).filter(Boolean))].slice(0, 500);
+        this.draft.labels = normalizeLabels(value.split(",")).slice(0, 500);
+        refreshLabelSelection();
       });
+      labelInput = text.inputEl;
     });
+    const labelSuggestions = recentLabelSuggestions(this.recentLabels);
+    if (labelSuggestions.length > 0) {
+      const recent = contentEl.createDiv({ cls: "taskmate-recent-labels" });
+      recent.createDiv({ text: "\u6700\u8FD1\u4F7F\u3063\u305F\u30E9\u30D9\u30EB", cls: "taskmate-suggestion-heading" });
+      const chips = recent.createDiv({ cls: "taskmate-suggestion-chips" });
+      for (const label of labelSuggestions) {
+        const button = chips.createEl("button", {
+          text: label,
+          cls: "taskmate-suggestion-chip",
+          attr: { type: "button", "aria-pressed": "false" }
+        });
+        button.dataset.label = label;
+        button.addEventListener("click", () => {
+          this.draft.labels = this.draft.labels.includes(label) ? this.draft.labels.filter((item) => item !== label) : [...this.draft.labels, label].slice(0, 500);
+          labelInput.value = this.draft.labels.join(", ");
+          refreshLabelSelection();
+        });
+        recentLabelButtons.push(button);
+      }
+      refreshLabelSelection();
+    }
     new import_obsidian5.Setting(contentEl).setName("\u30E1\u30E2").addTextArea((area) => {
       area.inputEl.rows = 5;
       area.setValue(this.draft.notes).onChange((value) => {
@@ -3186,8 +3284,9 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
   }
   async openCreateTask(projectId) {
     const projects = await this.plugin.projects.list();
-    new TaskModal(this.app, null, projects, projectId, async (draft) => {
+    new TaskModal(this.app, null, projects, this.plugin.settings.recentLabels ?? [], projectId, async (draft) => {
       await this.plugin.repository.create(draft);
+      await this.rememberLabels(draft.labels);
       if (draft.projectId) {
         const project = projects.find((item) => item.id === draft.projectId);
         if (project) await this.plugin.projects.touch(project);
@@ -3197,8 +3296,9 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
   }
   async openEditTask(task) {
     const projects = await this.plugin.projects.list();
-    new TaskModal(this.app, task, projects, task.projectId, async (draft) => {
+    new TaskModal(this.app, task, projects, this.plugin.settings.recentLabels ?? [], task.projectId, async (draft) => {
       await this.plugin.repository.update(task, draft);
+      await this.rememberLabels(draft.labels);
       if (draft.projectId) {
         const project = projects.find((item) => item.id === draft.projectId);
         if (project) await this.plugin.projects.touch(project);
@@ -3213,6 +3313,13 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
       this.projectScreen = "detail";
       this.requestRender();
     }).open();
+  }
+  async rememberLabels(labels) {
+    const current = this.plugin.settings.recentLabels ?? [];
+    const next = recordRecentLabels(current, labels);
+    if (next.length === current.length && next.every((label, index2) => label === current[index2])) return;
+    this.plugin.settings.recentLabels = next;
+    await this.plugin.saveSettings();
   }
 };
 

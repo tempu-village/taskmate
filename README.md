@@ -11,6 +11,8 @@ Tasks stay in your vault as readable Markdown. There is no TaskMate account, hos
 - Search with up to 10 recent search terms
 - Markdown-backed projects, five recently used projects, rename, and safe deletion
 - Priority 1–3 and up to 500 searchable, collapsible, favorite labels
+- One-tap Today, Tomorrow, 7 days later, and No date suggestions when editing a task
+- Up to 10 recently saved label suggestions
 - Manual drag ordering shared by every view
 - Date, priority, and creation-date sorting without destroying manual order
 - Desktop and mobile Obsidian support

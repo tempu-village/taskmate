@@ -1,5 +1,11 @@
 import { App, Modal, Setting } from "obsidian";
 import type { Project, Task, TaskDraft } from "./domain";
+import { normalizeLabels, recentLabelSuggestions, taskDateSuggestions } from "./task-input-suggestions";
+
+function shortDate(date: string): string {
+  const [, month, day] = date.split("-").map(Number);
+  return `${month}/${day}`;
+}
 
 export class TaskModal extends Modal {
   private draft: TaskDraft;
@@ -8,6 +14,7 @@ export class TaskModal extends Modal {
     app: App,
     task: Task | null,
     private readonly projects: Project[],
+    private readonly recentLabels: string[],
     defaultProjectId: string | null,
     private readonly onSave: (draft: TaskDraft) => Promise<void>
   ) {
@@ -34,12 +41,43 @@ export class TaskModal extends Modal {
       window.setTimeout(() => text.inputEl.focus(), 0);
     });
 
-    new Setting(contentEl).setName("日付").addText((text) => {
+    const dateSetting = new Setting(contentEl).setName("日付");
+    dateSetting.settingEl.addClass("taskmate-date-setting");
+    const datePresets = dateSetting.controlEl.createDiv({ cls: "taskmate-date-presets" });
+    const dateButtons: HTMLButtonElement[] = [];
+    let dateInput: HTMLInputElement;
+    const refreshDateSelection = () => {
+      for (const button of dateButtons) {
+        const selected = button.dataset.date === (this.draft.date ?? "");
+        button.toggleClass("is-active", selected);
+        button.setAttribute("aria-pressed", String(selected));
+      }
+    };
+    for (const suggestion of taskDateSuggestions()) {
+      const button = datePresets.createEl("button", {
+        cls: "taskmate-suggestion-chip",
+        attr: { type: "button", "aria-pressed": "false" }
+      });
+      button.dataset.date = suggestion.date ?? "";
+      button.createSpan({ text: suggestion.label });
+      if (suggestion.date) button.createSpan({ text: shortDate(suggestion.date), cls: "taskmate-suggestion-detail" });
+      button.addEventListener("click", () => {
+        this.draft.date = suggestion.date;
+        dateInput.value = suggestion.date ?? "";
+        refreshDateSelection();
+      });
+      dateButtons.push(button);
+    }
+    dateSetting.addText((text) => {
       text.inputEl.type = "date";
+      text.inputEl.addClass("taskmate-date-input");
+      dateInput = text.inputEl;
       text.setValue(this.draft.date ?? "").onChange((value) => {
         this.draft.date = value || null;
+        refreshDateSelection();
       });
     });
+    refreshDateSelection();
 
     new Setting(contentEl).setName("プロジェクト").addDropdown((dropdown) => {
       dropdown.addOption("", "未所属");
@@ -61,11 +99,46 @@ export class TaskModal extends Modal {
         });
     });
 
-    new Setting(contentEl).setName("ラベル").setDesc("カンマ区切り、最大500種類").addText((text) => {
+    const labelSetting = new Setting(contentEl).setName("ラベル").setDesc("カンマ区切り、最大500種類");
+    let labelInput: HTMLInputElement;
+    const recentLabelButtons: HTMLButtonElement[] = [];
+    const refreshLabelSelection = () => {
+      for (const button of recentLabelButtons) {
+        const selected = this.draft.labels.includes(button.dataset.label ?? "");
+        button.toggleClass("is-active", selected);
+        button.setAttribute("aria-pressed", String(selected));
+      }
+    };
+    labelSetting.addText((text) => {
       text.setPlaceholder("仕事, 連絡").setValue(this.draft.labels.join(", ")).onChange((value) => {
-        this.draft.labels = [...new Set(value.split(",").map((label) => label.trim().replace(/^#/, "")).filter(Boolean))].slice(0, 500);
+        this.draft.labels = normalizeLabels(value.split(",")).slice(0, 500);
+        refreshLabelSelection();
       });
+      labelInput = text.inputEl;
     });
+    const labelSuggestions = recentLabelSuggestions(this.recentLabels);
+    if (labelSuggestions.length > 0) {
+      const recent = contentEl.createDiv({ cls: "taskmate-recent-labels" });
+      recent.createDiv({ text: "最近使ったラベル", cls: "taskmate-suggestion-heading" });
+      const chips = recent.createDiv({ cls: "taskmate-suggestion-chips" });
+      for (const label of labelSuggestions) {
+        const button = chips.createEl("button", {
+          text: label,
+          cls: "taskmate-suggestion-chip",
+          attr: { type: "button", "aria-pressed": "false" }
+        });
+        button.dataset.label = label;
+        button.addEventListener("click", () => {
+          this.draft.labels = this.draft.labels.includes(label)
+            ? this.draft.labels.filter((item) => item !== label)
+            : [...this.draft.labels, label].slice(0, 500);
+          labelInput.value = this.draft.labels.join(", ");
+          refreshLabelSelection();
+        });
+        recentLabelButtons.push(button);
+      }
+      refreshLabelSelection();
+    }
 
     new Setting(contentEl).setName("メモ").addTextArea((area) => {
       area.inputEl.rows = 5;

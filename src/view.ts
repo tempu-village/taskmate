@@ -5,6 +5,7 @@ import type { Priority, Project, SmartView, SortMode, Task, TaskFilters } from "
 import type TaskMatePlugin from "./main";
 import { ProjectModal } from "./project-modal";
 import { TaskModal } from "./task-modal";
+import { recordRecentLabels } from "./task-input-suggestions";
 
 export const TODO_VIEW_TYPE = "taskmate-list";
 
@@ -474,8 +475,9 @@ export class TodoListView extends ItemView {
 
   private async openCreateTask(projectId: string | null): Promise<void> {
     const projects = await this.plugin.projects.list();
-    new TaskModal(this.app, null, projects, projectId, async (draft) => {
+    new TaskModal(this.app, null, projects, this.plugin.settings.recentLabels ?? [], projectId, async (draft) => {
       await this.plugin.repository.create(draft);
+      await this.rememberLabels(draft.labels);
       if (draft.projectId) {
         const project = projects.find((item) => item.id === draft.projectId);
         if (project) await this.plugin.projects.touch(project);
@@ -486,8 +488,9 @@ export class TodoListView extends ItemView {
 
   private async openEditTask(task: Task): Promise<void> {
     const projects = await this.plugin.projects.list();
-    new TaskModal(this.app, task, projects, task.projectId, async (draft) => {
+    new TaskModal(this.app, task, projects, this.plugin.settings.recentLabels ?? [], task.projectId, async (draft) => {
       await this.plugin.repository.update(task, draft);
+      await this.rememberLabels(draft.labels);
       if (draft.projectId) {
         const project = projects.find((item) => item.id === draft.projectId);
         if (project) await this.plugin.projects.touch(project);
@@ -503,5 +506,13 @@ export class TodoListView extends ItemView {
       this.projectScreen = "detail";
       this.requestRender();
     }).open();
+  }
+
+  private async rememberLabels(labels: string[]): Promise<void> {
+    const current = this.plugin.settings.recentLabels ?? [];
+    const next = recordRecentLabels(current, labels);
+    if (next.length === current.length && next.every((label, index) => label === current[index])) return;
+    this.plugin.settings.recentLabels = next;
+    await this.plugin.saveSettings();
   }
 }

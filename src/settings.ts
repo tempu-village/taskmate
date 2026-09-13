@@ -7,6 +7,7 @@ export interface TaskMateSettings {
   sourceFolders: string[];
   includeSourceSubfolders: boolean;
   recentSearches: string[];
+  recentLabels: string[];
   favoriteLabels: string[];
 }
 
@@ -16,6 +17,7 @@ export const DEFAULT_SETTINGS: TaskMateSettings = {
   sourceFolders: [],
   includeSourceSubfolders: true,
   recentSearches: [],
+  recentLabels: [],
   favoriteLabels: []
 };
 
