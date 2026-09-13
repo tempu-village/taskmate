@@ -54,9 +54,14 @@ PC上で、Obsidian Syncに接続している実際のVaultへTaskMateを配置�
 2. Android版Obsidianで同じリモートVaultを開く
 3. Android側も「Fully Synced」になるまで待つ
 4. Android版Obsidianを完全に終了して再起動する
-5. 「設定 → コミュニティプラグイン」でTaskMateが有効になっていることを確認する
+5. 「設定 → コミュニティプラグイン」を開く
+6. **「インストール済みプラグイン（Installed plugins）」ボタンを押す**
+7. 一覧に表示されたTaskMateを有効にする。すでに有効なら、その状態を確認する
 
 これで、TaskMate本体、タスク、プロジェクトをPCとAndroidで利用できます。
+
+> [!IMPORTANT]
+> Android側で同期完了を待つだけでは、同期されたTaskMateが端末へ読み込まれない場合があります。「インストール済みプラグイン」ボタンを押して一覧を開く操作まで行ってください。この操作により、同期済みのプラグインがAndroid側へ読み込まれます。
 
 ## TaskMateを更新する
 
@@ -90,6 +95,8 @@ PC側の同期完了後、Android版Obsidianを再起動すると更新が反映
 - 3ファイルがすべて存在するか
 - 両端末が「Fully Synced」になっているか
 - 同期後にAndroid版Obsidianを完全終了して再起動したか
+- Androidで「設定 → コミュニティプラグイン → インストール済みプラグイン」を開いたか
+- Androidのインストール済みプラグイン一覧でTaskMateが有効か
 
 ## 確認済みの構成
 

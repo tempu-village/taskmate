@@ -7,11 +7,18 @@
 }
 
 .taskmate-page {
+  display: flex;
+  flex-direction: column;
   height: 100%;
-  overflow: auto;
+  overflow: hidden;
 }
 
-.taskmate-content { padding: 1rem 1.1rem; }
+.taskmate-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 1rem 1.1rem;
+  overflow-y: auto;
+}
 
 .taskmate-header,
 .taskmate-task,
@@ -144,9 +151,9 @@
 .taskmate-label-favorite { flex: 0 0 42px; color: var(--text-accent); font-size: 1.1rem; }
 
 .taskmate-navigation {
-  position: sticky;
-  top: 0;
+  position: static;
   z-index: 10;
+  flex: 0 0 auto;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   min-height: 52px;
