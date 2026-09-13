@@ -60,7 +60,19 @@ PC上で、Obsidian Syncに接続している実際のVaultへTaskMateを配置�
 
 ## TaskMateを更新する
 
-新しいバージョンでも手順は同じです。PC側の`.obsidian/plugins/taskmate/`にある次の3ファイルを新しいものへ置き換えます。
+TaskMateリポジトリには、検証、ビルド、Vaultへの配置をまとめたスクリプトがあります。初回だけ、同期中Vaultの絶対パスを指定します。
+
+```bash
+npm run deploy -- /absolute/path/to/同期中のVault
+```
+
+成功したVaultパスは、Git管理されないローカル設定へ保存されます。2回目以降は次の1コマンドだけです。
+
+```bash
+npm run deploy
+```
+
+スクリプトは型チェック、テスト、本番ビルドを実行してから、PC側の`.obsidian/plugins/taskmate/`にある次の3ファイルを新しいものへ置き換えます。
 
 - `main.js`
 - `manifest.json`

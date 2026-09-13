@@ -6,6 +6,7 @@
   "main": "main.js",
   "scripts": {
     "build": "node esbuild.config.mjs production",
+    "deploy": "bash scripts/deploy-to-vault.sh",
     "dev": "node esbuild.config.mjs",
     "typecheck": "tsc --noEmit --skipLibCheck",
     "test": "vitest run"
