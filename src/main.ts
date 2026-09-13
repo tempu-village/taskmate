@@ -15,6 +15,13 @@ export default class TaskMatePlugin extends Plugin {
     await this.loadSettings();
     this.repository = new TaskRepository(this.app, () => this.settings.taskFolder);
     this.projects = new ProjectRepository(this.app, () => this.settings.projectFolder);
+    try {
+      const migrated = await this.repository.migrateLegacyFileNames();
+      if (migrated > 0) new Notice(`${migrated}件のタスクノート名からIDを取り除きました`);
+    } catch (error) {
+      console.error("TaskMate could not migrate legacy task filenames", error);
+      new Notice("一部のタスクノート名を更新できませんでした");
+    }
     this.registerView(TODO_VIEW_TYPE, (leaf) => new TodoListView(leaf, this));
     this.addSettingTab(new TaskMateSettingTab(this.app, this));
 

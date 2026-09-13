@@ -67,7 +67,7 @@ class TodoStoreTest(unittest.TestCase):
             "--priority", "1", "--label", "work", "--label", "client",
             "--project", "launch-project", "--source-note", "Notes/source.md",
         )
-        self.assertTrue(Path(created["path"]).name.startswith("Send the estimate--"))
+        self.assertEqual(Path(created["path"]).name, "Send the estimate.md")
         self.assertEqual(created["priority"], 1)
         self.assertEqual(created["labels"], ["work", "client"])
         self.assertEqual(created["project"], "launch-project")
@@ -82,6 +82,14 @@ class TodoStoreTest(unittest.TestCase):
         source.write_text(source.read_text(encoding="utf-8") + "Another action.\n", encoding="utf-8")
         self.assertEqual(self.run_store("sources")[0]["state"], "changed")
         self.assertTrue(self.run_store("validate")["valid"])
+
+    def test_duplicate_titles_get_a_readable_numbered_filename(self):
+        first = self.run_store("create", "--title", "Buy milk")
+        second = self.run_store("create", "--title", "Buy milk")
+
+        self.assertEqual(Path(first["path"]).name, "Buy milk.md")
+        self.assertEqual(Path(second["path"]).name, "Buy milk (2).md")
+        self.assertNotEqual(first["id"], second["id"])
 
     def test_update_can_clear_priority_labels_and_project(self):
         created = self.run_store(

@@ -10,6 +10,7 @@ import json
 import os
 import re
 import tempfile
+import unicodedata
 import uuid
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
@@ -148,11 +149,30 @@ def encode_task(task: Dict[str, Any]) -> str:
     return "\n".join(frontmatter) + f"\n\n# {str(task['title']).strip()}{suffix}\n"
 
 
-def task_file_name(title: str, identifier: str) -> str:
-    readable = re.sub(r"[\\/:*?\"<>|#^\[\]]", "-", title)
+def readable_task_file_stem(title: str) -> str:
+    readable = re.sub(r"[\\/:*?\"<>|#^\[\]]", "-", unicodedata.normalize("NFKC", title))
     readable = re.sub(r"\s+", " ", readable)
     readable = re.sub(r"-+", "-", readable).strip(". -")[:80].strip() or "task"
-    return f"{readable}--{identifier[:8]}.md"
+    return readable
+
+
+def task_file_name(title: str, duplicate_number: int = 1) -> str:
+    suffix = f" ({duplicate_number})" if duplicate_number > 1 else ""
+    return f"{readable_task_file_stem(title)}{suffix}.md"
+
+
+def available_task_path(folder: Path, title: str, current: Optional[Path] = None) -> Path:
+    occupied = {
+        path.name.casefold()
+        for path in folder.glob("*.md")
+        if current is None or path != current
+    }
+    duplicate_number = 1
+    while True:
+        candidate = folder / task_file_name(title, duplicate_number)
+        if candidate.name.casefold() not in occupied:
+            return candidate
+        duplicate_number += 1
 
 
 def plugin_settings(vault: Path) -> Dict[str, Any]:
@@ -235,9 +255,7 @@ def command_create(args: argparse.Namespace) -> None:
         "source-note": args.source_note,
         "notes": args.notes or "",
     }
-    path = folder / task_file_name(args.title, identifier)
-    if path.exists():
-        fail(f"task already exists: {identifier}")
+    path = available_task_path(folder, args.title)
     atomic_write(path, encode_task(task))
     result = dict(task)
     result["path"] = path.relative_to(args.vault).as_posix()
@@ -269,10 +287,8 @@ def command_update(args: argparse.Namespace) -> None:
         task["notes"] = args.notes
     task["updated-at"] = now_iso()
     atomic_write(path, encode_task(task))
-    desired = path.with_name(task_file_name(str(task["title"]), str(task["id"])))
+    desired = available_task_path(path.parent, str(task["title"]), path)
     if desired != path:
-        if desired.exists():
-            fail(f"task file already exists: {desired.name}")
         path.replace(desired)
         task["path"] = desired.relative_to(args.vault).as_posix()
     print(json.dumps(task, ensure_ascii=False, indent=2))

@@ -131,9 +131,21 @@ function taskFromDraft(id, path, draft, rank, now) {
     notes: draft.notes.trim()
   };
 }
-function taskFileName(title, id) {
-  const readable = title.normalize("NFKC").replace(/[\\/:*?"<>|#^[\]]/g, "-").replace(/\s+/g, " ").replace(/-+/g, "-").replace(/^[.\s-]+|[.\s-]+$/g, "").slice(0, 80).trim() || "task";
-  return `${readable}--${id.slice(0, 8)}.md`;
+function readableTaskFileStem(title) {
+  return title.normalize("NFKC").replace(/[\\/:*?"<>|#^[\]]/g, "-").replace(/\s+/g, " ").replace(/-+/g, "-").replace(/^[.\s-]+|[.\s-]+$/g, "").slice(0, 80).trim() || "task";
+}
+function taskFileName(title, duplicateNumber = 1) {
+  const suffix = duplicateNumber > 1 ? ` (${duplicateNumber})` : "";
+  return `${readableTaskFileStem(title)}${suffix}.md`;
+}
+function nextAvailableTaskFileName(title, isTaken) {
+  for (let duplicateNumber = 1; ; duplicateNumber += 1) {
+    const candidate = taskFileName(title, duplicateNumber);
+    if (!isTaken(candidate)) return candidate;
+  }
+}
+function legacyTaskFileName(title, id) {
+  return `${readableTaskFileStem(title)}--${id.slice(0, 8)}.md`;
 }
 
 // src/repository.ts
@@ -158,6 +170,15 @@ var TaskRepository = class {
       if (!this.app.vault.getAbstractFileByPath(current)) await this.app.vault.createFolder(current);
     }
   }
+  availableTaskPath(title, currentPath = null) {
+    const folder = this.folder();
+    const prefix = `${folder}/`;
+    const occupied = new Set(
+      this.app.vault.getMarkdownFiles().map((file) => file.path).filter((path) => path.startsWith(prefix) && path !== currentPath).map((path) => path.toLocaleLowerCase())
+    );
+    const fileName = nextAvailableTaskFileName(title, (candidate) => occupied.has((0, import_obsidian.normalizePath)(`${folder}/${candidate}`).toLocaleLowerCase()));
+    return (0, import_obsidian.normalizePath)(`${folder}/${fileName}`);
+  }
   async list() {
     const prefix = `${this.folder()}/`;
     const files = this.app.vault.getMarkdownFiles().filter((file) => file.path.startsWith(prefix));
@@ -170,7 +191,7 @@ var TaskRepository = class {
     const tasks = await this.list();
     const rank = tasks.reduce((maximum, task2) => Math.max(maximum, task2.rank), 0) + RANK_STEP;
     const id = newId();
-    const path = (0, import_obsidian.normalizePath)(`${this.folder()}/${taskFileName(draft.title, id)}`);
+    const path = this.availableTaskPath(draft.title);
     const task = taskFromDraft(id, path, draft, rank, (/* @__PURE__ */ new Date()).toISOString());
     await this.app.vault.create(path, encodeTask(task));
     return task;
@@ -192,12 +213,27 @@ var TaskRepository = class {
       };
       return encodeTask(updated);
     });
-    const desiredPath = (0, import_obsidian.normalizePath)(`${this.folder()}/${taskFileName(updated.title, updated.id)}`);
+    const desiredPath = this.availableTaskPath(updated.title, task.path);
     if (desiredPath !== file.path) {
       await this.app.fileManager.renameFile(file, desiredPath);
       updated = { ...updated, path: desiredPath };
     }
     return updated;
+  }
+  async migrateLegacyFileNames() {
+    const tasks = (await this.list()).sort((a, b) => a.path.localeCompare(b.path));
+    let migrated = 0;
+    for (const task of tasks) {
+      const currentName = task.path.split("/").pop();
+      if (currentName !== legacyTaskFileName(task.title, task.id)) continue;
+      const file = this.app.vault.getAbstractFileByPath(task.path);
+      if (!(file instanceof import_obsidian.TFile)) continue;
+      const desiredPath = this.availableTaskPath(task.title, task.path);
+      if (desiredPath === task.path) continue;
+      await this.app.fileManager.renameFile(file, desiredPath);
+      migrated += 1;
+    }
+    return migrated;
   }
   async remove(task) {
     const file = this.app.vault.getAbstractFileByPath(task.path);
@@ -3333,6 +3369,13 @@ var TaskMatePlugin = class extends import_obsidian7.Plugin {
     await this.loadSettings();
     this.repository = new TaskRepository(this.app, () => this.settings.taskFolder);
     this.projects = new ProjectRepository(this.app, () => this.settings.projectFolder);
+    try {
+      const migrated = await this.repository.migrateLegacyFileNames();
+      if (migrated > 0) new import_obsidian7.Notice(`${migrated}\u4EF6\u306E\u30BF\u30B9\u30AF\u30CE\u30FC\u30C8\u540D\u304B\u3089ID\u3092\u53D6\u308A\u9664\u304D\u307E\u3057\u305F`);
+    } catch (error) {
+      console.error("TaskMate could not migrate legacy task filenames", error);
+      new import_obsidian7.Notice("\u4E00\u90E8\u306E\u30BF\u30B9\u30AF\u30CE\u30FC\u30C8\u540D\u3092\u66F4\u65B0\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F");
+    }
     this.registerView(TODO_VIEW_TYPE, (leaf) => new TodoListView(leaf, this));
     this.addSettingTab(new TaskMateSettingTab(this.app, this));
     this.addRibbonIcon("circle-check-big", "TaskMate\u3092\u958B\u304F", () => void this.activateView());

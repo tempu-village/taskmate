@@ -109,8 +109,8 @@ export function taskFromDraft(id: string, path: string, draft: TaskDraft, rank: 
   };
 }
 
-export function taskFileName(title: string, id: string): string {
-  const readable = title
+function readableTaskFileStem(title: string): string {
+  return title
     .normalize("NFKC")
     .replace(/[\\/:*?"<>|#^[\]]/g, "-")
     .replace(/\s+/g, " ")
@@ -118,5 +118,20 @@ export function taskFileName(title: string, id: string): string {
     .replace(/^[.\s-]+|[.\s-]+$/g, "")
     .slice(0, 80)
     .trim() || "task";
-  return `${readable}--${id.slice(0, 8)}.md`;
+}
+
+export function taskFileName(title: string, duplicateNumber = 1): string {
+  const suffix = duplicateNumber > 1 ? ` (${duplicateNumber})` : "";
+  return `${readableTaskFileStem(title)}${suffix}.md`;
+}
+
+export function nextAvailableTaskFileName(title: string, isTaken: (fileName: string) => boolean): string {
+  for (let duplicateNumber = 1; ; duplicateNumber += 1) {
+    const candidate = taskFileName(title, duplicateNumber);
+    if (!isTaken(candidate)) return candidate;
+  }
+}
+
+export function legacyTaskFileName(title: string, id: string): string {
+  return `${readableTaskFileStem(title)}--${id.slice(0, 8)}.md`;
 }

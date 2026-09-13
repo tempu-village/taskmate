@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { filterTasks, sortTasks, taskMatchesView } from "../src/domain";
 import type { Project, Task } from "../src/domain";
-import { encodeTask, parseTaskMarkdown, taskFileName } from "../src/markdown";
+import { encodeTask, legacyTaskFileName, nextAvailableTaskFileName, parseTaskMarkdown, taskFileName } from "../src/markdown";
 import { encodeProject, parseProjectMarkdown, projectFileName } from "../src/project-markdown";
 import { recordRecentLabels, recentLabelSuggestions, taskDateSuggestions } from "../src/task-input-suggestions";
 
@@ -64,8 +64,17 @@ describe("task Markdown", () => {
     expect(parseTaskMarkdown(original.path, encodeTask(original))).toEqual(original);
   });
 
-  it("uses a readable collision-resistant file name", () => {
-    expect(taskFileName("見積書を送る / 最終版", "12345678-abcd")).toBe("見積書を送る - 最終版--12345678.md");
+  it("uses the readable title without exposing the task ID", () => {
+    expect(taskFileName("見積書を送る / 最終版")).toBe("見積書を送る - 最終版.md");
+  });
+
+  it("adds a number only when the readable title is already used", () => {
+    const occupied = new Set(["買い物.md", "買い物 (2).md"]);
+    expect(nextAvailableTaskFileName("買い物", (name) => occupied.has(name))).toBe("買い物 (3).md");
+  });
+
+  it("still recognizes the former short-ID filename during migration", () => {
+    expect(legacyTaskFileName("見積書を送る", "12345678-abcd")).toBe("見積書を送る--12345678.md");
   });
 });
 

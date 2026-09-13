@@ -1,6 +1,6 @@
 import { App, normalizePath, TFile } from "obsidian";
 import type { Task, TaskDraft } from "./domain";
-import { encodeTask, parseTaskMarkdown, taskFileName, taskFromDraft } from "./markdown";
+import { encodeTask, legacyTaskFileName, nextAvailableTaskFileName, parseTaskMarkdown, taskFromDraft } from "./markdown";
 
 const RANK_STEP = 1024;
 
@@ -25,6 +25,21 @@ export class TaskRepository {
     }
   }
 
+  private availableTaskPath(title: string, currentPath: string | null = null): string {
+    const folder = this.folder();
+    const prefix = `${folder}/`;
+    const occupied = new Set(
+      this.app.vault.getMarkdownFiles()
+        .map((file) => file.path)
+        .filter((path) => path.startsWith(prefix) && path !== currentPath)
+        .map((path) => path.toLocaleLowerCase())
+    );
+    const fileName = nextAvailableTaskFileName(title, (candidate) => (
+      occupied.has(normalizePath(`${folder}/${candidate}`).toLocaleLowerCase())
+    ));
+    return normalizePath(`${folder}/${fileName}`);
+  }
+
   async list(): Promise<Task[]> {
     const prefix = `${this.folder()}/`;
     const files = this.app.vault.getMarkdownFiles().filter((file) => file.path.startsWith(prefix));
@@ -38,7 +53,7 @@ export class TaskRepository {
     const tasks = await this.list();
     const rank = tasks.reduce((maximum, task) => Math.max(maximum, task.rank), 0) + RANK_STEP;
     const id = newId();
-    const path = normalizePath(`${this.folder()}/${taskFileName(draft.title, id)}`);
+    const path = this.availableTaskPath(draft.title);
     const task = taskFromDraft(id, path, draft, rank, new Date().toISOString());
     await this.app.vault.create(path, encodeTask(task));
     return task;
@@ -61,12 +76,28 @@ export class TaskRepository {
       };
       return encodeTask(updated);
     });
-    const desiredPath = normalizePath(`${this.folder()}/${taskFileName(updated.title, updated.id)}`);
+    const desiredPath = this.availableTaskPath(updated.title, task.path);
     if (desiredPath !== file.path) {
       await this.app.fileManager.renameFile(file, desiredPath);
       updated = { ...updated, path: desiredPath };
     }
     return updated;
+  }
+
+  async migrateLegacyFileNames(): Promise<number> {
+    const tasks = (await this.list()).sort((a, b) => a.path.localeCompare(b.path));
+    let migrated = 0;
+    for (const task of tasks) {
+      const currentName = task.path.split("/").pop();
+      if (currentName !== legacyTaskFileName(task.title, task.id)) continue;
+      const file = this.app.vault.getAbstractFileByPath(task.path);
+      if (!(file instanceof TFile)) continue;
+      const desiredPath = this.availableTaskPath(task.title, task.path);
+      if (desiredPath === task.path) continue;
+      await this.app.fileManager.renameFile(file, desiredPath);
+      migrated += 1;
+    }
+    return migrated;
   }
 
   async remove(task: Task): Promise<void> {

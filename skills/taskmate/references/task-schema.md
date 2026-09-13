@@ -4,7 +4,7 @@ Read this reference for adding, editing, completing, listing, or reordering task
 
 ## Canonical storage
 
-The vault-relative task folder comes from `.obsidian/plugins/taskmate/data.json` under `taskFolder`; use `TaskMate/Tasks` only when the setting is absent. Each task is one Markdown file named `<readable-title>--<short-id>.md`. Keep the full stable identity in frontmatter and rename the file when its title changes.
+The vault-relative task folder comes from `.obsidian/plugins/taskmate/data.json` under `taskFolder`; use `TaskMate/Tasks` only when the setting is absent. Each task is one Markdown file named `<readable-title>.md`; when that name already exists, use `<readable-title> (2).md`, then increment the number. Keep the full stable identity in frontmatter rather than the filename, and rename the file when its title changes. Continue accepting former `<readable-title>--<short-id>.md` files during migration.
 
 ```markdown
 ---

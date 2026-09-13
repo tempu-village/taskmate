@@ -1,0 +1,3 @@
+# Keep task IDs out of note names
+
+TaskMate names task notes `<readable-title>.md` and adds ` (2)`, ` (3)`, and so on only for locally known duplicate titles; the full stable task ID remains in frontmatter, and project references remain stable project IDs. This keeps ordinary Obsidian note names readable while preserving identity independently of titles. Removing the formerly visible short-ID suffix means simultaneous offline creation of the same title on multiple devices can produce a sync filename conflict, which is accepted in favor of human-readable note names; former short-ID filenames are migrated by the plugin and remain readable by the plugin and Skill during transition.

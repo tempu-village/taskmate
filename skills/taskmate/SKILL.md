@@ -4,7 +4,7 @@ description: Turn explicitly selected Obsidian notes into complete, reviewable T
 license: MIT
 metadata:
   author: infoNitobe
-  version: "0.2.0"
+  version: "0.3.0"
 ---
 
 # TaskMate
