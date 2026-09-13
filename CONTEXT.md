@@ -24,6 +24,18 @@ _Avoid_: AI note, import file
 The user confirmation in which every candidate from a source note is accounted for as a new task, a merge, or an explicit exclusion.
 _Avoid_: Import preview, AI summary
 
+**Proposal session**:
+A staged group of task proposals and possible exclusions derived from one review operation, kept separate from canonical Tasks until the user decides.
+_Avoid_: Sandbox, draft import
+
+**Task proposal**:
+A non-canonical candidate that may become a new Task or a change to an existing Task after explicit review.
+_Avoid_: Draft task, temporary task
+
+**Review decision**:
+The user's explicit approval, revision, or exclusion of a task proposal, retained with the proposal after review.
+_Avoid_: AI decision, implicit approval
+
 **Manual order**:
 One global user-defined task sequence preserved across every smart view.
 _Avoid_: View order, local order

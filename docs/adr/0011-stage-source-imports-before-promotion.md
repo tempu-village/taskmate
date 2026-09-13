@@ -1,0 +1,3 @@
+# Stage source imports before promotion
+
+TaskMate stages Source note extraction in a Proposal session outside the canonical task folder and writes to Tasks only after an explicit Review decision, preventing AI-generated titles, boundaries, and metadata from appearing as real work before the user accepts them. For the MVP, review happens in the Codex conversation; the proposal location is configurable with `TaskMate/Proposals` as its default, and decided sessions carry machine-readable decision properties plus a visible callout before moving to Archive, where they remain until the user manually deletes them. The staging folder limits where proposals are written but is not a security sandbox and does not expand the Source note allowlist.
