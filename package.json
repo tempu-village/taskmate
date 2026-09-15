@@ -8,6 +8,7 @@
     "build": "node esbuild.config.mjs production",
     "deploy": "bash scripts/deploy-to-vault.sh",
     "dev": "node esbuild.config.mjs",
+    "validate:localization": "python3 scripts/validate_localization.py",
     "typecheck": "tsc --noEmit --skipLibCheck",
     "test": "vitest run"
   },

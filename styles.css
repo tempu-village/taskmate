@@ -175,12 +175,14 @@
   border-radius: 0;
   box-shadow: none;
   font-size: var(--font-smallest);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
 .taskmate-navigation button.is-active { color: var(--interactive-accent); font-weight: 700; }
 .taskmate-nav-icon { font-size: 1.2rem; line-height: 1; }
 .taskmate-back { flex: 0 0 38px; font-size: 1.5rem; }
-.taskmate-modal-actions { justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
+.taskmate-modal-actions { flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
 .taskmate-folder-list { width: min(32rem, 100%); }
 
 .taskmate-date-setting .setting-item-control { flex-wrap: wrap; }

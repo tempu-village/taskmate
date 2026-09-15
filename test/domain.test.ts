@@ -96,10 +96,10 @@ describe("project Markdown", () => {
 describe("task input suggestions", () => {
   it("offers today, tomorrow, seven days later, and no date", () => {
     expect(taskDateSuggestions("2026-09-13")).toEqual([
-      { id: "today", label: "今日", date: "2026-09-13" },
-      { id: "tomorrow", label: "明日", date: "2026-09-14" },
-      { id: "seven-days", label: "7日後", date: "2026-09-20" },
-      { id: "none", label: "日付なし", date: null }
+      { id: "today", date: "2026-09-13" },
+      { id: "tomorrow", date: "2026-09-14" },
+      { id: "seven-days", date: "2026-09-20" },
+      { id: "none", date: null }
     ]);
   });
 

@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "display_policy": "visible",
+  "anchor_style": "github",
+  "language_switch_links": [
+    {
+      "side": "source",
+      "kind": "link",
+      "destination": "README.ja.md",
+      "count": 1
+    },
+    {
+      "side": "translation",
+      "kind": "link",
+      "destination": "README.md",
+      "count": 1
+    }
+  ],
+  "destination_changes": [],
+  "protected_literals": []
+}

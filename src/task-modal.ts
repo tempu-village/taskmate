@@ -1,6 +1,14 @@
 import { App, Modal, Setting } from "obsidian";
 import type { Project, Task, TaskDraft } from "./domain";
 import { normalizeLabels, recentLabelSuggestions, taskDateSuggestions } from "./task-input-suggestions";
+import type { I18n, TranslationKey } from "./i18n";
+
+const DATE_SUGGESTION_KEYS = {
+  today: "date.today",
+  tomorrow: "date.tomorrow",
+  "seven-days": "date.sevenDays",
+  none: "date.none"
+} satisfies Record<ReturnType<typeof taskDateSuggestions>[number]["id"], TranslationKey>;
 
 function shortDate(date: string): string {
   const [, month, day] = date.split("-").map(Number);
@@ -16,6 +24,7 @@ export class TaskModal extends Modal {
     private readonly projects: Project[],
     private readonly recentLabels: string[],
     defaultProjectId: string | null,
+    private readonly i18n: I18n,
     private readonly onSave: (draft: TaskDraft) => Promise<void>
   ) {
     super(app);
@@ -28,20 +37,21 @@ export class TaskModal extends Modal {
       notes: task?.notes ?? "",
       sourceNote: task?.sourceNote ?? null
     };
-    this.setTitle(task ? "タスクを編集" : "タスクを追加");
+    this.setTitle(task ? i18n.t("taskModal.editTitle") : i18n.t("taskModal.addTitle"));
   }
 
   onOpen(): void {
     const { contentEl } = this;
+    const { t } = this.i18n;
 
-    new Setting(contentEl).setName("タイトル").addText((text) => {
-      text.setPlaceholder("やること").setValue(this.draft.title).onChange((value) => {
+    new Setting(contentEl).setName(t("taskModal.title")).addText((text) => {
+      text.setPlaceholder(t("taskModal.titlePlaceholder")).setValue(this.draft.title).onChange((value) => {
         this.draft.title = value;
       });
       window.setTimeout(() => text.inputEl.focus(), 0);
     });
 
-    const dateSetting = new Setting(contentEl).setName("日付");
+    const dateSetting = new Setting(contentEl).setName(t("taskModal.date"));
     dateSetting.settingEl.addClass("taskmate-date-setting");
     const datePresets = dateSetting.controlEl.createDiv({ cls: "taskmate-date-presets" });
     const dateButtons: HTMLButtonElement[] = [];
@@ -59,7 +69,7 @@ export class TaskModal extends Modal {
         attr: { type: "button", "aria-pressed": "false" }
       });
       button.dataset.date = suggestion.date ?? "";
-      button.createSpan({ text: suggestion.label });
+      button.createSpan({ text: t(DATE_SUGGESTION_KEYS[suggestion.id]) });
       if (suggestion.date) button.createSpan({ text: shortDate(suggestion.date), cls: "taskmate-suggestion-detail" });
       button.addEventListener("click", () => {
         this.draft.date = suggestion.date;
@@ -79,27 +89,27 @@ export class TaskModal extends Modal {
     });
     refreshDateSelection();
 
-    new Setting(contentEl).setName("プロジェクト").addDropdown((dropdown) => {
-      dropdown.addOption("", "未所属");
+    new Setting(contentEl).setName(t("taskModal.project")).addDropdown((dropdown) => {
+      dropdown.addOption("", t("taskModal.unassigned"));
       for (const project of this.projects) dropdown.addOption(project.id, project.name);
       dropdown.setValue(this.draft.projectId ?? "").onChange((value) => {
         this.draft.projectId = value || null;
       });
     });
 
-    new Setting(contentEl).setName("優先度").addDropdown((dropdown) => {
+    new Setting(contentEl).setName(t("taskModal.priority")).addDropdown((dropdown) => {
       dropdown
-        .addOption("", "なし")
-        .addOption("1", "優先度 1")
-        .addOption("2", "優先度 2")
-        .addOption("3", "優先度 3")
+        .addOption("", t("taskModal.noPriority"))
+        .addOption("1", t("filter.priorityValue", { priority: 1 }))
+        .addOption("2", t("filter.priorityValue", { priority: 2 }))
+        .addOption("3", t("filter.priorityValue", { priority: 3 }))
         .setValue(this.draft.priority ? String(this.draft.priority) : "")
         .onChange((value) => {
           this.draft.priority = value ? Number(value) as 1 | 2 | 3 : null;
         });
     });
 
-    const labelSetting = new Setting(contentEl).setName("ラベル").setDesc("カンマ区切り、最大500種類");
+    const labelSetting = new Setting(contentEl).setName(t("taskModal.labels")).setDesc(t("taskModal.labelsDescription"));
     let labelInput: HTMLInputElement;
     const recentLabelButtons: HTMLButtonElement[] = [];
     const refreshLabelSelection = () => {
@@ -110,7 +120,7 @@ export class TaskModal extends Modal {
       }
     };
     labelSetting.addText((text) => {
-      text.setPlaceholder("仕事, 連絡").setValue(this.draft.labels.join(", ")).onChange((value) => {
+      text.setPlaceholder(t("taskModal.labelsPlaceholder")).setValue(this.draft.labels.join(", ")).onChange((value) => {
         this.draft.labels = normalizeLabels(value.split(",")).slice(0, 500);
         refreshLabelSelection();
       });
@@ -119,7 +129,7 @@ export class TaskModal extends Modal {
     const labelSuggestions = recentLabelSuggestions(this.recentLabels);
     if (labelSuggestions.length > 0) {
       const recent = contentEl.createDiv({ cls: "taskmate-recent-labels" });
-      recent.createDiv({ text: "最近使ったラベル", cls: "taskmate-suggestion-heading" });
+      recent.createDiv({ text: t("taskModal.recentLabels"), cls: "taskmate-suggestion-heading" });
       const chips = recent.createDiv({ cls: "taskmate-suggestion-chips" });
       for (const label of labelSuggestions) {
         const button = chips.createEl("button", {
@@ -140,7 +150,7 @@ export class TaskModal extends Modal {
       refreshLabelSelection();
     }
 
-    new Setting(contentEl).setName("メモ").addTextArea((area) => {
+    new Setting(contentEl).setName(t("taskModal.notes")).addTextArea((area) => {
       area.inputEl.rows = 5;
       area.setValue(this.draft.notes).onChange((value) => {
         this.draft.notes = value;
@@ -148,9 +158,9 @@ export class TaskModal extends Modal {
     });
 
     const actions = contentEl.createDiv({ cls: "taskmate-modal-actions" });
-    const cancel = actions.createEl("button", { text: "キャンセル" });
+    const cancel = actions.createEl("button", { text: t("common.cancel") });
     cancel.addEventListener("click", () => this.close());
-    const save = actions.createEl("button", { text: "保存", cls: "mod-cta" });
+    const save = actions.createEl("button", { text: t("common.save"), cls: "mod-cta" });
     save.addEventListener("click", async () => {
       if (!this.draft.title.trim()) return;
       save.disabled = true;

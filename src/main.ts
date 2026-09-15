@@ -4,6 +4,9 @@ import { ProjectRepository } from "./project-repository";
 import { DEFAULT_SETTINGS, TaskMateSettingTab } from "./settings";
 import type { TaskMateSettings } from "./settings";
 import { TODO_VIEW_TYPE, TodoListView } from "./view";
+import { createI18n, isLanguagePreference } from "./i18n";
+import type { I18n } from "./i18n";
+import { detectObsidianLanguage } from "./i18n/obsidian-locale";
 
 export default class TaskMatePlugin extends Plugin {
   settings: TaskMateSettings = DEFAULT_SETTINGS;
@@ -13,33 +16,34 @@ export default class TaskMatePlugin extends Plugin {
 
   async onload(): Promise<void> {
     await this.loadSettings();
+    const { t } = this.i18n();
     this.repository = new TaskRepository(this.app, () => this.settings.taskFolder);
     this.projects = new ProjectRepository(this.app, () => this.settings.projectFolder);
     try {
       const migrated = await this.repository.migrateLegacyFileNames();
-      if (migrated > 0) new Notice(`${migrated}件のタスクノート名からIDを取り除きました`);
+      if (migrated > 0) new Notice(t("notice.migratedTaskNames", { count: migrated }));
     } catch (error) {
       console.error("TaskMate could not migrate legacy task filenames", error);
-      new Notice("一部のタスクノート名を更新できませんでした");
+      new Notice(t("notice.migrationFailed"));
     }
     this.registerView(TODO_VIEW_TYPE, (leaf) => new TodoListView(leaf, this));
     this.addSettingTab(new TaskMateSettingTab(this.app, this));
 
-    this.addRibbonIcon("circle-check-big", "TaskMateを開く", () => void this.activateView());
-    this.addCommand({ id: "open-todo-list", name: "タスク一覧を開く", callback: () => void this.activateView() });
+    this.addRibbonIcon("circle-check-big", t("command.openRibbon"), () => void this.activateView());
+    this.addCommand({ id: "open-todo-list", name: t("command.openList"), callback: () => void this.activateView() });
     this.addCommand({
       id: "include-current-note-as-ai-source",
-      name: "現在のノートをAI対象にする",
+      name: t("command.includeNote"),
       checkCallback: (checking) => this.setCurrentNoteSource(true, checking)
     });
     this.addCommand({
       id: "exclude-current-note-as-ai-source",
-      name: "現在のノートをAI対象外にする",
+      name: t("command.excludeNote"),
       checkCallback: (checking) => this.setCurrentNoteSource(false, checking)
     });
     this.addCommand({
       id: "include-current-folder-as-ai-source",
-      name: "現在のフォルダをAI対象にする",
+      name: t("command.includeFolder"),
       checkCallback: (checking) => this.includeCurrentFolder(checking)
     });
 
@@ -75,8 +79,19 @@ export default class TaskMatePlugin extends Plugin {
     }
   }
 
+  i18n(): I18n {
+    return createI18n(this.settings.language, detectObsidianLanguage());
+  }
+
   async loadSettings(): Promise<void> {
-    this.settings = { ...DEFAULT_SETTINGS, ...(await this.loadData() as Partial<TaskMateSettings> | null) };
+    const loaded = await this.loadData() as Partial<TaskMateSettings> | null;
+    this.settings = {
+      ...DEFAULT_SETTINGS,
+      ...loaded,
+      language: loaded?.language === undefined
+        ? "auto"
+        : isLanguagePreference(loaded.language) ? loaded.language : "en"
+    };
   }
 
   async saveSettings(): Promise<void> {
@@ -89,7 +104,10 @@ export default class TaskMatePlugin extends Plugin {
     if (!checking) {
       void this.app.fileManager.processFrontMatter(file, (frontmatter) => {
         frontmatter["taskmate-source"] = value;
-      }).then(() => new Notice(value ? "AI対象に追加しました" : "AI対象から除外しました"));
+      }).then(() => {
+        const { t } = this.i18n();
+        new Notice(value ? t("notice.noteIncluded") : t("notice.noteExcluded"));
+      });
     }
     return true;
   }
@@ -101,7 +119,7 @@ export default class TaskMatePlugin extends Plugin {
     if (!checking) {
       const normalized = normalizePath(folder);
       if (!this.settings.sourceFolders.includes(normalized)) this.settings.sourceFolders.push(normalized);
-      void this.saveSettings().then(() => new Notice(`${normalized}をAI対象に追加しました`));
+      void this.saveSettings().then(() => new Notice(this.i18n().t("notice.folderIncluded", { folder: normalized })));
     }
     return true;
   }

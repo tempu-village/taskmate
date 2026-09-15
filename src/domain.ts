@@ -51,15 +51,6 @@ export interface TaskFilters {
   search: string;
 }
 
-export const SMART_VIEW_LABELS: Record<SmartView, string> = {
-  today: "今日",
-  "seven-days": "7日間",
-  upcoming: "今後",
-  all: "すべて",
-  unplanned: "未整理",
-  completed: "完了"
-};
-
 function localDateParts(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");

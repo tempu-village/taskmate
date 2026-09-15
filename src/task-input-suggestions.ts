@@ -2,16 +2,15 @@ import { addDays, todayKey } from "./domain";
 
 export interface DateSuggestion {
   id: "today" | "tomorrow" | "seven-days" | "none";
-  label: string;
   date: string | null;
 }
 
 export function taskDateSuggestions(today = todayKey()): DateSuggestion[] {
   return [
-    { id: "today", label: "今日", date: today },
-    { id: "tomorrow", label: "明日", date: addDays(today, 1) },
-    { id: "seven-days", label: "7日後", date: addDays(today, 7) },
-    { id: "none", label: "日付なし", date: null }
+    { id: "today", date: today },
+    { id: "tomorrow", date: addDays(today, 1) },
+    { id: "seven-days", date: addDays(today, 7) },
+    { id: "none", date: null }
   ];
 }
 

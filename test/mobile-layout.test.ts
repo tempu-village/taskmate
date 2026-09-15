@@ -26,4 +26,8 @@ describe("mobile layout", () => {
     expect(content).toMatch(/overflow(?:-y)?\s*:\s*auto\s*;/);
     expect(navigation).toMatch(/position\s*:\s*static\s*;/);
   });
+
+  it("allows translated modal actions to wrap", () => {
+    expect(declarations(".taskmate-modal-actions")).toMatch(/flex-wrap\s*:\s*wrap\s*;/);
+  });
 });

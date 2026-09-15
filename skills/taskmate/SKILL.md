@@ -3,7 +3,7 @@ name: taskmate
 description: Turn explicitly selected Obsidian notes into complete, reviewable TaskMate tasks and manage the resulting task Markdown. Use when the user wants to extract, add, update, complete, search, or reorganize TaskMate tasks without silently dropping source content.
 license: MIT
 metadata:
-  author: infoNitobe
+  author: Masashi
   version: "0.4.0"
 ---
 
