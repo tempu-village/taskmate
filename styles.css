@@ -199,18 +199,48 @@
 .taskmate-navigation button.is-active { color: var(--interactive-accent); font-weight: 700; }
 .taskmate-nav-icon { font-size: 1.2rem; line-height: 1; }
 .taskmate-back { flex: 0 0 38px; font-size: 1.5rem; }
-.taskmate-modal-actions { flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
+.taskmate-task-modal .modal-content {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.taskmate-task-fields {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding-inline-end: 0.25rem;
+  overflow-y: auto;
+}
+.taskmate-modal-actions {
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  background: var(--background-primary);
+  border-top: 1px solid var(--background-modifier-border);
+}
 .taskmate-folder-list { width: min(32rem, 100%); }
 
-.taskmate-date-setting .setting-item-control { flex-wrap: wrap; }
-.taskmate-date-presets,
+.taskmate-date-setting .setting-item-control { flex-wrap: wrap; width: 100%; }
+.taskmate-date-presets {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.3rem;
+  width: 100%;
+}
+.taskmate-date-presets .taskmate-suggestion-chip {
+  min-width: 0;
+  padding-inline: 0.35rem;
+  white-space: nowrap;
+}
 .taskmate-suggestion-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
   width: 100%;
 }
-.taskmate-date-input { margin-top: 0.35rem; }
+.taskmate-date-input { width: 100%; margin-top: 0.35rem; }
 .taskmate-suggestion-chip {
   display: inline-flex;
   align-items: center;
@@ -224,7 +254,6 @@
   color: var(--text-on-accent);
   background: var(--interactive-accent);
 }
-.taskmate-suggestion-detail { font-size: var(--font-smallest); opacity: 0.75; }
 .taskmate-recent-labels { margin: -0.45rem 0 1rem; }
 .taskmate-suggestion-heading { margin-bottom: 0.4rem; color: var(--text-muted); font-size: var(--font-smallest); }
 
@@ -236,4 +265,15 @@
   .taskmate-task { min-height: 56px; }
   .taskmate-drag { touch-action: none; }
   .taskmate-suggestion-chip { min-height: 44px; }
+}
+
+.is-phone .taskmate-scroll-region {
+  padding-bottom: max(
+    6rem,
+    calc(var(--mobile-toolbar-height, 0px) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 1rem)
+  );
+  scroll-padding-bottom: max(
+    6rem,
+    calc(var(--mobile-toolbar-height, 0px) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 1rem)
+  );
 }

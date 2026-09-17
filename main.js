@@ -3020,10 +3020,6 @@ var DATE_SUGGESTION_KEYS = {
   "seven-days": "date.sevenDays",
   none: "date.none"
 };
-function shortDate(date) {
-  const [, month, day] = date.split("-").map(Number);
-  return `${month}/${day}`;
-}
 var TaskModal = class extends import_obsidian5.Modal {
   constructor(app, task, projects, recentLabels, defaultProjectId, i18n, onSave) {
     super(app);
@@ -3046,13 +3042,15 @@ var TaskModal = class extends import_obsidian5.Modal {
   onOpen() {
     const { contentEl } = this;
     const { t } = this.i18n;
-    new import_obsidian5.Setting(contentEl).setName(t("taskModal.title")).addText((text) => {
+    this.modalEl.addClass("taskmate-task-modal");
+    const fields = contentEl.createDiv({ cls: "taskmate-task-fields" });
+    new import_obsidian5.Setting(fields).setName(t("taskModal.title")).addText((text) => {
       text.setPlaceholder(t("taskModal.titlePlaceholder")).setValue(this.draft.title).onChange((value) => {
         this.draft.title = value;
       });
       window.setTimeout(() => text.inputEl.focus(), 0);
     });
-    const dateSetting = new import_obsidian5.Setting(contentEl).setName(t("taskModal.date"));
+    const dateSetting = new import_obsidian5.Setting(fields).setName(t("taskModal.date"));
     dateSetting.settingEl.addClass("taskmate-date-setting");
     const datePresets = dateSetting.controlEl.createDiv({ cls: "taskmate-date-presets" });
     const dateButtons = [];
@@ -3071,7 +3069,6 @@ var TaskModal = class extends import_obsidian5.Modal {
       });
       button.dataset.date = suggestion.date ?? "";
       button.createSpan({ text: t(DATE_SUGGESTION_KEYS[suggestion.id]) });
-      if (suggestion.date) button.createSpan({ text: shortDate(suggestion.date), cls: "taskmate-suggestion-detail" });
       button.addEventListener("click", () => {
         this.draft.date = suggestion.date;
         dateInput.value = suggestion.date ?? "";
@@ -3089,19 +3086,19 @@ var TaskModal = class extends import_obsidian5.Modal {
       });
     });
     refreshDateSelection();
-    new import_obsidian5.Setting(contentEl).setName(t("taskModal.project")).addDropdown((dropdown) => {
+    new import_obsidian5.Setting(fields).setName(t("taskModal.project")).addDropdown((dropdown) => {
       dropdown.addOption("", t("taskModal.unassigned"));
       for (const project of this.projects) dropdown.addOption(project.id, project.name);
       dropdown.setValue(this.draft.projectId ?? "").onChange((value) => {
         this.draft.projectId = value || null;
       });
     });
-    new import_obsidian5.Setting(contentEl).setName(t("taskModal.priority")).addDropdown((dropdown) => {
+    new import_obsidian5.Setting(fields).setName(t("taskModal.priority")).addDropdown((dropdown) => {
       dropdown.addOption("", t("taskModal.noPriority")).addOption("1", t("filter.priorityValue", { priority: 1 })).addOption("2", t("filter.priorityValue", { priority: 2 })).addOption("3", t("filter.priorityValue", { priority: 3 })).setValue(this.draft.priority ? String(this.draft.priority) : "").onChange((value) => {
         this.draft.priority = value ? Number(value) : null;
       });
     });
-    const labelSetting = new import_obsidian5.Setting(contentEl).setName(t("taskModal.labels")).setDesc(t("taskModal.labelsDescription"));
+    const labelSetting = new import_obsidian5.Setting(fields).setName(t("taskModal.labels")).setDesc(t("taskModal.labelsDescription"));
     let labelInput;
     const recentLabelButtons = [];
     const refreshLabelSelection = () => {
@@ -3120,7 +3117,7 @@ var TaskModal = class extends import_obsidian5.Modal {
     });
     const labelSuggestions = recentLabelSuggestions(this.recentLabels);
     if (labelSuggestions.length > 0) {
-      const recent = contentEl.createDiv({ cls: "taskmate-recent-labels" });
+      const recent = fields.createDiv({ cls: "taskmate-recent-labels" });
       recent.createDiv({ text: t("taskModal.recentLabels"), cls: "taskmate-suggestion-heading" });
       const chips = recent.createDiv({ cls: "taskmate-suggestion-chips" });
       for (const label of labelSuggestions) {
@@ -3139,7 +3136,7 @@ var TaskModal = class extends import_obsidian5.Modal {
       }
       refreshLabelSelection();
     }
-    new import_obsidian5.Setting(contentEl).setName(t("taskModal.notes")).addTextArea((area) => {
+    new import_obsidian5.Setting(fields).setName(t("taskModal.notes")).addTextArea((area) => {
       area.inputEl.rows = 5;
       area.setValue(this.draft.notes).onChange((value) => {
         this.draft.notes = value;
@@ -3240,7 +3237,7 @@ var TodoListView = class extends import_obsidian6.ItemView {
     if (this.screen === "search") {
       this.renderSearchScreen(page, tasks, projects);
     } else {
-      const content = page.createDiv({ cls: "taskmate-content" });
+      const content = page.createDiv({ cls: "taskmate-content taskmate-scroll-region" });
       if (this.screen === "date") this.renderDateScreen(content, tasks, projects);
       else if (this.screen === "projects") this.renderProjectsScreen(content, tasks, projects);
       else this.renderFilterScreen(content, tasks, projects);
@@ -3291,7 +3288,7 @@ var TodoListView = class extends import_obsidian6.ItemView {
         "enterkeyhint": "search"
       }
     });
-    const results = container.createDiv({ cls: "taskmate-search-results" });
+    const results = container.createDiv({ cls: "taskmate-search-results taskmate-scroll-region" });
     const updateResults = () => this.renderSearchResults(results, tasks, projects);
     let composing = false;
     input.addEventListener("compositionstart", () => {

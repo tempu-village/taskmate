@@ -10,11 +10,6 @@ const DATE_SUGGESTION_KEYS = {
   none: "date.none"
 } satisfies Record<ReturnType<typeof taskDateSuggestions>[number]["id"], TranslationKey>;
 
-function shortDate(date: string): string {
-  const [, month, day] = date.split("-").map(Number);
-  return `${month}/${day}`;
-}
-
 export class TaskModal extends Modal {
   private draft: TaskDraft;
 
@@ -43,15 +38,17 @@ export class TaskModal extends Modal {
   onOpen(): void {
     const { contentEl } = this;
     const { t } = this.i18n;
+    this.modalEl.addClass("taskmate-task-modal");
+    const fields = contentEl.createDiv({ cls: "taskmate-task-fields" });
 
-    new Setting(contentEl).setName(t("taskModal.title")).addText((text) => {
+    new Setting(fields).setName(t("taskModal.title")).addText((text) => {
       text.setPlaceholder(t("taskModal.titlePlaceholder")).setValue(this.draft.title).onChange((value) => {
         this.draft.title = value;
       });
       window.setTimeout(() => text.inputEl.focus(), 0);
     });
 
-    const dateSetting = new Setting(contentEl).setName(t("taskModal.date"));
+    const dateSetting = new Setting(fields).setName(t("taskModal.date"));
     dateSetting.settingEl.addClass("taskmate-date-setting");
     const datePresets = dateSetting.controlEl.createDiv({ cls: "taskmate-date-presets" });
     const dateButtons: HTMLButtonElement[] = [];
@@ -70,7 +67,6 @@ export class TaskModal extends Modal {
       });
       button.dataset.date = suggestion.date ?? "";
       button.createSpan({ text: t(DATE_SUGGESTION_KEYS[suggestion.id]) });
-      if (suggestion.date) button.createSpan({ text: shortDate(suggestion.date), cls: "taskmate-suggestion-detail" });
       button.addEventListener("click", () => {
         this.draft.date = suggestion.date;
         dateInput.value = suggestion.date ?? "";
@@ -89,7 +85,7 @@ export class TaskModal extends Modal {
     });
     refreshDateSelection();
 
-    new Setting(contentEl).setName(t("taskModal.project")).addDropdown((dropdown) => {
+    new Setting(fields).setName(t("taskModal.project")).addDropdown((dropdown) => {
       dropdown.addOption("", t("taskModal.unassigned"));
       for (const project of this.projects) dropdown.addOption(project.id, project.name);
       dropdown.setValue(this.draft.projectId ?? "").onChange((value) => {
@@ -97,7 +93,7 @@ export class TaskModal extends Modal {
       });
     });
 
-    new Setting(contentEl).setName(t("taskModal.priority")).addDropdown((dropdown) => {
+    new Setting(fields).setName(t("taskModal.priority")).addDropdown((dropdown) => {
       dropdown
         .addOption("", t("taskModal.noPriority"))
         .addOption("1", t("filter.priorityValue", { priority: 1 }))
@@ -109,7 +105,7 @@ export class TaskModal extends Modal {
         });
     });
 
-    const labelSetting = new Setting(contentEl).setName(t("taskModal.labels")).setDesc(t("taskModal.labelsDescription"));
+    const labelSetting = new Setting(fields).setName(t("taskModal.labels")).setDesc(t("taskModal.labelsDescription"));
     let labelInput: HTMLInputElement;
     const recentLabelButtons: HTMLButtonElement[] = [];
     const refreshLabelSelection = () => {
@@ -128,7 +124,7 @@ export class TaskModal extends Modal {
     });
     const labelSuggestions = recentLabelSuggestions(this.recentLabels);
     if (labelSuggestions.length > 0) {
-      const recent = contentEl.createDiv({ cls: "taskmate-recent-labels" });
+      const recent = fields.createDiv({ cls: "taskmate-recent-labels" });
       recent.createDiv({ text: t("taskModal.recentLabels"), cls: "taskmate-suggestion-heading" });
       const chips = recent.createDiv({ cls: "taskmate-suggestion-chips" });
       for (const label of labelSuggestions) {
@@ -150,7 +146,7 @@ export class TaskModal extends Modal {
       refreshLabelSelection();
     }
 
-    new Setting(contentEl).setName(t("taskModal.notes")).addTextArea((area) => {
+    new Setting(fields).setName(t("taskModal.notes")).addTextArea((area) => {
       area.inputEl.rows = 5;
       area.setValue(this.draft.notes).onChange((value) => {
         this.draft.notes = value;

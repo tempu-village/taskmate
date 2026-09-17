@@ -10,6 +10,10 @@ const viewSource = readFileSync(
   fileURLToPath(new URL("../src/view.ts", import.meta.url)),
   "utf8"
 );
+const taskModalSource = readFileSync(
+  fileURLToPath(new URL("../src/task-modal.ts", import.meta.url)),
+  "utf8"
+);
 
 function declarations(selector: string): string {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -72,5 +76,40 @@ describe("mobile layout", () => {
     expect(viewSource).not.toMatch(/\btype:\s*"search",/);
     expect(viewSource.match(/"inputmode": "search"/g)).toHaveLength(2);
     expect(viewSource.match(/"enterkeyhint": "search"/g)).toHaveLength(2);
+  });
+
+  it("keeps task modal actions outside the scrollable fields", () => {
+    expect(taskModalSource).toContain('contentEl.createDiv({ cls: "taskmate-task-fields" })');
+    expect(taskModalSource).toContain('contentEl.createDiv({ cls: "taskmate-modal-actions" })');
+
+    const fields = declarations(".taskmate-task-fields");
+    expect(fields).toMatch(/flex\s*:\s*1\s+1\s+auto\s*;/);
+    expect(fields).toMatch(/min-height\s*:\s*0\s*;/);
+    expect(fields).toMatch(/overflow-y\s*:\s*auto\s*;/);
+
+    const modalContent = declarations(".taskmate-task-modal .modal-content");
+    expect(modalContent).toMatch(/display\s*:\s*flex\s*;/);
+    expect(modalContent).toMatch(/flex-direction\s*:\s*column\s*;/);
+    expect(modalContent).toMatch(/overflow\s*:\s*hidden\s*;/);
+  });
+
+  it("shows four compact date presets in one row", () => {
+    expect(taskModalSource).not.toContain("shortDate(");
+    expect(taskModalSource).not.toContain("taskmate-suggestion-detail");
+
+    const presets = declarations(".taskmate-date-presets");
+    expect(presets).toMatch(/display\s*:\s*grid\s*;/);
+    expect(presets).toMatch(/grid-template-columns\s*:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)\s*;/);
+  });
+
+  it("keeps the end of phone task lists above Obsidian navigation", () => {
+    expect(viewSource).toContain('cls: "taskmate-content taskmate-scroll-region"');
+    expect(viewSource).toContain('cls: "taskmate-search-results taskmate-scroll-region"');
+
+    const scrollRegion = declarations(".is-phone .taskmate-scroll-region");
+    expect(scrollRegion).toMatch(/padding-bottom\s*:\s*max\(/);
+    expect(scrollRegion).toContain("--safe-area-inset-bottom");
+    expect(scrollRegion).toContain("--mobile-toolbar-height");
+    expect(scrollRegion).toMatch(/scroll-padding-bottom\s*:/);
   });
 });

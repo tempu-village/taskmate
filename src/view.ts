@@ -99,7 +99,7 @@ export class TodoListView extends ItemView {
     if (this.screen === "search") {
       this.renderSearchScreen(page, tasks, projects);
     } else {
-      const content = page.createDiv({ cls: "taskmate-content" });
+      const content = page.createDiv({ cls: "taskmate-content taskmate-scroll-region" });
       if (this.screen === "date") this.renderDateScreen(content, tasks, projects);
       else if (this.screen === "projects") this.renderProjectsScreen(content, tasks, projects);
       else this.renderFilterScreen(content, tasks, projects);
@@ -154,7 +154,7 @@ export class TodoListView extends ItemView {
         "enterkeyhint": "search"
       }
     });
-    const results = container.createDiv({ cls: "taskmate-search-results" });
+    const results = container.createDiv({ cls: "taskmate-search-results taskmate-scroll-region" });
     const updateResults = () => this.renderSearchResults(results, tasks, projects);
     let composing = false;
     input.addEventListener("compositionstart", () => {
