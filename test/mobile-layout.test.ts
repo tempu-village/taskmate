@@ -6,6 +6,10 @@ const stylesheet = readFileSync(
   fileURLToPath(new URL("../styles.css", import.meta.url)),
   "utf8"
 );
+const viewSource = readFileSync(
+  fileURLToPath(new URL("../src/view.ts", import.meta.url)),
+  "utf8"
+);
 
 function declarations(selector: string): string {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -16,11 +20,19 @@ function declarations(selector: string): string {
 
 describe("mobile layout", () => {
   it("keeps navigation outside the scrollable screen body", () => {
+    const view = declarations(".taskmate-view");
     const page = declarations(".taskmate-page");
     const content = declarations(".taskmate-content");
     const navigation = declarations(".taskmate-navigation");
 
+    expect(view).toMatch(/display\s*:\s*flex\s*;/);
+    expect(view).toMatch(/flex-direction\s*:\s*column\s*;/);
+    expect(view).toMatch(/padding\s*:\s*0\s*!important\s*;/);
     expect(page).toMatch(/display\s*:\s*flex\s*;/);
+    expect(page).toMatch(/flex\s*:\s*1\s+1\s+auto\s*;/);
+    expect(page).toMatch(/min-height\s*:\s*0\s*;/);
+    expect(page).toMatch(/height\s*:\s*auto\s*;/);
+    expect(page).not.toMatch(/height\s*:\s*100%\s*;/);
     expect(page).toMatch(/overflow\s*:\s*hidden\s*;/);
     expect(content).toMatch(/flex\s*:\s*1\s+1\s+auto\s*;/);
     expect(content).toMatch(/overflow(?:-y)?\s*:\s*auto\s*;/);
@@ -29,5 +41,36 @@ describe("mobile layout", () => {
 
   it("allows translated modal actions to wrap", () => {
     expect(declarations(".taskmate-modal-actions")).toMatch(/flex-wrap\s*:\s*wrap\s*;/);
+  });
+
+  it("keeps search controls outside the keyboard-sensitive results scroller", () => {
+    const renderMethod = viewSource.slice(
+      viewSource.indexOf("private async render"),
+      viewSource.indexOf("private renderHeader")
+    );
+    const searchScreen = viewSource.slice(
+      viewSource.indexOf("private renderSearchScreen"),
+      viewSource.indexOf("private renderProjectsScreen")
+    );
+
+    expect(renderMethod).toContain('this.renderSearchScreen(page, tasks, projects)');
+    expect(searchScreen).toContain('createDiv({ cls: "taskmate-search-controls" })');
+    expect(searchScreen).toContain('addEventListener("compositionstart"');
+    expect(searchScreen).toContain('addEventListener("compositionend"');
+    expect(searchScreen).toContain("renderSearchResults");
+    expect(searchScreen).not.toContain("scheduleRender");
+
+    const controls = declarations(".taskmate-search-controls");
+    const results = declarations(".taskmate-search-results");
+    expect(controls).toMatch(/flex\s*:\s*0\s+0\s+auto\s*;/);
+    expect(results).toMatch(/flex\s*:\s*1\s+1\s+auto\s*;/);
+    expect(results).toMatch(/min-height\s*:\s*0\s*;/);
+    expect(results).toMatch(/overflow-y\s*:\s*auto\s*;/);
+  });
+
+  it("avoids Android WebView's native search-input focus behavior", () => {
+    expect(viewSource).not.toMatch(/\btype:\s*"search",/);
+    expect(viewSource.match(/"inputmode": "search"/g)).toHaveLength(2);
+    expect(viewSource.match(/"enterkeyhint": "search"/g)).toHaveLength(2);
   });
 });

@@ -3237,11 +3237,14 @@ var TodoListView = class extends import_obsidian6.ItemView {
     root.addClass("taskmate-view");
     const page = root.createDiv({ cls: "taskmate-page" });
     this.renderNavigation(page);
-    const content = page.createDiv({ cls: "taskmate-content" });
-    if (this.screen === "date") this.renderDateScreen(content, tasks, projects);
-    else if (this.screen === "search") this.renderSearchScreen(content, tasks, projects);
-    else if (this.screen === "projects") this.renderProjectsScreen(content, tasks, projects);
-    else this.renderFilterScreen(content, tasks, projects);
+    if (this.screen === "search") {
+      this.renderSearchScreen(page, tasks, projects);
+    } else {
+      const content = page.createDiv({ cls: "taskmate-content" });
+      if (this.screen === "date") this.renderDateScreen(content, tasks, projects);
+      else if (this.screen === "projects") this.renderProjectsScreen(content, tasks, projects);
+      else this.renderFilterScreen(content, tasks, projects);
+    }
   }
   renderHeader(container, title, addTaskProjectId) {
     const { t } = this.plugin.i18n();
@@ -3275,23 +3278,44 @@ var TodoListView = class extends import_obsidian6.ItemView {
   }
   renderSearchScreen(container, tasks, projects) {
     const { t } = this.plugin.i18n();
-    this.renderHeader(container, t("search.title"));
-    const input = container.createEl("input", {
-      type: "search",
+    const controls = container.createDiv({ cls: "taskmate-search-controls" });
+    this.renderHeader(controls, t("search.title"));
+    const input = controls.createEl("input", {
+      type: "text",
       value: this.searchQuery,
       placeholder: t("search.placeholder"),
       cls: "taskmate-search-input",
-      attr: { "aria-label": t("search.ariaLabel") }
+      attr: {
+        "aria-label": t("search.ariaLabel"),
+        "inputmode": "search",
+        "enterkeyhint": "search"
+      }
     });
-    input.addEventListener("input", () => {
+    const results = container.createDiv({ cls: "taskmate-search-results" });
+    const updateResults = () => this.renderSearchResults(results, tasks, projects);
+    let composing = false;
+    input.addEventListener("compositionstart", () => {
+      composing = true;
+    });
+    input.addEventListener("compositionend", () => {
+      composing = false;
       this.searchQuery = input.value;
-      this.focusAfterRender = "search";
-      this.scheduleRender();
+      updateResults();
+    });
+    input.addEventListener("input", (event) => {
+      this.searchQuery = input.value;
+      if (!composing && !event.isComposing) updateResults();
     });
     input.addEventListener("keydown", (event) => {
       if (event.key === "Enter" && this.searchQuery.trim()) void this.rememberSearch(this.searchQuery);
     });
-    this.restoreFocus(input, "search");
+    updateResults();
+  }
+  renderSearchResults(container, tasks, projects) {
+    const { t } = this.plugin.i18n();
+    this.sortable?.destroy();
+    this.sortable = null;
+    container.empty();
     const recent = this.plugin.settings.recentSearches ?? [];
     if (recent.length > 0) {
       const section = container.createDiv({ cls: "taskmate-section" });
@@ -3446,14 +3470,29 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
       this.requestRender();
     });
     const labelSearch = labelsSection.createEl("input", {
-      type: "search",
+      type: "text",
       value: this.labelQuery,
       placeholder: t("filter.labelSearchPlaceholder"),
       cls: "taskmate-label-search",
-      attr: { "aria-label": t("filter.labelSearchAriaLabel") }
+      attr: {
+        "aria-label": t("filter.labelSearchAriaLabel"),
+        "inputmode": "search",
+        "enterkeyhint": "search"
+      }
     });
-    labelSearch.addEventListener("input", () => {
+    let labelComposing = false;
+    labelSearch.addEventListener("compositionstart", () => {
+      labelComposing = true;
+    });
+    labelSearch.addEventListener("compositionend", () => {
+      labelComposing = false;
       this.labelQuery = labelSearch.value;
+      this.focusAfterRender = "label";
+      this.scheduleRender();
+    });
+    labelSearch.addEventListener("input", (event) => {
+      this.labelQuery = labelSearch.value;
+      if (labelComposing || event.isComposing) return;
       this.focusAfterRender = "label";
       this.scheduleRender();
     });

@@ -3,7 +3,7 @@
 [English](README.md) | 日本語
 
 <!-- translation-status: ai-translated -->
-<!-- translation-source-sha256: b8a5985b0c5ca3cc06e7ff387bf50b64f3bea66ad3891a0300304270558e1687 -->
+<!-- translation-source-sha256: afa487025035a4b50dd66bf46bd359e0b922c6b2211d2060acbe8ab6acc6f53c -->
 
 > 翻訳状態：`ai-translated`
 >
@@ -80,7 +80,6 @@ PCとAndroidの両方で次の操作をします。
 2. **保管庫設定の同期（Vault configuration sync）**を開きます。
 3. `Installed community plugin list`を有効にします。
 4. `Active community plugin list`を有効にします。
-5. Obsidianを完全に再起動します。
 
 `Active community plugin list`を有効にすると、TaskMate以外のコミュニティプラグインについても有効・無効状態が同期されます。
 
@@ -112,12 +111,11 @@ PC版Obsidianを再起動し、**設定 → コミュニティプラグイン**�
 1. PC版Obsidianが**Fully Synced**と表示するまで待ちます。
 2. Androidで同じリモートVaultを開きます。
 3. Android版Obsidianが**Fully Synced**と表示するまで待ちます。
-4. Android版Obsidianを完全に終了して再起動します。
-5. **設定 → コミュニティプラグイン**を開きます。
-6. **インストール済みプラグイン（Installed plugins）**を押して、同期されたプラグイン一覧をAndroidに読み込ませます。
-7. TaskMateを有効にします。すでに有効な場合は、その状態を確認します。
+4. **設定 → コミュニティプラグイン**を開きます。
+5. **インストール済みプラグイン（Installed plugins）**を押して、同期されたプラグイン一覧をAndroidに読み込ませます。
+6. TaskMateが無効な場合は有効にします。すでに有効な場合は、一度無効にしてから再び有効にします。
 
-同期を待つだけでは、未公開プラグインがAndroidへ読み込まれない場合があります。同期後に**インストール済みプラグイン**を開いてください。
+同期を待つだけでは、プラグインのファイルが更新されても、実行中のTaskMateコードが再読み込みされない場合があります。確認済みのAndroid手順では、Obsidianを起動したまま、同期後にTaskMateを無効化して再び有効化することで再読み込みします。この手順ではAndroid版Obsidianの完全再起動は不要です。
 
 ### 4. 両方の端末を更新する
 
@@ -133,7 +131,7 @@ npm run deploy -- /absolute/path/to/synced-vault
 npm run deploy
 ```
 
-このコマンドは型チェック、テスト、本番ビルドを実行してから、PC側Vaultの`main.js`、`manifest.json`、`styles.css`を置き換えます。PC側の同期完了後、Android版Obsidianを再起動してください。
+このコマンドは型チェック、テスト、本番ビルドを実行してから、PC側Vaultの`main.js`、`manifest.json`、`styles.css`を置き換えます。PCとAndroidの両方で**Fully Synced**になった後、Androidのインストール済みプラグイン一覧を開き、TaskMateを一度無効にして再び有効にしてください。同期でファイルが更新され、このプラグイン再読み込みで新しいコードが有効になります。
 
 この同期手順は、PC版Obsidian、Android版Obsidian、公式Obsidian Sync、未公開のTaskMateビルドの組み合わせで確認済みです。iOSはまだ確認していません。
 
@@ -201,9 +199,8 @@ Skillは`TaskMate/Proposals/Active`へ提案を書き込み、この段階では
 - パスが`.obsidian/plugins/taskmate/`で、`taskmate`フォルダが重複していない。
 - `main.js`、`manifest.json`、`styles.css`が存在する。
 - 両方の端末で**Fully Synced**と表示されている。
-- 同期後にAndroid版Obsidianを完全に再起動した。
 - Androidで**設定 → コミュニティプラグイン → インストール済みプラグイン**を開いた。
-- Androidのインストール済みプラグイン一覧でTaskMateが有効になっている。
+- TaskMateがすでに有効だった場合も含め、同期後に一度無効化してから再び有効化した。
 
 バグを報告する際は、TaskMateのバージョン、Obsidianのバージョン、OS、再現手順、必要に応じて個人情報を除いたタスク例を含めてください。Vault内の非公開情報を公開しないでください。
 

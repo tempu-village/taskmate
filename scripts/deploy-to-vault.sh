@@ -73,4 +73,4 @@ fi
 VERSION="$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' manifest.json | head -n 1)"
 
 echo "TaskMate ${VERSION:-unknown} deployed to: $DESTINATION"
-echo "Wait for Obsidian Sync to finish, then fully restart Obsidian on Android."
+echo "Wait for Obsidian Sync to finish on Android, then disable and re-enable TaskMate to load the update."

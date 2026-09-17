@@ -1,6 +1,6 @@
 {
   "name": "obsidian-taskmate",
-  "version": "0.5.0",
+  "version": "0.5.6",
   "private": true,
   "description": "A simple, local-first Todoist-style task list for Obsidian.",
   "main": "main.js",

@@ -73,7 +73,6 @@ On both desktop and Android:
 2. Open **Vault configuration sync**.
 3. Enable `Installed community plugin list`.
 4. Enable `Active community plugin list`.
-5. Fully restart Obsidian.
 
 Enabling `Active community plugin list` also synchronizes the enabled or disabled state of community plugins other than TaskMate.
 
@@ -105,12 +104,11 @@ Restart desktop Obsidian and enable TaskMate under **Settings → Community plug
 1. Wait until desktop Obsidian reports **Fully Synced**.
 2. Open the same remote vault on Android.
 3. Wait until Android Obsidian reports **Fully Synced**.
-4. Fully close and restart Android Obsidian.
-5. Open **Settings → Community plugins**.
-6. Select **Installed plugins** to make Android load the synchronized plugin list.
-7. Enable TaskMate, or confirm that it is already enabled.
+4. Open **Settings → Community plugins**.
+5. Select **Installed plugins** to make Android load the synchronized plugin list.
+6. If TaskMate is disabled, enable it. If it is already enabled, disable it once and then enable it again.
 
-Waiting for synchronization alone may not load an unpublished plugin on Android. Open **Installed plugins** after synchronization.
+Waiting for synchronization alone may update the plugin files without reloading the TaskMate code that is already running. The verified Android procedure keeps Obsidian open and reloads TaskMate by disabling and re-enabling the plugin after synchronization. A full restart of Android Obsidian is not required for this procedure.
 
 ### 4. Update both devices
 
@@ -126,7 +124,7 @@ The path is stored in a Git-ignored local file. Later updates require one comman
 npm run deploy
 ```
 
-The command runs type checking, tests, and a production build before replacing `main.js`, `manifest.json`, and `styles.css` in the desktop vault. After desktop synchronization completes, restart Android Obsidian.
+The command runs type checking, tests, and a production build before replacing `main.js`, `manifest.json`, and `styles.css` in the desktop vault. After desktop and Android both report **Fully Synced**, open the Android installed-plugin list, disable TaskMate, and enable it again. Synchronization updates the files, while this plugin reload activates the new code.
 
 This synchronization procedure has been confirmed with desktop Obsidian, Android Obsidian, official Obsidian Sync, and an unpublished TaskMate build. iOS has not yet been tested.
 
@@ -194,9 +192,8 @@ If tasks synchronize but TaskMate does not appear on Android, confirm all of the
 - The path is `.obsidian/plugins/taskmate/`, without a duplicated `taskmate` folder.
 - `main.js`, `manifest.json`, and `styles.css` are present.
 - Both devices report **Fully Synced**.
-- Android Obsidian was fully restarted after synchronization.
 - **Settings → Community plugins → Installed plugins** was opened on Android.
-- TaskMate is enabled in the Android installed-plugin list.
+- TaskMate was disabled and then enabled again after synchronization, even if it was already enabled.
 
 When reporting a bug, include the TaskMate version, Obsidian version, operating system, reproduction steps, and a sanitized example task when relevant. Do not publish private vault content.
 
