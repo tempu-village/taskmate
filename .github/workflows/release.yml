@@ -1,14 +1,15 @@
-name: CI
+name: Release
 
 on:
   push:
-  pull_request:
+    tags:
+      - "*.*.*"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  verify:
+  release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,4 +27,13 @@ jobs:
       - run: python3 -m unittest discover -s skills/taskmate/tests -v
       - run: python3 scripts/validate_skills.py
       - run: npm run validate:localization
-      - run: npm run validate:release
+      - run: npm run validate:release -- --tag "$GITHUB_REF_NAME"
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "$GITHUB_REF_NAME"
+          main.js manifest.json styles.css
+          --verify-tag
+          --title "TaskMate $GITHUB_REF_NAME"
+          --generate-notes
