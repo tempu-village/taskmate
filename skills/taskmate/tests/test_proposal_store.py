@@ -53,6 +53,10 @@ class ProposalStoreTest(unittest.TestCase):
         return {
             "language": "ja",
             "sources": ["Notes/source.md"],
+            "candidates": [
+                {"sourceNote": "Notes/source.md", "statement": "Send the estimate."},
+                {"sourceNote": "Notes/source.md", "statement": "Ignore the small talk."},
+            ],
             "proposals": [
                 {
                     "operation": "create",
@@ -147,6 +151,56 @@ class ProposalStoreTest(unittest.TestCase):
         self.assertFalse((self.vault / "TaskMate/Tasks").exists())
         inspected = self.run_store("inspect", "--session", staged["sessionId"])
         self.assertEqual(inspected["status"], "needs-review")
+
+    def test_stage_rejects_a_candidate_silently_omitted_from_proposals(self):
+        plan = self.plan()
+        plan["proposals"] = plan["proposals"][:1]
+        result = self.run_store("stage", "--plan", str(self.write_json("omitted.json", plan)), check=False)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("candidate is not covered", result.stderr)
+        self.assertFalse((self.vault / "TaskMate/Proposals").exists())
+        self.assertFalse((self.vault / "TaskMate/Tasks").exists())
+
+    def test_stage_rejects_invalid_candidate_manifests_before_writing_files(self):
+        cases = {}
+
+        missing_manifest = self.plan()
+        del missing_manifest["candidates"]
+        cases["plan.candidates must be a non-empty array"] = missing_manifest
+
+        invalid_source = self.plan()
+        invalid_source["candidates"][0]["sourceNote"] = "Notes/other.md"
+        cases["candidate source is not in the plan source set"] = invalid_source
+
+        empty_statement = self.plan()
+        empty_statement["candidates"][0]["statement"] = "  "
+        cases["candidate statement must be a non-empty string"] = empty_statement
+
+        duplicate = self.plan()
+        duplicate["candidates"].append(dict(duplicate["candidates"][0]))
+        cases["duplicate candidate"] = duplicate
+
+        missing_from_source = self.plan()
+        missing_from_source["candidates"][0]["statement"] = "This sentence is not in the note."
+        missing_from_source["proposals"][0]["coverage"] = ["This sentence is not in the note."]
+        cases["candidate statement was not found"] = missing_from_source
+
+        undeclared = self.plan()
+        undeclared["proposals"][0]["coverage"] = ["Meeting"]
+        cases["proposal coverage is not a declared candidate"] = undeclared
+
+        covered_twice = self.plan()
+        covered_twice["proposals"][1]["coverage"] = ["Send the estimate."]
+        cases["candidate is covered more than once"] = covered_twice
+
+        for expected, plan in cases.items():
+            with self.subTest(expected=expected):
+                result = self.run_store("stage", "--plan", str(self.write_json("invalid.json", plan)), check=False)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(expected, result.stderr)
+                self.assertFalse((self.vault / "TaskMate/Proposals").exists())
+                self.assertFalse((self.vault / "TaskMate/Tasks").exists())
 
 
 if __name__ == "__main__":

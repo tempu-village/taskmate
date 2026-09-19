@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import json
 import shutil
 import uuid
@@ -153,8 +154,51 @@ def normalize_proposal(raw: Dict[str, Any], sources: Dict[str, Dict[str, Any]], 
         "title": title, "date": date, "priority": priority, "labels": labels,
         "project": raw["project"] if "project" in raw else (target or {}).get("project"),
         "task-notes": raw["notes"] if "notes" in raw else (target or {}).get("notes", ""),
-        "coverage": coverage, "reason": raw.get("reason"),
+        "coverage": [item.strip() for item in coverage], "reason": raw.get("reason"),
     }
+
+
+def candidate_manifest(plan: Dict[str, Any], sources: Dict[str, Dict[str, Any]], vault: Path) -> set[Tuple[str, str]]:
+    raw_candidates = plan.get("candidates")
+    if not isinstance(raw_candidates, list) or not raw_candidates:
+        fail("plan.candidates must be a non-empty array")
+    candidates: set[Tuple[str, str]] = set()
+    source_texts: Dict[str, str] = {}
+    for raw in raw_candidates:
+        if not isinstance(raw, dict):
+            fail("every candidate must be an object")
+        source = raw.get("sourceNote")
+        statement = raw.get("statement")
+        if not isinstance(source, str) or source not in sources:
+            fail(f"candidate source is not in the plan source set: {source}")
+        if not isinstance(statement, str) or not statement.strip():
+            fail("candidate statement must be a non-empty string")
+        key = (source, statement.strip())
+        if key in candidates:
+            fail(f"duplicate candidate: {source}: {statement.strip()}")
+        if source not in source_texts:
+            _, source_texts[source] = split_document(safe_path(vault, source).read_text(encoding="utf-8"))
+        if statement.strip() not in source_texts[source]:
+            fail(f"candidate statement was not found in {source}: {statement.strip()}")
+        candidates.add(key)
+    return candidates
+
+
+def validate_coverage(candidates: set[Tuple[str, str]], proposals: List[Dict[str, Any]]) -> None:
+    counts: Counter[Tuple[str, str]] = Counter()
+    for proposal in proposals:
+        source = str(proposal["source-note"])
+        for statement in proposal["coverage"]:
+            key = (source, statement)
+            if key not in candidates:
+                fail(f"proposal coverage is not a declared candidate: {source}: {statement}")
+            counts[key] += 1
+    duplicated = next((key for key, count in counts.items() if count > 1), None)
+    if duplicated:
+        fail(f"candidate is covered more than once: {duplicated[0]}: {duplicated[1]}")
+    missing = next((key for key in candidates if counts[key] == 0), None)
+    if missing:
+        fail(f"candidate is not covered by any proposal: {missing[0]}: {missing[1]}")
 
 
 def command_stage(args: argparse.Namespace) -> None:
@@ -169,12 +213,14 @@ def command_stage(args: argparse.Namespace) -> None:
     if any(not isinstance(path, str) or path not in eligible for path in requested):
         fail("every source must be eligible under TaskMate source settings")
     sources = {path: eligible[path] for path in requested}
+    candidates = candidate_manifest(plan, sources, args.vault)
     raw_proposals = plan.get("proposals")
     if not isinstance(raw_proposals, list) or not raw_proposals:
         fail("plan.proposals must be a non-empty array")
     proposals = [normalize_proposal(raw, sources, args.vault, args.task_folder) for raw in raw_proposals if isinstance(raw, dict)]
     if len(proposals) != len(raw_proposals):
         fail("every proposal must be an object")
+    validate_coverage(candidates, proposals)
     session_id = now_iso().replace(":", "").replace("-", "")[:15] + "-" + uuid.uuid4().hex[:8]
     folder = proposal_root(args.vault, args.proposal_folder) / "Active" / session_id
     session = {
