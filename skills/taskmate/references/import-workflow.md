@@ -14,7 +14,7 @@ The folder setting may include subfolders. Exclude the task, project, proposal, 
 
 ## Build a coverage review
 
-Read each eligible new or changed note completely. First inventory every exact source statement that could reasonably imply follow-up; this is the candidate manifest. Then classify every candidate into two sections:
+Read each eligible new or changed note completely. First inventory every exact source statement that could reasonably imply follow-up; this is the candidate manifest. A statement is one complete non-empty source line, ignoring only leading and trailing whitespace. Then classify every candidate into two sections:
 
 1. **Add or merge** — the tasks that will be created, including the source statements covered by each.
 2. **Possible exclusions** — every source statement that could reasonably imply action but that you propose not to add, with a concise reason and an explicit confirmation request.

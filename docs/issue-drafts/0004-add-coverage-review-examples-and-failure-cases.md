@@ -17,7 +17,7 @@ The Skill already says not to silently omit actionable content, but the staging 
 - Include an ambiguous background-versus-action example and show the safe default.
 - Include a merge example for statements serving the same independently completable outcome.
 - Include a split example for statements with different dates or independently completable outcomes.
-- Require every stage plan to declare `candidates`, each with an eligible `sourceNote` and an exact `statement` copied from that source.
+- Require every stage plan to declare `candidates`, each with an eligible `sourceNote` and an exact `statement` copied from one complete non-empty source line, ignoring only leading and trailing whitespace.
 - Reject duplicate candidates, candidates not present in their source, proposal coverage not declared as a candidate, candidates covered more than once, and candidates not covered by any proposal.
 - Treat create, merge, and exclude proposals equally for coverage accounting.
 - Keep existing staged sessions promotable; the new validation applies when staging new plans.
@@ -71,7 +71,7 @@ The Skill already says not to silently omit actionable content, but the staging 
 - 背景情報と行動が曖昧な例、および安全な既定動作を示す。
 - 同じ独立完了可能な成果に属する文の統合例を示す。
 - 日付または独立完了可能な成果が異なる文の分割例を示す。
-- 新規stage計画に、対象`sourceNote`と原文から正確に写した`statement`を持つ`candidates`を必須化する。
+- 新規stage計画に、対象`sourceNote`と、前後の空白だけを無視して原文の空でない1行全体から正確に写した`statement`を持つ`candidates`を必須化する。
 - 重複候補、原文に存在しない候補、未宣言coverage、複数回coverage、未coverage候補を拒否する。
 - create、merge、excludeを同じcoverageとして数える。
 - 既存のステージ済みセッションはpromote可能なままにする。

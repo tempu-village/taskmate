@@ -4,7 +4,7 @@ Use this workflow after building the complete coverage review. Proposal files ar
 
 ## Stage
 
-Prepare a JSON plan with `language` (`ja` or `en`), the eligible `sources`, the candidate manifest in `candidates`, and `proposals`. Each candidate has a `sourceNote` and an exact non-empty `statement` copied from that source. Each proposal has an `operation` (`create`, `merge`, or `exclude`), `sourceNote`, one or more exact `coverage` statements, and a readable `title`. Add task fields for create or merge. A merge requires `targetTaskId`; an exclusion requires `reason`.
+Prepare a JSON plan with `language` (`ja` or `en`), the eligible `sources`, the candidate manifest in `candidates`, and `proposals`. Each candidate has a `sourceNote` and an exact non-empty `statement` copied from that source. A statement must match one complete non-empty source line, ignoring only leading and trailing whitespace; a substring is not sufficient. Each proposal has an `operation` (`create`, `merge`, or `exclude`), `sourceNote`, one or more exact `coverage` statements, and a readable `title`. Add task fields for create or merge. A merge requires `targetTaskId`; an exclusion requires `reason`.
 
 Every candidate must appear in proposal coverage exactly once. Coverage cannot introduce statements absent from the manifest. Staging verifies the manifest against the current source and stops before writing proposal files when coverage is missing, duplicated, or undeclared.
 

@@ -10,7 +10,7 @@ Natural-language analysis is required to identify candidates, so a file tool can
 
 ## Decision
 
-Every staged import plan must include a candidate manifest. Each candidate contains an eligible `sourceNote` and one exact non-empty `statement` copied from that source.
+Every staged import plan must include a candidate manifest. Each candidate contains an eligible `sourceNote` and one exact non-empty `statement` copied from that source. A statement matches one complete non-empty source line after ignoring leading and trailing whitespace; matching only a substring is rejected.
 
 Before writing proposal files, the staging tool verifies that:
 

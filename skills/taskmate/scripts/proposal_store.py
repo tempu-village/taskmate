@@ -163,7 +163,7 @@ def candidate_manifest(plan: Dict[str, Any], sources: Dict[str, Dict[str, Any]],
     if not isinstance(raw_candidates, list) or not raw_candidates:
         fail("plan.candidates must be a non-empty array")
     candidates: set[Tuple[str, str]] = set()
-    source_texts: Dict[str, str] = {}
+    source_statements: Dict[str, set[str]] = {}
     for raw in raw_candidates:
         if not isinstance(raw, dict):
             fail("every candidate must be an object")
@@ -176,9 +176,12 @@ def candidate_manifest(plan: Dict[str, Any], sources: Dict[str, Dict[str, Any]],
         key = (source, statement.strip())
         if key in candidates:
             fail(f"duplicate candidate: {source}: {statement.strip()}")
-        if source not in source_texts:
-            _, source_texts[source] = split_document(safe_path(vault, source).read_text(encoding="utf-8"))
-        if statement.strip() not in source_texts[source]:
+        if source not in source_statements:
+            _, source_text = split_document(safe_path(vault, source).read_text(encoding="utf-8"))
+            source_statements[source] = {
+                line.strip() for line in source_text.splitlines() if line.strip()
+            }
+        if statement.strip() not in source_statements[source]:
             fail(f"candidate statement was not found in {source}: {statement.strip()}")
         candidates.add(key)
     return candidates

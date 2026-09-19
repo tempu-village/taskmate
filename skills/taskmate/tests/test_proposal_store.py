@@ -186,6 +186,11 @@ class ProposalStoreTest(unittest.TestCase):
         missing_from_source["proposals"][0]["coverage"] = ["This sentence is not in the note."]
         cases["candidate statement was not found"] = missing_from_source
 
+        partial_statement = self.plan()
+        partial_statement["candidates"][0]["statement"] = "estimate"
+        partial_statement["proposals"][0]["coverage"] = ["estimate"]
+        cases["candidate statement was not found"] = partial_statement
+
         undeclared = self.plan()
         undeclared["proposals"][0]["coverage"] = ["Meeting"]
         cases["proposal coverage is not a declared candidate"] = undeclared

@@ -1,6 +1,6 @@
 # Coverage review examples
 
-Use these examples after reading the complete eligible source note. Inventory candidate statements before deciding whether to create, merge, or exclude them. Copy each candidate statement exactly from its source so deterministic staging can verify it.
+Use these examples after reading the complete eligible source note. Inventory candidate statements before deciding whether to create, merge, or exclude them. Copy each candidate as one complete non-empty source line, ignoring only leading and trailing whitespace, so deterministic staging can verify it. Do not copy only a matching substring.
 
 ## Meeting note
 
