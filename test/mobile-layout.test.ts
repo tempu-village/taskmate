@@ -85,6 +85,15 @@ describe("mobile layout", () => {
     expect(rule).toMatch(/overflow-y\s*:\s*auto\s*;/);
   });
 
+  it("offers direct filter clearing only while criteria are active", () => {
+    expect(viewSource).toContain('count > 0 ? t("filter.change") : t("filter.title")');
+    expect(viewSource).toContain('setTitle(t("filter.clearActive"))');
+    expect(viewSource).toContain("if (count > 0)");
+    expect(viewSource).toContain("this.selectedPriorities = []");
+    expect(viewSource).toContain("this.selectedLabels = []");
+    expect(viewSource).toContain("this.includeCompleted = false");
+  });
+
   it("avoids Android WebView's native search-input focus behavior", () => {
     expect(viewSource).not.toMatch(/\btype:\s*"search",/);
     expect(viewSource.match(/"inputmode": "search"/g)).toHaveLength(1);

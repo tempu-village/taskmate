@@ -21,7 +21,7 @@ Filter opens a modal and applies Priority, Label, and Completion state criteria 
 3. Apply the selected sort order.
 4. Render the task list.
 
-Filter state persists while navigating between task-result screens until the user clears it. The Adjust control shows the number of active criteria so filtering cannot remain invisible.
+Filter state persists while navigating between task-result screens until the user clears it. The Adjust control shows the number of active criteria so filtering cannot remain invisible. When criteria are active, the Adjust menu labels the modal action Change filters and adds a separate Clear filters action. Clear filters removes all criteria immediately, closes the menu, refreshes the current list, and shows a notice. It is hidden when no criteria are active. No confirmation is required because this operation changes only reversible view state and does not modify task data.
 
 Select tasks enters an explicit selection mode. While it is active, the main navigation is replaced with selection actions and the set of selectable tasks is frozen to the currently displayed results. Normal completion controls are hidden, row selection is available from the whole task row, and manual drag handles become selection controls. Single-item editing reuses the normal editor; multi-item editing uses an explicit bulk editor that distinguishes preserving a value from clearing it.
 
@@ -29,6 +29,7 @@ Select tasks enters an explicit selection mode. While it is active, the main nav
 
 - Keeping Filter as a main-navigation destination was rejected because it creates a separate result set, cannot be composed naturally with the current list's sorting, and obscures what is being filtered.
 - Keeping filter controls permanently above every task list was rejected because mobile vertical space is scarce and most users do not change filters continuously.
+- Requiring the user to open the filter modal before clearing all criteria was rejected because clearing is a frequent, reversible action and the extra modal step adds no useful decision point.
 - Using a gear icon was rejected because it suggests global settings rather than display and list operations.
 - Allowing selection to follow live search or filter changes was rejected because selected tasks could disappear while a destructive action is being prepared.
 
@@ -39,6 +40,7 @@ Select tasks enters an explicit selection mode. While it is active, the main nav
 - Search and project results exclude completed tasks by default and can include them through the Completion state filter.
 - Selection mode has a stable, visible scope. Select all affects only tasks displayed when selection mode begins.
 - The top navigation becomes simpler, while the Adjust control gains a persistent active-filter indicator.
+- Active filters can be cleared from the Adjust menu without opening the filter modal; the destructive-looking shortcut is avoided because no task data is deleted.
 - Bulk editing and deletion require explicit partial-failure reporting because multiple Markdown files are updated independently.
 
 Related: GitHub Issues #12, #17, and #18.

@@ -506,7 +506,17 @@ export class TodoListView extends ItemView {
         this.selectionMode = true;
         this.requestRender();
       }));
-      menu.addItem((item) => item.setTitle(t("filter.title")).setIcon("list-filter").onClick(() => this.openFilterModal()));
+      menu.addItem((item) => item
+        .setTitle(count > 0 ? t("filter.change") : t("filter.title"))
+        .setIcon("list-filter")
+        .onClick(() => this.openFilterModal()));
+      if (count > 0) {
+        menu.addSeparator();
+        menu.addItem((item) => item
+          .setTitle(t("filter.clearActive"))
+          .setIcon("filter-x")
+          .onClick(() => this.clearActiveFilters()));
+      }
       menu.showAtMouseEvent(event);
     });
   }
@@ -550,6 +560,14 @@ export class TodoListView extends ItemView {
       this.includeCompleted = filters.includeCompleted;
       this.requestRender();
     }).open();
+  }
+
+  private clearActiveFilters(): void {
+    this.selectedPriorities = [];
+    this.selectedLabels = [];
+    this.includeCompleted = false;
+    new Notice(this.plugin.i18n().t("filter.clearedNotice"));
+    this.requestRender();
   }
 
   private async editSelectedTasks(tasks: Task[]): Promise<void> {

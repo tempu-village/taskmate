@@ -671,6 +671,9 @@ var en = {
   "filter.includeCompleted": "Include completed tasks",
   "filter.results": "Results",
   "filter.select": "Select filters",
+  "filter.change": "Change filters",
+  "filter.clearActive": "Clear filters",
+  "filter.clearedNotice": "Filters cleared",
   "filter.clearAll": "Clear all",
   "filter.apply": "Apply",
   "filter.labelsDescription": "Comma-separated labels. A task matches any selected label.",
@@ -806,6 +809,9 @@ var ja = {
   "filter.includeCompleted": "\u5B8C\u4E86\u6E08\u307F\u30BF\u30B9\u30AF\u3092\u8868\u793A",
   "filter.results": "\u7D50\u679C",
   "filter.select": "\u30D5\u30A3\u30EB\u30BF\u3092\u9078\u629E",
+  "filter.change": "\u30D5\u30A3\u30EB\u30BF\u3092\u5909\u66F4",
+  "filter.clearActive": "\u30D5\u30A3\u30EB\u30BF\u3092\u89E3\u9664",
+  "filter.clearedNotice": "\u30D5\u30A3\u30EB\u30BF\u3092\u89E3\u9664\u3057\u307E\u3057\u305F",
   "filter.clearAll": "\u3059\u3079\u3066\u89E3\u9664",
   "filter.apply": "\u9069\u7528",
   "filter.labelsDescription": "\u30AB\u30F3\u30DE\u533A\u5207\u308A\u3002\u9078\u629E\u3057\u305F\u3044\u305A\u308C\u304B\u306E\u30E9\u30D9\u30EB\u3092\u542B\u3080\u30BF\u30B9\u30AF\u3092\u8868\u793A\u3057\u307E\u3059\u3002",
@@ -3954,7 +3960,11 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
         this.selectionMode = true;
         this.requestRender();
       }));
-      menu.addItem((item) => item.setTitle(t("filter.title")).setIcon("list-filter").onClick(() => this.openFilterModal()));
+      menu.addItem((item) => item.setTitle(count > 0 ? t("filter.change") : t("filter.title")).setIcon("list-filter").onClick(() => this.openFilterModal()));
+      if (count > 0) {
+        menu.addSeparator();
+        menu.addItem((item) => item.setTitle(t("filter.clearActive")).setIcon("filter-x").onClick(() => this.clearActiveFilters()));
+      }
       menu.showAtMouseEvent(event);
     });
   }
@@ -3993,6 +4003,13 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
       this.includeCompleted = filters.includeCompleted;
       this.requestRender();
     }).open();
+  }
+  clearActiveFilters() {
+    this.selectedPriorities = [];
+    this.selectedLabels = [];
+    this.includeCompleted = false;
+    new import_obsidian8.Notice(this.plugin.i18n().t("filter.clearedNotice"));
+    this.requestRender();
   }
   async editSelectedTasks(tasks) {
     const selected = tasks.filter((task) => this.selectedTaskIds.has(task.id));
