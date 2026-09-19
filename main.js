@@ -22,7 +22,7 @@ __export(main_exports, {
   default: () => TaskMatePlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian8 = require("obsidian");
+var import_obsidian10 = require("obsidian");
 
 // src/repository.ts
 var import_obsidian = require("obsidian");
@@ -445,7 +445,10 @@ var TaskMateSettingTab = class extends import_obsidian3.PluginSettingTab {
 };
 
 // src/view.ts
-var import_obsidian6 = require("obsidian");
+var import_obsidian8 = require("obsidian");
+
+// src/bulk-task-modal.ts
+var import_obsidian4 = require("obsidian");
 
 // src/domain.ts
 function localDateParts(date) {
@@ -463,8 +466,8 @@ function addDays(dateKey, amount) {
   date.setDate(date.getDate() + amount);
   return localDateParts(date);
 }
-function taskMatchesView(task, view, today = todayKey()) {
-  if (task.completed) return false;
+function taskMatchesView(task, view, today = todayKey(), includeCompleted = false) {
+  if (task.completed && !includeCompleted) return false;
   switch (view) {
     case "scheduled":
       return task.date !== null;
@@ -479,7 +482,7 @@ function taskMatchesView(task, view, today = todayKey()) {
 function filterTasks(tasks, view, filters, today) {
   const needle = filters.search.trim().toLocaleLowerCase();
   return tasks.filter((task) => {
-    if (!(view === "all" && filters.includeCompleted) && !taskMatchesView(task, view, today)) return false;
+    if (!taskMatchesView(task, view, today, filters.includeCompleted)) return false;
     if (filters.priorities.length > 0 && (task.priority === null || !filters.priorities.includes(task.priority))) return false;
     if (filters.labels.length > 0 && !filters.labels.some((label) => task.labels.includes(label))) return false;
     return needle.length === 0 || `${task.title}
@@ -487,8 +490,8 @@ ${task.notes}
 ${task.labels.join(" ")}`.toLocaleLowerCase().includes(needle);
   });
 }
-function groupScheduledTasks(tasks, today = todayKey()) {
-  const scheduled = tasks.filter((task) => !task.completed && task.date !== null);
+function groupScheduledTasks(tasks, today = todayKey(), includeCompleted = false) {
+  const scheduled = tasks.filter((task) => (includeCompleted || !task.completed) && task.date !== null);
   return {
     overdue: scheduled.filter((task) => task.date !== null && task.date < today),
     today: scheduled.filter((task) => task.date === today),
@@ -515,6 +518,111 @@ function sortTasks(tasks, mode, direction = "asc") {
     case "manual":
       return result.sort(rankThenCreated);
   }
+}
+
+// src/task-input-suggestions.ts
+function taskDateSuggestions(today = todayKey()) {
+  return [
+    { id: "today", date: today },
+    { id: "tomorrow", date: addDays(today, 1) },
+    { id: "seven-days", date: addDays(today, 7) },
+    { id: "none", date: null }
+  ];
+}
+function normalizeLabels(labels) {
+  const result = [];
+  for (const raw of labels) {
+    const label = raw.trim().replace(/^#/, "");
+    if (label && !result.includes(label)) result.push(label);
+  }
+  return result;
+}
+function recentLabelSuggestions(history, limit = 10) {
+  return normalizeLabels(history).slice(0, limit);
+}
+function recordRecentLabels(history, savedLabels, limit = 10) {
+  const used = normalizeLabels(savedLabels);
+  if (used.length === 0) return recentLabelSuggestions(history, limit);
+  return normalizeLabels([...used, ...history]).slice(0, limit);
+}
+
+// src/bulk-task-modal.ts
+var BulkTaskModal = class extends import_obsidian4.Modal {
+  constructor(app, count, projects, i18n, onApply) {
+    super(app);
+    this.count = count;
+    this.projects = projects;
+    this.i18n = i18n;
+    this.onApply = onApply;
+    this.setTitle(i18n.t("bulk.title", { count }));
+  }
+  changes = { addLabels: [], removeLabels: [] };
+  onOpen() {
+    const { t } = this.i18n;
+    const date = new import_obsidian4.Setting(this.contentEl).setName(t("taskModal.date"));
+    let dateInput = null;
+    date.addDropdown((dropdown) => dropdown.addOption("unchanged", t("bulk.unchanged")).addOption("clear", t("date.none")).addOption("set", t("bulk.setValue")).onChange((value) => {
+      if (value === "unchanged") delete this.changes.date;
+      else if (value === "clear") this.changes.date = null;
+      else this.changes.date = dateInput?.value || null;
+      if (dateInput) dateInput.disabled = value !== "set";
+    }));
+    date.addText((text) => {
+      text.inputEl.type = "date";
+      text.inputEl.disabled = true;
+      dateInput = text.inputEl;
+      text.onChange((value) => {
+        if (!text.inputEl.disabled) this.changes.date = value || null;
+      });
+    });
+    new import_obsidian4.Setting(this.contentEl).setName(t("taskModal.project")).addDropdown((dropdown) => {
+      dropdown.addOption("unchanged", t("bulk.unchanged")).addOption("clear", t("taskModal.unassigned"));
+      this.projects.forEach((project) => dropdown.addOption(project.id, project.name));
+      dropdown.onChange((value) => {
+        if (value === "unchanged") delete this.changes.projectId;
+        else this.changes.projectId = value === "clear" ? null : value;
+      });
+    });
+    new import_obsidian4.Setting(this.contentEl).setName(t("taskModal.priority")).addDropdown((dropdown) => dropdown.addOption("unchanged", t("bulk.unchanged")).addOption("clear", t("taskModal.noPriority")).addOption("1", t("filter.priorityValue", { priority: 1 })).addOption("2", t("filter.priorityValue", { priority: 2 })).addOption("3", t("filter.priorityValue", { priority: 3 })).onChange((value) => {
+      if (value === "unchanged") delete this.changes.priority;
+      else this.changes.priority = value === "clear" ? null : Number(value);
+    }));
+    new import_obsidian4.Setting(this.contentEl).setName(t("bulk.addLabels")).addText((text) => text.onChange((value) => {
+      this.changes.addLabels = normalizeLabels(value.split(",")).slice(0, 500);
+    }));
+    new import_obsidian4.Setting(this.contentEl).setName(t("bulk.removeLabels")).addText((text) => text.onChange((value) => {
+      this.changes.removeLabels = normalizeLabels(value.split(",")).slice(0, 500);
+    }));
+    const actions = this.contentEl.createDiv({ cls: "taskmate-modal-actions" });
+    const cancel = actions.createEl("button", { text: t("common.cancel") });
+    cancel.addEventListener("click", () => this.close());
+    const apply = actions.createEl("button", { text: t("bulk.apply", { count: this.count }), cls: "mod-cta" });
+    apply.addEventListener("click", async () => {
+      apply.disabled = true;
+      try {
+        await this.onApply(this.changes);
+        this.close();
+      } finally {
+        apply.disabled = false;
+      }
+    });
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+};
+
+// src/bulk-task-actions.ts
+function buildBulkTaskPatch(task, changes) {
+  const labels = task.labels.filter((label) => !changes.removeLabels.includes(label)).concat(changes.addLabels.filter((label) => !task.labels.includes(label))).slice(0, 500);
+  const patch = { labels };
+  if ("date" in changes) patch.date = changes.date;
+  if ("projectId" in changes) patch.projectId = changes.projectId;
+  if ("priority" in changes) patch.priority = changes.priority;
+  return patch;
+}
+function failedBulkTasks(tasks, results) {
+  return tasks.filter((_, index2) => results[index2]?.status === "rejected");
 }
 
 // src/i18n/en.ts
@@ -576,11 +684,29 @@ var en = {
   "filter.includeCompleted": "Include completed tasks",
   "filter.results": "Results",
   "filter.select": "Select filters",
+  "filter.change": "Change filters",
+  "filter.clearActive": "Clear filters",
+  "filter.clearedNotice": "Filters cleared",
   "filter.clearAll": "Clear all",
+  "filter.apply": "Apply",
+  "filter.labelsDescription": "Comma-separated labels. A task matches any selected label.",
+  "filter.labelsPlaceholder": "work, calls",
+  "adjust.ariaLabel": "View and task actions",
+  "adjust.ariaLabelActive": "View and task actions, {count} active filters",
+  "selection.start": "Select tasks",
+  "selection.ariaLabel": "Task selection actions",
+  "selection.exit": "Exit",
+  "selection.count": "{count} selected",
+  "selection.selectAll": "Select all",
+  "selection.deleteConfirm": "Move {count} tasks to the Obsidian trash?",
+  "selection.deletedNotice": "Moved {count} tasks to the trash",
+  "selection.updatedNotice": "Updated {count} tasks",
+  "selection.partialFailure": "{failed} of {total} tasks could not be changed",
   "tasks.empty": "No tasks",
   "tasks.reorderAriaLabel": "Reorder tasks",
   "tasks.completeAriaLabel": "Complete {title}",
   "tasks.moreAriaLabel": "More actions",
+  "tasks.selectAriaLabel": "Select {title}",
   "tasks.deleteConfirm": "Move \u201C{title}\u201D to the trash?",
   "tasks.deletedNotice": "Task moved to the trash",
   "taskModal.addTitle": "Add task",
@@ -597,6 +723,12 @@ var en = {
   "taskModal.labelsPlaceholder": "work, calls",
   "taskModal.recentLabels": "Recently used labels",
   "taskModal.notes": "Notes",
+  "bulk.title": "Edit {count} tasks",
+  "bulk.unchanged": "No change",
+  "bulk.setValue": "Set a date",
+  "bulk.addLabels": "Add labels",
+  "bulk.removeLabels": "Remove labels",
+  "bulk.apply": "Apply to {count} tasks",
   "date.today": "Today",
   "date.tomorrow": "Tomorrow",
   "date.sevenDays": "7 days later",
@@ -690,11 +822,29 @@ var ja = {
   "filter.includeCompleted": "\u5B8C\u4E86\u6E08\u307F\u30BF\u30B9\u30AF\u3092\u8868\u793A",
   "filter.results": "\u7D50\u679C",
   "filter.select": "\u30D5\u30A3\u30EB\u30BF\u3092\u9078\u629E",
+  "filter.change": "\u30D5\u30A3\u30EB\u30BF\u3092\u5909\u66F4",
+  "filter.clearActive": "\u30D5\u30A3\u30EB\u30BF\u3092\u89E3\u9664",
+  "filter.clearedNotice": "\u30D5\u30A3\u30EB\u30BF\u3092\u89E3\u9664\u3057\u307E\u3057\u305F",
   "filter.clearAll": "\u3059\u3079\u3066\u89E3\u9664",
+  "filter.apply": "\u9069\u7528",
+  "filter.labelsDescription": "\u30AB\u30F3\u30DE\u533A\u5207\u308A\u3002\u9078\u629E\u3057\u305F\u3044\u305A\u308C\u304B\u306E\u30E9\u30D9\u30EB\u3092\u542B\u3080\u30BF\u30B9\u30AF\u3092\u8868\u793A\u3057\u307E\u3059\u3002",
+  "filter.labelsPlaceholder": "\u4ED5\u4E8B, \u9023\u7D61",
+  "adjust.ariaLabel": "\u8868\u793A\u3068\u30BF\u30B9\u30AF\u306E\u64CD\u4F5C",
+  "adjust.ariaLabelActive": "\u8868\u793A\u3068\u30BF\u30B9\u30AF\u306E\u64CD\u4F5C\u3001{count}\u4EF6\u306E\u30D5\u30A3\u30EB\u30BF\u304C\u6709\u52B9",
+  "selection.start": "\u30BF\u30B9\u30AF\u3092\u9078\u629E",
+  "selection.ariaLabel": "\u30BF\u30B9\u30AF\u9078\u629E\u306E\u64CD\u4F5C",
+  "selection.exit": "\u89E3\u9664",
+  "selection.count": "{count}\u4EF6\u9078\u629E",
+  "selection.selectAll": "\u3059\u3079\u3066\u9078\u629E",
+  "selection.deleteConfirm": "{count}\u4EF6\u306E\u30BF\u30B9\u30AF\u3092Obsidian\u306E\u30B4\u30DF\u7BB1\u3078\u79FB\u52D5\u3057\u307E\u3059\u304B\uFF1F",
+  "selection.deletedNotice": "{count}\u4EF6\u306E\u30BF\u30B9\u30AF\u3092\u30B4\u30DF\u7BB1\u3078\u79FB\u52D5\u3057\u307E\u3057\u305F",
+  "selection.updatedNotice": "{count}\u4EF6\u306E\u30BF\u30B9\u30AF\u3092\u66F4\u65B0\u3057\u307E\u3057\u305F",
+  "selection.partialFailure": "{total}\u4EF6\u4E2D{failed}\u4EF6\u3092\u5909\u66F4\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F",
   "tasks.empty": "\u30BF\u30B9\u30AF\u306F\u3042\u308A\u307E\u305B\u3093",
   "tasks.reorderAriaLabel": "\u30BF\u30B9\u30AF\u3092\u4E26\u3079\u66FF\u3048",
   "tasks.completeAriaLabel": "{title}\u3092\u5B8C\u4E86",
   "tasks.moreAriaLabel": "\u305D\u306E\u4ED6",
+  "tasks.selectAriaLabel": "{title}\u3092\u9078\u629E",
   "tasks.deleteConfirm": "\u300C{title}\u300D\u3092\u30B4\u30DF\u7BB1\u3078\u79FB\u52D5\u3057\u307E\u3059\u304B\uFF1F",
   "tasks.deletedNotice": "\u30BF\u30B9\u30AF\u3092\u30B4\u30DF\u7BB1\u3078\u79FB\u52D5\u3057\u307E\u3057\u305F",
   "taskModal.addTitle": "\u30BF\u30B9\u30AF\u3092\u8FFD\u52A0",
@@ -711,6 +861,12 @@ var ja = {
   "taskModal.labelsPlaceholder": "\u4ED5\u4E8B, \u9023\u7D61",
   "taskModal.recentLabels": "\u6700\u8FD1\u4F7F\u3063\u305F\u30E9\u30D9\u30EB",
   "taskModal.notes": "\u30E1\u30E2",
+  "bulk.title": "{count}\u4EF6\u3092\u4E00\u62EC\u7DE8\u96C6",
+  "bulk.unchanged": "\u5909\u66F4\u3057\u306A\u3044",
+  "bulk.setValue": "\u65E5\u4ED8\u3092\u6307\u5B9A",
+  "bulk.addLabels": "\u8FFD\u52A0\u3059\u308B\u30E9\u30D9\u30EB",
+  "bulk.removeLabels": "\u524A\u9664\u3059\u308B\u30E9\u30D9\u30EB",
+  "bulk.apply": "{count}\u4EF6\u306B\u9069\u7528",
   "date.today": "\u4ECA\u65E5",
   "date.tomorrow": "\u660E\u65E5",
   "date.sevenDays": "7\u65E5\u5F8C",
@@ -780,9 +936,58 @@ function createI18n(preference, detectedLanguage) {
   return { locale, t };
 }
 
+// src/filter-modal.ts
+var import_obsidian5 = require("obsidian");
+var TaskFilterModal = class extends import_obsidian5.Modal {
+  constructor(app, filters, i18n, onApply) {
+    super(app);
+    this.i18n = i18n;
+    this.onApply = onApply;
+    this.draft = { ...filters, priorities: [...filters.priorities], labels: [...filters.labels] };
+    this.setTitle(i18n.t("filter.title"));
+  }
+  draft;
+  onOpen() {
+    const { t } = this.i18n;
+    const priority = new import_obsidian5.Setting(this.contentEl).setName(t("filter.priority"));
+    [1, 2, 3].forEach((value) => priority.addButton((button) => {
+      const refresh = () => {
+        const selected = this.draft.priorities.includes(value);
+        button.buttonEl.toggleClass("is-active", selected);
+        button.buttonEl.toggleClass("mod-cta", selected);
+      };
+      button.setButtonText(`P${value}`).setTooltip(t("filter.priorityValue", { priority: value })).onClick(() => {
+        this.draft.priorities = this.draft.priorities.includes(value) ? this.draft.priorities.filter((item) => item !== value) : [...this.draft.priorities, value];
+        refresh();
+      });
+      refresh();
+    }));
+    new import_obsidian5.Setting(this.contentEl).setName(t("filter.labels")).setDesc(t("filter.labelsDescription")).addText((text) => text.setPlaceholder(t("filter.labelsPlaceholder")).setValue(this.draft.labels.join(", ")).onChange((value) => {
+      this.draft.labels = normalizeLabels(value.split(",")).slice(0, 500);
+    }));
+    new import_obsidian5.Setting(this.contentEl).setName(t("filter.completion")).addToggle((toggle) => toggle.setValue(this.draft.includeCompleted).onChange((value) => {
+      this.draft.includeCompleted = value;
+    })).setDesc(t("filter.includeCompleted"));
+    const actions = this.contentEl.createDiv({ cls: "taskmate-modal-actions" });
+    const clear = actions.createEl("button", { text: t("filter.clearAll") });
+    clear.addEventListener("click", () => {
+      this.onApply({ priorities: [], labels: [], search: "", includeCompleted: false });
+      this.close();
+    });
+    const apply = actions.createEl("button", { text: t("filter.apply"), cls: "mod-cta" });
+    apply.addEventListener("click", () => {
+      this.onApply(this.draft);
+      this.close();
+    });
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+};
+
 // src/project-modal.ts
-var import_obsidian4 = require("obsidian");
-var ProjectModal = class extends import_obsidian4.Modal {
+var import_obsidian6 = require("obsidian");
+var ProjectModal = class extends import_obsidian6.Modal {
   constructor(app, i18n, onSave) {
     super(app);
     this.i18n = i18n;
@@ -792,7 +997,7 @@ var ProjectModal = class extends import_obsidian4.Modal {
   name = "";
   onOpen() {
     const { t } = this.i18n;
-    new import_obsidian4.Setting(this.contentEl).setName(t("projectModal.name")).addText((text) => {
+    new import_obsidian6.Setting(this.contentEl).setName(t("projectModal.name")).addText((text) => {
       text.setPlaceholder(t("projectModal.namePlaceholder")).onChange((value) => {
         this.name = value;
       });
@@ -818,55 +1023,21 @@ var ProjectModal = class extends import_obsidian4.Modal {
 };
 
 // src/task-modal.ts
-var import_obsidian5 = require("obsidian");
-
-// src/task-input-suggestions.ts
-function taskDateSuggestions(today = todayKey()) {
-  return [
-    { id: "today", date: today },
-    { id: "tomorrow", date: addDays(today, 1) },
-    { id: "seven-days", date: addDays(today, 7) },
-    { id: "none", date: null }
-  ];
-}
-function normalizeLabels(labels) {
-  const result = [];
-  for (const raw of labels) {
-    const label = raw.trim().replace(/^#/, "");
-    if (label && !result.includes(label)) result.push(label);
-  }
-  return result;
-}
-function recentLabelSuggestions(history, limit = 10) {
-  return normalizeLabels(history).slice(0, limit);
-}
-function filterLabelSuggestions(labels, history, query, selected, limit = 10) {
-  const available = normalizeLabels(labels);
-  const selectedSet = new Set(normalizeLabels(selected));
-  const needle = query.trim().toLocaleLowerCase();
-  const candidates = needle ? available.filter((label) => label.toLocaleLowerCase().includes(needle)) : recentLabelSuggestions(history).filter((label) => available.includes(label));
-  return candidates.filter((label) => !selectedSet.has(label)).slice(0, limit);
-}
-function recordRecentLabels(history, savedLabels, limit = 10) {
-  const used = normalizeLabels(savedLabels);
-  if (used.length === 0) return recentLabelSuggestions(history, limit);
-  return normalizeLabels([...used, ...history]).slice(0, limit);
-}
-
-// src/task-modal.ts
+var import_obsidian7 = require("obsidian");
 var DATE_SUGGESTION_KEYS = {
   today: "date.today",
   tomorrow: "date.tomorrow",
   "seven-days": "date.sevenDays",
   none: "date.none"
 };
-var TaskModal = class extends import_obsidian5.Modal {
-  constructor(app, task, projects, recentLabels, defaultProjectId, i18n, onSave) {
+var TaskModal = class extends import_obsidian7.Modal {
+  constructor(app, task, projects, recentLabels, defaultProjectId, i18n, onSave, onDelete = null) {
     super(app);
     this.projects = projects;
     this.recentLabels = recentLabels;
     this.i18n = i18n;
     this.onSave = onSave;
+    this.onDelete = onDelete;
     this.draft = {
       title: task?.title ?? "",
       date: task?.date ?? null,
@@ -884,7 +1055,7 @@ var TaskModal = class extends import_obsidian5.Modal {
     const { t } = this.i18n;
     this.modalEl.addClass("taskmate-task-modal");
     const fields = contentEl.createDiv({ cls: "taskmate-task-fields" });
-    const titleSetting = new import_obsidian5.Setting(fields).setName(t("taskModal.title"));
+    const titleSetting = new import_obsidian7.Setting(fields).setName(t("taskModal.title"));
     titleSetting.settingEl.addClass("taskmate-title-setting");
     titleSetting.addText((text) => {
       text.setPlaceholder(t("taskModal.titlePlaceholder")).setValue(this.draft.title).onChange((value) => {
@@ -892,7 +1063,7 @@ var TaskModal = class extends import_obsidian5.Modal {
       });
       window.setTimeout(() => text.inputEl.focus(), 0);
     });
-    const dateSetting = new import_obsidian5.Setting(fields).setName(t("taskModal.date"));
+    const dateSetting = new import_obsidian7.Setting(fields).setName(t("taskModal.date"));
     dateSetting.settingEl.addClass("taskmate-date-setting");
     const datePresets = dateSetting.controlEl.createDiv({ cls: "taskmate-date-presets" });
     const dateButtons = [];
@@ -928,19 +1099,19 @@ var TaskModal = class extends import_obsidian5.Modal {
       });
     });
     refreshDateSelection();
-    new import_obsidian5.Setting(fields).setName(t("taskModal.project")).addDropdown((dropdown) => {
+    new import_obsidian7.Setting(fields).setName(t("taskModal.project")).addDropdown((dropdown) => {
       dropdown.addOption("", t("taskModal.unassigned"));
       for (const project of this.projects) dropdown.addOption(project.id, project.name);
       dropdown.setValue(this.draft.projectId ?? "").onChange((value) => {
         this.draft.projectId = value || null;
       });
     });
-    new import_obsidian5.Setting(fields).setName(t("taskModal.priority")).addDropdown((dropdown) => {
+    new import_obsidian7.Setting(fields).setName(t("taskModal.priority")).addDropdown((dropdown) => {
       dropdown.addOption("", t("taskModal.noPriority")).addOption("1", t("filter.priorityValue", { priority: 1 })).addOption("2", t("filter.priorityValue", { priority: 2 })).addOption("3", t("filter.priorityValue", { priority: 3 })).setValue(this.draft.priority ? String(this.draft.priority) : "").onChange((value) => {
         this.draft.priority = value ? Number(value) : null;
       });
     });
-    const labelSetting = new import_obsidian5.Setting(fields).setName(t("taskModal.labels")).setDesc(t("taskModal.labelsDescription"));
+    const labelSetting = new import_obsidian7.Setting(fields).setName(t("taskModal.labels")).setDesc(t("taskModal.labelsDescription"));
     let labelInput;
     const recentLabelButtons = [];
     const refreshLabelSelection = () => {
@@ -978,7 +1149,7 @@ var TaskModal = class extends import_obsidian5.Modal {
       }
       refreshLabelSelection();
     }
-    const notesSetting = new import_obsidian5.Setting(fields).setName(t("taskModal.notes"));
+    const notesSetting = new import_obsidian7.Setting(fields).setName(t("taskModal.notes"));
     notesSetting.settingEl.addClass("taskmate-notes-setting");
     notesSetting.addTextArea((area) => {
       area.inputEl.rows = 7;
@@ -987,9 +1158,25 @@ var TaskModal = class extends import_obsidian5.Modal {
       });
     });
     const actions = contentEl.createDiv({ cls: "taskmate-modal-actions" });
-    const cancel = actions.createEl("button", { text: t("common.cancel") });
+    if (this.onDelete) {
+      const remove = actions.createEl("button", { cls: "taskmate-delete-task" });
+      (0, import_obsidian7.setIcon)(remove, "trash-2");
+      remove.createSpan({ text: t("common.delete") });
+      remove.addEventListener("click", async () => {
+        if (!window.confirm(t("tasks.deleteConfirm", { title: this.draft.title }))) return;
+        remove.disabled = true;
+        try {
+          await this.onDelete?.();
+          this.close();
+        } finally {
+          remove.disabled = false;
+        }
+      });
+    }
+    const ordinaryActions = actions.createDiv({ cls: "taskmate-modal-primary-actions" });
+    const cancel = ordinaryActions.createEl("button", { text: t("common.cancel") });
     cancel.addEventListener("click", () => this.close());
-    const save2 = actions.createEl("button", { text: t("common.save"), cls: "mod-cta" });
+    const save2 = ordinaryActions.createEl("button", { text: t("common.save"), cls: "mod-cta" });
     save2.addEventListener("click", async () => {
       if (!this.draft.title.trim()) return;
       save2.disabled = true;
@@ -1015,25 +1202,30 @@ function toRow(task, projectNames) {
     date: task.date,
     priority: task.priority,
     projectName: task.projectId ? projectNames.get(task.projectId) ?? null : null,
-    labels: task.labels.slice(0, 3)
+    labels: task.labels.slice(0, 3),
+    selected: false
   };
 }
 function buildTaskListModel(input) {
   const projectNames = new Map(input.projects.map((project) => [project.id, project.name]));
-  const toSortedRows = (tasks) => sortTasks(tasks, input.sortMode, input.sortDirection).map((task) => toRow(task, projectNames));
+  const selectionMode = input.selectionMode ?? false;
+  const selectedIds = input.selectedIds ?? /* @__PURE__ */ new Set();
+  const toSortedRows = (tasks) => sortTasks(tasks, input.sortMode, input.sortDirection).map((task) => ({ ...toRow(task, projectNames), selected: selectedIds.has(task.id) }));
   if (input.grouping === "flat") {
     return {
       grouping: "flat",
       sections: [{ id: "default", rows: toSortedRows(input.tasks) }],
-      reorderEnabled: input.allowReorder && input.sortMode === "manual"
+      reorderEnabled: !selectionMode && input.allowReorder && input.sortMode === "manual",
+      selectionMode
     };
   }
-  const groups = groupScheduledTasks(input.tasks, input.today);
+  const groups = groupScheduledTasks(input.tasks, input.today, true);
   const sections = ["overdue", "today", "later"].map((id) => ({ id, rows: toSortedRows(groups[id]) })).filter((section) => section.rows.length > 0);
   return {
     grouping: "scheduled",
     sections,
-    reorderEnabled: input.allowReorder && input.sortMode === "manual"
+    reorderEnabled: !selectionMode && input.allowReorder && input.sortMode === "manual",
+    selectionMode
   };
 }
 
@@ -3235,29 +3427,46 @@ function appendElement(parent, tag, options = {}) {
   parent.append(element);
   return element;
 }
-function renderRow(list, row, reorderEnabled, copy, signal, dispatch) {
+function renderRow(list, row, reorderEnabled, selectionMode, copy, signal, dispatch) {
   const task = appendElement(list, "div", {
-    className: `taskmate-task${row.completed ? " is-completed" : ""}`,
-    attributes: { role: "listitem" }
+    className: `taskmate-task${row.completed ? " is-completed" : ""}${row.selected ? " is-selected" : ""}`,
+    attributes: { role: "listitem", "aria-selected": String(row.selected) }
   });
   task.dataset.taskId = row.id;
-  const drag = appendElement(task, "button", {
-    className: "taskmate-drag",
-    text: "\u283F",
-    attributes: { "aria-label": copy.reorderAriaLabel }
-  });
-  drag.disabled = !reorderEnabled;
-  const checkbox = appendElement(task, "input", {
-    attributes: { type: "checkbox", "aria-label": copy.completeAriaLabel(row.title) }
-  });
-  checkbox.checked = row.completed;
-  checkbox.addEventListener("change", () => {
-    void dispatch({ type: "toggle-completed", taskId: row.id, completed: checkbox.checked });
-  }, { signal });
+  if (selectionMode) {
+    task.addEventListener("click", (event) => {
+      if (event.target.closest("input")) return;
+      void dispatch({ type: "toggle-selected", taskId: row.id });
+    }, { signal });
+  }
+  if (selectionMode) {
+    const selection = appendElement(task, "input", {
+      className: "taskmate-select-task",
+      attributes: { type: "checkbox", "aria-label": copy.selectAriaLabel(row.title) }
+    });
+    selection.checked = row.selected;
+    selection.addEventListener("change", () => {
+      void dispatch({ type: "toggle-selected", taskId: row.id });
+    }, { signal });
+  } else {
+    const drag = appendElement(task, "button", {
+      className: "taskmate-drag",
+      text: "\u283F",
+      attributes: { "aria-label": copy.reorderAriaLabel }
+    });
+    drag.disabled = !reorderEnabled;
+    const checkbox = appendElement(task, "input", {
+      attributes: { type: "checkbox", "aria-label": copy.completeAriaLabel(row.title) }
+    });
+    checkbox.checked = row.completed;
+    checkbox.addEventListener("change", () => {
+      void dispatch({ type: "toggle-completed", taskId: row.id, completed: checkbox.checked });
+    }, { signal });
+  }
   const body = appendElement(task, "div", { className: "taskmate-task-body" });
   const title = appendElement(body, "button", { className: "taskmate-title", text: row.title });
   title.addEventListener("click", () => {
-    void dispatch({ type: "open", taskId: row.id });
+    if (!selectionMode) void dispatch({ type: "open", taskId: row.id });
   }, { signal });
   const metadata = appendElement(body, "div", { className: "taskmate-metadata" });
   if (row.date) appendElement(metadata, "span", { text: row.date });
@@ -3267,20 +3476,12 @@ function renderRow(list, row, reorderEnabled, copy, signal, dispatch) {
   });
   if (row.projectName) appendElement(metadata, "span", { text: row.projectName });
   row.labels.forEach((label) => appendElement(metadata, "span", { text: `#${label}` }));
-  const more = appendElement(task, "button", {
-    className: "taskmate-more",
-    text: "\u2022\u2022\u2022",
-    attributes: { "aria-label": copy.moreAriaLabel }
-  });
-  more.addEventListener("click", (event) => {
-    void dispatch({ type: "show-actions", taskId: row.id, event });
-  }, { signal });
 }
 function renderTaskList(container, model, copy, dispatch) {
   const AbortControllerClass = container.ownerDocument.defaultView?.AbortController ?? AbortController;
   const controller = new AbortControllerClass();
   const list = appendElement(container, "div", {
-    className: `taskmate-list${model.grouping === "scheduled" ? " taskmate-scheduled-list" : ""}`,
+    className: `taskmate-list${model.grouping === "scheduled" ? " taskmate-scheduled-list" : ""}${model.selectionMode ? " is-selection-mode" : ""}`,
     attributes: { role: "list" }
   });
   const rowCount = model.sections.reduce((count, section) => count + section.rows.length, 0);
@@ -3296,7 +3497,7 @@ function renderTaskList(container, model, copy, dispatch) {
         attributes: { role: "heading", "aria-level": "3" }
       });
     }
-    section.rows.forEach((row) => renderRow(list, row, model.reorderEnabled, copy, controller.signal, dispatch));
+    section.rows.forEach((row) => renderRow(list, row, model.reorderEnabled, model.selectionMode, copy, controller.signal, dispatch));
   });
   const sortable = sortable_esm_default.create(list, {
     animation: 140,
@@ -3328,6 +3529,39 @@ function renderTaskList(container, model, copy, dispatch) {
   };
 }
 
+// src/task-filter-state.ts
+var EMPTY_FILTERS = {
+  priorities: [],
+  labels: [],
+  search: "",
+  includeCompleted: false
+};
+var TaskFilterState = class {
+  filters = { ...EMPTY_FILTERS };
+  value() {
+    return {
+      priorities: [...this.filters.priorities],
+      labels: [...this.filters.labels],
+      search: "",
+      includeCompleted: this.filters.includeCompleted
+    };
+  }
+  replace(filters) {
+    this.filters = {
+      priorities: [...filters.priorities],
+      labels: [...filters.labels],
+      search: "",
+      includeCompleted: filters.includeCompleted
+    };
+  }
+  clear() {
+    this.filters = { ...EMPTY_FILTERS };
+  }
+  count() {
+    return this.filters.priorities.length + this.filters.labels.length + Number(this.filters.includeCompleted);
+  }
+};
+
 // src/view.ts
 var TODO_VIEW_TYPE = "taskmate-list";
 var SMART_VIEW_KEYS = {
@@ -3344,11 +3578,9 @@ var SORT_KEYS = {
 var NAV_ITEMS = [
   { screen: "date", icon: "\u25F7", labelKey: "nav.date" },
   { screen: "search", icon: "\u2315", labelKey: "nav.search" },
-  { screen: "projects", icon: "\u25A3", labelKey: "nav.projects" },
-  { screen: "filter", icon: "\u2261", labelKey: "nav.filter" }
+  { screen: "projects", icon: "\u25A3", labelKey: "nav.projects" }
 ];
-var EMPTY_FILTERS = { priorities: [], labels: [], search: "", includeCompleted: false };
-var TodoListView = class extends import_obsidian6.ItemView {
+var TodoListView = class extends import_obsidian8.ItemView {
   constructor(leaf, plugin) {
     super(leaf);
     this.plugin = plugin;
@@ -3358,13 +3590,13 @@ var TodoListView = class extends import_obsidian6.ItemView {
   sortMode = "manual";
   sortDirection = "asc";
   searchQuery = "";
-  selectedPriorities = [];
-  selectedLabels = [];
-  includeCompleted = false;
-  labelQuery = "";
+  filterState = new TaskFilterState();
   projectScreen = "index";
   activeProjectId = null;
   renderedTaskList = null;
+  selectionMode = false;
+  selectedTaskIds = /* @__PURE__ */ new Set();
+  selectionScopeIds = /* @__PURE__ */ new Set();
   generation = 0;
   getViewType() {
     return TODO_VIEW_TYPE;
@@ -3393,23 +3625,23 @@ var TodoListView = class extends import_obsidian6.ItemView {
     root.empty();
     root.addClass("taskmate-view");
     const page = root.createDiv({ cls: "taskmate-page" });
-    this.renderNavigation(page);
+    if (this.selectionMode) this.renderSelectionToolbar(page, tasks);
+    else this.renderNavigation(page);
     if (this.screen === "search") {
       this.renderSearchScreen(page, tasks, projects);
     } else if (this.screen === "date") {
       this.renderDateScreen(page, tasks, projects);
-    } else if (this.screen === "filter") {
-      this.renderFilterScreen(page, tasks, projects);
     } else {
       const content = page.createDiv({ cls: "taskmate-content taskmate-scroll-region" });
       this.renderProjectsScreen(content, tasks, projects);
     }
   }
-  renderHeader(container, title, addTaskProjectId) {
+  renderHeader(container, title, addTaskProjectId, selectionScope) {
     const { t } = this.plugin.i18n();
     const header = container.createDiv({ cls: "taskmate-header" });
     header.createEl("h2", { text: title });
-    if (addTaskProjectId !== void 0) {
+    if (!this.selectionMode && selectionScope) this.renderAdjustMenu(header, selectionScope);
+    if (!this.selectionMode && addTaskProjectId !== void 0) {
       const add = header.createEl("button", { text: t("common.add"), cls: "mod-cta taskmate-add" });
       add.addEventListener("click", () => void this.openCreateTask(addTaskProjectId));
     }
@@ -3418,7 +3650,8 @@ var TodoListView = class extends import_obsidian6.ItemView {
   renderDateScreen(container, tasks, projects) {
     const { t } = this.plugin.i18n();
     const controls = container.createDiv({ cls: "taskmate-date-controls" });
-    this.renderHeader(controls, "TaskMate", null);
+    const visibleTasks = filterTasks(tasks, this.smartView, this.filterState.value());
+    this.renderHeader(controls, "TaskMate", null, () => visibleTasks);
     const tabs = controls.createDiv({ cls: "taskmate-smart-views", attr: { role: "tablist" } });
     Object.keys(SMART_VIEW_KEYS).forEach((view) => {
       const button = tabs.createEl("button", {
@@ -3430,17 +3663,18 @@ var TodoListView = class extends import_obsidian6.ItemView {
         this.smartView = view;
         this.requestRender();
       });
+      button.disabled = this.selectionMode;
     });
     this.renderSortControl(controls);
     const results = container.createDiv({ cls: "taskmate-date-results taskmate-scroll-region" });
-    const visibleTasks = filterTasks(tasks, this.smartView, EMPTY_FILTERS);
     if (this.smartView === "scheduled") this.renderScheduledTaskList(results, visibleTasks, projects);
     else this.renderTaskList(results, visibleTasks, projects, true);
   }
   renderSearchScreen(container, tasks, projects) {
     const { t } = this.plugin.i18n();
     const controls = container.createDiv({ cls: "taskmate-search-controls" });
-    this.renderHeader(controls, t("search.title"));
+    const currentMatches = () => this.searchMatches(tasks, projects);
+    this.renderHeader(controls, t("search.title"), void 0, currentMatches);
     const input = controls.createEl("input", {
       type: "text",
       value: this.searchQuery,
@@ -3452,6 +3686,7 @@ var TodoListView = class extends import_obsidian6.ItemView {
         "enterkeyhint": "search"
       }
     });
+    input.disabled = this.selectionMode;
     const results = container.createDiv({ cls: "taskmate-search-results taskmate-scroll-region" });
     const updateResults = () => this.renderSearchResults(results, tasks, projects);
     let composing = false;
@@ -3477,7 +3712,7 @@ var TodoListView = class extends import_obsidian6.ItemView {
     this.destroyTaskList();
     container.empty();
     const recent = this.plugin.settings.recentSearches ?? [];
-    if (recent.length > 0) {
+    if (!this.selectionMode && recent.length > 0) {
       const section = container.createDiv({ cls: "taskmate-section" });
       const heading = section.createDiv({ cls: "taskmate-section-heading" });
       heading.createEl("h3", { text: t("search.recent") });
@@ -3501,14 +3736,7 @@ var TodoListView = class extends import_obsidian6.ItemView {
       container.createDiv({ cls: "taskmate-empty", text: t("search.emptyQuery") });
       return;
     }
-    const projectNames = new Map(projects.map((project) => [project.id, project.name.toLocaleLowerCase()]));
-    const matches2 = tasks.filter((task) => {
-      const text = `${task.title}
-${task.notes}
-${task.labels.join(" ")}
-${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
-      return text.includes(query);
-    });
+    const matches2 = this.searchMatches(tasks, projects);
     this.renderTaskList(container, matches2, projects, false);
   }
   renderProjectsScreen(container, tasks, projects) {
@@ -3519,18 +3747,21 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
       this.activeProjectId = null;
     }
     if (this.projectScreen === "detail" && active) {
-      const header2 = this.renderHeader(container, active.name, active.id);
-      this.addBackButton(header2, () => {
-        this.projectScreen = "index";
-        this.requestRender();
-      });
-      const edit = header2.createEl("button", { text: t("common.edit") });
-      edit.addEventListener("click", () => {
-        this.projectScreen = "edit";
-        this.requestRender();
-      });
+      const visibleTasks = filterTasks(tasks.filter((task) => task.projectId === active.id), "all", this.filterState.value());
+      const header2 = this.renderHeader(container, active.name, active.id, () => visibleTasks);
+      if (!this.selectionMode) {
+        this.addBackButton(header2, () => {
+          this.projectScreen = "index";
+          this.requestRender();
+        });
+        const edit = header2.createEl("button", { text: t("common.edit") });
+        edit.addEventListener("click", () => {
+          this.projectScreen = "edit";
+          this.requestRender();
+        });
+      }
       this.renderSortControl(container);
-      this.renderTaskList(container, tasks.filter((task) => !task.completed && task.projectId === active.id), projects, true);
+      this.renderTaskList(container, visibleTasks, projects, true);
       return;
     }
     if (this.projectScreen === "edit" && active) {
@@ -3600,157 +3831,9 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
       await this.plugin.projects.remove(project);
       this.activeProjectId = null;
       this.projectScreen = "index";
-      new import_obsidian6.Notice(t("projects.deletedNotice"));
+      new import_obsidian8.Notice(t("projects.deletedNotice"));
       this.requestRender();
     });
-  }
-  renderFilterScreen(container, tasks, projects) {
-    const { t, locale } = this.plugin.i18n();
-    const controls = container.createDiv({ cls: "taskmate-filter-controls" });
-    this.renderHeader(controls, t("filter.title"));
-    const results = container.createDiv({ cls: "taskmate-filter-results taskmate-scroll-region" });
-    const updateResults = () => this.renderFilterResults(results, tasks, projects);
-    const priorities = controls.createDiv({ cls: "taskmate-section" });
-    priorities.createEl("h3", { text: t("filter.priority") });
-    const priorityButtons = priorities.createDiv({ cls: "taskmate-filter-buttons" });
-    [1, 2, 3].forEach((priority) => {
-      const selected = this.selectedPriorities.includes(priority);
-      const button = priorityButtons.createEl("button", { text: t("filter.priorityValue", { priority }), cls: selected ? "is-active" : "" });
-      button.addEventListener("click", () => {
-        const currentlySelected = this.selectedPriorities.includes(priority);
-        this.selectedPriorities = currentlySelected ? this.selectedPriorities.filter((value) => value !== priority) : [...this.selectedPriorities, priority];
-        button.toggleClass("is-active", !currentlySelected);
-        updateResults();
-      });
-    });
-    const labelsSection = controls.createDiv({ cls: "taskmate-section taskmate-filter-label-section" });
-    labelsSection.createEl("h3", { text: t("filter.labels") });
-    const allLabels = [...new Set(tasks.flatMap((task) => task.labels))].sort((a, b) => compareDisplayText(a, b, locale)).slice(0, 500);
-    const picker = labelsSection.createDiv({ cls: "taskmate-filter-label-picker" });
-    const inputRow = picker.createDiv({ cls: "taskmate-filter-label-input" });
-    const tokenHost = inputRow.createDiv({ cls: "taskmate-selected-labels" });
-    const labelSearch = inputRow.createEl("input", {
-      type: "text",
-      value: this.labelQuery,
-      placeholder: t("filter.labelSearchPlaceholder"),
-      cls: "taskmate-label-search",
-      attr: {
-        "aria-label": t("filter.labelSearchAriaLabel"),
-        "inputmode": "search",
-        "enterkeyhint": "search"
-      }
-    });
-    const suggestions = picker.createDiv({ cls: "taskmate-filter-label-suggestions is-hidden" });
-    let pickerOpen = false;
-    let labelComposing = false;
-    const renderTokens = () => {
-      tokenHost.empty();
-      this.selectedLabels.forEach((label) => {
-        const token = tokenHost.createEl("button", {
-          text: `${label} \xD7`,
-          cls: "taskmate-label-token",
-          attr: { "aria-label": t("filter.removeLabelAriaLabel", { label }) }
-        });
-        token.addEventListener("click", () => {
-          this.selectedLabels = this.selectedLabels.filter((item) => item !== label);
-          renderTokens();
-          renderSuggestions();
-          updateResults();
-        });
-      });
-    };
-    const renderSuggestions = () => {
-      suggestions.empty();
-      suggestions.toggleClass("is-hidden", !pickerOpen);
-      if (!pickerOpen) return;
-      const candidates = filterLabelSuggestions(
-        allLabels,
-        this.plugin.settings.recentLabels ?? [],
-        this.labelQuery,
-        this.selectedLabels
-      );
-      if (candidates.length === 0) {
-        suggestions.addClass("is-hidden");
-        return;
-      }
-      suggestions.createDiv({
-        text: t(this.labelQuery.trim() ? "filter.matchingLabels" : "filter.recentLabels"),
-        cls: "taskmate-suggestion-heading"
-      });
-      const chips = suggestions.createDiv({ cls: "taskmate-suggestion-chips" });
-      candidates.forEach((label) => {
-        const choose = chips.createEl("button", { text: label, cls: "taskmate-suggestion-chip" });
-        choose.addEventListener("click", () => {
-          this.selectedLabels = [...this.selectedLabels, label];
-          this.labelQuery = "";
-          labelSearch.value = "";
-          renderTokens();
-          renderSuggestions();
-          updateResults();
-          labelSearch.focus();
-        });
-      });
-    };
-    labelSearch.addEventListener("compositionstart", () => {
-      labelComposing = true;
-    });
-    labelSearch.addEventListener("compositionend", () => {
-      labelComposing = false;
-      this.labelQuery = labelSearch.value;
-      renderSuggestions();
-    });
-    labelSearch.addEventListener("input", (event) => {
-      this.labelQuery = labelSearch.value;
-      if (labelComposing || event.isComposing) return;
-      renderSuggestions();
-    });
-    labelSearch.addEventListener("focus", () => {
-      pickerOpen = true;
-      renderSuggestions();
-    });
-    labelsSection.addEventListener("focusout", () => {
-      window.setTimeout(() => {
-        if (labelsSection.contains(document.activeElement)) return;
-        pickerOpen = false;
-        renderSuggestions();
-      }, 0);
-    });
-    renderTokens();
-    const completion = controls.createDiv({ cls: "taskmate-section taskmate-completion-filter" });
-    completion.createEl("h3", { text: t("filter.completion") });
-    const completionLabel = completion.createEl("label");
-    const completionCheckbox = completionLabel.createEl("input", { type: "checkbox" });
-    completionCheckbox.checked = this.includeCompleted;
-    completionLabel.createSpan({ text: t("filter.includeCompleted") });
-    completionCheckbox.addEventListener("change", () => {
-      this.includeCompleted = completionCheckbox.checked;
-      updateResults();
-    });
-    updateResults();
-  }
-  renderFilterResults(container, tasks, projects) {
-    const { t } = this.plugin.i18n();
-    this.destroyTaskList();
-    container.empty();
-    const selectionCount = this.selectedPriorities.length + this.selectedLabels.length + Number(this.includeCompleted);
-    const resultHeader = container.createDiv({ cls: "taskmate-filter-result-heading" });
-    resultHeader.createEl("h3", { text: selectionCount > 0 ? t("filter.results") : t("filter.select") });
-    if (selectionCount > 0) {
-      const clear = resultHeader.createEl("button", { text: t("filter.clearAll") });
-      clear.addEventListener("click", () => {
-        this.selectedPriorities = [];
-        this.selectedLabels = [];
-        this.includeCompleted = false;
-        this.requestRender();
-      });
-      const matches2 = filterTasks(tasks, "all", {
-        priorities: this.selectedPriorities,
-        labels: this.selectedLabels,
-        search: "",
-        includeCompleted: this.includeCompleted
-      });
-      this.renderTaskList(container, matches2, projects, false);
-    }
   }
   renderSortControl(container) {
     const { t } = this.plugin.i18n();
@@ -3781,6 +3864,7 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
         }
         this.requestRender();
       });
+      button.disabled = this.selectionMode;
     });
   }
   renderTaskList(container, source, projects, allowReorder) {
@@ -3790,7 +3874,9 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
       grouping: "flat",
       sortMode: this.sortMode,
       sortDirection: this.sortDirection,
-      allowReorder
+      allowReorder,
+      selectionMode: this.selectionMode,
+      selectedIds: this.selectedTaskIds
     });
     this.mountTaskList(container, model, source);
   }
@@ -3801,7 +3887,9 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
       grouping: "scheduled",
       sortMode: this.sortMode,
       sortDirection: this.sortDirection,
-      allowReorder: true
+      allowReorder: true,
+      selectionMode: this.selectionMode,
+      selectedIds: this.selectedTaskIds
     });
     this.mountTaskList(container, model, source);
   }
@@ -3811,7 +3899,7 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
       empty: t("tasks.empty"),
       reorderAriaLabel: t("tasks.reorderAriaLabel"),
       completeAriaLabel: (title) => t("tasks.completeAriaLabel", { title }),
-      moreAriaLabel: t("tasks.moreAriaLabel"),
+      selectAriaLabel: (title) => t("tasks.selectAriaLabel", { title }),
       sectionTitles: {
         overdue: t("view.overdue"),
         today: t("view.today"),
@@ -3834,7 +3922,6 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
     this.renderedTaskList = null;
   }
   async handleTaskListAction(action, tasksById) {
-    const { t } = this.plugin.i18n();
     if (action.type === "reorder") {
       await this.plugin.repository.reorder(action.taskId, action.previousId, action.nextId);
       this.requestRender();
@@ -3842,16 +3929,10 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
     }
     const task = tasksById.get(action.taskId);
     if (!task) return;
-    if (action.type === "show-actions") {
-      const menu = new import_obsidian6.Menu();
-      menu.addItem((item) => item.setTitle(t("common.edit")).setIcon("pencil").onClick(() => void this.openEditTask(task)));
-      menu.addItem((item) => item.setTitle(t("common.delete")).setIcon("trash").onClick(async () => {
-        if (!window.confirm(t("tasks.deleteConfirm", { title: task.title }))) return;
-        await this.plugin.repository.remove(task);
-        new import_obsidian6.Notice(t("tasks.deletedNotice"));
-        this.requestRender();
-      }));
-      menu.showAtMouseEvent(action.event);
+    if (action.type === "toggle-selected") {
+      if (this.selectedTaskIds.has(task.id)) this.selectedTaskIds.delete(task.id);
+      else this.selectedTaskIds.add(task.id);
+      this.requestRender();
       return;
     }
     if (action.type === "open") {
@@ -3881,6 +3962,127 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
       });
     });
   }
+  searchMatches(tasks, projects) {
+    const query = this.searchQuery.trim().toLocaleLowerCase();
+    if (!query) return [];
+    const projectNames = new Map(projects.map((project) => [project.id, project.name.toLocaleLowerCase()]));
+    const matches2 = tasks.filter((task) => {
+      const text = `${task.title}
+${task.notes}
+${task.labels.join(" ")}
+${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
+      return text.includes(query);
+    });
+    return filterTasks(matches2, "all", this.filterState.value());
+  }
+  renderAdjustMenu(header, selectionScope) {
+    const { t } = this.plugin.i18n();
+    const count = this.filterState.count();
+    const button = header.createEl("button", {
+      cls: `taskmate-adjust${count > 0 ? " is-active" : ""}`,
+      attr: { "aria-label": count > 0 ? t("adjust.ariaLabelActive", { count }) : t("adjust.ariaLabel") }
+    });
+    (0, import_obsidian8.setIcon)(button, "sliders-horizontal");
+    if (count > 0) button.createSpan({ text: String(count), cls: "taskmate-adjust-count" });
+    button.addEventListener("click", (event) => {
+      const menu = new import_obsidian8.Menu();
+      const scope = selectionScope();
+      menu.addItem((item) => item.setTitle(t("selection.start")).setIcon("list-checks").setDisabled(scope.length === 0).onClick(() => {
+        this.selectionScopeIds = new Set(scope.map((task) => task.id));
+        this.selectedTaskIds.clear();
+        this.selectionMode = true;
+        this.requestRender();
+      }));
+      menu.addItem((item) => item.setTitle(count > 0 ? t("filter.change") : t("filter.title")).setIcon("list-filter").onClick(() => this.openFilterModal()));
+      if (count > 0) {
+        menu.addSeparator();
+        menu.addItem((item) => item.setTitle(t("filter.clearActive")).setIcon("filter-x").onClick(() => this.clearActiveFilters()));
+      }
+      menu.showAtMouseEvent(event);
+    });
+  }
+  renderSelectionToolbar(root, tasks) {
+    const { t } = this.plugin.i18n();
+    const existingIds = new Set(tasks.map((task) => task.id));
+    this.selectionScopeIds = new Set([...this.selectionScopeIds].filter((id) => existingIds.has(id)));
+    this.selectedTaskIds = new Set([...this.selectedTaskIds].filter((id) => this.selectionScopeIds.has(id)));
+    const toolbar = root.createDiv({ cls: "taskmate-selection-toolbar", attr: { "aria-label": t("selection.ariaLabel") } });
+    const exit = toolbar.createEl("button", { text: `\xD7 ${t("selection.exit")}` });
+    exit.addEventListener("click", () => this.exitSelectionMode());
+    toolbar.createDiv({ text: t("selection.count", { count: this.selectedTaskIds.size }), cls: "taskmate-selection-count" });
+    const selectAll = toolbar.createEl("button", { text: t("selection.selectAll") });
+    selectAll.disabled = this.selectionScopeIds.size === 0;
+    selectAll.addEventListener("click", () => {
+      this.selectedTaskIds = this.selectedTaskIds.size === this.selectionScopeIds.size ? /* @__PURE__ */ new Set() : new Set(this.selectionScopeIds);
+      this.requestRender();
+    });
+    const edit = toolbar.createEl("button", { text: t("common.edit") });
+    edit.disabled = this.selectedTaskIds.size === 0;
+    edit.addEventListener("click", () => void this.editSelectedTasks(tasks));
+    const remove = toolbar.createEl("button", { text: t("common.delete"), cls: "mod-warning" });
+    remove.disabled = this.selectedTaskIds.size === 0;
+    remove.addEventListener("click", () => void this.deleteSelectedTasks(tasks));
+  }
+  exitSelectionMode() {
+    this.selectionMode = false;
+    this.selectedTaskIds.clear();
+    this.selectionScopeIds.clear();
+    this.requestRender();
+  }
+  openFilterModal() {
+    new TaskFilterModal(this.app, this.filterState.value(), this.plugin.i18n(), (filters) => {
+      this.filterState.replace(filters);
+      this.requestRender();
+    }).open();
+  }
+  clearActiveFilters() {
+    this.filterState.clear();
+    new import_obsidian8.Notice(this.plugin.i18n().t("filter.clearedNotice"));
+    this.requestRender();
+  }
+  async editSelectedTasks(tasks) {
+    const selected = tasks.filter((task) => this.selectedTaskIds.has(task.id));
+    if (selected.length === 1) {
+      await this.openEditTask(selected[0], () => this.exitSelectionMode());
+      return;
+    }
+    if (selected.length < 2) return;
+    const projects = await this.plugin.projects.list();
+    new BulkTaskModal(this.app, selected.length, projects, this.plugin.i18n(), async (changes) => {
+      await this.applyBulkChanges(selected, changes);
+    }).open();
+  }
+  async applyBulkChanges(tasks, changes) {
+    const results = await Promise.allSettled(tasks.map(
+      (task) => this.plugin.repository.update(task, buildBulkTaskPatch(task, changes))
+    ));
+    if (typeof changes.projectId === "string") {
+      const project = (await this.plugin.projects.list()).find((item) => item.id === changes.projectId);
+      if (project) await this.plugin.projects.touch(project);
+    }
+    await this.rememberLabels(changes.addLabels);
+    this.finishBulkAction(tasks, results, "selection.updatedNotice");
+  }
+  async deleteSelectedTasks(tasks) {
+    const { t } = this.plugin.i18n();
+    const selected = tasks.filter((task) => this.selectedTaskIds.has(task.id));
+    if (selected.length === 0 || !window.confirm(t("selection.deleteConfirm", { count: selected.length }))) return;
+    const results = await Promise.allSettled(selected.map((task) => this.plugin.repository.remove(task)));
+    this.finishBulkAction(selected, results, "selection.deletedNotice");
+  }
+  finishBulkAction(tasks, results, successKey) {
+    const { t } = this.plugin.i18n();
+    const failed = failedBulkTasks(tasks, results);
+    if (failed.length === 0) {
+      new import_obsidian8.Notice(t(successKey, { count: tasks.length }));
+      this.exitSelectionMode();
+      return;
+    }
+    this.selectedTaskIds = new Set(failed.map((task) => task.id));
+    this.selectionScopeIds = new Set(failed.map((task) => task.id));
+    new import_obsidian8.Notice(t("selection.partialFailure", { failed: failed.length, total: tasks.length }));
+    this.requestRender();
+  }
   addBackButton(header, action) {
     const button = header.createEl("button", {
       text: "\u2039",
@@ -3909,7 +4111,7 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
       this.requestRender();
     }).open();
   }
-  async openEditTask(task) {
+  async openEditTask(task, afterAction) {
     const projects = await this.plugin.projects.list();
     new TaskModal(this.app, task, projects, this.plugin.settings.recentLabels ?? [], task.projectId, this.plugin.i18n(), async (draft) => {
       await this.plugin.repository.update(task, draft);
@@ -3918,7 +4120,13 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
         const project = projects.find((item) => item.id === draft.projectId);
         if (project) await this.plugin.projects.touch(project);
       }
-      this.requestRender();
+      if (afterAction) afterAction();
+      else this.requestRender();
+    }, async () => {
+      await this.plugin.repository.remove(task);
+      new import_obsidian8.Notice(this.plugin.i18n().t("tasks.deletedNotice"));
+      if (afterAction) afterAction();
+      else this.requestRender();
     }).open();
   }
   openCreateProject() {
@@ -3939,17 +4147,17 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
 };
 
 // src/i18n/obsidian-locale.ts
-var import_obsidian7 = require("obsidian");
+var import_obsidian9 = require("obsidian");
 function detectObsidianLanguage() {
   try {
-    return typeof import_obsidian7.getLanguage === "function" ? (0, import_obsidian7.getLanguage)() : void 0;
+    return typeof import_obsidian9.getLanguage === "function" ? (0, import_obsidian9.getLanguage)() : void 0;
   } catch {
     return void 0;
   }
 }
 
 // src/main.ts
-var TaskMatePlugin = class extends import_obsidian8.Plugin {
+var TaskMatePlugin = class extends import_obsidian10.Plugin {
   settings = DEFAULT_SETTINGS;
   repository;
   projects;
@@ -3961,10 +4169,10 @@ var TaskMatePlugin = class extends import_obsidian8.Plugin {
     this.projects = new ProjectRepository(this.app, () => this.settings.projectFolder);
     try {
       const migrated = await this.repository.migrateLegacyFileNames();
-      if (migrated > 0) new import_obsidian8.Notice(t("notice.migratedTaskNames", { count: migrated }));
+      if (migrated > 0) new import_obsidian10.Notice(t("notice.migratedTaskNames", { count: migrated }));
     } catch (error) {
       console.error("TaskMate could not migrate legacy task filenames", error);
-      new import_obsidian8.Notice(t("notice.migrationFailed"));
+      new import_obsidian10.Notice(t("notice.migrationFailed"));
     }
     this.registerView(TODO_VIEW_TYPE, (leaf) => new TodoListView(leaf, this));
     this.addSettingTab(new TaskMateSettingTab(this.app, this));
@@ -3986,23 +4194,23 @@ var TaskMatePlugin = class extends import_obsidian8.Plugin {
       checkCallback: (checking) => this.includeCurrentFolder(checking)
     });
     const scheduleRefresh = (file) => {
-      const taskPrefix = `${(0, import_obsidian8.normalizePath)(this.settings.taskFolder)}/`;
-      const projectPrefix = `${(0, import_obsidian8.normalizePath)(this.settings.projectFolder)}/`;
+      const taskPrefix = `${(0, import_obsidian10.normalizePath)(this.settings.taskFolder)}/`;
+      const projectPrefix = `${(0, import_obsidian10.normalizePath)(this.settings.projectFolder)}/`;
       if (!file.path.startsWith(taskPrefix) && !file.path.startsWith(projectPrefix)) return;
       if (this.refreshTimer !== null) window.clearTimeout(this.refreshTimer);
       this.refreshTimer = window.setTimeout(() => this.refreshViews(), 100);
     };
     this.registerEvent(this.app.vault.on("create", (file) => {
-      if (file instanceof import_obsidian8.TFile) scheduleRefresh(file);
+      if (file instanceof import_obsidian10.TFile) scheduleRefresh(file);
     }));
     this.registerEvent(this.app.vault.on("modify", (file) => {
-      if (file instanceof import_obsidian8.TFile) scheduleRefresh(file);
+      if (file instanceof import_obsidian10.TFile) scheduleRefresh(file);
     }));
     this.registerEvent(this.app.vault.on("delete", (file) => {
-      if (file instanceof import_obsidian8.TFile) scheduleRefresh(file);
+      if (file instanceof import_obsidian10.TFile) scheduleRefresh(file);
     }));
     this.registerEvent(this.app.vault.on("rename", (file) => {
-      if (file instanceof import_obsidian8.TFile) scheduleRefresh(file);
+      if (file instanceof import_obsidian10.TFile) scheduleRefresh(file);
     }));
   }
   onunload() {
@@ -4043,7 +4251,7 @@ var TaskMatePlugin = class extends import_obsidian8.Plugin {
         frontmatter["taskmate-source"] = value;
       }).then(() => {
         const { t } = this.i18n();
-        new import_obsidian8.Notice(value ? t("notice.noteIncluded") : t("notice.noteExcluded"));
+        new import_obsidian10.Notice(value ? t("notice.noteIncluded") : t("notice.noteExcluded"));
       });
     }
     return true;
@@ -4053,9 +4261,9 @@ var TaskMatePlugin = class extends import_obsidian8.Plugin {
     const folder = file?.parent?.path;
     if (!file || !folder || folder === "/") return false;
     if (!checking) {
-      const normalized = (0, import_obsidian8.normalizePath)(folder);
+      const normalized = (0, import_obsidian10.normalizePath)(folder);
       if (!this.settings.sourceFolders.includes(normalized)) this.settings.sourceFolders.push(normalized);
-      void this.saveSettings().then(() => new import_obsidian8.Notice(this.i18n().t("notice.folderIncluded", { folder: normalized })));
+      void this.saveSettings().then(() => new import_obsidian10.Notice(this.i18n().t("notice.folderIncluded", { folder: normalized })));
     }
     return true;
   }

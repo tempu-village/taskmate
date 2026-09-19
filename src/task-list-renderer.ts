@@ -3,15 +3,15 @@ import type { TaskListModel, TaskListRow, TaskListSectionId } from "./task-list-
 
 export type TaskListAction =
   | { type: "open"; taskId: string }
+  | { type: "toggle-selected"; taskId: string }
   | { type: "toggle-completed"; taskId: string; completed: boolean }
-  | { type: "show-actions"; taskId: string; event: MouseEvent }
   | { type: "reorder"; taskId: string; previousId: string | null; nextId: string | null };
 
 export interface TaskListCopy {
   empty: string;
   reorderAriaLabel: string;
   completeAriaLabel: (title: string) => string;
-  moreAriaLabel: string;
+  selectAriaLabel: (title: string) => string;
   sectionTitles: Record<Exclude<TaskListSectionId, "default">, string>;
 }
 
@@ -38,35 +38,53 @@ function renderRow(
   list: HTMLElement,
   row: TaskListRow,
   reorderEnabled: boolean,
+  selectionMode: boolean,
   copy: TaskListCopy,
   signal: AbortSignal,
   dispatch: DispatchTaskListAction
 ): void {
   const task = appendElement(list, "div", {
-    className: `taskmate-task${row.completed ? " is-completed" : ""}`,
-    attributes: { role: "listitem" }
+    className: `taskmate-task${row.completed ? " is-completed" : ""}${row.selected ? " is-selected" : ""}`,
+    attributes: { role: "listitem", "aria-selected": String(row.selected) }
   });
   task.dataset.taskId = row.id;
+  if (selectionMode) {
+    task.addEventListener("click", (event) => {
+      if ((event.target as HTMLElement).closest("input")) return;
+      void dispatch({ type: "toggle-selected", taskId: row.id });
+    }, { signal });
+  }
 
-  const drag = appendElement(task, "button", {
-    className: "taskmate-drag",
-    text: "⠿",
-    attributes: { "aria-label": copy.reorderAriaLabel }
-  });
-  drag.disabled = !reorderEnabled;
+  if (selectionMode) {
+    const selection = appendElement(task, "input", {
+      className: "taskmate-select-task",
+      attributes: { type: "checkbox", "aria-label": copy.selectAriaLabel(row.title) }
+    });
+    selection.checked = row.selected;
+    selection.addEventListener("change", () => {
+      void dispatch({ type: "toggle-selected", taskId: row.id });
+    }, { signal });
+  } else {
+    const drag = appendElement(task, "button", {
+      className: "taskmate-drag",
+      text: "⠿",
+      attributes: { "aria-label": copy.reorderAriaLabel }
+    });
+    drag.disabled = !reorderEnabled;
 
-  const checkbox = appendElement(task, "input", {
-    attributes: { type: "checkbox", "aria-label": copy.completeAriaLabel(row.title) }
-  });
-  checkbox.checked = row.completed;
-  checkbox.addEventListener("change", () => {
-    void dispatch({ type: "toggle-completed", taskId: row.id, completed: checkbox.checked });
-  }, { signal });
+    const checkbox = appendElement(task, "input", {
+      attributes: { type: "checkbox", "aria-label": copy.completeAriaLabel(row.title) }
+    });
+    checkbox.checked = row.completed;
+    checkbox.addEventListener("change", () => {
+      void dispatch({ type: "toggle-completed", taskId: row.id, completed: checkbox.checked });
+    }, { signal });
+  }
 
   const body = appendElement(task, "div", { className: "taskmate-task-body" });
   const title = appendElement(body, "button", { className: "taskmate-title", text: row.title });
   title.addEventListener("click", () => {
-    void dispatch({ type: "open", taskId: row.id });
+    if (!selectionMode) void dispatch({ type: "open", taskId: row.id });
   }, { signal });
 
   const metadata = appendElement(body, "div", { className: "taskmate-metadata" });
@@ -78,14 +96,6 @@ function renderRow(
   if (row.projectName) appendElement(metadata, "span", { text: row.projectName });
   row.labels.forEach((label) => appendElement(metadata, "span", { text: `#${label}` }));
 
-  const more = appendElement(task, "button", {
-    className: "taskmate-more",
-    text: "•••",
-    attributes: { "aria-label": copy.moreAriaLabel }
-  });
-  more.addEventListener("click", (event) => {
-    void dispatch({ type: "show-actions", taskId: row.id, event });
-  }, { signal });
 }
 
 export function renderTaskList(
@@ -97,7 +107,7 @@ export function renderTaskList(
   const AbortControllerClass = container.ownerDocument.defaultView?.AbortController ?? AbortController;
   const controller = new AbortControllerClass();
   const list = appendElement(container, "div", {
-    className: `taskmate-list${model.grouping === "scheduled" ? " taskmate-scheduled-list" : ""}`,
+    className: `taskmate-list${model.grouping === "scheduled" ? " taskmate-scheduled-list" : ""}${model.selectionMode ? " is-selection-mode" : ""}`,
     attributes: { role: "list" }
   });
   const rowCount = model.sections.reduce((count, section) => count + section.rows.length, 0);
@@ -114,7 +124,7 @@ export function renderTaskList(
         attributes: { role: "heading", "aria-level": "3" }
       });
     }
-    section.rows.forEach((row) => renderRow(list, row, model.reorderEnabled, copy, controller.signal, dispatch));
+    section.rows.forEach((row) => renderRow(list, row, model.reorderEnabled, model.selectionMode, copy, controller.signal, dispatch));
   });
 
   const sortable = Sortable.create(list, {

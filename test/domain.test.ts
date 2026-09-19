@@ -70,6 +70,16 @@ describe("filters and sorting", () => {
     expect(filterTasks(tasks, "all", { priorities: [], labels: [], search: "", includeCompleted: true }).map((item) => item.id)).toEqual(["open", "done"]);
   });
 
+  it("includes completed tasks inside dated and undated views when explicitly enabled", () => {
+    const tasks = [
+      task({ id: "dated", date: "2026-09-20", completed: true }),
+      task({ id: "undated", completed: true })
+    ];
+    const filters = { priorities: [], labels: [], search: "", includeCompleted: true };
+    expect(filterTasks(tasks, "scheduled", filters).map((item) => item.id)).toEqual(["dated"]);
+    expect(filterTasks(tasks, "unplanned", filters).map((item) => item.id)).toEqual(["undated"]);
+  });
+
   it("preserves global rank in manual mode", () => {
     const tasks = [task({ id: "late", rank: 20 }), task({ id: "early", rank: 10 })];
     expect(sortTasks(tasks, "manual").map((item) => item.id)).toEqual(["early", "late"]);

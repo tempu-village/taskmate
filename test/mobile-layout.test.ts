@@ -72,27 +72,30 @@ describe("mobile layout", () => {
     expect(results).toMatch(/overflow-y\s*:\s*auto\s*;/);
   });
 
-  it("keeps date and filter controls outside their result scrollers", () => {
+  it("keeps date controls outside the result scroller and moves filters to a modal", () => {
     expect(viewSource).toContain('createDiv({ cls: "taskmate-date-controls" })');
     expect(viewSource).toContain('createDiv({ cls: "taskmate-date-results taskmate-scroll-region" })');
-    expect(viewSource).toContain('createDiv({ cls: "taskmate-filter-controls" })');
-    expect(viewSource).toContain('createDiv({ cls: "taskmate-filter-results taskmate-scroll-region" })');
+    expect(viewSource).toContain("new TaskFilterModal");
+    expect(viewSource).not.toContain('screen: "filter"');
 
-    for (const selector of [".taskmate-date-controls", ".taskmate-filter-controls"]) {
-      expect(declarations(selector)).toMatch(/flex\s*:\s*0\s+0\s+auto\s*;/);
-    }
-    for (const selector of [".taskmate-date-results", ".taskmate-filter-results"]) {
-      const rule = declarations(selector);
-      expect(rule).toMatch(/flex\s*:\s*1\s+1\s+auto\s*;/);
-      expect(rule).toMatch(/min-height\s*:\s*0\s*;/);
-      expect(rule).toMatch(/overflow-y\s*:\s*auto\s*;/);
-    }
+    expect(declarations(".taskmate-date-controls")).toMatch(/flex\s*:\s*0\s+0\s+auto\s*;/);
+    const rule = declarations(".taskmate-date-results");
+    expect(rule).toMatch(/flex\s*:\s*1\s+1\s+auto\s*;/);
+    expect(rule).toMatch(/min-height\s*:\s*0\s*;/);
+    expect(rule).toMatch(/overflow-y\s*:\s*auto\s*;/);
+  });
+
+  it("offers direct filter clearing only while criteria are active", () => {
+    expect(viewSource).toContain('count > 0 ? t("filter.change") : t("filter.title")');
+    expect(viewSource).toContain('setTitle(t("filter.clearActive"))');
+    expect(viewSource).toContain("if (count > 0)");
+    expect(viewSource).toContain("this.filterState.clear()");
   });
 
   it("avoids Android WebView's native search-input focus behavior", () => {
     expect(viewSource).not.toMatch(/\btype:\s*"search",/);
-    expect(viewSource.match(/"inputmode": "search"/g)).toHaveLength(2);
-    expect(viewSource.match(/"enterkeyhint": "search"/g)).toHaveLength(2);
+    expect(viewSource.match(/"inputmode": "search"/g)).toHaveLength(1);
+    expect(viewSource.match(/"enterkeyhint": "search"/g)).toHaveLength(1);
   });
 
   it("keeps task modal actions outside the scrollable fields", () => {
@@ -143,7 +146,6 @@ describe("mobile layout", () => {
     expect(viewSource).toContain('cls: "taskmate-content taskmate-scroll-region"');
     expect(viewSource).toContain('cls: "taskmate-search-results taskmate-scroll-region"');
     expect(viewSource).toContain('cls: "taskmate-date-results taskmate-scroll-region"');
-    expect(viewSource).toContain('cls: "taskmate-filter-results taskmate-scroll-region"');
 
     const scrollRegion = declarations(".is-phone .taskmate-scroll-region");
     expect(scrollRegion).toMatch(/padding-bottom\s*:\s*max\(/);

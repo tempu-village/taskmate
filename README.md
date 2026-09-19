@@ -16,11 +16,13 @@ TaskMate also includes an optional portable Agent Skill. The Skill turns explici
 
 ## Current features
 
-- Four focused screens: Date, Search, Projects, and Filter
-- Today, Next 7 days, Upcoming, All, Unplanned, and Completed views
+- Three focused destinations: Date, Search, and Projects
+- Scheduled, All, and No date views, with overdue, today, and later sections in Scheduled
+- An Adjust menu that filters the current list and provides explicit task selection
+- Single-task deletion in the editor and bulk editing or deletion from selection mode
 - Search with up to 10 recent search terms
 - Markdown-backed projects with five recent projects, rename, and safe deletion
-- Priority 1–3 and up to 500 searchable, collapsible, favorite labels
+- Priority 1–3 and up to 500 labels, with filters for priority, label, and completion state
 - One-tap Today, Tomorrow, 7 days later, and No date suggestions
 - Up to 10 recently saved label suggestions
 - One global manual drag order plus date, priority, and creation sorting
@@ -35,7 +37,7 @@ TaskMate also includes an optional portable Agent Skill. The Skill turns explici
 1. Install and enable TaskMate.
 2. Open the command palette and run **TaskMate: Open task list**.
 3. Select **+ Add**, enter a title, and save the task.
-4. Use the Date screen to view Today, Next 7 days, Upcoming, All, Unplanned, or Completed tasks.
+4. Use the Date screen to view Scheduled, All, or No date tasks. Use Adjust to filter or select the current list.
 5. Select **Settings → TaskMate → Language** to choose Auto, English, or 日本語.
 
 The language change updates TaskMate views and settings immediately. Reload the plugin to update command names and the ribbon tooltip.

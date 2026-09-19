@@ -44,6 +44,21 @@
 .taskmate-header h2 { margin: 0 auto 0 0; }
 .taskmate-header .taskmate-back + h2 { margin-left: 0; }
 .taskmate-add { min-height: 36px; }
+.taskmate-adjust {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  min-height: 38px;
+}
+.taskmate-adjust.is-active { color: var(--text-on-accent); background: var(--interactive-accent); }
+.taskmate-adjust-count {
+  min-width: 1.2rem;
+  margin-left: 0.25rem;
+  font-size: var(--font-smallest);
+  font-weight: 700;
+}
 
 .taskmate-smart-views {
   display: grid;
@@ -182,6 +197,12 @@
 }
 
 .taskmate-task.sortable-ghost { opacity: 0.35; }
+.taskmate-task.is-selected {
+  background: var(--background-modifier-active-hover);
+  border-radius: 8px;
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: -2px;
+}
 .taskmate-task.is-completed .taskmate-title { text-decoration: line-through; color: var(--text-muted); }
 .taskmate-drag,
 .taskmate-more,
@@ -203,6 +224,7 @@
 .taskmate-priority-2 { color: var(--color-orange); }
 .taskmate-priority-3 { color: var(--color-blue); }
 .taskmate-more { color: var(--text-muted); padding: 0.5rem; }
+.taskmate-select-task { flex: 0 0 auto; }
 .taskmate-empty { padding: 2.5rem 1rem; text-align: center; color: var(--text-muted); }
 .taskmate-empty-compact { padding: 0.8rem 0; color: var(--text-muted); }
 
@@ -284,7 +306,7 @@
   z-index: 10;
   flex: 0 0 auto;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   min-height: 52px;
   background: var(--background-primary);
   border-bottom: 1px solid var(--background-modifier-border);
@@ -310,6 +332,24 @@
 
 .taskmate-navigation button.is-active { color: var(--interactive-accent); font-weight: 700; }
 .taskmate-nav-icon { font-size: 1.2rem; line-height: 1; }
+.taskmate-selection-toolbar {
+  z-index: 10;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 52px;
+  padding: 0.35rem 0.6rem;
+  background: var(--background-primary);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+.taskmate-selection-toolbar button { min-height: 40px; }
+.taskmate-selection-count {
+  flex: 1 1 auto;
+  min-width: 5rem;
+  text-align: center;
+  font-weight: 700;
+}
 .taskmate-back { flex: 0 0 38px; font-size: 1.5rem; }
 .taskmate-task-modal .modal-content {
   display: flex;
@@ -338,12 +378,28 @@
 .taskmate-modal-actions {
   flex: 0 0 auto;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 0.5rem;
   margin-top: 0.5rem;
   padding-top: 0.75rem;
   background: var(--background-primary);
   border-top: 1px solid var(--background-modifier-border);
+}
+.taskmate-modal-primary-actions { display: flex; gap: 0.5rem; margin-left: auto; }
+.taskmate-delete-task {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 40px;
+  color: var(--text-error);
+  background: transparent;
+  border: 1px solid var(--text-error);
+}
+.taskmate-delete-task:hover { color: var(--text-on-accent); background: var(--text-error); }
+
+@media (max-width: 520px) {
+  .taskmate-selection-toolbar { flex-wrap: wrap; }
+  .taskmate-selection-count { order: -1; flex-basis: 100%; }
 }
 .taskmate-folder-list { width: min(32rem, 100%); }
 

@@ -79,4 +79,23 @@ describe("task-list presentation model", () => {
       ["later", ["later"]]
     ]);
   });
+
+  it("marks selected rows and disables manual reordering in selection mode", () => {
+    const model = buildTaskListModel({
+      tasks: [task({ id: "selected" }), task({ id: "other" })],
+      projects: [],
+      grouping: "flat",
+      sortMode: "manual",
+      sortDirection: "asc",
+      allowReorder: true,
+      selectionMode: true,
+      selectedIds: new Set(["selected"])
+    });
+    expect(model.reorderEnabled).toBe(false);
+    expect(model.selectionMode).toBe(true);
+    expect(model.sections[0].rows.map((row) => [row.id, row.selected])).toEqual([
+      ["selected", true],
+      ["other", false]
+    ]);
+  });
 });

@@ -1,6 +1,6 @@
 # ADR 0013: Simplify date views and filter completed tasks
 
-Status: Accepted
+Status: Accepted; the standalone Filter-screen placement is superseded by ADR 0016
 
 ## Context
 

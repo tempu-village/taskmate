@@ -1,20 +1,25 @@
-import { ItemView, Menu, Notice, WorkspaceLeaf } from "obsidian";
+import { ItemView, Menu, Notice, setIcon, WorkspaceLeaf } from "obsidian";
+import { BulkTaskModal } from "./bulk-task-modal";
+import { buildBulkTaskPatch, failedBulkTasks } from "./bulk-task-actions";
+import type { BulkTaskChanges } from "./bulk-task-actions";
 import { filterTasks } from "./domain";
-import type { Priority, Project, SmartView, SortDirection, SortMode, Task, TaskFilters } from "./domain";
+import type { Project, SmartView, SortDirection, SortMode, Task } from "./domain";
 import type { TranslationKey } from "./i18n";
 import { compareDisplayText } from "./i18n";
 import type TaskMatePlugin from "./main";
+import { TaskFilterModal } from "./filter-modal";
 import { ProjectModal } from "./project-modal";
 import { TaskModal } from "./task-modal";
-import { filterLabelSuggestions, recordRecentLabels } from "./task-input-suggestions";
+import { recordRecentLabels } from "./task-input-suggestions";
 import { buildTaskListModel } from "./task-list-model";
 import type { TaskListModel } from "./task-list-model";
 import { renderTaskList as renderTaskListDom } from "./task-list-renderer";
 import type { RenderedTaskList, TaskListAction, TaskListCopy } from "./task-list-renderer";
+import { TaskFilterState } from "./task-filter-state";
 
 export const TODO_VIEW_TYPE = "taskmate-list";
 
-type MainScreen = "date" | "search" | "projects" | "filter";
+type MainScreen = "date" | "search" | "projects";
 type ProjectScreen = "index" | "detail" | "edit";
 
 const SMART_VIEW_KEYS = {
@@ -33,11 +38,8 @@ const SORT_KEYS = {
 const NAV_ITEMS = [
   { screen: "date", icon: "◷", labelKey: "nav.date" },
   { screen: "search", icon: "⌕", labelKey: "nav.search" },
-  { screen: "projects", icon: "▣", labelKey: "nav.projects" },
-  { screen: "filter", icon: "≡", labelKey: "nav.filter" }
+  { screen: "projects", icon: "▣", labelKey: "nav.projects" }
 ] as const satisfies ReadonlyArray<{ screen: MainScreen; icon: string; labelKey: TranslationKey }>;
-
-const EMPTY_FILTERS: TaskFilters = { priorities: [], labels: [], search: "", includeCompleted: false };
 
 export class TodoListView extends ItemView {
   private screen: MainScreen = "date";
@@ -45,13 +47,13 @@ export class TodoListView extends ItemView {
   private sortMode: SortMode = "manual";
   private sortDirection: SortDirection = "asc";
   private searchQuery = "";
-  private selectedPriorities: Priority[] = [];
-  private selectedLabels: string[] = [];
-  private includeCompleted = false;
-  private labelQuery = "";
+  private readonly filterState = new TaskFilterState();
   private projectScreen: ProjectScreen = "index";
   private activeProjectId: string | null = null;
   private renderedTaskList: RenderedTaskList | null = null;
+  private selectionMode = false;
+  private selectedTaskIds = new Set<string>();
+  private selectionScopeIds = new Set<string>();
   private generation = 0;
 
   constructor(leaf: WorkspaceLeaf, private readonly plugin: TaskMatePlugin) {
@@ -92,24 +94,29 @@ export class TodoListView extends ItemView {
     root.empty();
     root.addClass("taskmate-view");
     const page = root.createDiv({ cls: "taskmate-page" });
-    this.renderNavigation(page);
+    if (this.selectionMode) this.renderSelectionToolbar(page, tasks);
+    else this.renderNavigation(page);
     if (this.screen === "search") {
       this.renderSearchScreen(page, tasks, projects);
     } else if (this.screen === "date") {
       this.renderDateScreen(page, tasks, projects);
-    } else if (this.screen === "filter") {
-      this.renderFilterScreen(page, tasks, projects);
     } else {
       const content = page.createDiv({ cls: "taskmate-content taskmate-scroll-region" });
       this.renderProjectsScreen(content, tasks, projects);
     }
   }
 
-  private renderHeader(container: HTMLElement, title: string, addTaskProjectId?: string | null): HTMLElement {
+  private renderHeader(
+    container: HTMLElement,
+    title: string,
+    addTaskProjectId?: string | null,
+    selectionScope?: () => Task[]
+  ): HTMLElement {
     const { t } = this.plugin.i18n();
     const header = container.createDiv({ cls: "taskmate-header" });
     header.createEl("h2", { text: title });
-    if (addTaskProjectId !== undefined) {
+    if (!this.selectionMode && selectionScope) this.renderAdjustMenu(header, selectionScope);
+    if (!this.selectionMode && addTaskProjectId !== undefined) {
       const add = header.createEl("button", { text: t("common.add"), cls: "mod-cta taskmate-add" });
       add.addEventListener("click", () => void this.openCreateTask(addTaskProjectId));
     }
@@ -119,7 +126,8 @@ export class TodoListView extends ItemView {
   private renderDateScreen(container: HTMLElement, tasks: Task[], projects: Project[]): void {
     const { t } = this.plugin.i18n();
     const controls = container.createDiv({ cls: "taskmate-date-controls" });
-    this.renderHeader(controls, "TaskMate", null);
+    const visibleTasks = filterTasks(tasks, this.smartView, this.filterState.value());
+    this.renderHeader(controls, "TaskMate", null, () => visibleTasks);
     const tabs = controls.createDiv({ cls: "taskmate-smart-views", attr: { role: "tablist" } });
     (Object.keys(SMART_VIEW_KEYS) as SmartView[]).forEach((view) => {
       const button = tabs.createEl("button", {
@@ -131,11 +139,11 @@ export class TodoListView extends ItemView {
         this.smartView = view;
         this.requestRender();
       });
+      button.disabled = this.selectionMode;
     });
 
     this.renderSortControl(controls);
     const results = container.createDiv({ cls: "taskmate-date-results taskmate-scroll-region" });
-    const visibleTasks = filterTasks(tasks, this.smartView, EMPTY_FILTERS);
     if (this.smartView === "scheduled") this.renderScheduledTaskList(results, visibleTasks, projects);
     else this.renderTaskList(results, visibleTasks, projects, true);
   }
@@ -143,7 +151,8 @@ export class TodoListView extends ItemView {
   private renderSearchScreen(container: HTMLElement, tasks: Task[], projects: Project[]): void {
     const { t } = this.plugin.i18n();
     const controls = container.createDiv({ cls: "taskmate-search-controls" });
-    this.renderHeader(controls, t("search.title"));
+    const currentMatches = () => this.searchMatches(tasks, projects);
+    this.renderHeader(controls, t("search.title"), undefined, currentMatches);
     const input = controls.createEl("input", {
       type: "text",
       value: this.searchQuery,
@@ -155,6 +164,7 @@ export class TodoListView extends ItemView {
         "enterkeyhint": "search"
       }
     });
+    input.disabled = this.selectionMode;
     const results = container.createDiv({ cls: "taskmate-search-results taskmate-scroll-region" });
     const updateResults = () => this.renderSearchResults(results, tasks, projects);
     let composing = false;
@@ -181,7 +191,7 @@ export class TodoListView extends ItemView {
     this.destroyTaskList();
     container.empty();
     const recent = this.plugin.settings.recentSearches ?? [];
-    if (recent.length > 0) {
+    if (!this.selectionMode && recent.length > 0) {
       const section = container.createDiv({ cls: "taskmate-section" });
       const heading = section.createDiv({ cls: "taskmate-section-heading" });
       heading.createEl("h3", { text: t("search.recent") });
@@ -206,11 +216,7 @@ export class TodoListView extends ItemView {
       container.createDiv({ cls: "taskmate-empty", text: t("search.emptyQuery") });
       return;
     }
-    const projectNames = new Map(projects.map((project) => [project.id, project.name.toLocaleLowerCase()]));
-    const matches = tasks.filter((task) => {
-      const text = `${task.title}\n${task.notes}\n${task.labels.join(" ")}\n${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
-      return text.includes(query);
-    });
+    const matches = this.searchMatches(tasks, projects);
     this.renderTaskList(container, matches, projects, false);
   }
 
@@ -223,18 +229,21 @@ export class TodoListView extends ItemView {
     }
 
     if (this.projectScreen === "detail" && active) {
-      const header = this.renderHeader(container, active.name, active.id);
-      this.addBackButton(header, () => {
-        this.projectScreen = "index";
-        this.requestRender();
-      });
-      const edit = header.createEl("button", { text: t("common.edit") });
-      edit.addEventListener("click", () => {
-        this.projectScreen = "edit";
-        this.requestRender();
-      });
+      const visibleTasks = filterTasks(tasks.filter((task) => task.projectId === active.id), "all", this.filterState.value());
+      const header = this.renderHeader(container, active.name, active.id, () => visibleTasks);
+      if (!this.selectionMode) {
+        this.addBackButton(header, () => {
+          this.projectScreen = "index";
+          this.requestRender();
+        });
+        const edit = header.createEl("button", { text: t("common.edit") });
+        edit.addEventListener("click", () => {
+          this.projectScreen = "edit";
+          this.requestRender();
+        });
+      }
       this.renderSortControl(container);
-      this.renderTaskList(container, tasks.filter((task) => !task.completed && task.projectId === active.id), projects, true);
+      this.renderTaskList(container, visibleTasks, projects, true);
       return;
     }
 
@@ -316,167 +325,6 @@ export class TodoListView extends ItemView {
     });
   }
 
-  private renderFilterScreen(container: HTMLElement, tasks: Task[], projects: Project[]): void {
-    const { t, locale } = this.plugin.i18n();
-    const controls = container.createDiv({ cls: "taskmate-filter-controls" });
-    this.renderHeader(controls, t("filter.title"));
-    const results = container.createDiv({ cls: "taskmate-filter-results taskmate-scroll-region" });
-    const updateResults = () => this.renderFilterResults(results, tasks, projects);
-
-    const priorities = controls.createDiv({ cls: "taskmate-section" });
-    priorities.createEl("h3", { text: t("filter.priority") });
-    const priorityButtons = priorities.createDiv({ cls: "taskmate-filter-buttons" });
-    ([1, 2, 3] as Priority[]).forEach((priority) => {
-      const selected = this.selectedPriorities.includes(priority);
-      const button = priorityButtons.createEl("button", { text: t("filter.priorityValue", { priority }), cls: selected ? "is-active" : "" });
-      button.addEventListener("click", () => {
-        const currentlySelected = this.selectedPriorities.includes(priority);
-        this.selectedPriorities = currentlySelected
-          ? this.selectedPriorities.filter((value) => value !== priority)
-          : [...this.selectedPriorities, priority];
-        button.toggleClass("is-active", !currentlySelected);
-        updateResults();
-      });
-    });
-
-    const labelsSection = controls.createDiv({ cls: "taskmate-section taskmate-filter-label-section" });
-    labelsSection.createEl("h3", { text: t("filter.labels") });
-    const allLabels = [...new Set(tasks.flatMap((task) => task.labels))]
-      .sort((a, b) => compareDisplayText(a, b, locale))
-      .slice(0, 500);
-    const picker = labelsSection.createDiv({ cls: "taskmate-filter-label-picker" });
-    const inputRow = picker.createDiv({ cls: "taskmate-filter-label-input" });
-    const tokenHost = inputRow.createDiv({ cls: "taskmate-selected-labels" });
-    const labelSearch = inputRow.createEl("input", {
-      type: "text",
-      value: this.labelQuery,
-      placeholder: t("filter.labelSearchPlaceholder"),
-      cls: "taskmate-label-search",
-      attr: {
-        "aria-label": t("filter.labelSearchAriaLabel"),
-        "inputmode": "search",
-        "enterkeyhint": "search"
-      }
-    });
-    const suggestions = picker.createDiv({ cls: "taskmate-filter-label-suggestions is-hidden" });
-    let pickerOpen = false;
-    let labelComposing = false;
-
-    const renderTokens = () => {
-      tokenHost.empty();
-      this.selectedLabels.forEach((label) => {
-        const token = tokenHost.createEl("button", {
-          text: `${label} ×`,
-          cls: "taskmate-label-token",
-          attr: { "aria-label": t("filter.removeLabelAriaLabel", { label }) }
-        });
-        token.addEventListener("click", () => {
-          this.selectedLabels = this.selectedLabels.filter((item) => item !== label);
-          renderTokens();
-          renderSuggestions();
-          updateResults();
-        });
-      });
-    };
-
-    const renderSuggestions = () => {
-      suggestions.empty();
-      suggestions.toggleClass("is-hidden", !pickerOpen);
-      if (!pickerOpen) return;
-      const candidates = filterLabelSuggestions(
-        allLabels,
-        this.plugin.settings.recentLabels ?? [],
-        this.labelQuery,
-        this.selectedLabels
-      );
-      if (candidates.length === 0) {
-        suggestions.addClass("is-hidden");
-        return;
-      }
-      suggestions.createDiv({
-        text: t(this.labelQuery.trim() ? "filter.matchingLabels" : "filter.recentLabels"),
-        cls: "taskmate-suggestion-heading"
-      });
-      const chips = suggestions.createDiv({ cls: "taskmate-suggestion-chips" });
-      candidates.forEach((label) => {
-        const choose = chips.createEl("button", { text: label, cls: "taskmate-suggestion-chip" });
-        choose.addEventListener("click", () => {
-          this.selectedLabels = [...this.selectedLabels, label];
-          this.labelQuery = "";
-          labelSearch.value = "";
-          renderTokens();
-          renderSuggestions();
-          updateResults();
-          labelSearch.focus();
-        });
-      });
-    };
-
-    labelSearch.addEventListener("compositionstart", () => {
-      labelComposing = true;
-    });
-    labelSearch.addEventListener("compositionend", () => {
-      labelComposing = false;
-      this.labelQuery = labelSearch.value;
-      renderSuggestions();
-    });
-    labelSearch.addEventListener("input", (event) => {
-      this.labelQuery = labelSearch.value;
-      if (labelComposing || (event as InputEvent).isComposing) return;
-      renderSuggestions();
-    });
-    labelSearch.addEventListener("focus", () => {
-      pickerOpen = true;
-      renderSuggestions();
-    });
-    labelsSection.addEventListener("focusout", () => {
-      window.setTimeout(() => {
-        if (labelsSection.contains(document.activeElement)) return;
-        pickerOpen = false;
-        renderSuggestions();
-      }, 0);
-    });
-    renderTokens();
-
-    const completion = controls.createDiv({ cls: "taskmate-section taskmate-completion-filter" });
-    completion.createEl("h3", { text: t("filter.completion") });
-    const completionLabel = completion.createEl("label");
-    const completionCheckbox = completionLabel.createEl("input", { type: "checkbox" });
-    completionCheckbox.checked = this.includeCompleted;
-    completionLabel.createSpan({ text: t("filter.includeCompleted") });
-    completionCheckbox.addEventListener("change", () => {
-      this.includeCompleted = completionCheckbox.checked;
-      updateResults();
-    });
-
-    updateResults();
-  }
-
-  private renderFilterResults(container: HTMLElement, tasks: Task[], projects: Project[]): void {
-    const { t } = this.plugin.i18n();
-    this.destroyTaskList();
-    container.empty();
-    const selectionCount = this.selectedPriorities.length + this.selectedLabels.length + Number(this.includeCompleted);
-    const resultHeader = container.createDiv({ cls: "taskmate-filter-result-heading" });
-    resultHeader.createEl("h3", { text: selectionCount > 0 ? t("filter.results") : t("filter.select") });
-    if (selectionCount > 0) {
-      const clear = resultHeader.createEl("button", { text: t("filter.clearAll") });
-      clear.addEventListener("click", () => {
-        this.selectedPriorities = [];
-        this.selectedLabels = [];
-        this.includeCompleted = false;
-        this.requestRender();
-      });
-      const matches = filterTasks(tasks, "all", {
-        priorities: this.selectedPriorities,
-        labels: this.selectedLabels,
-        search: "",
-        includeCompleted: this.includeCompleted
-      });
-      this.renderTaskList(container, matches, projects, false);
-    }
-  }
-
   private renderSortControl(container: HTMLElement): void {
     const { t } = this.plugin.i18n();
     const controls = container.createDiv({ cls: "taskmate-sort" });
@@ -508,6 +356,7 @@ export class TodoListView extends ItemView {
         }
         this.requestRender();
       });
+      button.disabled = this.selectionMode;
     });
   }
 
@@ -518,7 +367,9 @@ export class TodoListView extends ItemView {
       grouping: "flat",
       sortMode: this.sortMode,
       sortDirection: this.sortDirection,
-      allowReorder
+      allowReorder,
+      selectionMode: this.selectionMode,
+      selectedIds: this.selectedTaskIds
     });
     this.mountTaskList(container, model, source);
   }
@@ -530,7 +381,9 @@ export class TodoListView extends ItemView {
       grouping: "scheduled",
       sortMode: this.sortMode,
       sortDirection: this.sortDirection,
-      allowReorder: true
+      allowReorder: true,
+      selectionMode: this.selectionMode,
+      selectedIds: this.selectedTaskIds
     });
     this.mountTaskList(container, model, source);
   }
@@ -541,7 +394,7 @@ export class TodoListView extends ItemView {
       empty: t("tasks.empty"),
       reorderAriaLabel: t("tasks.reorderAriaLabel"),
       completeAriaLabel: (title) => t("tasks.completeAriaLabel", { title }),
-      moreAriaLabel: t("tasks.moreAriaLabel"),
+      selectAriaLabel: (title) => t("tasks.selectAriaLabel", { title }),
       sectionTitles: {
         overdue: t("view.overdue"),
         today: t("view.today"),
@@ -568,7 +421,6 @@ export class TodoListView extends ItemView {
   }
 
   private async handleTaskListAction(action: TaskListAction, tasksById: Map<string, Task>): Promise<void> {
-    const { t } = this.plugin.i18n();
     if (action.type === "reorder") {
       await this.plugin.repository.reorder(action.taskId, action.previousId, action.nextId);
       this.requestRender();
@@ -577,16 +429,10 @@ export class TodoListView extends ItemView {
 
     const task = tasksById.get(action.taskId);
     if (!task) return;
-    if (action.type === "show-actions") {
-      const menu = new Menu();
-      menu.addItem((item) => item.setTitle(t("common.edit")).setIcon("pencil").onClick(() => void this.openEditTask(task)));
-      menu.addItem((item) => item.setTitle(t("common.delete")).setIcon("trash").onClick(async () => {
-        if (!window.confirm(t("tasks.deleteConfirm", { title: task.title }))) return;
-        await this.plugin.repository.remove(task);
-        new Notice(t("tasks.deletedNotice"));
-        this.requestRender();
-      }));
-      menu.showAtMouseEvent(action.event);
+    if (action.type === "toggle-selected") {
+      if (this.selectedTaskIds.has(task.id)) this.selectedTaskIds.delete(task.id);
+      else this.selectedTaskIds.add(task.id);
+      this.requestRender();
       return;
     }
     if (action.type === "open") {
@@ -616,6 +462,146 @@ export class TodoListView extends ItemView {
         this.requestRender();
       });
     });
+  }
+
+  private searchMatches(tasks: Task[], projects: Project[]): Task[] {
+    const query = this.searchQuery.trim().toLocaleLowerCase();
+    if (!query) return [];
+    const projectNames = new Map(projects.map((project) => [project.id, project.name.toLocaleLowerCase()]));
+    const matches = tasks.filter((task) => {
+      const text = `${task.title}\n${task.notes}\n${task.labels.join(" ")}\n${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
+      return text.includes(query);
+    });
+    return filterTasks(matches, "all", this.filterState.value());
+  }
+
+  private renderAdjustMenu(header: HTMLElement, selectionScope: () => Task[]): void {
+    const { t } = this.plugin.i18n();
+    const count = this.filterState.count();
+    const button = header.createEl("button", {
+      cls: `taskmate-adjust${count > 0 ? " is-active" : ""}`,
+      attr: { "aria-label": count > 0 ? t("adjust.ariaLabelActive", { count }) : t("adjust.ariaLabel") }
+    });
+    setIcon(button, "sliders-horizontal");
+    if (count > 0) button.createSpan({ text: String(count), cls: "taskmate-adjust-count" });
+    button.addEventListener("click", (event) => {
+      const menu = new Menu();
+      const scope = selectionScope();
+      menu.addItem((item) => item.setTitle(t("selection.start")).setIcon("list-checks").setDisabled(scope.length === 0).onClick(() => {
+        this.selectionScopeIds = new Set(scope.map((task) => task.id));
+        this.selectedTaskIds.clear();
+        this.selectionMode = true;
+        this.requestRender();
+      }));
+      menu.addItem((item) => item
+        .setTitle(count > 0 ? t("filter.change") : t("filter.title"))
+        .setIcon("list-filter")
+        .onClick(() => this.openFilterModal()));
+      if (count > 0) {
+        menu.addSeparator();
+        menu.addItem((item) => item
+          .setTitle(t("filter.clearActive"))
+          .setIcon("filter-x")
+          .onClick(() => this.clearActiveFilters()));
+      }
+      menu.showAtMouseEvent(event);
+    });
+  }
+
+  private renderSelectionToolbar(root: HTMLElement, tasks: Task[]): void {
+    const { t } = this.plugin.i18n();
+    const existingIds = new Set(tasks.map((task) => task.id));
+    this.selectionScopeIds = new Set([...this.selectionScopeIds].filter((id) => existingIds.has(id)));
+    this.selectedTaskIds = new Set([...this.selectedTaskIds].filter((id) => this.selectionScopeIds.has(id)));
+    const toolbar = root.createDiv({ cls: "taskmate-selection-toolbar", attr: { "aria-label": t("selection.ariaLabel") } });
+    const exit = toolbar.createEl("button", { text: `× ${t("selection.exit")}` });
+    exit.addEventListener("click", () => this.exitSelectionMode());
+    toolbar.createDiv({ text: t("selection.count", { count: this.selectedTaskIds.size }), cls: "taskmate-selection-count" });
+    const selectAll = toolbar.createEl("button", { text: t("selection.selectAll") });
+    selectAll.disabled = this.selectionScopeIds.size === 0;
+    selectAll.addEventListener("click", () => {
+      this.selectedTaskIds = this.selectedTaskIds.size === this.selectionScopeIds.size
+        ? new Set<string>()
+        : new Set(this.selectionScopeIds);
+      this.requestRender();
+    });
+    const edit = toolbar.createEl("button", { text: t("common.edit") });
+    edit.disabled = this.selectedTaskIds.size === 0;
+    edit.addEventListener("click", () => void this.editSelectedTasks(tasks));
+    const remove = toolbar.createEl("button", { text: t("common.delete"), cls: "mod-warning" });
+    remove.disabled = this.selectedTaskIds.size === 0;
+    remove.addEventListener("click", () => void this.deleteSelectedTasks(tasks));
+  }
+
+  private exitSelectionMode(): void {
+    this.selectionMode = false;
+    this.selectedTaskIds.clear();
+    this.selectionScopeIds.clear();
+    this.requestRender();
+  }
+
+  private openFilterModal(): void {
+    new TaskFilterModal(this.app, this.filterState.value(), this.plugin.i18n(), (filters) => {
+      this.filterState.replace(filters);
+      this.requestRender();
+    }).open();
+  }
+
+  private clearActiveFilters(): void {
+    this.filterState.clear();
+    new Notice(this.plugin.i18n().t("filter.clearedNotice"));
+    this.requestRender();
+  }
+
+  private async editSelectedTasks(tasks: Task[]): Promise<void> {
+    const selected = tasks.filter((task) => this.selectedTaskIds.has(task.id));
+    if (selected.length === 1) {
+      await this.openEditTask(selected[0], () => this.exitSelectionMode());
+      return;
+    }
+    if (selected.length < 2) return;
+    const projects = await this.plugin.projects.list();
+    new BulkTaskModal(this.app, selected.length, projects, this.plugin.i18n(), async (changes) => {
+      await this.applyBulkChanges(selected, changes);
+    }).open();
+  }
+
+  private async applyBulkChanges(tasks: Task[], changes: BulkTaskChanges): Promise<void> {
+    const results = await Promise.allSettled(tasks.map((task) =>
+      this.plugin.repository.update(task, buildBulkTaskPatch(task, changes))
+    ));
+    if (typeof changes.projectId === "string") {
+      const project = (await this.plugin.projects.list()).find((item) => item.id === changes.projectId);
+      if (project) await this.plugin.projects.touch(project);
+    }
+    await this.rememberLabels(changes.addLabels);
+    this.finishBulkAction(tasks, results, "selection.updatedNotice");
+  }
+
+  private async deleteSelectedTasks(tasks: Task[]): Promise<void> {
+    const { t } = this.plugin.i18n();
+    const selected = tasks.filter((task) => this.selectedTaskIds.has(task.id));
+    if (selected.length === 0 || !window.confirm(t("selection.deleteConfirm", { count: selected.length }))) return;
+    const results = await Promise.allSettled(selected.map((task) => this.plugin.repository.remove(task)));
+    this.finishBulkAction(selected, results, "selection.deletedNotice");
+  }
+
+  private finishBulkAction(
+    tasks: Task[],
+    results: PromiseSettledResult<unknown>[],
+    successKey: "selection.updatedNotice" | "selection.deletedNotice"
+  ): void {
+    const { t } = this.plugin.i18n();
+    const failed = failedBulkTasks(tasks, results);
+    if (failed.length === 0) {
+      new Notice(t(successKey, { count: tasks.length }));
+      this.exitSelectionMode();
+      return;
+    }
+    this.selectedTaskIds = new Set(failed.map((task) => task.id));
+    this.selectionScopeIds = new Set(failed.map((task) => task.id));
+    new Notice(t("selection.partialFailure", { failed: failed.length, total: tasks.length }));
+    this.requestRender();
   }
 
   private addBackButton(header: HTMLElement, action: () => void): void {
@@ -649,7 +635,7 @@ export class TodoListView extends ItemView {
     }).open();
   }
 
-  private async openEditTask(task: Task): Promise<void> {
+  private async openEditTask(task: Task, afterAction?: () => void): Promise<void> {
     const projects = await this.plugin.projects.list();
     new TaskModal(this.app, task, projects, this.plugin.settings.recentLabels ?? [], task.projectId, this.plugin.i18n(), async (draft) => {
       await this.plugin.repository.update(task, draft);
@@ -658,7 +644,13 @@ export class TodoListView extends ItemView {
         const project = projects.find((item) => item.id === draft.projectId);
         if (project) await this.plugin.projects.touch(project);
       }
-      this.requestRender();
+      if (afterAction) afterAction();
+      else this.requestRender();
+    }, async () => {
+      await this.plugin.repository.remove(task);
+      new Notice(this.plugin.i18n().t("tasks.deletedNotice"));
+      if (afterAction) afterAction();
+      else this.requestRender();
     }).open();
   }
 
