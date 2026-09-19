@@ -70,8 +70,22 @@ if (tag !== undefined && tag !== manifest.version) {
   fail(`release tag ${tag} must exactly match manifest.json ${manifest.version}.`);
 }
 
-if (!/^[a-z0-9-]+$/.test(manifest.id) || manifest.id.includes("obsidian")) {
+if (
+  !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(manifest.id)
+  || manifest.id.includes("obsidian")
+  || manifest.id.endsWith("plugin")
+) {
   fail(`manifest id is not Community directory compatible: ${manifest.id}`);
+}
+
+for (const field of ["name", "author", "minAppVersion"]) {
+  if (typeof manifest[field] !== "string" || !manifest[field].trim()) {
+    fail(`manifest ${field} must be a non-empty string.`);
+  }
+}
+
+if (typeof manifest.minAppVersion === "string" && !SEMVER.test(manifest.minAppVersion)) {
+  fail(`manifest minAppVersion must use x.y.z SemVer: ${manifest.minAppVersion}`);
 }
 
 if (typeof manifest.description !== "string" || manifest.description.length > 250) {

@@ -74,6 +74,33 @@ describe("release validation", () => {
     );
   });
 
+  it("rejects missing or empty release assets", () => {
+    const directory = fixture();
+    writeFileSync(join(directory, "styles.css"), "");
+
+    const result = validate(directory);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("styles.css must not be empty");
+  });
+
+  it("rejects empty or invalid required manifest fields", () => {
+    const directory = fixture();
+    const path = join(directory, "manifest.json");
+    const manifest = JSON.parse(readFileSync(path, "utf8"));
+    manifest.name = "";
+    manifest.author = "   ";
+    manifest.minAppVersion = "latest";
+    writeFileSync(path, `${JSON.stringify(manifest, null, 2)}\n`);
+
+    const result = validate(directory);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("manifest name must be a non-empty string");
+    expect(result.stderr).toContain("manifest author must be a non-empty string");
+    expect(result.stderr).toContain("manifest minAppVersion must use x.y.z SemVer");
+  });
+
   it("updates every maintained version field with one command", () => {
     const directory = fixture();
     const result = spawnSync(process.execPath, [BUMP_VERSION, "9.8.7"], {
