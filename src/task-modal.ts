@@ -1,4 +1,4 @@
-import { App, Modal, Setting } from "obsidian";
+import { App, Modal, Setting, setIcon } from "obsidian";
 import type { Project, Task, TaskDraft } from "./domain";
 import { normalizeLabels, recentLabelSuggestions, taskDateSuggestions } from "./task-input-suggestions";
 import type { I18n, TranslationKey } from "./i18n";
@@ -20,7 +20,8 @@ export class TaskModal extends Modal {
     private readonly recentLabels: string[],
     defaultProjectId: string | null,
     private readonly i18n: I18n,
-    private readonly onSave: (draft: TaskDraft) => Promise<void>
+    private readonly onSave: (draft: TaskDraft) => Promise<void>,
+    private readonly onDelete: (() => Promise<void>) | null = null
   ) {
     super(app);
     this.draft = {
@@ -158,9 +159,25 @@ export class TaskModal extends Modal {
     });
 
     const actions = contentEl.createDiv({ cls: "taskmate-modal-actions" });
-    const cancel = actions.createEl("button", { text: t("common.cancel") });
+    if (this.onDelete) {
+      const remove = actions.createEl("button", { cls: "taskmate-delete-task" });
+      setIcon(remove, "trash-2");
+      remove.createSpan({ text: t("common.delete") });
+      remove.addEventListener("click", async () => {
+        if (!window.confirm(t("tasks.deleteConfirm", { title: this.draft.title }))) return;
+        remove.disabled = true;
+        try {
+          await this.onDelete?.();
+          this.close();
+        } finally {
+          remove.disabled = false;
+        }
+      });
+    }
+    const ordinaryActions = actions.createDiv({ cls: "taskmate-modal-primary-actions" });
+    const cancel = ordinaryActions.createEl("button", { text: t("common.cancel") });
     cancel.addEventListener("click", () => this.close());
-    const save = actions.createEl("button", { text: t("common.save"), cls: "mod-cta" });
+    const save = ordinaryActions.createEl("button", { text: t("common.save"), cls: "mod-cta" });
     save.addEventListener("click", async () => {
       if (!this.draft.title.trim()) return;
       save.disabled = true;

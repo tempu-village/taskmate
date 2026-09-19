@@ -12,6 +12,7 @@ export interface TaskListRow {
   priority: Task["priority"];
   projectName: string | null;
   labels: string[];
+  selected: boolean;
 }
 
 export interface TaskListSection {
@@ -23,6 +24,7 @@ export interface TaskListModel {
   grouping: TaskListGrouping;
   sections: TaskListSection[];
   reorderEnabled: boolean;
+  selectionMode: boolean;
 }
 
 export interface TaskListModelInput {
@@ -32,6 +34,8 @@ export interface TaskListModelInput {
   sortMode: SortMode;
   sortDirection: SortDirection;
   allowReorder: boolean;
+  selectionMode?: boolean;
+  selectedIds?: ReadonlySet<string>;
   today?: string;
 }
 
@@ -43,30 +47,35 @@ function toRow(task: Task, projectNames: Map<string, string>): TaskListRow {
     date: task.date,
     priority: task.priority,
     projectName: task.projectId ? projectNames.get(task.projectId) ?? null : null,
-    labels: task.labels.slice(0, 3)
+    labels: task.labels.slice(0, 3),
+    selected: false
   };
 }
 
 export function buildTaskListModel(input: TaskListModelInput): TaskListModel {
   const projectNames = new Map(input.projects.map((project) => [project.id, project.name]));
+  const selectionMode = input.selectionMode ?? false;
+  const selectedIds = input.selectedIds ?? new Set<string>();
   const toSortedRows = (tasks: Task[]) => sortTasks(tasks, input.sortMode, input.sortDirection)
-    .map((task) => toRow(task, projectNames));
+    .map((task) => ({ ...toRow(task, projectNames), selected: selectedIds.has(task.id) }));
 
   if (input.grouping === "flat") {
     return {
       grouping: "flat",
       sections: [{ id: "default", rows: toSortedRows(input.tasks) }],
-      reorderEnabled: input.allowReorder && input.sortMode === "manual"
+      reorderEnabled: !selectionMode && input.allowReorder && input.sortMode === "manual",
+      selectionMode
     };
   }
 
-  const groups = groupScheduledTasks(input.tasks, input.today);
+  const groups = groupScheduledTasks(input.tasks, input.today, true);
   const sections = (["overdue", "today", "later"] as const)
     .map((id) => ({ id, rows: toSortedRows(groups[id]) }))
     .filter((section) => section.rows.length > 0);
   return {
     grouping: "scheduled",
     sections,
-    reorderEnabled: input.allowReorder && input.sortMode === "manual"
+    reorderEnabled: !selectionMode && input.allowReorder && input.sortMode === "manual",
+    selectionMode
   };
 }

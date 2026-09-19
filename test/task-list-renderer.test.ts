@@ -16,13 +16,14 @@ const copy = {
   empty: "No tasks",
   reorderAriaLabel: "Reorder",
   completeAriaLabel: (title: string) => `Complete ${title}`,
-  moreAriaLabel: "More",
+  selectAriaLabel: (title: string) => `Select ${title}`,
   sectionTitles: { overdue: "Overdue", today: "Today", later: "Later" }
 };
 
 const model: TaskListModel = {
   grouping: "flat",
   reorderEnabled: true,
+  selectionMode: false,
   sections: [{
     id: "default",
     rows: [{
@@ -32,7 +33,8 @@ const model: TaskListModel = {
       date: "2026-09-19",
       priority: 1,
       projectName: "Project",
-      labels: ["label"]
+      labels: ["label"],
+      selected: false
     }]
   }]
 };
@@ -56,17 +58,26 @@ describe("task-list renderer", () => {
       checkbox.checked = true;
       checkbox.dispatchEvent(new Event("change"));
     }
-    container.querySelector<HTMLButtonElement>(".taskmate-more")?.click();
-
     expect(dispatch).toHaveBeenNthCalledWith(1, { type: "open", taskId: "task-1" });
     expect(dispatch).toHaveBeenNthCalledWith(2, { type: "toggle-completed", taskId: "task-1", completed: true });
-    expect(dispatch).toHaveBeenNthCalledWith(3, expect.objectContaining({
-      type: "show-actions",
-      taskId: "task-1",
-      event: expect.any(MouseEvent)
-    }));
+    expect(container.querySelector(".taskmate-more")).toBeNull();
     expect(container.textContent).toContain("Project");
     expect(container.textContent).toContain("#label");
+  });
+
+  it("uses one selection checkbox and row title toggles selection in selection mode", () => {
+    const container = document.createElement("div");
+    const dispatch = vi.fn();
+    renderTaskList(container, {
+      ...model,
+      selectionMode: true,
+      reorderEnabled: false,
+      sections: [{ id: "default", rows: [{ ...model.sections[0].rows[0], selected: true }] }]
+    }, copy, dispatch);
+    expect(container.querySelectorAll('input[type="checkbox"]')).toHaveLength(1);
+    expect(container.querySelector(".taskmate-drag")).toBeNull();
+    container.querySelector<HTMLElement>(".taskmate-metadata")?.click();
+    expect(dispatch).toHaveBeenCalledWith({ type: "toggle-selected", taskId: "task-1" });
   });
 
   it("destroys renderer-owned resources", () => {

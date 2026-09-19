@@ -65,8 +65,8 @@ export function addDays(dateKey: string, amount: number): string {
   return localDateParts(date);
 }
 
-export function taskMatchesView(task: Task, view: SmartView, today = todayKey()): boolean {
-  if (task.completed) return false;
+export function taskMatchesView(task: Task, view: SmartView, today = todayKey(), includeCompleted = false): boolean {
+  if (task.completed && !includeCompleted) return false;
 
   switch (view) {
     case "scheduled":
@@ -83,7 +83,7 @@ export function taskMatchesView(task: Task, view: SmartView, today = todayKey())
 export function filterTasks(tasks: Task[], view: SmartView, filters: TaskFilters, today?: string): Task[] {
   const needle = filters.search.trim().toLocaleLowerCase();
   return tasks.filter((task) => {
-    if (!(view === "all" && filters.includeCompleted) && !taskMatchesView(task, view, today)) return false;
+    if (!taskMatchesView(task, view, today, filters.includeCompleted)) return false;
     if (filters.priorities.length > 0 && (task.priority === null || !filters.priorities.includes(task.priority))) return false;
     if (filters.labels.length > 0 && !filters.labels.some((label) => task.labels.includes(label))) return false;
     return needle.length === 0 || `${task.title}\n${task.notes}\n${task.labels.join(" ")}`.toLocaleLowerCase().includes(needle);
@@ -96,8 +96,8 @@ export interface ScheduledTaskGroups {
   later: Task[];
 }
 
-export function groupScheduledTasks(tasks: Task[], today = todayKey()): ScheduledTaskGroups {
-  const scheduled = tasks.filter((task) => !task.completed && task.date !== null);
+export function groupScheduledTasks(tasks: Task[], today = todayKey(), includeCompleted = false): ScheduledTaskGroups {
+  const scheduled = tasks.filter((task) => (includeCompleted || !task.completed) && task.date !== null);
   return {
     overdue: scheduled.filter((task) => task.date !== null && task.date < today),
     today: scheduled.filter((task) => task.date === today),
