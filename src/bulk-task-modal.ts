@@ -2,14 +2,7 @@ import { App, Modal, Setting } from "obsidian";
 import type { Priority, Project } from "./domain";
 import type { I18n } from "./i18n";
 import { normalizeLabels } from "./task-input-suggestions";
-
-export interface BulkTaskChanges {
-  date?: string | null;
-  projectId?: string | null;
-  priority?: Priority | null;
-  addLabels: string[];
-  removeLabels: string[];
-}
+import type { BulkTaskChanges } from "./bulk-task-actions";
 
 export class BulkTaskModal extends Modal {
   private changes: BulkTaskChanges = { addLabels: [], removeLabels: [] };

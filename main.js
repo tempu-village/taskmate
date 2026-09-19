@@ -612,6 +612,19 @@ var BulkTaskModal = class extends import_obsidian4.Modal {
   }
 };
 
+// src/bulk-task-actions.ts
+function buildBulkTaskPatch(task, changes) {
+  const labels = task.labels.filter((label) => !changes.removeLabels.includes(label)).concat(changes.addLabels.filter((label) => !task.labels.includes(label))).slice(0, 500);
+  const patch = { labels };
+  if ("date" in changes) patch.date = changes.date;
+  if ("projectId" in changes) patch.projectId = changes.projectId;
+  if ("priority" in changes) patch.priority = changes.priority;
+  return patch;
+}
+function failedBulkTasks(tasks, results) {
+  return tasks.filter((_, index2) => results[index2]?.status === "rejected");
+}
+
 // src/i18n/en.ts
 var en = {
   "nav.date": "Date",
@@ -3516,6 +3529,39 @@ function renderTaskList(container, model, copy, dispatch) {
   };
 }
 
+// src/task-filter-state.ts
+var EMPTY_FILTERS = {
+  priorities: [],
+  labels: [],
+  search: "",
+  includeCompleted: false
+};
+var TaskFilterState = class {
+  filters = { ...EMPTY_FILTERS };
+  value() {
+    return {
+      priorities: [...this.filters.priorities],
+      labels: [...this.filters.labels],
+      search: "",
+      includeCompleted: this.filters.includeCompleted
+    };
+  }
+  replace(filters) {
+    this.filters = {
+      priorities: [...filters.priorities],
+      labels: [...filters.labels],
+      search: "",
+      includeCompleted: filters.includeCompleted
+    };
+  }
+  clear() {
+    this.filters = { ...EMPTY_FILTERS };
+  }
+  count() {
+    return this.filters.priorities.length + this.filters.labels.length + Number(this.filters.includeCompleted);
+  }
+};
+
 // src/view.ts
 var TODO_VIEW_TYPE = "taskmate-list";
 var SMART_VIEW_KEYS = {
@@ -3544,9 +3590,7 @@ var TodoListView = class extends import_obsidian8.ItemView {
   sortMode = "manual";
   sortDirection = "asc";
   searchQuery = "";
-  selectedPriorities = [];
-  selectedLabels = [];
-  includeCompleted = false;
+  filterState = new TaskFilterState();
   projectScreen = "index";
   activeProjectId = null;
   renderedTaskList = null;
@@ -3606,7 +3650,7 @@ var TodoListView = class extends import_obsidian8.ItemView {
   renderDateScreen(container, tasks, projects) {
     const { t } = this.plugin.i18n();
     const controls = container.createDiv({ cls: "taskmate-date-controls" });
-    const visibleTasks = filterTasks(tasks, this.smartView, this.activeFilters());
+    const visibleTasks = filterTasks(tasks, this.smartView, this.filterState.value());
     this.renderHeader(controls, "TaskMate", null, () => visibleTasks);
     const tabs = controls.createDiv({ cls: "taskmate-smart-views", attr: { role: "tablist" } });
     Object.keys(SMART_VIEW_KEYS).forEach((view) => {
@@ -3703,7 +3747,7 @@ var TodoListView = class extends import_obsidian8.ItemView {
       this.activeProjectId = null;
     }
     if (this.projectScreen === "detail" && active) {
-      const visibleTasks = filterTasks(tasks.filter((task) => task.projectId === active.id), "all", this.activeFilters());
+      const visibleTasks = filterTasks(tasks.filter((task) => task.projectId === active.id), "all", this.filterState.value());
       const header2 = this.renderHeader(container, active.name, active.id, () => visibleTasks);
       if (!this.selectionMode) {
         this.addBackButton(header2, () => {
@@ -3918,17 +3962,6 @@ var TodoListView = class extends import_obsidian8.ItemView {
       });
     });
   }
-  activeFilters() {
-    return {
-      priorities: this.selectedPriorities,
-      labels: this.selectedLabels,
-      search: "",
-      includeCompleted: this.includeCompleted
-    };
-  }
-  activeFilterCount() {
-    return this.selectedPriorities.length + this.selectedLabels.length + Number(this.includeCompleted);
-  }
   searchMatches(tasks, projects) {
     const query = this.searchQuery.trim().toLocaleLowerCase();
     if (!query) return [];
@@ -3940,11 +3973,11 @@ ${task.labels.join(" ")}
 ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
       return text.includes(query);
     });
-    return filterTasks(matches2, "all", this.activeFilters());
+    return filterTasks(matches2, "all", this.filterState.value());
   }
   renderAdjustMenu(header, selectionScope) {
     const { t } = this.plugin.i18n();
-    const count = this.activeFilterCount();
+    const count = this.filterState.count();
     const button = header.createEl("button", {
       cls: `taskmate-adjust${count > 0 ? " is-active" : ""}`,
       attr: { "aria-label": count > 0 ? t("adjust.ariaLabelActive", { count }) : t("adjust.ariaLabel") }
@@ -3997,17 +4030,13 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
     this.requestRender();
   }
   openFilterModal() {
-    new TaskFilterModal(this.app, this.activeFilters(), this.plugin.i18n(), (filters) => {
-      this.selectedPriorities = filters.priorities;
-      this.selectedLabels = filters.labels;
-      this.includeCompleted = filters.includeCompleted;
+    new TaskFilterModal(this.app, this.filterState.value(), this.plugin.i18n(), (filters) => {
+      this.filterState.replace(filters);
       this.requestRender();
     }).open();
   }
   clearActiveFilters() {
-    this.selectedPriorities = [];
-    this.selectedLabels = [];
-    this.includeCompleted = false;
+    this.filterState.clear();
     new import_obsidian8.Notice(this.plugin.i18n().t("filter.clearedNotice"));
     this.requestRender();
   }
@@ -4024,14 +4053,9 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
     }).open();
   }
   async applyBulkChanges(tasks, changes) {
-    const results = await Promise.allSettled(tasks.map((task) => {
-      const labels = task.labels.filter((label) => !changes.removeLabels.includes(label)).concat(changes.addLabels.filter((label) => !task.labels.includes(label))).slice(0, 500);
-      const patch = { labels };
-      if ("date" in changes) patch.date = changes.date;
-      if ("projectId" in changes) patch.projectId = changes.projectId;
-      if ("priority" in changes) patch.priority = changes.priority;
-      return this.plugin.repository.update(task, patch);
-    }));
+    const results = await Promise.allSettled(tasks.map(
+      (task) => this.plugin.repository.update(task, buildBulkTaskPatch(task, changes))
+    ));
     if (typeof changes.projectId === "string") {
       const project = (await this.plugin.projects.list()).find((item) => item.id === changes.projectId);
       if (project) await this.plugin.projects.touch(project);
@@ -4048,7 +4072,7 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
   }
   finishBulkAction(tasks, results, successKey) {
     const { t } = this.plugin.i18n();
-    const failed = tasks.filter((_, index2) => results[index2]?.status === "rejected");
+    const failed = failedBulkTasks(tasks, results);
     if (failed.length === 0) {
       new import_obsidian8.Notice(t(successKey, { count: tasks.length }));
       this.exitSelectionMode();

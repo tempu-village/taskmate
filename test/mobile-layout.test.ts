@@ -89,9 +89,7 @@ describe("mobile layout", () => {
     expect(viewSource).toContain('count > 0 ? t("filter.change") : t("filter.title")');
     expect(viewSource).toContain('setTitle(t("filter.clearActive"))');
     expect(viewSource).toContain("if (count > 0)");
-    expect(viewSource).toContain("this.selectedPriorities = []");
-    expect(viewSource).toContain("this.selectedLabels = []");
-    expect(viewSource).toContain("this.includeCompleted = false");
+    expect(viewSource).toContain("this.filterState.clear()");
   });
 
   it("avoids Android WebView's native search-input focus behavior", () => {

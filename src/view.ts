@@ -1,8 +1,9 @@
 import { ItemView, Menu, Notice, setIcon, WorkspaceLeaf } from "obsidian";
 import { BulkTaskModal } from "./bulk-task-modal";
-import type { BulkTaskChanges } from "./bulk-task-modal";
+import { buildBulkTaskPatch, failedBulkTasks } from "./bulk-task-actions";
+import type { BulkTaskChanges } from "./bulk-task-actions";
 import { filterTasks } from "./domain";
-import type { Priority, Project, SmartView, SortDirection, SortMode, Task, TaskFilters } from "./domain";
+import type { Project, SmartView, SortDirection, SortMode, Task } from "./domain";
 import type { TranslationKey } from "./i18n";
 import { compareDisplayText } from "./i18n";
 import type TaskMatePlugin from "./main";
@@ -14,6 +15,7 @@ import { buildTaskListModel } from "./task-list-model";
 import type { TaskListModel } from "./task-list-model";
 import { renderTaskList as renderTaskListDom } from "./task-list-renderer";
 import type { RenderedTaskList, TaskListAction, TaskListCopy } from "./task-list-renderer";
+import { TaskFilterState } from "./task-filter-state";
 
 export const TODO_VIEW_TYPE = "taskmate-list";
 
@@ -45,9 +47,7 @@ export class TodoListView extends ItemView {
   private sortMode: SortMode = "manual";
   private sortDirection: SortDirection = "asc";
   private searchQuery = "";
-  private selectedPriorities: Priority[] = [];
-  private selectedLabels: string[] = [];
-  private includeCompleted = false;
+  private readonly filterState = new TaskFilterState();
   private projectScreen: ProjectScreen = "index";
   private activeProjectId: string | null = null;
   private renderedTaskList: RenderedTaskList | null = null;
@@ -126,7 +126,7 @@ export class TodoListView extends ItemView {
   private renderDateScreen(container: HTMLElement, tasks: Task[], projects: Project[]): void {
     const { t } = this.plugin.i18n();
     const controls = container.createDiv({ cls: "taskmate-date-controls" });
-    const visibleTasks = filterTasks(tasks, this.smartView, this.activeFilters());
+    const visibleTasks = filterTasks(tasks, this.smartView, this.filterState.value());
     this.renderHeader(controls, "TaskMate", null, () => visibleTasks);
     const tabs = controls.createDiv({ cls: "taskmate-smart-views", attr: { role: "tablist" } });
     (Object.keys(SMART_VIEW_KEYS) as SmartView[]).forEach((view) => {
@@ -229,7 +229,7 @@ export class TodoListView extends ItemView {
     }
 
     if (this.projectScreen === "detail" && active) {
-      const visibleTasks = filterTasks(tasks.filter((task) => task.projectId === active.id), "all", this.activeFilters());
+      const visibleTasks = filterTasks(tasks.filter((task) => task.projectId === active.id), "all", this.filterState.value());
       const header = this.renderHeader(container, active.name, active.id, () => visibleTasks);
       if (!this.selectionMode) {
         this.addBackButton(header, () => {
@@ -464,19 +464,6 @@ export class TodoListView extends ItemView {
     });
   }
 
-  private activeFilters(): TaskFilters {
-    return {
-      priorities: this.selectedPriorities,
-      labels: this.selectedLabels,
-      search: "",
-      includeCompleted: this.includeCompleted
-    };
-  }
-
-  private activeFilterCount(): number {
-    return this.selectedPriorities.length + this.selectedLabels.length + Number(this.includeCompleted);
-  }
-
   private searchMatches(tasks: Task[], projects: Project[]): Task[] {
     const query = this.searchQuery.trim().toLocaleLowerCase();
     if (!query) return [];
@@ -485,12 +472,12 @@ export class TodoListView extends ItemView {
       const text = `${task.title}\n${task.notes}\n${task.labels.join(" ")}\n${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
       return text.includes(query);
     });
-    return filterTasks(matches, "all", this.activeFilters());
+    return filterTasks(matches, "all", this.filterState.value());
   }
 
   private renderAdjustMenu(header: HTMLElement, selectionScope: () => Task[]): void {
     const { t } = this.plugin.i18n();
-    const count = this.activeFilterCount();
+    const count = this.filterState.count();
     const button = header.createEl("button", {
       cls: `taskmate-adjust${count > 0 ? " is-active" : ""}`,
       attr: { "aria-label": count > 0 ? t("adjust.ariaLabelActive", { count }) : t("adjust.ariaLabel") }
@@ -554,18 +541,14 @@ export class TodoListView extends ItemView {
   }
 
   private openFilterModal(): void {
-    new TaskFilterModal(this.app, this.activeFilters(), this.plugin.i18n(), (filters) => {
-      this.selectedPriorities = filters.priorities;
-      this.selectedLabels = filters.labels;
-      this.includeCompleted = filters.includeCompleted;
+    new TaskFilterModal(this.app, this.filterState.value(), this.plugin.i18n(), (filters) => {
+      this.filterState.replace(filters);
       this.requestRender();
     }).open();
   }
 
   private clearActiveFilters(): void {
-    this.selectedPriorities = [];
-    this.selectedLabels = [];
-    this.includeCompleted = false;
+    this.filterState.clear();
     new Notice(this.plugin.i18n().t("filter.clearedNotice"));
     this.requestRender();
   }
@@ -584,17 +567,9 @@ export class TodoListView extends ItemView {
   }
 
   private async applyBulkChanges(tasks: Task[], changes: BulkTaskChanges): Promise<void> {
-    const results = await Promise.allSettled(tasks.map((task) => {
-      const labels = task.labels
-        .filter((label) => !changes.removeLabels.includes(label))
-        .concat(changes.addLabels.filter((label) => !task.labels.includes(label)))
-        .slice(0, 500);
-      const patch: Partial<Pick<Task, "date" | "projectId" | "priority" | "labels">> = { labels };
-      if ("date" in changes) patch.date = changes.date;
-      if ("projectId" in changes) patch.projectId = changes.projectId;
-      if ("priority" in changes) patch.priority = changes.priority;
-      return this.plugin.repository.update(task, patch);
-    }));
+    const results = await Promise.allSettled(tasks.map((task) =>
+      this.plugin.repository.update(task, buildBulkTaskPatch(task, changes))
+    ));
     if (typeof changes.projectId === "string") {
       const project = (await this.plugin.projects.list()).find((item) => item.id === changes.projectId);
       if (project) await this.plugin.projects.touch(project);
@@ -617,7 +592,7 @@ export class TodoListView extends ItemView {
     successKey: "selection.updatedNotice" | "selection.deletedNotice"
   ): void {
     const { t } = this.plugin.i18n();
-    const failed = tasks.filter((_, index) => results[index]?.status === "rejected");
+    const failed = failedBulkTasks(tasks, results);
     if (failed.length === 0) {
       new Notice(t(successKey, { count: tasks.length }));
       this.exitSelectionMode();
