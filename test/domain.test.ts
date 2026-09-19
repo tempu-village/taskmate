@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { filterTasks, sortTasks, taskMatchesView } from "../src/domain";
+import { filterTasks, groupScheduledTasks, sortTasks, taskMatchesView } from "../src/domain";
 import type { Project, Task } from "../src/domain";
 import { encodeTask, legacyTaskFileName, nextAvailableTaskFileName, parseTaskMarkdown, taskFileName } from "../src/markdown";
 import { encodeProject, parseProjectMarkdown, projectFileName } from "../src/project-markdown";
-import { recordRecentLabels, recentLabelSuggestions, taskDateSuggestions } from "../src/task-input-suggestions";
+import { filterLabelSuggestions, recordRecentLabels, recentLabelSuggestions, taskDateSuggestions } from "../src/task-input-suggestions";
 
 function task(overrides: Partial<Task> = {}): Task {
   return {
@@ -28,18 +28,30 @@ function task(overrides: Partial<Task> = {}): Task {
 describe("smart views", () => {
   const today = "2026-09-06";
 
-  it("includes overdue tasks in Today", () => {
-    expect(taskMatchesView(task({ date: "2026-09-04" }), "today", today)).toBe(true);
-  });
-
-  it("limits Next 7 days to today through day six", () => {
-    expect(taskMatchesView(task({ date: "2026-09-12" }), "seven-days", today)).toBe(true);
-    expect(taskMatchesView(task({ date: "2026-09-13" }), "seven-days", today)).toBe(false);
+  it("puts every dated incomplete task in Scheduled", () => {
+    expect(taskMatchesView(task({ date: "2026-09-04" }), "scheduled", today)).toBe(true);
+    expect(taskMatchesView(task({ date: today }), "scheduled", today)).toBe(true);
+    expect(taskMatchesView(task({ date: "2026-09-12" }), "scheduled", today)).toBe(true);
+    expect(taskMatchesView(task(), "scheduled", today)).toBe(false);
+    expect(taskMatchesView(task({ date: today, completed: true }), "scheduled", today)).toBe(false);
   });
 
   it("puts only incomplete undated tasks in Unplanned", () => {
     expect(taskMatchesView(task(), "unplanned", today)).toBe(true);
     expect(taskMatchesView(task({ completed: true }), "unplanned", today)).toBe(false);
+  });
+
+  it("groups Scheduled into overdue, today, and later", () => {
+    const groups = groupScheduledTasks([
+      task({ id: "overdue", date: "2026-09-05" }),
+      task({ id: "today", date: today }),
+      task({ id: "later", date: "2026-09-07" }),
+      task({ id: "undated" }),
+      task({ id: "done", date: today, completed: true })
+    ], today);
+    expect(groups.overdue.map((item) => item.id)).toEqual(["overdue"]);
+    expect(groups.today.map((item) => item.id)).toEqual(["today"]);
+    expect(groups.later.map((item) => item.id)).toEqual(["later"]);
   });
 });
 
@@ -49,12 +61,47 @@ describe("filters and sorting", () => {
       task({ title: "Call Mina", priority: 1, labels: ["連絡"] }),
       task({ id: "two", title: "Call Jo", priority: 2, labels: ["連絡"] })
     ];
-    expect(filterTasks(tasks, "all", { priorities: [1], labels: ["連絡"], search: "mina" })).toHaveLength(1);
+    expect(filterTasks(tasks, "all", { priorities: [1], labels: ["連絡"], search: "mina", includeCompleted: false })).toHaveLength(1);
+  });
+
+  it("includes completed tasks only when explicitly enabled", () => {
+    const tasks = [task({ id: "open" }), task({ id: "done", completed: true })];
+    expect(filterTasks(tasks, "all", { priorities: [], labels: [], search: "", includeCompleted: false }).map((item) => item.id)).toEqual(["open"]);
+    expect(filterTasks(tasks, "all", { priorities: [], labels: [], search: "", includeCompleted: true }).map((item) => item.id)).toEqual(["open", "done"]);
   });
 
   it("preserves global rank in manual mode", () => {
     const tasks = [task({ id: "late", rank: 20 }), task({ id: "early", rank: 10 })];
     expect(sortTasks(tasks, "manual").map((item) => item.id)).toEqual(["early", "late"]);
+  });
+
+  it("reverses date order while keeping undated tasks last", () => {
+    const tasks = [
+      task({ id: "none", date: null }),
+      task({ id: "early", date: "2026-09-10" }),
+      task({ id: "late", date: "2026-09-20" })
+    ];
+    expect(sortTasks(tasks, "date", "asc").map((item) => item.id)).toEqual(["early", "late", "none"]);
+    expect(sortTasks(tasks, "date", "desc").map((item) => item.id)).toEqual(["late", "early", "none"]);
+  });
+
+  it("reverses priority order while keeping tasks without priority last", () => {
+    const tasks = [
+      task({ id: "none", priority: null }),
+      task({ id: "p1", priority: 1 }),
+      task({ id: "p3", priority: 3 })
+    ];
+    expect(sortTasks(tasks, "priority", "asc").map((item) => item.id)).toEqual(["p1", "p3", "none"]);
+    expect(sortTasks(tasks, "priority", "desc").map((item) => item.id)).toEqual(["p3", "p1", "none"]);
+  });
+
+  it("reverses creation order", () => {
+    const tasks = [
+      task({ id: "old", createdAt: "2026-09-01T00:00:00.000Z" }),
+      task({ id: "new", createdAt: "2026-09-02T00:00:00.000Z" })
+    ];
+    expect(sortTasks(tasks, "created", "asc").map((item) => item.id)).toEqual(["old", "new"]);
+    expect(sortTasks(tasks, "created", "desc").map((item) => item.id)).toEqual(["new", "old"]);
   });
 });
 
@@ -109,5 +156,11 @@ describe("task input suggestions", () => {
       "仕事", "label-2", "連絡", "label-1", "label-3", "label-4", "label-5", "label-6", "label-7", "label-8"
     ]);
     expect(recentLabelSuggestions(["仕事", "仕事", " 連絡 "])).toEqual(["仕事", "連絡"]);
+  });
+
+  it("offers recent labels on focus and matching labels while typing", () => {
+    const labels = ["仕事", "連絡", "私用", "資料"];
+    expect(filterLabelSuggestions(labels, ["連絡", "仕事", "削除済み"], "", ["仕事"])).toEqual(["連絡"]);
+    expect(filterLabelSuggestions(labels, [], "料", ["仕事"])).toEqual(["資料"]);
   });
 });

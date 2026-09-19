@@ -1,13 +1,13 @@
 import { ItemView, Menu, Notice, WorkspaceLeaf } from "obsidian";
 import Sortable from "sortablejs";
-import { filterTasks, sortTasks } from "./domain";
-import type { Priority, Project, SmartView, SortMode, Task, TaskFilters } from "./domain";
+import { filterTasks, groupScheduledTasks, sortTasks } from "./domain";
+import type { Priority, Project, SmartView, SortDirection, SortMode, Task, TaskFilters } from "./domain";
 import type { TranslationKey } from "./i18n";
 import { compareDisplayText } from "./i18n";
 import type TaskMatePlugin from "./main";
 import { ProjectModal } from "./project-modal";
 import { TaskModal } from "./task-modal";
-import { recordRecentLabels } from "./task-input-suggestions";
+import { filterLabelSuggestions, recordRecentLabels } from "./task-input-suggestions";
 
 export const TODO_VIEW_TYPE = "taskmate-list";
 
@@ -15,12 +15,9 @@ type MainScreen = "date" | "search" | "projects" | "filter";
 type ProjectScreen = "index" | "detail" | "edit";
 
 const SMART_VIEW_KEYS = {
-  today: "view.today",
-  "seven-days": "view.sevenDays",
-  upcoming: "view.upcoming",
+  scheduled: "view.scheduled",
   all: "view.all",
-  unplanned: "view.unplanned",
-  completed: "view.completed"
+  unplanned: "view.unplanned"
 } as const satisfies Record<SmartView, TranslationKey>;
 
 const SORT_KEYS = {
@@ -37,23 +34,22 @@ const NAV_ITEMS = [
   { screen: "filter", icon: "≡", labelKey: "nav.filter" }
 ] as const satisfies ReadonlyArray<{ screen: MainScreen; icon: string; labelKey: TranslationKey }>;
 
-const EMPTY_FILTERS: TaskFilters = { priorities: [], labels: [], search: "" };
+const EMPTY_FILTERS: TaskFilters = { priorities: [], labels: [], search: "", includeCompleted: false };
 
 export class TodoListView extends ItemView {
   private screen: MainScreen = "date";
-  private smartView: SmartView = "today";
+  private smartView: SmartView = "scheduled";
   private sortMode: SortMode = "manual";
+  private sortDirection: SortDirection = "asc";
   private searchQuery = "";
   private selectedPriorities: Priority[] = [];
   private selectedLabels: string[] = [];
+  private includeCompleted = false;
   private labelQuery = "";
-  private labelsExpanded = false;
   private projectScreen: ProjectScreen = "index";
   private activeProjectId: string | null = null;
   private sortable: Sortable | null = null;
   private generation = 0;
-  private inputTimer: number | null = null;
-  private focusAfterRender: "search" | "label" | null = null;
 
   constructor(leaf: WorkspaceLeaf, private readonly plugin: TaskMatePlugin) {
     super(leaf);
@@ -77,7 +73,6 @@ export class TodoListView extends ItemView {
 
   async onClose(): Promise<void> {
     this.sortable?.destroy();
-    if (this.inputTimer !== null) window.clearTimeout(this.inputTimer);
   }
 
   requestRender(): void {
@@ -98,11 +93,13 @@ export class TodoListView extends ItemView {
     this.renderNavigation(page);
     if (this.screen === "search") {
       this.renderSearchScreen(page, tasks, projects);
+    } else if (this.screen === "date") {
+      this.renderDateScreen(page, tasks, projects);
+    } else if (this.screen === "filter") {
+      this.renderFilterScreen(page, tasks, projects);
     } else {
       const content = page.createDiv({ cls: "taskmate-content taskmate-scroll-region" });
-      if (this.screen === "date") this.renderDateScreen(content, tasks, projects);
-      else if (this.screen === "projects") this.renderProjectsScreen(content, tasks, projects);
-      else this.renderFilterScreen(content, tasks, projects);
+      this.renderProjectsScreen(content, tasks, projects);
     }
   }
 
@@ -119,24 +116,26 @@ export class TodoListView extends ItemView {
 
   private renderDateScreen(container: HTMLElement, tasks: Task[], projects: Project[]): void {
     const { t } = this.plugin.i18n();
-    this.renderHeader(container, "TaskMate", null);
-    const tabs = container.createDiv({ cls: "taskmate-smart-views", attr: { role: "tablist" } });
+    const controls = container.createDiv({ cls: "taskmate-date-controls" });
+    this.renderHeader(controls, "TaskMate", null);
+    const tabs = controls.createDiv({ cls: "taskmate-smart-views", attr: { role: "tablist" } });
     (Object.keys(SMART_VIEW_KEYS) as SmartView[]).forEach((view) => {
-      const count = tasks.filter((task) => filterTasks([task], view, EMPTY_FILTERS).length > 0).length;
       const button = tabs.createEl("button", {
         cls: view === this.smartView ? "is-active" : "",
         attr: { role: "tab", "aria-selected": String(view === this.smartView) }
       });
       button.createSpan({ text: t(SMART_VIEW_KEYS[view]) });
-      button.createSpan({ text: String(count), cls: "taskmate-view-count" });
       button.addEventListener("click", () => {
         this.smartView = view;
         this.requestRender();
       });
     });
 
-    this.renderSortControl(container);
-    this.renderTaskList(container, filterTasks(tasks, this.smartView, EMPTY_FILTERS), projects, true);
+    this.renderSortControl(controls);
+    const results = container.createDiv({ cls: "taskmate-date-results taskmate-scroll-region" });
+    const visibleTasks = filterTasks(tasks, this.smartView, EMPTY_FILTERS);
+    if (this.smartView === "scheduled") this.renderScheduledTaskList(results, visibleTasks, projects);
+    else this.renderTaskList(results, visibleTasks, projects, true);
   }
 
   private renderSearchScreen(container: HTMLElement, tasks: Task[], projects: Project[]): void {
@@ -318,33 +317,36 @@ export class TodoListView extends ItemView {
 
   private renderFilterScreen(container: HTMLElement, tasks: Task[], projects: Project[]): void {
     const { t, locale } = this.plugin.i18n();
-    this.renderHeader(container, t("filter.title"));
-    const priorities = container.createDiv({ cls: "taskmate-section" });
+    const controls = container.createDiv({ cls: "taskmate-filter-controls" });
+    this.renderHeader(controls, t("filter.title"));
+    const results = container.createDiv({ cls: "taskmate-filter-results taskmate-scroll-region" });
+    const updateResults = () => this.renderFilterResults(results, tasks, projects);
+
+    const priorities = controls.createDiv({ cls: "taskmate-section" });
     priorities.createEl("h3", { text: t("filter.priority") });
     const priorityButtons = priorities.createDiv({ cls: "taskmate-filter-buttons" });
     ([1, 2, 3] as Priority[]).forEach((priority) => {
       const selected = this.selectedPriorities.includes(priority);
       const button = priorityButtons.createEl("button", { text: t("filter.priorityValue", { priority }), cls: selected ? "is-active" : "" });
       button.addEventListener("click", () => {
-        this.selectedPriorities = selected
+        const currentlySelected = this.selectedPriorities.includes(priority);
+        this.selectedPriorities = currentlySelected
           ? this.selectedPriorities.filter((value) => value !== priority)
           : [...this.selectedPriorities, priority];
-        this.requestRender();
+        button.toggleClass("is-active", !currentlySelected);
+        updateResults();
       });
     });
 
-    const labelsSection = container.createDiv({ cls: "taskmate-section" });
-    const labelsHeading = labelsSection.createDiv({ cls: "taskmate-section-heading" });
-    labelsHeading.createEl("h3", { text: t("filter.labels") });
-    const allLabels = [...new Set(tasks.flatMap((task) => task.labels))].slice(0, 500);
-    const toggle = labelsHeading.createEl("button", {
-      text: this.labelsExpanded ? t("filter.collapse") : t("filter.showAll", { count: allLabels.length })
-    });
-    toggle.addEventListener("click", () => {
-      this.labelsExpanded = !this.labelsExpanded;
-      this.requestRender();
-    });
-    const labelSearch = labelsSection.createEl("input", {
+    const labelsSection = controls.createDiv({ cls: "taskmate-section taskmate-filter-label-section" });
+    labelsSection.createEl("h3", { text: t("filter.labels") });
+    const allLabels = [...new Set(tasks.flatMap((task) => task.labels))]
+      .sort((a, b) => compareDisplayText(a, b, locale))
+      .slice(0, 500);
+    const picker = labelsSection.createDiv({ cls: "taskmate-filter-label-picker" });
+    const inputRow = picker.createDiv({ cls: "taskmate-filter-label-input" });
+    const tokenHost = inputRow.createDiv({ cls: "taskmate-selected-labels" });
+    const labelSearch = inputRow.createEl("input", {
       type: "text",
       value: this.labelQuery,
       placeholder: t("filter.labelSearchPlaceholder"),
@@ -355,49 +357,106 @@ export class TodoListView extends ItemView {
         "enterkeyhint": "search"
       }
     });
+    const suggestions = picker.createDiv({ cls: "taskmate-filter-label-suggestions is-hidden" });
+    let pickerOpen = false;
     let labelComposing = false;
+
+    const renderTokens = () => {
+      tokenHost.empty();
+      this.selectedLabels.forEach((label) => {
+        const token = tokenHost.createEl("button", {
+          text: `${label} ×`,
+          cls: "taskmate-label-token",
+          attr: { "aria-label": t("filter.removeLabelAriaLabel", { label }) }
+        });
+        token.addEventListener("click", () => {
+          this.selectedLabels = this.selectedLabels.filter((item) => item !== label);
+          renderTokens();
+          renderSuggestions();
+          updateResults();
+        });
+      });
+    };
+
+    const renderSuggestions = () => {
+      suggestions.empty();
+      suggestions.toggleClass("is-hidden", !pickerOpen);
+      if (!pickerOpen) return;
+      const candidates = filterLabelSuggestions(
+        allLabels,
+        this.plugin.settings.recentLabels ?? [],
+        this.labelQuery,
+        this.selectedLabels
+      );
+      if (candidates.length === 0) {
+        suggestions.addClass("is-hidden");
+        return;
+      }
+      suggestions.createDiv({
+        text: t(this.labelQuery.trim() ? "filter.matchingLabels" : "filter.recentLabels"),
+        cls: "taskmate-suggestion-heading"
+      });
+      const chips = suggestions.createDiv({ cls: "taskmate-suggestion-chips" });
+      candidates.forEach((label) => {
+        const choose = chips.createEl("button", { text: label, cls: "taskmate-suggestion-chip" });
+        choose.addEventListener("click", () => {
+          this.selectedLabels = [...this.selectedLabels, label];
+          this.labelQuery = "";
+          labelSearch.value = "";
+          renderTokens();
+          renderSuggestions();
+          updateResults();
+          labelSearch.focus();
+        });
+      });
+    };
+
     labelSearch.addEventListener("compositionstart", () => {
       labelComposing = true;
     });
     labelSearch.addEventListener("compositionend", () => {
       labelComposing = false;
       this.labelQuery = labelSearch.value;
-      this.focusAfterRender = "label";
-      this.scheduleRender();
+      renderSuggestions();
     });
     labelSearch.addEventListener("input", (event) => {
       this.labelQuery = labelSearch.value;
       if (labelComposing || (event as InputEvent).isComposing) return;
-      this.focusAfterRender = "label";
-      this.scheduleRender();
+      renderSuggestions();
     });
-    this.restoreFocus(labelSearch, "label");
+    labelSearch.addEventListener("focus", () => {
+      pickerOpen = true;
+      renderSuggestions();
+    });
+    labelsSection.addEventListener("focusout", () => {
+      window.setTimeout(() => {
+        if (labelsSection.contains(document.activeElement)) return;
+        pickerOpen = false;
+        renderSuggestions();
+      }, 0);
+    });
+    renderTokens();
 
-    const favoriteSet = new Set(this.plugin.settings.favoriteLabels ?? []);
-    const matchingLabels = allLabels
-      .filter((label) => label.toLocaleLowerCase().includes(this.labelQuery.trim().toLocaleLowerCase()))
-      .sort((a, b) => Number(favoriteSet.has(b)) - Number(favoriteSet.has(a)) || compareDisplayText(a, b, locale));
-    const visibleLabels = this.labelQuery.trim() || this.labelsExpanded
-      ? matchingLabels
-      : matchingLabels.filter((label) => favoriteSet.has(label)).concat(matchingLabels.filter((label) => !favoriteSet.has(label)).slice(0, 12));
-    const labelList = labelsSection.createDiv({ cls: "taskmate-label-list" });
-    visibleLabels.slice(0, 500).forEach((label) => {
-      const row = labelList.createDiv({ cls: "taskmate-label-row" });
-      const selected = this.selectedLabels.includes(label);
-      const choose = row.createEl("button", { text: label, cls: selected ? "is-active taskmate-label-select" : "taskmate-label-select" });
-      choose.addEventListener("click", () => {
-        this.selectedLabels = selected ? this.selectedLabels.filter((item) => item !== label) : [...this.selectedLabels, label];
-        this.requestRender();
-      });
-      const favorite = row.createEl("button", {
-        text: favoriteSet.has(label) ? "★" : "☆",
-        cls: "taskmate-label-favorite",
-        attr: { "aria-label": t("filter.favoriteAriaLabel", { label }) }
-      });
-      favorite.addEventListener("click", () => void this.toggleFavoriteLabel(label));
+    const completion = controls.createDiv({ cls: "taskmate-section taskmate-completion-filter" });
+    completion.createEl("h3", { text: t("filter.completion") });
+    const completionLabel = completion.createEl("label");
+    const completionCheckbox = completionLabel.createEl("input", { type: "checkbox" });
+    completionCheckbox.checked = this.includeCompleted;
+    completionLabel.createSpan({ text: t("filter.includeCompleted") });
+    completionCheckbox.addEventListener("change", () => {
+      this.includeCompleted = completionCheckbox.checked;
+      updateResults();
     });
 
-    const selectionCount = this.selectedPriorities.length + this.selectedLabels.length;
+    updateResults();
+  }
+
+  private renderFilterResults(container: HTMLElement, tasks: Task[], projects: Project[]): void {
+    const { t } = this.plugin.i18n();
+    this.sortable?.destroy();
+    this.sortable = null;
+    container.empty();
+    const selectionCount = this.selectedPriorities.length + this.selectedLabels.length + Number(this.includeCompleted);
     const resultHeader = container.createDiv({ cls: "taskmate-filter-result-heading" });
     resultHeader.createEl("h3", { text: selectionCount > 0 ? t("filter.results") : t("filter.select") });
     if (selectionCount > 0) {
@@ -405,12 +464,14 @@ export class TodoListView extends ItemView {
       clear.addEventListener("click", () => {
         this.selectedPriorities = [];
         this.selectedLabels = [];
+        this.includeCompleted = false;
         this.requestRender();
       });
       const matches = filterTasks(tasks, "all", {
         priorities: this.selectedPriorities,
         labels: this.selectedLabels,
-        search: ""
+        search: "",
+        includeCompleted: this.includeCompleted
       });
       this.renderTaskList(container, matches, projects, false);
     }
@@ -419,18 +480,40 @@ export class TodoListView extends ItemView {
   private renderSortControl(container: HTMLElement): void {
     const { t } = this.plugin.i18n();
     const controls = container.createDiv({ cls: "taskmate-sort" });
-    const sort = controls.createEl("select", { attr: { "aria-label": t("sort.ariaLabel") } });
-    (Object.keys(SORT_KEYS) as SortMode[]).forEach((mode) => sort.createEl("option", { text: t(SORT_KEYS[mode]), value: mode }));
-    sort.value = this.sortMode;
-    sort.addEventListener("change", () => {
-      this.sortMode = sort.value as SortMode;
-      this.requestRender();
+    controls.createDiv({ text: t("sort.label"), cls: "taskmate-sort-label" });
+    const options = controls.createDiv({ cls: "taskmate-sort-options", attr: { role: "group", "aria-label": t("sort.ariaLabel") } });
+    (Object.keys(SORT_KEYS) as SortMode[]).forEach((mode) => {
+      const selected = mode === this.sortMode;
+      const directionLabel = this.sortDirection === "asc" ? t("sort.ascending") : t("sort.descending");
+      const button = options.createEl("button", {
+        cls: selected ? "is-active" : "",
+        attr: {
+          type: "button",
+          "aria-pressed": String(selected),
+          "aria-label": selected && mode !== "manual"
+            ? t("sort.activeOptionAriaLabel", { mode: t(SORT_KEYS[mode]), direction: directionLabel })
+            : t(SORT_KEYS[mode])
+        }
+      });
+      button.createSpan({ text: t(SORT_KEYS[mode]) });
+      if (selected && mode !== "manual") {
+        button.createSpan({ text: this.sortDirection === "asc" ? "↑" : "↓", cls: "taskmate-sort-direction", attr: { "aria-hidden": "true" } });
+      }
+      button.addEventListener("click", () => {
+        if (mode === this.sortMode && mode !== "manual") {
+          this.sortDirection = this.sortDirection === "asc" ? "desc" : "asc";
+        } else {
+          this.sortMode = mode;
+          this.sortDirection = "asc";
+        }
+        this.requestRender();
+      });
     });
   }
 
   private renderTaskList(container: HTMLElement, source: Task[], projects: Project[], allowReorder: boolean): void {
     const { t } = this.plugin.i18n();
-    const visibleTasks = sortTasks(source, this.sortMode);
+    const visibleTasks = sortTasks(source, this.sortMode, this.sortDirection);
     const projectNames = new Map(projects.map((project) => [project.id, project.name]));
     const list = container.createDiv({ cls: "taskmate-list", attr: { role: "list" } });
     if (visibleTasks.length === 0) {
@@ -438,6 +521,39 @@ export class TodoListView extends ItemView {
       return;
     }
     visibleTasks.forEach((task) => this.renderTask(list, task, projectNames));
+    this.enableTaskReordering(list, allowReorder);
+  }
+
+  private renderScheduledTaskList(container: HTMLElement, source: Task[], projects: Project[]): void {
+    const { t } = this.plugin.i18n();
+    const groups = groupScheduledTasks(source);
+    const projectNames = new Map(projects.map((project) => [project.id, project.name]));
+    const list = container.createDiv({ cls: "taskmate-list taskmate-scheduled-list", attr: { role: "list" } });
+    const sections = [
+      { key: "overdue", title: t("view.overdue"), cls: "is-overdue" },
+      { key: "today", title: t("view.today"), cls: "is-today" },
+      { key: "later", title: t("view.later"), cls: "is-later" }
+    ] as const;
+    let taskCount = 0;
+    sections.forEach((section) => {
+      const sectionTasks = sortTasks(groups[section.key], this.sortMode, this.sortDirection);
+      if (sectionTasks.length === 0) return;
+      taskCount += sectionTasks.length;
+      list.createDiv({
+        text: section.title,
+        cls: `taskmate-task-section-heading ${section.cls}`,
+        attr: { role: "heading", "aria-level": "3" }
+      });
+      sectionTasks.forEach((task) => this.renderTask(list, task, projectNames));
+    });
+    if (taskCount === 0) {
+      list.createDiv({ cls: "taskmate-empty", text: t("tasks.empty") });
+      return;
+    }
+    this.enableTaskReordering(list, true);
+  }
+
+  private enableTaskReordering(list: HTMLElement, allowReorder: boolean): void {
     this.sortable = Sortable.create(list, {
       animation: 140,
       handle: ".taskmate-drag",
@@ -447,10 +563,12 @@ export class TodoListView extends ItemView {
       delayOnTouchOnly: true,
       touchStartThreshold: 4,
       onEnd: async (event) => {
-        if (event.oldIndex === event.newIndex || event.newIndex === undefined) return;
+        if (event.oldIndex === event.newIndex) return;
         const orderedIds = Array.from(list.querySelectorAll<HTMLElement>(".taskmate-task")).map((element) => element.dataset.taskId ?? "");
-        const id = orderedIds[event.newIndex];
-        await this.plugin.repository.reorder(id, orderedIds[event.newIndex - 1] ?? null, orderedIds[event.newIndex + 1] ?? null);
+        const id = (event.item as HTMLElement).dataset.taskId ?? "";
+        const newIndex = orderedIds.indexOf(id);
+        if (!id || newIndex < 0) return;
+        await this.plugin.repository.reorder(id, orderedIds[newIndex - 1] ?? null, orderedIds[newIndex + 1] ?? null);
         this.requestRender();
       }
     });
@@ -518,31 +636,10 @@ export class TodoListView extends ItemView {
     button.addEventListener("click", action);
   }
 
-  private scheduleRender(): void {
-    if (this.inputTimer !== null) window.clearTimeout(this.inputTimer);
-    this.inputTimer = window.setTimeout(() => this.requestRender(), 140);
-  }
-
-  private restoreFocus(input: HTMLInputElement, type: "search" | "label"): void {
-    if (this.focusAfterRender !== type) return;
-    this.focusAfterRender = null;
-    window.setTimeout(() => {
-      input.focus();
-      input.setSelectionRange(input.value.length, input.value.length);
-    }, 0);
-  }
-
   private async rememberSearch(value: string): Promise<void> {
     const word = value.trim();
     if (!word) return;
     this.plugin.settings.recentSearches = [word, ...(this.plugin.settings.recentSearches ?? []).filter((item) => item !== word)].slice(0, 10);
-    await this.plugin.saveSettings();
-    this.requestRender();
-  }
-
-  private async toggleFavoriteLabel(label: string): Promise<void> {
-    const favorites = this.plugin.settings.favoriteLabels ?? [];
-    this.plugin.settings.favoriteLabels = favorites.includes(label) ? favorites.filter((item) => item !== label) : [...favorites, label];
     await this.plugin.saveSettings();
     this.requestRender();
   }

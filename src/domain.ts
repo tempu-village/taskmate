@@ -1,12 +1,7 @@
-export type SmartView =
-  | "today"
-  | "seven-days"
-  | "upcoming"
-  | "all"
-  | "unplanned"
-  | "completed";
+export type SmartView = "scheduled" | "all" | "unplanned";
 
 export type SortMode = "manual" | "date" | "priority" | "created";
+export type SortDirection = "asc" | "desc";
 export type Priority = 1 | 2 | 3;
 
 export interface Project {
@@ -49,6 +44,7 @@ export interface TaskFilters {
   priorities: Priority[];
   labels: string[];
   search: string;
+  includeCompleted: boolean;
 }
 
 function localDateParts(date: Date): string {
@@ -70,16 +66,11 @@ export function addDays(dateKey: string, amount: number): string {
 }
 
 export function taskMatchesView(task: Task, view: SmartView, today = todayKey()): boolean {
-  if (view === "completed") return task.completed;
   if (task.completed) return false;
 
   switch (view) {
-    case "today":
-      return task.date !== null && task.date <= today;
-    case "seven-days":
-      return task.date !== null && task.date >= today && task.date <= addDays(today, 6);
-    case "upcoming":
-      return task.date !== null && task.date > today;
+    case "scheduled":
+      return task.date !== null;
     case "unplanned":
       return task.date === null;
     case "all":
@@ -92,24 +83,46 @@ export function taskMatchesView(task: Task, view: SmartView, today = todayKey())
 export function filterTasks(tasks: Task[], view: SmartView, filters: TaskFilters, today?: string): Task[] {
   const needle = filters.search.trim().toLocaleLowerCase();
   return tasks.filter((task) => {
-    if (!taskMatchesView(task, view, today)) return false;
+    if (!(view === "all" && filters.includeCompleted) && !taskMatchesView(task, view, today)) return false;
     if (filters.priorities.length > 0 && (task.priority === null || !filters.priorities.includes(task.priority))) return false;
     if (filters.labels.length > 0 && !filters.labels.some((label) => task.labels.includes(label))) return false;
     return needle.length === 0 || `${task.title}\n${task.notes}\n${task.labels.join(" ")}`.toLocaleLowerCase().includes(needle);
   });
 }
 
-export function sortTasks(tasks: Task[], mode: SortMode): Task[] {
+export interface ScheduledTaskGroups {
+  overdue: Task[];
+  today: Task[];
+  later: Task[];
+}
+
+export function groupScheduledTasks(tasks: Task[], today = todayKey()): ScheduledTaskGroups {
+  const scheduled = tasks.filter((task) => !task.completed && task.date !== null);
+  return {
+    overdue: scheduled.filter((task) => task.date !== null && task.date < today),
+    today: scheduled.filter((task) => task.date === today),
+    later: scheduled.filter((task) => task.date !== null && task.date > today)
+  };
+}
+
+export function sortTasks(tasks: Task[], mode: SortMode, direction: SortDirection = "asc"): Task[] {
   const result = [...tasks];
   const rankThenCreated = (a: Task, b: Task) => a.rank - b.rank || a.createdAt.localeCompare(b.createdAt);
+  const directed = (comparison: number) => direction === "asc" ? comparison : -comparison;
+  const compareNullable = <Value>(a: Value | null, b: Value | null, compare: (left: Value, right: Value) => number): number => {
+    if (a === null && b === null) return 0;
+    if (a === null) return 1;
+    if (b === null) return -1;
+    return directed(compare(a, b));
+  };
 
   switch (mode) {
     case "date":
-      return result.sort((a, b) => (a.date ?? "9999-12-31").localeCompare(b.date ?? "9999-12-31") || rankThenCreated(a, b));
+      return result.sort((a, b) => compareNullable(a.date, b.date, (left, right) => left.localeCompare(right)) || rankThenCreated(a, b));
     case "priority":
-      return result.sort((a, b) => (a.priority ?? 4) - (b.priority ?? 4) || rankThenCreated(a, b));
+      return result.sort((a, b) => compareNullable(a.priority, b.priority, (left, right) => left - right) || rankThenCreated(a, b));
     case "created":
-      return result.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+      return result.sort((a, b) => directed(a.createdAt.localeCompare(b.createdAt)) || rankThenCreated(a, b));
     case "manual":
       return result.sort(rankThenCreated);
   }

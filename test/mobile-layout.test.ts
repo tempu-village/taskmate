@@ -72,6 +72,23 @@ describe("mobile layout", () => {
     expect(results).toMatch(/overflow-y\s*:\s*auto\s*;/);
   });
 
+  it("keeps date and filter controls outside their result scrollers", () => {
+    expect(viewSource).toContain('createDiv({ cls: "taskmate-date-controls" })');
+    expect(viewSource).toContain('createDiv({ cls: "taskmate-date-results taskmate-scroll-region" })');
+    expect(viewSource).toContain('createDiv({ cls: "taskmate-filter-controls" })');
+    expect(viewSource).toContain('createDiv({ cls: "taskmate-filter-results taskmate-scroll-region" })');
+
+    for (const selector of [".taskmate-date-controls", ".taskmate-filter-controls"]) {
+      expect(declarations(selector)).toMatch(/flex\s*:\s*0\s+0\s+auto\s*;/);
+    }
+    for (const selector of [".taskmate-date-results", ".taskmate-filter-results"]) {
+      const rule = declarations(selector);
+      expect(rule).toMatch(/flex\s*:\s*1\s+1\s+auto\s*;/);
+      expect(rule).toMatch(/min-height\s*:\s*0\s*;/);
+      expect(rule).toMatch(/overflow-y\s*:\s*auto\s*;/);
+    }
+  });
+
   it("avoids Android WebView's native search-input focus behavior", () => {
     expect(viewSource).not.toMatch(/\btype:\s*"search",/);
     expect(viewSource.match(/"inputmode": "search"/g)).toHaveLength(2);
@@ -102,9 +119,31 @@ describe("mobile layout", () => {
     expect(presets).toMatch(/grid-template-columns\s*:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)\s*;/);
   });
 
+  it("uses one-row sort buttons with direction inside the active button", () => {
+    expect(viewSource).not.toContain('controls.createEl("select"');
+    expect(viewSource).toContain('createDiv({ cls: "taskmate-sort-options"');
+    expect(viewSource).toContain('cls: "taskmate-sort-direction"');
+    expect(viewSource).toContain('mode === this.sortMode && mode !== "manual"');
+
+    const options = declarations(".taskmate-sort-options");
+    expect(options).toMatch(/display\s*:\s*grid\s*;/);
+    expect(options).toMatch(/grid-template-columns\s*:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)\s*;/);
+  });
+
+  it("gives title and notes the full modal width", () => {
+    expect(taskModalSource).toContain('addClass("taskmate-title-setting")');
+    expect(taskModalSource).toContain('addClass("taskmate-notes-setting")');
+    expect(declarations(".taskmate-title-setting input")).toMatch(/width\s*:\s*100%\s*;/);
+    const notes = declarations(".taskmate-notes-setting textarea");
+    expect(notes).toMatch(/width\s*:\s*100%\s*;/);
+    expect(notes).toMatch(/min-height\s*:\s*9rem\s*;/);
+  });
+
   it("keeps the end of phone task lists above Obsidian navigation", () => {
     expect(viewSource).toContain('cls: "taskmate-content taskmate-scroll-region"');
     expect(viewSource).toContain('cls: "taskmate-search-results taskmate-scroll-region"');
+    expect(viewSource).toContain('cls: "taskmate-date-results taskmate-scroll-region"');
+    expect(viewSource).toContain('cls: "taskmate-filter-results taskmate-scroll-region"');
 
     const scrollRegion = declarations(".is-phone .taskmate-scroll-region");
     expect(scrollRegion).toMatch(/padding-bottom\s*:\s*max\(/);

@@ -12,6 +12,10 @@ _Avoid_: Item, card, task note
 A built-in projection of tasks selected by a fixed date or completion rule.
 _Avoid_: Filter, saved search
 
+**Scheduled**:
+An incomplete task with a date. The Scheduled smart view groups these tasks into Overdue, Today, and Later.
+_Avoid_: Upcoming, future tasks
+
 **Unplanned**:
 An incomplete task without a date.
 _Avoid_: Inbox, unscheduled bucket

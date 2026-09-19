@@ -41,7 +41,9 @@ export class TaskModal extends Modal {
     this.modalEl.addClass("taskmate-task-modal");
     const fields = contentEl.createDiv({ cls: "taskmate-task-fields" });
 
-    new Setting(fields).setName(t("taskModal.title")).addText((text) => {
+    const titleSetting = new Setting(fields).setName(t("taskModal.title"));
+    titleSetting.settingEl.addClass("taskmate-title-setting");
+    titleSetting.addText((text) => {
       text.setPlaceholder(t("taskModal.titlePlaceholder")).setValue(this.draft.title).onChange((value) => {
         this.draft.title = value;
       });
@@ -146,8 +148,10 @@ export class TaskModal extends Modal {
       refreshLabelSelection();
     }
 
-    new Setting(fields).setName(t("taskModal.notes")).addTextArea((area) => {
-      area.inputEl.rows = 5;
+    const notesSetting = new Setting(fields).setName(t("taskModal.notes"));
+    notesSetting.settingEl.addClass("taskmate-notes-setting");
+    notesSetting.addTextArea((area) => {
+      area.inputEl.rows = 7;
       area.setValue(this.draft.notes).onChange((value) => {
         this.draft.notes = value;
       });
