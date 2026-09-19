@@ -3,7 +3,7 @@
 [English](README.md) | 日本語
 
 <!-- translation-status: ai-translated -->
-<!-- translation-source-sha256: a1b92ee47a81c8e8c7a801030a0ae45b64020c5373de8fbad84f14497d337c35 -->
+<!-- translation-source-sha256: 587d373d2a49b5e8d2c168ce332e72c25f4b557c5041a709026d68e88c3d71ca -->
 
 > 翻訳状態：`ai-translated`
 >
@@ -48,6 +48,20 @@ TaskMateには、任意で使用できるポータブルなAgent Skillも含ま�
 5. **設定 → TaskMate → 言語**で、自動、English、日本語のいずれかを選択します。
 
 言語を変更するとTaskMateのビューと設定画面はすぐに更新されます。コマンド名とリボンの説明を更新するには、プラグインを再読み込みしてください。
+
+## GitHub Releaseからインストールする
+
+TaskMateは、まだObsidian Community directoryに掲載されていません。GitHub Releaseが利用できる場合は、[TaskMate Releasesページ](https://github.com/tempu-village/taskmate/releases)を開き、同じバージョンの次の3ファイルをダウンロードします。
+
+```text
+main.js
+manifest.json
+styles.css
+```
+
+`<vault>/.obsidian/plugins/taskmate/`を作成し、3ファイルをその直下へ置き、Obsidianを再起動して、**設定 → コミュニティプラグイン**からTaskMateを有効にします。
+
+手動インストールを更新する場合は、Vaultをバックアップし、TaskMateを無効にして、1つの新しいReleaseに含まれる3ファイルをすべて置き換えてから、TaskMateを再び有効にします。異なるバージョンのファイルを混在させないでください。
 
 ## ローカルビルドからインストールする
 
@@ -228,10 +242,13 @@ npm run build
 python3 -m unittest discover -s skills/taskmate/tests -v
 python3 scripts/validate_skills.py
 npm run validate:localization
+npm run validate:release
 git diff --check
 ```
 
 生成された`main.js`はビルド成果物です。直接編集しないでください。
+
+保守担当者は、バージョン情報を同期して更新し、正確なバージョンタグを作成し、生成されたGitHub Releaseを確認するため、二言語の[リリース手順](docs/releasing.md)に従ってください。
 
 ## ライセンス
 

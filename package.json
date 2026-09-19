@@ -9,6 +9,8 @@
     "deploy": "bash scripts/deploy-to-vault.sh",
     "dev": "node esbuild.config.mjs",
     "validate:localization": "python3 scripts/validate_localization.py",
+    "validate:release": "node scripts/validate-release.mjs",
+    "version:bump": "node scripts/bump-version.mjs",
     "typecheck": "tsc --noEmit --skipLibCheck",
     "test": "vitest run"
   },

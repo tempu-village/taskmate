@@ -42,6 +42,20 @@ TaskMate also includes an optional portable Agent Skill. The Skill turns explici
 
 The language change updates TaskMate views and settings immediately. Reload the plugin to update command names and the ribbon tooltip.
 
+## Install from a GitHub Release
+
+TaskMate is not yet listed in the Obsidian Community directory. When a GitHub Release is available, open the [TaskMate Releases page](https://github.com/tempu-village/taskmate/releases) and download these three assets from the same version:
+
+```text
+main.js
+manifest.json
+styles.css
+```
+
+Create `<vault>/.obsidian/plugins/taskmate/`, place the three files directly inside it, restart Obsidian, and enable TaskMate under **Settings → Community plugins**.
+
+To update a manual installation, back up the vault, disable TaskMate, replace all three files with assets from one newer Release, and enable TaskMate again. Do not mix files from different versions.
+
 ## Install from a local build
 
 TaskMate is not yet listed in the Obsidian Community directory. Build it from this repository:
@@ -221,10 +235,13 @@ npm run build
 python3 -m unittest discover -s skills/taskmate/tests -v
 python3 scripts/validate_skills.py
 npm run validate:localization
+npm run validate:release
 git diff --check
 ```
 
 The generated `main.js` is a build artifact. Do not edit it by hand.
+
+Maintainers should follow the bilingual [release procedure](docs/releasing.md) to update synchronized version metadata, create an exact version tag, and verify the generated GitHub Release.
 
 ## License
 
