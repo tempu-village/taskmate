@@ -4,7 +4,37 @@ Use this workflow after building the complete coverage review. Proposal files ar
 
 ## Stage
 
-Prepare a JSON plan with `language` (`ja` or `en`), the eligible `sources`, and `proposals`. Each proposal has an `operation` (`create`, `merge`, or `exclude`), `sourceNote`, one or more exact `coverage` statements, and a readable `title`. Add task fields for create or merge. A merge requires `targetTaskId`; an exclusion requires `reason`.
+Prepare a JSON plan with `language` (`ja` or `en`), the eligible `sources`, the candidate manifest in `candidates`, and `proposals`. Each candidate has a `sourceNote` and an exact non-empty `statement` copied from that source. A statement must match one complete non-empty source line, ignoring only leading and trailing whitespace; a substring is not sufficient. Each proposal has an `operation` (`create`, `merge`, or `exclude`), `sourceNote`, one or more exact `coverage` statements, and a readable `title`. Add task fields for create or merge. A merge requires `targetTaskId`; an exclusion requires `reason`.
+
+Every candidate must appear in proposal coverage exactly once. Coverage cannot introduce statements absent from the manifest. Staging verifies the manifest against the current source and stops before writing proposal files when coverage is missing, duplicated, or undeclared.
+
+Example plan shape:
+
+```json
+{
+  "language": "en",
+  "sources": ["Notes/meeting.md"],
+  "candidates": [
+    {"sourceNote": "Notes/meeting.md", "statement": "Send the estimate."},
+    {"sourceNote": "Notes/meeting.md", "statement": "Maybe revisit the color palette."}
+  ],
+  "proposals": [
+    {
+      "operation": "create",
+      "sourceNote": "Notes/meeting.md",
+      "coverage": ["Send the estimate."],
+      "title": "Send the estimate"
+    },
+    {
+      "operation": "exclude",
+      "sourceNote": "Notes/meeting.md",
+      "coverage": ["Maybe revisit the color palette."],
+      "title": "Do not create a color-palette task",
+      "reason": "The meeting did not establish an owner or desired outcome; ask the user to confirm this exclusion."
+    }
+  ]
+}
+```
 
 Run:
 

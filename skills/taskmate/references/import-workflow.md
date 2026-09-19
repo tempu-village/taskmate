@@ -14,12 +14,14 @@ The folder setting may include subfolders. Exclude the task, project, proposal, 
 
 ## Build a coverage review
 
-Read each eligible new or changed note completely. Produce two sections:
+Read each eligible new or changed note completely. First inventory every exact source statement that could reasonably imply follow-up; this is the candidate manifest. A statement is one complete non-empty source line, ignoring only leading and trailing whitespace. Then classify every candidate into two sections:
 
 1. **Add or merge** — the tasks that will be created, including the source statements covered by each.
 2. **Possible exclusions** — every source statement that could reasonably imply action but that you propose not to add, with a concise reason and an explicit confirmation request.
 
 Default every ambiguous action to **Add**. Pure headings and connective prose need not become candidates, but background facts, decisions, promises, questions, and dependencies must be accounted for whenever they could imply follow-up work.
+
+Read [coverage-review-examples.md](coverage-review-examples.md) when building the manifest. It shows meeting notes, ambiguous background, task merging, task splitting, and explicit exclusions.
 
 Write the complete review to a proposal session before asking for a decision. Do not create or change canonical task files during staging. Follow [proposal-workflow.md](proposal-workflow.md) to obtain explicit decisions and promote approved or revised proposals. Apply the task-boundary rules in [task-schema.md](task-schema.md); the agent may decide whether related statements become one task or several.
 
