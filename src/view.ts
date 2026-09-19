@@ -1,6 +1,5 @@
 import { ItemView, Menu, Notice, WorkspaceLeaf } from "obsidian";
-import Sortable from "sortablejs";
-import { filterTasks, groupScheduledTasks, sortTasks } from "./domain";
+import { filterTasks } from "./domain";
 import type { Priority, Project, SmartView, SortDirection, SortMode, Task, TaskFilters } from "./domain";
 import type { TranslationKey } from "./i18n";
 import { compareDisplayText } from "./i18n";
@@ -8,6 +7,10 @@ import type TaskMatePlugin from "./main";
 import { ProjectModal } from "./project-modal";
 import { TaskModal } from "./task-modal";
 import { filterLabelSuggestions, recordRecentLabels } from "./task-input-suggestions";
+import { buildTaskListModel } from "./task-list-model";
+import type { TaskListModel } from "./task-list-model";
+import { renderTaskList as renderTaskListDom } from "./task-list-renderer";
+import type { RenderedTaskList, TaskListAction, TaskListCopy } from "./task-list-renderer";
 
 export const TODO_VIEW_TYPE = "taskmate-list";
 
@@ -48,7 +51,7 @@ export class TodoListView extends ItemView {
   private labelQuery = "";
   private projectScreen: ProjectScreen = "index";
   private activeProjectId: string | null = null;
-  private sortable: Sortable | null = null;
+  private renderedTaskList: RenderedTaskList | null = null;
   private generation = 0;
 
   constructor(leaf: WorkspaceLeaf, private readonly plugin: TaskMatePlugin) {
@@ -72,7 +75,7 @@ export class TodoListView extends ItemView {
   }
 
   async onClose(): Promise<void> {
-    this.sortable?.destroy();
+    this.destroyTaskList();
   }
 
   requestRender(): void {
@@ -84,8 +87,7 @@ export class TodoListView extends ItemView {
     const [tasks, projects] = await Promise.all([this.plugin.repository.list(), this.plugin.projects.list()]);
     if (currentGeneration !== this.generation) return;
 
-    this.sortable?.destroy();
-    this.sortable = null;
+    this.destroyTaskList();
     const root = this.contentEl;
     root.empty();
     root.addClass("taskmate-view");
@@ -176,8 +178,7 @@ export class TodoListView extends ItemView {
 
   private renderSearchResults(container: HTMLElement, tasks: Task[], projects: Project[]): void {
     const { t } = this.plugin.i18n();
-    this.sortable?.destroy();
-    this.sortable = null;
+    this.destroyTaskList();
     container.empty();
     const recent = this.plugin.settings.recentSearches ?? [];
     if (recent.length > 0) {
@@ -453,8 +454,7 @@ export class TodoListView extends ItemView {
 
   private renderFilterResults(container: HTMLElement, tasks: Task[], projects: Project[]): void {
     const { t } = this.plugin.i18n();
-    this.sortable?.destroy();
-    this.sortable = null;
+    this.destroyTaskList();
     container.empty();
     const selectionCount = this.selectedPriorities.length + this.selectedLabels.length + Number(this.includeCompleted);
     const resultHeader = container.createDiv({ cls: "taskmate-filter-result-heading" });
@@ -512,90 +512,72 @@ export class TodoListView extends ItemView {
   }
 
   private renderTaskList(container: HTMLElement, source: Task[], projects: Project[], allowReorder: boolean): void {
-    const { t } = this.plugin.i18n();
-    const visibleTasks = sortTasks(source, this.sortMode, this.sortDirection);
-    const projectNames = new Map(projects.map((project) => [project.id, project.name]));
-    const list = container.createDiv({ cls: "taskmate-list", attr: { role: "list" } });
-    if (visibleTasks.length === 0) {
-      list.createDiv({ cls: "taskmate-empty", text: t("tasks.empty") });
-      return;
-    }
-    visibleTasks.forEach((task) => this.renderTask(list, task, projectNames));
-    this.enableTaskReordering(list, allowReorder);
+    const model = buildTaskListModel({
+      tasks: source,
+      projects,
+      grouping: "flat",
+      sortMode: this.sortMode,
+      sortDirection: this.sortDirection,
+      allowReorder
+    });
+    this.mountTaskList(container, model, source);
   }
 
   private renderScheduledTaskList(container: HTMLElement, source: Task[], projects: Project[]): void {
-    const { t } = this.plugin.i18n();
-    const groups = groupScheduledTasks(source);
-    const projectNames = new Map(projects.map((project) => [project.id, project.name]));
-    const list = container.createDiv({ cls: "taskmate-list taskmate-scheduled-list", attr: { role: "list" } });
-    const sections = [
-      { key: "overdue", title: t("view.overdue"), cls: "is-overdue" },
-      { key: "today", title: t("view.today"), cls: "is-today" },
-      { key: "later", title: t("view.later"), cls: "is-later" }
-    ] as const;
-    let taskCount = 0;
-    sections.forEach((section) => {
-      const sectionTasks = sortTasks(groups[section.key], this.sortMode, this.sortDirection);
-      if (sectionTasks.length === 0) return;
-      taskCount += sectionTasks.length;
-      list.createDiv({
-        text: section.title,
-        cls: `taskmate-task-section-heading ${section.cls}`,
-        attr: { role: "heading", "aria-level": "3" }
-      });
-      sectionTasks.forEach((task) => this.renderTask(list, task, projectNames));
+    const model = buildTaskListModel({
+      tasks: source,
+      projects,
+      grouping: "scheduled",
+      sortMode: this.sortMode,
+      sortDirection: this.sortDirection,
+      allowReorder: true
     });
-    if (taskCount === 0) {
-      list.createDiv({ cls: "taskmate-empty", text: t("tasks.empty") });
+    this.mountTaskList(container, model, source);
+  }
+
+  private taskListCopy(): TaskListCopy {
+    const { t } = this.plugin.i18n();
+    return {
+      empty: t("tasks.empty"),
+      reorderAriaLabel: t("tasks.reorderAriaLabel"),
+      completeAriaLabel: (title) => t("tasks.completeAriaLabel", { title }),
+      moreAriaLabel: t("tasks.moreAriaLabel"),
+      sectionTitles: {
+        overdue: t("view.overdue"),
+        today: t("view.today"),
+        later: t("view.later")
+      }
+    };
+  }
+
+  private mountTaskList(
+    container: HTMLElement,
+    model: TaskListModel,
+    source: Task[]
+  ): void {
+    this.destroyTaskList();
+    const tasksById = new Map(source.map((task) => [task.id, task]));
+    this.renderedTaskList = renderTaskListDom(container, model, this.taskListCopy(), (action) =>
+      this.handleTaskListAction(action, tasksById)
+    );
+  }
+
+  private destroyTaskList(): void {
+    this.renderedTaskList?.destroy();
+    this.renderedTaskList = null;
+  }
+
+  private async handleTaskListAction(action: TaskListAction, tasksById: Map<string, Task>): Promise<void> {
+    const { t } = this.plugin.i18n();
+    if (action.type === "reorder") {
+      await this.plugin.repository.reorder(action.taskId, action.previousId, action.nextId);
+      this.requestRender();
       return;
     }
-    this.enableTaskReordering(list, true);
-  }
 
-  private enableTaskReordering(list: HTMLElement, allowReorder: boolean): void {
-    this.sortable = Sortable.create(list, {
-      animation: 140,
-      handle: ".taskmate-drag",
-      draggable: ".taskmate-task",
-      disabled: this.sortMode !== "manual" || !allowReorder,
-      delay: 120,
-      delayOnTouchOnly: true,
-      touchStartThreshold: 4,
-      onEnd: async (event) => {
-        if (event.oldIndex === event.newIndex) return;
-        const orderedIds = Array.from(list.querySelectorAll<HTMLElement>(".taskmate-task")).map((element) => element.dataset.taskId ?? "");
-        const id = (event.item as HTMLElement).dataset.taskId ?? "";
-        const newIndex = orderedIds.indexOf(id);
-        if (!id || newIndex < 0) return;
-        await this.plugin.repository.reorder(id, orderedIds[newIndex - 1] ?? null, orderedIds[newIndex + 1] ?? null);
-        this.requestRender();
-      }
-    });
-  }
-
-  private renderTask(list: HTMLElement, task: Task, projectNames: Map<string, string>): void {
-    const { t } = this.plugin.i18n();
-    const row = list.createDiv({ cls: `taskmate-task${task.completed ? " is-completed" : ""}`, attr: { role: "listitem" } });
-    row.dataset.taskId = task.id;
-    const drag = row.createEl("button", { text: "⠿", cls: "taskmate-drag", attr: { "aria-label": t("tasks.reorderAriaLabel") } });
-    drag.disabled = this.sortMode !== "manual" || this.screen === "search" || this.screen === "filter";
-    const checkbox = row.createEl("input", { type: "checkbox", attr: { "aria-label": t("tasks.completeAriaLabel", { title: task.title }) } });
-    checkbox.checked = task.completed;
-    checkbox.addEventListener("change", async () => {
-      await this.plugin.repository.update(task, { completed: checkbox.checked });
-      this.requestRender();
-    });
-    const body = row.createDiv({ cls: "taskmate-task-body" });
-    const title = body.createEl("button", { text: task.title, cls: "taskmate-title" });
-    title.addEventListener("click", () => void this.openEditTask(task));
-    const metadata = body.createDiv({ cls: "taskmate-metadata" });
-    if (task.date) metadata.createSpan({ text: task.date });
-    if (task.priority) metadata.createSpan({ text: `P${task.priority}`, cls: `taskmate-priority taskmate-priority-${task.priority}` });
-    if (task.projectId && projectNames.has(task.projectId)) metadata.createSpan({ text: projectNames.get(task.projectId) });
-    task.labels.slice(0, 3).forEach((label) => metadata.createSpan({ text: `#${label}` }));
-    const more = row.createEl("button", { text: "•••", cls: "taskmate-more", attr: { "aria-label": t("tasks.moreAriaLabel") } });
-    more.addEventListener("click", (event) => {
+    const task = tasksById.get(action.taskId);
+    if (!task) return;
+    if (action.type === "show-actions") {
       const menu = new Menu();
       menu.addItem((item) => item.setTitle(t("common.edit")).setIcon("pencil").onClick(() => void this.openEditTask(task)));
       menu.addItem((item) => item.setTitle(t("common.delete")).setIcon("trash").onClick(async () => {
@@ -604,8 +586,18 @@ export class TodoListView extends ItemView {
         new Notice(t("tasks.deletedNotice"));
         this.requestRender();
       }));
-      menu.showAtMouseEvent(event);
-    });
+      menu.showAtMouseEvent(action.event);
+      return;
+    }
+    if (action.type === "open") {
+      await this.openEditTask(task);
+      return;
+    }
+    if (action.type === "toggle-completed") {
+      await this.plugin.repository.update(task, { completed: action.completed });
+      this.requestRender();
+      return;
+    }
   }
 
   private renderNavigation(root: HTMLElement): void {

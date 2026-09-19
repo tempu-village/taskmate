@@ -1,0 +1,82 @@
+import { describe, expect, it } from "vitest";
+import type { Project, Task } from "../src/domain";
+import { buildTaskListModel } from "../src/task-list-model";
+
+function task(overrides: Partial<Task> = {}): Task {
+  return {
+    path: "TaskMate/Tasks/one.md",
+    id: "one",
+    title: "One",
+    completed: false,
+    date: null,
+    priority: null,
+    labels: [],
+    projectId: null,
+    rank: 1024,
+    createdAt: "2026-09-01T00:00:00.000Z",
+    updatedAt: "2026-09-01T00:00:00.000Z",
+    completedAt: null,
+    sourceNote: null,
+    notes: "",
+    ...overrides
+  };
+}
+
+const project: Project = {
+  path: "TaskMate/Projects/work.md",
+  id: "work",
+  name: "Work",
+  createdAt: "2026-09-01T00:00:00.000Z",
+  updatedAt: "2026-09-01T00:00:00.000Z",
+  lastUsedAt: null
+};
+
+describe("task-list presentation model", () => {
+  it("builds sorted flat rows with display-only project and label metadata", () => {
+    const model = buildTaskListModel({
+      tasks: [
+        task({ id: "later", rank: 20 }),
+        task({ id: "first", rank: 10, projectId: "work", labels: ["a", "b", "c", "hidden"] })
+      ],
+      projects: [project],
+      grouping: "flat",
+      sortMode: "manual",
+      sortDirection: "asc",
+      allowReorder: true
+    });
+
+    expect(model.reorderEnabled).toBe(true);
+    expect(model.grouping).toBe("flat");
+    expect(model.sections).toEqual([{
+      id: "default",
+      rows: [
+        expect.objectContaining({ id: "first", projectName: "Work", labels: ["a", "b", "c"] }),
+        expect.objectContaining({ id: "later", projectName: null })
+      ]
+    }]);
+  });
+
+  it("builds scheduled sections in overdue, today, and later order", () => {
+    const model = buildTaskListModel({
+      tasks: [
+        task({ id: "later", date: "2026-09-20" }),
+        task({ id: "overdue", date: "2026-09-18" }),
+        task({ id: "today", date: "2026-09-19" })
+      ],
+      projects: [],
+      grouping: "scheduled",
+      sortMode: "date",
+      sortDirection: "asc",
+      allowReorder: true,
+      today: "2026-09-19"
+    });
+
+    expect(model.reorderEnabled).toBe(false);
+    expect(model.grouping).toBe("scheduled");
+    expect(model.sections.map((section) => [section.id, section.rows.map((row) => row.id)])).toEqual([
+      ["overdue", ["overdue"]],
+      ["today", ["today"]],
+      ["later", ["later"]]
+    ]);
+  });
+});

@@ -447,6 +447,596 @@ var TaskMateSettingTab = class extends import_obsidian3.PluginSettingTab {
 // src/view.ts
 var import_obsidian6 = require("obsidian");
 
+// src/domain.ts
+function localDateParts(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+function todayKey(now = /* @__PURE__ */ new Date()) {
+  return localDateParts(now);
+}
+function addDays(dateKey, amount) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  date.setDate(date.getDate() + amount);
+  return localDateParts(date);
+}
+function taskMatchesView(task, view, today = todayKey()) {
+  if (task.completed) return false;
+  switch (view) {
+    case "scheduled":
+      return task.date !== null;
+    case "unplanned":
+      return task.date === null;
+    case "all":
+      return true;
+    default:
+      return false;
+  }
+}
+function filterTasks(tasks, view, filters, today) {
+  const needle = filters.search.trim().toLocaleLowerCase();
+  return tasks.filter((task) => {
+    if (!(view === "all" && filters.includeCompleted) && !taskMatchesView(task, view, today)) return false;
+    if (filters.priorities.length > 0 && (task.priority === null || !filters.priorities.includes(task.priority))) return false;
+    if (filters.labels.length > 0 && !filters.labels.some((label) => task.labels.includes(label))) return false;
+    return needle.length === 0 || `${task.title}
+${task.notes}
+${task.labels.join(" ")}`.toLocaleLowerCase().includes(needle);
+  });
+}
+function groupScheduledTasks(tasks, today = todayKey()) {
+  const scheduled = tasks.filter((task) => !task.completed && task.date !== null);
+  return {
+    overdue: scheduled.filter((task) => task.date !== null && task.date < today),
+    today: scheduled.filter((task) => task.date === today),
+    later: scheduled.filter((task) => task.date !== null && task.date > today)
+  };
+}
+function sortTasks(tasks, mode, direction = "asc") {
+  const result = [...tasks];
+  const rankThenCreated = (a, b) => a.rank - b.rank || a.createdAt.localeCompare(b.createdAt);
+  const directed = (comparison) => direction === "asc" ? comparison : -comparison;
+  const compareNullable = (a, b, compare) => {
+    if (a === null && b === null) return 0;
+    if (a === null) return 1;
+    if (b === null) return -1;
+    return directed(compare(a, b));
+  };
+  switch (mode) {
+    case "date":
+      return result.sort((a, b) => compareNullable(a.date, b.date, (left, right) => left.localeCompare(right)) || rankThenCreated(a, b));
+    case "priority":
+      return result.sort((a, b) => compareNullable(a.priority, b.priority, (left, right) => left - right) || rankThenCreated(a, b));
+    case "created":
+      return result.sort((a, b) => directed(a.createdAt.localeCompare(b.createdAt)) || rankThenCreated(a, b));
+    case "manual":
+      return result.sort(rankThenCreated);
+  }
+}
+
+// src/i18n/en.ts
+var en = {
+  "nav.date": "Date",
+  "nav.search": "Search",
+  "nav.projects": "Projects",
+  "nav.filter": "Filter",
+  "nav.ariaLabel": "Main navigation",
+  "view.scheduled": "Scheduled",
+  "view.overdue": "Overdue",
+  "view.today": "Today",
+  "view.later": "Later",
+  "view.all": "All",
+  "view.unplanned": "No date",
+  "sort.label": "Sort",
+  "sort.manual": "Manual",
+  "sort.date": "Date",
+  "sort.priority": "Priority",
+  "sort.created": "Created",
+  "sort.ariaLabel": "Sort tasks",
+  "sort.ascending": "ascending",
+  "sort.descending": "descending",
+  "sort.activeOptionAriaLabel": "{mode}, {direction}. Activate again to reverse the order.",
+  "common.add": "+ Add",
+  "common.edit": "Edit",
+  "common.delete": "Delete",
+  "common.cancel": "Cancel",
+  "common.save": "Save",
+  "common.back": "Back",
+  "common.clear": "Clear",
+  "search.title": "Search",
+  "search.placeholder": "Search tasks, labels, and projects",
+  "search.ariaLabel": "Search tasks",
+  "search.recent": "Recent searches",
+  "search.emptyQuery": "Enter a search term",
+  "projects.title": "Projects",
+  "projects.editTitle": "Edit project",
+  "projects.recent": "Recently used projects",
+  "projects.all": "All projects",
+  "projects.empty": "No projects",
+  "projects.taskCountOne": "{count} task",
+  "projects.taskCount": "{count} tasks",
+  "projects.name": "Project name",
+  "projects.saveName": "Save name",
+  "projects.delete": "Delete project",
+  "projects.deleteConfirm": "Delete \u201C{project}\u201D? Its tasks will become unassigned.",
+  "projects.deletedNotice": "Project deleted. Its tasks are now unassigned.",
+  "filter.title": "Filter",
+  "filter.priority": "Priority",
+  "filter.priorityValue": "Priority {priority}",
+  "filter.labels": "Labels",
+  "filter.labelSearchPlaceholder": "Search labels",
+  "filter.labelSearchAriaLabel": "Search labels",
+  "filter.recentLabels": "Recent labels",
+  "filter.matchingLabels": "Matching labels",
+  "filter.removeLabelAriaLabel": "Remove {label}",
+  "filter.completion": "Completion state",
+  "filter.includeCompleted": "Include completed tasks",
+  "filter.results": "Results",
+  "filter.select": "Select filters",
+  "filter.clearAll": "Clear all",
+  "tasks.empty": "No tasks",
+  "tasks.reorderAriaLabel": "Reorder tasks",
+  "tasks.completeAriaLabel": "Complete {title}",
+  "tasks.moreAriaLabel": "More actions",
+  "tasks.deleteConfirm": "Move \u201C{title}\u201D to the trash?",
+  "tasks.deletedNotice": "Task moved to the trash",
+  "taskModal.addTitle": "Add task",
+  "taskModal.editTitle": "Edit task",
+  "taskModal.title": "Title",
+  "taskModal.titlePlaceholder": "What needs to be done?",
+  "taskModal.date": "Date",
+  "taskModal.project": "Project",
+  "taskModal.unassigned": "Unassigned",
+  "taskModal.priority": "Priority",
+  "taskModal.noPriority": "None",
+  "taskModal.labels": "Labels",
+  "taskModal.labelsDescription": "Comma-separated, up to 500 unique labels",
+  "taskModal.labelsPlaceholder": "work, calls",
+  "taskModal.recentLabels": "Recently used labels",
+  "taskModal.notes": "Notes",
+  "date.today": "Today",
+  "date.tomorrow": "Tomorrow",
+  "date.sevenDays": "7 days later",
+  "date.none": "No date",
+  "projectModal.addTitle": "Add project",
+  "projectModal.name": "Project name",
+  "projectModal.namePlaceholder": "New project",
+  "settings.language": "Language",
+  "settings.languageDescription": "Choose the language used by TaskMate. Reload the plugin to update command names and the ribbon tooltip.",
+  "settings.languageAuto": "Auto",
+  "settings.languageEnglish": "English",
+  "settings.languageJapanese": "\u65E5\u672C\u8A9E",
+  "settings.taskFolder": "Task folder",
+  "settings.taskFolderDescription": "One Markdown file is stored here for each task.",
+  "settings.projectFolder": "Project folder",
+  "settings.projectFolderDescription": "One Markdown file is stored here for each project.",
+  "settings.proposalFolder": "Proposal folder",
+  "settings.proposalFolderDescription": "AI import proposals are reviewed here before approved items become tasks.",
+  "settings.sourceFolders": "AI source folders",
+  "settings.sourceFoldersDescription": "One vault-relative folder per line. Notes inherit inclusion from these folders.",
+  "settings.includeSubfolders": "Include subfolders",
+  "settings.includeSubfoldersDescription": "Apply every AI source folder rule to its subfolders too.",
+  "command.openRibbon": "Open TaskMate",
+  "command.openList": "Open task list",
+  "command.includeNote": "Include current note as an AI source",
+  "command.excludeNote": "Exclude current note as an AI source",
+  "command.includeFolder": "Include current folder as an AI source",
+  "notice.migratedTaskNames": "Removed IDs from {count} task note names",
+  "notice.migrationFailed": "Some task note names could not be updated",
+  "notice.noteIncluded": "Note included as an AI source",
+  "notice.noteExcluded": "Note excluded as an AI source",
+  "notice.folderIncluded": "Included {folder} as an AI source"
+};
+
+// src/i18n/ja.ts
+var ja = {
+  "nav.date": "\u65E5\u4ED8",
+  "nav.search": "\u691C\u7D22",
+  "nav.projects": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8",
+  "nav.filter": "\u30D5\u30A3\u30EB\u30BF",
+  "nav.ariaLabel": "\u30E1\u30A4\u30F3\u30CA\u30D3\u30B2\u30FC\u30B7\u30E7\u30F3",
+  "view.scheduled": "\u4E88\u5B9A",
+  "view.overdue": "\u671F\u9650\u5207\u308C",
+  "view.today": "\u4ECA\u65E5",
+  "view.later": "\u660E\u65E5\u4EE5\u964D",
+  "view.all": "\u3059\u3079\u3066",
+  "view.unplanned": "\u65E5\u4ED8\u306A\u3057",
+  "sort.label": "\u4E26\u3079\u66FF\u3048",
+  "sort.manual": "\u624B\u52D5",
+  "sort.date": "\u65E5\u4ED8",
+  "sort.priority": "\u512A\u5148\u5EA6",
+  "sort.created": "\u4F5C\u6210\u65E5",
+  "sort.ariaLabel": "\u30BF\u30B9\u30AF\u3092\u4E26\u3079\u66FF\u3048",
+  "sort.ascending": "\u6607\u9806",
+  "sort.descending": "\u964D\u9806",
+  "sort.activeOptionAriaLabel": "{mode}\u3001{direction}\u3002\u3082\u3046\u4E00\u5EA6\u62BC\u3059\u3068\u9806\u5E8F\u3092\u53CD\u8EE2\u3057\u307E\u3059\u3002",
+  "common.add": "\uFF0B \u8FFD\u52A0",
+  "common.edit": "\u7DE8\u96C6",
+  "common.delete": "\u524A\u9664",
+  "common.cancel": "\u30AD\u30E3\u30F3\u30BB\u30EB",
+  "common.save": "\u4FDD\u5B58",
+  "common.back": "\u623B\u308B",
+  "common.clear": "\u6D88\u53BB",
+  "search.title": "\u691C\u7D22",
+  "search.placeholder": "\u30BF\u30B9\u30AF\u3001\u30E9\u30D9\u30EB\u3001\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3092\u691C\u7D22",
+  "search.ariaLabel": "\u30BF\u30B9\u30AF\u3092\u691C\u7D22",
+  "search.recent": "\u6700\u8FD1\u306E\u691C\u7D22",
+  "search.emptyQuery": "\u691C\u7D22\u8A9E\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044",
+  "projects.title": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8",
+  "projects.editTitle": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3092\u7DE8\u96C6",
+  "projects.recent": "\u6700\u8FD1\u4F7F\u3063\u305F\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8",
+  "projects.all": "\u3059\u3079\u3066\u306E\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8",
+  "projects.empty": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306F\u3042\u308A\u307E\u305B\u3093",
+  "projects.taskCountOne": "{count}\u4EF6",
+  "projects.taskCount": "{count}\u4EF6",
+  "projects.name": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u540D",
+  "projects.saveName": "\u540D\u79F0\u3092\u4FDD\u5B58",
+  "projects.delete": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3092\u524A\u9664",
+  "projects.deleteConfirm": "\u300C{project}\u300D\u3092\u524A\u9664\u3057\u307E\u3059\u304B\uFF1F\u30BF\u30B9\u30AF\u306F\u672A\u6240\u5C5E\u3078\u79FB\u52D5\u3057\u307E\u3059\u3002",
+  "projects.deletedNotice": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3092\u524A\u9664\u3057\u3001\u30BF\u30B9\u30AF\u3092\u672A\u6240\u5C5E\u3078\u79FB\u52D5\u3057\u307E\u3057\u305F",
+  "filter.title": "\u30D5\u30A3\u30EB\u30BF",
+  "filter.priority": "\u512A\u5148\u5EA6",
+  "filter.priorityValue": "\u512A\u5148\u5EA6 {priority}",
+  "filter.labels": "\u30E9\u30D9\u30EB",
+  "filter.labelSearchPlaceholder": "\u30E9\u30D9\u30EB\u3092\u691C\u7D22",
+  "filter.labelSearchAriaLabel": "\u30E9\u30D9\u30EB\u3092\u691C\u7D22",
+  "filter.recentLabels": "\u6700\u8FD1\u4F7F\u3063\u305F\u30E9\u30D9\u30EB",
+  "filter.matchingLabels": "\u4E00\u81F4\u3059\u308B\u30E9\u30D9\u30EB",
+  "filter.removeLabelAriaLabel": "{label}\u3092\u89E3\u9664",
+  "filter.completion": "\u5B8C\u4E86\u72B6\u614B",
+  "filter.includeCompleted": "\u5B8C\u4E86\u6E08\u307F\u30BF\u30B9\u30AF\u3092\u8868\u793A",
+  "filter.results": "\u7D50\u679C",
+  "filter.select": "\u30D5\u30A3\u30EB\u30BF\u3092\u9078\u629E",
+  "filter.clearAll": "\u3059\u3079\u3066\u89E3\u9664",
+  "tasks.empty": "\u30BF\u30B9\u30AF\u306F\u3042\u308A\u307E\u305B\u3093",
+  "tasks.reorderAriaLabel": "\u30BF\u30B9\u30AF\u3092\u4E26\u3079\u66FF\u3048",
+  "tasks.completeAriaLabel": "{title}\u3092\u5B8C\u4E86",
+  "tasks.moreAriaLabel": "\u305D\u306E\u4ED6",
+  "tasks.deleteConfirm": "\u300C{title}\u300D\u3092\u30B4\u30DF\u7BB1\u3078\u79FB\u52D5\u3057\u307E\u3059\u304B\uFF1F",
+  "tasks.deletedNotice": "\u30BF\u30B9\u30AF\u3092\u30B4\u30DF\u7BB1\u3078\u79FB\u52D5\u3057\u307E\u3057\u305F",
+  "taskModal.addTitle": "\u30BF\u30B9\u30AF\u3092\u8FFD\u52A0",
+  "taskModal.editTitle": "\u30BF\u30B9\u30AF\u3092\u7DE8\u96C6",
+  "taskModal.title": "\u30BF\u30A4\u30C8\u30EB",
+  "taskModal.titlePlaceholder": "\u3084\u308B\u3053\u3068",
+  "taskModal.date": "\u65E5\u4ED8",
+  "taskModal.project": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8",
+  "taskModal.unassigned": "\u672A\u6240\u5C5E",
+  "taskModal.priority": "\u512A\u5148\u5EA6",
+  "taskModal.noPriority": "\u306A\u3057",
+  "taskModal.labels": "\u30E9\u30D9\u30EB",
+  "taskModal.labelsDescription": "\u30AB\u30F3\u30DE\u533A\u5207\u308A\u3001\u6700\u5927500\u7A2E\u985E",
+  "taskModal.labelsPlaceholder": "\u4ED5\u4E8B, \u9023\u7D61",
+  "taskModal.recentLabels": "\u6700\u8FD1\u4F7F\u3063\u305F\u30E9\u30D9\u30EB",
+  "taskModal.notes": "\u30E1\u30E2",
+  "date.today": "\u4ECA\u65E5",
+  "date.tomorrow": "\u660E\u65E5",
+  "date.sevenDays": "7\u65E5\u5F8C",
+  "date.none": "\u65E5\u4ED8\u306A\u3057",
+  "projectModal.addTitle": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3092\u8FFD\u52A0",
+  "projectModal.name": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u540D",
+  "projectModal.namePlaceholder": "\u65B0\u3057\u3044\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8",
+  "settings.language": "\u8A00\u8A9E",
+  "settings.languageDescription": "TaskMate\u3067\u4F7F\u7528\u3059\u308B\u8A00\u8A9E\u3092\u9078\u629E\u3057\u307E\u3059\u3002\u30B3\u30DE\u30F3\u30C9\u540D\u3068\u30EA\u30DC\u30F3\u306E\u8AAC\u660E\u3092\u66F4\u65B0\u3059\u308B\u306B\u306F\u3001\u30D7\u30E9\u30B0\u30A4\u30F3\u3092\u518D\u8AAD\u307F\u8FBC\u307F\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
+  "settings.languageAuto": "\u81EA\u52D5",
+  "settings.languageEnglish": "English",
+  "settings.languageJapanese": "\u65E5\u672C\u8A9E",
+  "settings.taskFolder": "\u30BF\u30B9\u30AF\u30D5\u30A9\u30EB\u30C0",
+  "settings.taskFolderDescription": "\u30BF\u30B9\u30AF\u3054\u3068\u306B1\u3064\u306EMarkdown\u30D5\u30A1\u30A4\u30EB\u3092\u4FDD\u5B58\u3057\u307E\u3059\u3002",
+  "settings.projectFolder": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u30D5\u30A9\u30EB\u30C0",
+  "settings.projectFolderDescription": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3054\u3068\u306B1\u3064\u306EMarkdown\u30D5\u30A1\u30A4\u30EB\u3092\u4FDD\u5B58\u3057\u307E\u3059\u3002",
+  "settings.proposalFolder": "\u63D0\u6848\u30D5\u30A9\u30EB\u30C0",
+  "settings.proposalFolderDescription": "\u627F\u8A8D\u3057\u305F\u9805\u76EE\u3092\u30BF\u30B9\u30AF\u306B\u3059\u308B\u524D\u306B\u3001AI\u306B\u3088\u308B\u30A4\u30F3\u30DD\u30FC\u30C8\u63D0\u6848\u3092\u3053\u3053\u3067\u78BA\u8A8D\u3057\u307E\u3059\u3002",
+  "settings.sourceFolders": "AI\u5BFE\u8C61\u30D5\u30A9\u30EB\u30C0",
+  "settings.sourceFoldersDescription": "Vault\u304B\u3089\u306E\u76F8\u5BFE\u30D1\u30B9\u30921\u884C\u306B1\u30D5\u30A9\u30EB\u30C0\u5165\u529B\u3057\u307E\u3059\u3002\u914D\u4E0B\u306E\u30CE\u30FC\u30C8\u306F\u3053\u306E\u8A2D\u5B9A\u3092\u5F15\u304D\u7D99\u304E\u307E\u3059\u3002",
+  "settings.includeSubfolders": "\u30B5\u30D6\u30D5\u30A9\u30EB\u30C0\u3092\u542B\u3081\u308B",
+  "settings.includeSubfoldersDescription": "\u5404AI\u5BFE\u8C61\u30D5\u30A9\u30EB\u30C0\u306E\u8A2D\u5B9A\u3092\u3001\u305D\u306E\u30B5\u30D6\u30D5\u30A9\u30EB\u30C0\u306B\u3082\u9069\u7528\u3057\u307E\u3059\u3002",
+  "command.openRibbon": "TaskMate\u3092\u958B\u304F",
+  "command.openList": "\u30BF\u30B9\u30AF\u4E00\u89A7\u3092\u958B\u304F",
+  "command.includeNote": "\u73FE\u5728\u306E\u30CE\u30FC\u30C8\u3092AI\u5BFE\u8C61\u306B\u3059\u308B",
+  "command.excludeNote": "\u73FE\u5728\u306E\u30CE\u30FC\u30C8\u3092AI\u5BFE\u8C61\u5916\u306B\u3059\u308B",
+  "command.includeFolder": "\u73FE\u5728\u306E\u30D5\u30A9\u30EB\u30C0\u3092AI\u5BFE\u8C61\u306B\u3059\u308B",
+  "notice.migratedTaskNames": "{count}\u4EF6\u306E\u30BF\u30B9\u30AF\u30CE\u30FC\u30C8\u540D\u304B\u3089ID\u3092\u53D6\u308A\u9664\u304D\u307E\u3057\u305F",
+  "notice.migrationFailed": "\u4E00\u90E8\u306E\u30BF\u30B9\u30AF\u30CE\u30FC\u30C8\u540D\u3092\u66F4\u65B0\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F",
+  "notice.noteIncluded": "AI\u5BFE\u8C61\u306B\u8FFD\u52A0\u3057\u307E\u3057\u305F",
+  "notice.noteExcluded": "AI\u5BFE\u8C61\u304B\u3089\u9664\u5916\u3057\u307E\u3057\u305F",
+  "notice.folderIncluded": "{folder}\u3092AI\u5BFE\u8C61\u306B\u8FFD\u52A0\u3057\u307E\u3057\u305F"
+};
+
+// src/i18n/index.ts
+var catalogs = { en, ja };
+var PLACEHOLDER = /\{([A-Za-z][A-Za-z0-9]*)\}/g;
+function selectLocalizedMessage(english, localized) {
+  if (!english.trim()) throw new Error("The canonical English translation must not be blank");
+  return localized?.trim() ? localized : english;
+}
+function isLanguagePreference(value) {
+  return value === "auto" || value === "en" || value === "ja";
+}
+function resolveLocale(preference, detectedLanguage) {
+  if (preference === "en" || preference === "ja") return preference;
+  if (preference !== "auto") return "en";
+  const normalized = detectedLanguage?.trim().toLowerCase().replace(/_/g, "-") ?? "";
+  if (normalized === "ja" || normalized.startsWith("ja-")) return "ja";
+  return "en";
+}
+function compareDisplayText(a, b, locale) {
+  return new Intl.Collator(locale).compare(a, b);
+}
+function interpolate(message, values) {
+  return message.replace(PLACEHOLDER, (_placeholder, name) => {
+    if (!values || !(name in values)) throw new Error(`Missing translation value: ${name}`);
+    return String(values[name]);
+  });
+}
+function createI18n(preference, detectedLanguage) {
+  const locale = resolveLocale(preference, detectedLanguage);
+  const t = ((key, ...args) => {
+    const message = selectLocalizedMessage(en[key], catalogs[locale][key]);
+    return interpolate(message, args[0]);
+  });
+  return { locale, t };
+}
+
+// src/project-modal.ts
+var import_obsidian4 = require("obsidian");
+var ProjectModal = class extends import_obsidian4.Modal {
+  constructor(app, i18n, onSave) {
+    super(app);
+    this.i18n = i18n;
+    this.onSave = onSave;
+    this.setTitle(i18n.t("projectModal.addTitle"));
+  }
+  name = "";
+  onOpen() {
+    const { t } = this.i18n;
+    new import_obsidian4.Setting(this.contentEl).setName(t("projectModal.name")).addText((text) => {
+      text.setPlaceholder(t("projectModal.namePlaceholder")).onChange((value) => {
+        this.name = value;
+      });
+      window.setTimeout(() => text.inputEl.focus(), 0);
+    });
+    const actions = this.contentEl.createDiv({ cls: "taskmate-modal-actions" });
+    actions.createEl("button", { text: t("common.cancel") }).addEventListener("click", () => this.close());
+    const save2 = actions.createEl("button", { text: t("common.add"), cls: "mod-cta" });
+    save2.addEventListener("click", async () => {
+      if (!this.name.trim()) return;
+      save2.disabled = true;
+      try {
+        await this.onSave(this.name.trim());
+        this.close();
+      } finally {
+        save2.disabled = false;
+      }
+    });
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+};
+
+// src/task-modal.ts
+var import_obsidian5 = require("obsidian");
+
+// src/task-input-suggestions.ts
+function taskDateSuggestions(today = todayKey()) {
+  return [
+    { id: "today", date: today },
+    { id: "tomorrow", date: addDays(today, 1) },
+    { id: "seven-days", date: addDays(today, 7) },
+    { id: "none", date: null }
+  ];
+}
+function normalizeLabels(labels) {
+  const result = [];
+  for (const raw of labels) {
+    const label = raw.trim().replace(/^#/, "");
+    if (label && !result.includes(label)) result.push(label);
+  }
+  return result;
+}
+function recentLabelSuggestions(history, limit = 10) {
+  return normalizeLabels(history).slice(0, limit);
+}
+function filterLabelSuggestions(labels, history, query, selected, limit = 10) {
+  const available = normalizeLabels(labels);
+  const selectedSet = new Set(normalizeLabels(selected));
+  const needle = query.trim().toLocaleLowerCase();
+  const candidates = needle ? available.filter((label) => label.toLocaleLowerCase().includes(needle)) : recentLabelSuggestions(history).filter((label) => available.includes(label));
+  return candidates.filter((label) => !selectedSet.has(label)).slice(0, limit);
+}
+function recordRecentLabels(history, savedLabels, limit = 10) {
+  const used = normalizeLabels(savedLabels);
+  if (used.length === 0) return recentLabelSuggestions(history, limit);
+  return normalizeLabels([...used, ...history]).slice(0, limit);
+}
+
+// src/task-modal.ts
+var DATE_SUGGESTION_KEYS = {
+  today: "date.today",
+  tomorrow: "date.tomorrow",
+  "seven-days": "date.sevenDays",
+  none: "date.none"
+};
+var TaskModal = class extends import_obsidian5.Modal {
+  constructor(app, task, projects, recentLabels, defaultProjectId, i18n, onSave) {
+    super(app);
+    this.projects = projects;
+    this.recentLabels = recentLabels;
+    this.i18n = i18n;
+    this.onSave = onSave;
+    this.draft = {
+      title: task?.title ?? "",
+      date: task?.date ?? null,
+      priority: task?.priority ?? null,
+      labels: task?.labels ?? [],
+      projectId: task?.projectId ?? defaultProjectId,
+      notes: task?.notes ?? "",
+      sourceNote: task?.sourceNote ?? null
+    };
+    this.setTitle(task ? i18n.t("taskModal.editTitle") : i18n.t("taskModal.addTitle"));
+  }
+  draft;
+  onOpen() {
+    const { contentEl } = this;
+    const { t } = this.i18n;
+    this.modalEl.addClass("taskmate-task-modal");
+    const fields = contentEl.createDiv({ cls: "taskmate-task-fields" });
+    const titleSetting = new import_obsidian5.Setting(fields).setName(t("taskModal.title"));
+    titleSetting.settingEl.addClass("taskmate-title-setting");
+    titleSetting.addText((text) => {
+      text.setPlaceholder(t("taskModal.titlePlaceholder")).setValue(this.draft.title).onChange((value) => {
+        this.draft.title = value;
+      });
+      window.setTimeout(() => text.inputEl.focus(), 0);
+    });
+    const dateSetting = new import_obsidian5.Setting(fields).setName(t("taskModal.date"));
+    dateSetting.settingEl.addClass("taskmate-date-setting");
+    const datePresets = dateSetting.controlEl.createDiv({ cls: "taskmate-date-presets" });
+    const dateButtons = [];
+    let dateInput;
+    const refreshDateSelection = () => {
+      for (const button of dateButtons) {
+        const selected = button.dataset.date === (this.draft.date ?? "");
+        button.toggleClass("is-active", selected);
+        button.setAttribute("aria-pressed", String(selected));
+      }
+    };
+    for (const suggestion of taskDateSuggestions()) {
+      const button = datePresets.createEl("button", {
+        cls: "taskmate-suggestion-chip",
+        attr: { type: "button", "aria-pressed": "false" }
+      });
+      button.dataset.date = suggestion.date ?? "";
+      button.createSpan({ text: t(DATE_SUGGESTION_KEYS[suggestion.id]) });
+      button.addEventListener("click", () => {
+        this.draft.date = suggestion.date;
+        dateInput.value = suggestion.date ?? "";
+        refreshDateSelection();
+      });
+      dateButtons.push(button);
+    }
+    dateSetting.addText((text) => {
+      text.inputEl.type = "date";
+      text.inputEl.addClass("taskmate-date-input");
+      dateInput = text.inputEl;
+      text.setValue(this.draft.date ?? "").onChange((value) => {
+        this.draft.date = value || null;
+        refreshDateSelection();
+      });
+    });
+    refreshDateSelection();
+    new import_obsidian5.Setting(fields).setName(t("taskModal.project")).addDropdown((dropdown) => {
+      dropdown.addOption("", t("taskModal.unassigned"));
+      for (const project of this.projects) dropdown.addOption(project.id, project.name);
+      dropdown.setValue(this.draft.projectId ?? "").onChange((value) => {
+        this.draft.projectId = value || null;
+      });
+    });
+    new import_obsidian5.Setting(fields).setName(t("taskModal.priority")).addDropdown((dropdown) => {
+      dropdown.addOption("", t("taskModal.noPriority")).addOption("1", t("filter.priorityValue", { priority: 1 })).addOption("2", t("filter.priorityValue", { priority: 2 })).addOption("3", t("filter.priorityValue", { priority: 3 })).setValue(this.draft.priority ? String(this.draft.priority) : "").onChange((value) => {
+        this.draft.priority = value ? Number(value) : null;
+      });
+    });
+    const labelSetting = new import_obsidian5.Setting(fields).setName(t("taskModal.labels")).setDesc(t("taskModal.labelsDescription"));
+    let labelInput;
+    const recentLabelButtons = [];
+    const refreshLabelSelection = () => {
+      for (const button of recentLabelButtons) {
+        const selected = this.draft.labels.includes(button.dataset.label ?? "");
+        button.toggleClass("is-active", selected);
+        button.setAttribute("aria-pressed", String(selected));
+      }
+    };
+    labelSetting.addText((text) => {
+      text.setPlaceholder(t("taskModal.labelsPlaceholder")).setValue(this.draft.labels.join(", ")).onChange((value) => {
+        this.draft.labels = normalizeLabels(value.split(",")).slice(0, 500);
+        refreshLabelSelection();
+      });
+      labelInput = text.inputEl;
+    });
+    const labelSuggestions = recentLabelSuggestions(this.recentLabels);
+    if (labelSuggestions.length > 0) {
+      const recent = fields.createDiv({ cls: "taskmate-recent-labels" });
+      recent.createDiv({ text: t("taskModal.recentLabels"), cls: "taskmate-suggestion-heading" });
+      const chips = recent.createDiv({ cls: "taskmate-suggestion-chips" });
+      for (const label of labelSuggestions) {
+        const button = chips.createEl("button", {
+          text: label,
+          cls: "taskmate-suggestion-chip",
+          attr: { type: "button", "aria-pressed": "false" }
+        });
+        button.dataset.label = label;
+        button.addEventListener("click", () => {
+          this.draft.labels = this.draft.labels.includes(label) ? this.draft.labels.filter((item) => item !== label) : [...this.draft.labels, label].slice(0, 500);
+          labelInput.value = this.draft.labels.join(", ");
+          refreshLabelSelection();
+        });
+        recentLabelButtons.push(button);
+      }
+      refreshLabelSelection();
+    }
+    const notesSetting = new import_obsidian5.Setting(fields).setName(t("taskModal.notes"));
+    notesSetting.settingEl.addClass("taskmate-notes-setting");
+    notesSetting.addTextArea((area) => {
+      area.inputEl.rows = 7;
+      area.setValue(this.draft.notes).onChange((value) => {
+        this.draft.notes = value;
+      });
+    });
+    const actions = contentEl.createDiv({ cls: "taskmate-modal-actions" });
+    const cancel = actions.createEl("button", { text: t("common.cancel") });
+    cancel.addEventListener("click", () => this.close());
+    const save2 = actions.createEl("button", { text: t("common.save"), cls: "mod-cta" });
+    save2.addEventListener("click", async () => {
+      if (!this.draft.title.trim()) return;
+      save2.disabled = true;
+      try {
+        await this.onSave(this.draft);
+        this.close();
+      } finally {
+        save2.disabled = false;
+      }
+    });
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+};
+
+// src/task-list-model.ts
+function toRow(task, projectNames) {
+  return {
+    id: task.id,
+    title: task.title,
+    completed: task.completed,
+    date: task.date,
+    priority: task.priority,
+    projectName: task.projectId ? projectNames.get(task.projectId) ?? null : null,
+    labels: task.labels.slice(0, 3)
+  };
+}
+function buildTaskListModel(input) {
+  const projectNames = new Map(input.projects.map((project) => [project.id, project.name]));
+  const toSortedRows = (tasks) => sortTasks(tasks, input.sortMode, input.sortDirection).map((task) => toRow(task, projectNames));
+  if (input.grouping === "flat") {
+    return {
+      grouping: "flat",
+      sections: [{ id: "default", rows: toSortedRows(input.tasks) }],
+      reorderEnabled: input.allowReorder && input.sortMode === "manual"
+    };
+  }
+  const groups = groupScheduledTasks(input.tasks, input.today);
+  const sections = ["overdue", "today", "later"].map((id) => ({ id, rows: toSortedRows(groups[id]) })).filter((section) => section.rows.length > 0);
+  return {
+    grouping: "scheduled",
+    sections,
+    reorderEnabled: input.allowReorder && input.sortMode === "manual"
+  };
+}
+
 // node_modules/sortablejs/modular/sortable.esm.js
 function _defineProperty(e, r, t) {
   return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
@@ -2636,564 +3226,107 @@ Sortable.mount(new AutoScrollPlugin());
 Sortable.mount(Remove, Revert);
 var sortable_esm_default = Sortable;
 
-// src/domain.ts
-function localDateParts(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+// src/task-list-renderer.ts
+function appendElement(parent, tag, options = {}) {
+  const element = parent.ownerDocument.createElement(tag);
+  if (options.className) element.className = options.className;
+  if (options.text !== void 0) element.textContent = options.text;
+  Object.entries(options.attributes ?? {}).forEach(([name, value]) => element.setAttribute(name, value));
+  parent.append(element);
+  return element;
 }
-function todayKey(now = /* @__PURE__ */ new Date()) {
-  return localDateParts(now);
-}
-function addDays(dateKey, amount) {
-  const [year, month, day] = dateKey.split("-").map(Number);
-  const date = new Date(year, month - 1, day);
-  date.setDate(date.getDate() + amount);
-  return localDateParts(date);
-}
-function taskMatchesView(task, view, today = todayKey()) {
-  if (task.completed) return false;
-  switch (view) {
-    case "scheduled":
-      return task.date !== null;
-    case "unplanned":
-      return task.date === null;
-    case "all":
-      return true;
-    default:
-      return false;
-  }
-}
-function filterTasks(tasks, view, filters, today) {
-  const needle = filters.search.trim().toLocaleLowerCase();
-  return tasks.filter((task) => {
-    if (!(view === "all" && filters.includeCompleted) && !taskMatchesView(task, view, today)) return false;
-    if (filters.priorities.length > 0 && (task.priority === null || !filters.priorities.includes(task.priority))) return false;
-    if (filters.labels.length > 0 && !filters.labels.some((label) => task.labels.includes(label))) return false;
-    return needle.length === 0 || `${task.title}
-${task.notes}
-${task.labels.join(" ")}`.toLocaleLowerCase().includes(needle);
+function renderRow(list, row, reorderEnabled, copy, signal, dispatch) {
+  const task = appendElement(list, "div", {
+    className: `taskmate-task${row.completed ? " is-completed" : ""}`,
+    attributes: { role: "listitem" }
   });
+  task.dataset.taskId = row.id;
+  const drag = appendElement(task, "button", {
+    className: "taskmate-drag",
+    text: "\u283F",
+    attributes: { "aria-label": copy.reorderAriaLabel }
+  });
+  drag.disabled = !reorderEnabled;
+  const checkbox = appendElement(task, "input", {
+    attributes: { type: "checkbox", "aria-label": copy.completeAriaLabel(row.title) }
+  });
+  checkbox.checked = row.completed;
+  checkbox.addEventListener("change", () => {
+    void dispatch({ type: "toggle-completed", taskId: row.id, completed: checkbox.checked });
+  }, { signal });
+  const body = appendElement(task, "div", { className: "taskmate-task-body" });
+  const title = appendElement(body, "button", { className: "taskmate-title", text: row.title });
+  title.addEventListener("click", () => {
+    void dispatch({ type: "open", taskId: row.id });
+  }, { signal });
+  const metadata = appendElement(body, "div", { className: "taskmate-metadata" });
+  if (row.date) appendElement(metadata, "span", { text: row.date });
+  if (row.priority) appendElement(metadata, "span", {
+    text: `P${row.priority}`,
+    className: `taskmate-priority taskmate-priority-${row.priority}`
+  });
+  if (row.projectName) appendElement(metadata, "span", { text: row.projectName });
+  row.labels.forEach((label) => appendElement(metadata, "span", { text: `#${label}` }));
+  const more = appendElement(task, "button", {
+    className: "taskmate-more",
+    text: "\u2022\u2022\u2022",
+    attributes: { "aria-label": copy.moreAriaLabel }
+  });
+  more.addEventListener("click", (event) => {
+    void dispatch({ type: "show-actions", taskId: row.id, event });
+  }, { signal });
 }
-function groupScheduledTasks(tasks, today = todayKey()) {
-  const scheduled = tasks.filter((task) => !task.completed && task.date !== null);
+function renderTaskList(container, model, copy, dispatch) {
+  const AbortControllerClass = container.ownerDocument.defaultView?.AbortController ?? AbortController;
+  const controller = new AbortControllerClass();
+  const list = appendElement(container, "div", {
+    className: `taskmate-list${model.grouping === "scheduled" ? " taskmate-scheduled-list" : ""}`,
+    attributes: { role: "list" }
+  });
+  const rowCount = model.sections.reduce((count, section) => count + section.rows.length, 0);
+  if (rowCount === 0) {
+    appendElement(list, "div", { className: "taskmate-empty", text: copy.empty });
+    return { destroy: () => controller.abort() };
+  }
+  model.sections.forEach((section) => {
+    if (section.id !== "default") {
+      appendElement(list, "div", {
+        className: `taskmate-task-section-heading is-${section.id}`,
+        text: copy.sectionTitles[section.id],
+        attributes: { role: "heading", "aria-level": "3" }
+      });
+    }
+    section.rows.forEach((row) => renderRow(list, row, model.reorderEnabled, copy, controller.signal, dispatch));
+  });
+  const sortable = sortable_esm_default.create(list, {
+    animation: 140,
+    handle: ".taskmate-drag",
+    draggable: ".taskmate-task",
+    disabled: !model.reorderEnabled,
+    delay: 120,
+    delayOnTouchOnly: true,
+    touchStartThreshold: 4,
+    onEnd: (event) => {
+      if (event.oldIndex === event.newIndex) return;
+      const orderedIds = Array.from(list.querySelectorAll(".taskmate-task")).map((element) => element.dataset.taskId ?? "");
+      const taskId = event.item.dataset.taskId ?? "";
+      const newIndex2 = orderedIds.indexOf(taskId);
+      if (!taskId || newIndex2 < 0) return;
+      void dispatch({
+        type: "reorder",
+        taskId,
+        previousId: orderedIds[newIndex2 - 1] || null,
+        nextId: orderedIds[newIndex2 + 1] || null
+      });
+    }
+  });
   return {
-    overdue: scheduled.filter((task) => task.date !== null && task.date < today),
-    today: scheduled.filter((task) => task.date === today),
-    later: scheduled.filter((task) => task.date !== null && task.date > today)
+    destroy() {
+      controller.abort();
+      sortable.destroy();
+    }
   };
 }
-function sortTasks(tasks, mode, direction = "asc") {
-  const result = [...tasks];
-  const rankThenCreated = (a, b) => a.rank - b.rank || a.createdAt.localeCompare(b.createdAt);
-  const directed = (comparison) => direction === "asc" ? comparison : -comparison;
-  const compareNullable = (a, b, compare) => {
-    if (a === null && b === null) return 0;
-    if (a === null) return 1;
-    if (b === null) return -1;
-    return directed(compare(a, b));
-  };
-  switch (mode) {
-    case "date":
-      return result.sort((a, b) => compareNullable(a.date, b.date, (left, right) => left.localeCompare(right)) || rankThenCreated(a, b));
-    case "priority":
-      return result.sort((a, b) => compareNullable(a.priority, b.priority, (left, right) => left - right) || rankThenCreated(a, b));
-    case "created":
-      return result.sort((a, b) => directed(a.createdAt.localeCompare(b.createdAt)) || rankThenCreated(a, b));
-    case "manual":
-      return result.sort(rankThenCreated);
-  }
-}
-
-// src/i18n/en.ts
-var en = {
-  "nav.date": "Date",
-  "nav.search": "Search",
-  "nav.projects": "Projects",
-  "nav.filter": "Filter",
-  "nav.ariaLabel": "Main navigation",
-  "view.scheduled": "Scheduled",
-  "view.overdue": "Overdue",
-  "view.today": "Today",
-  "view.later": "Later",
-  "view.all": "All",
-  "view.unplanned": "No date",
-  "sort.label": "Sort",
-  "sort.manual": "Manual",
-  "sort.date": "Date",
-  "sort.priority": "Priority",
-  "sort.created": "Created",
-  "sort.ariaLabel": "Sort tasks",
-  "sort.ascending": "ascending",
-  "sort.descending": "descending",
-  "sort.activeOptionAriaLabel": "{mode}, {direction}. Activate again to reverse the order.",
-  "common.add": "+ Add",
-  "common.edit": "Edit",
-  "common.delete": "Delete",
-  "common.cancel": "Cancel",
-  "common.save": "Save",
-  "common.back": "Back",
-  "common.clear": "Clear",
-  "search.title": "Search",
-  "search.placeholder": "Search tasks, labels, and projects",
-  "search.ariaLabel": "Search tasks",
-  "search.recent": "Recent searches",
-  "search.emptyQuery": "Enter a search term",
-  "projects.title": "Projects",
-  "projects.editTitle": "Edit project",
-  "projects.recent": "Recently used projects",
-  "projects.all": "All projects",
-  "projects.empty": "No projects",
-  "projects.taskCountOne": "{count} task",
-  "projects.taskCount": "{count} tasks",
-  "projects.name": "Project name",
-  "projects.saveName": "Save name",
-  "projects.delete": "Delete project",
-  "projects.deleteConfirm": "Delete \u201C{project}\u201D? Its tasks will become unassigned.",
-  "projects.deletedNotice": "Project deleted. Its tasks are now unassigned.",
-  "filter.title": "Filter",
-  "filter.priority": "Priority",
-  "filter.priorityValue": "Priority {priority}",
-  "filter.labels": "Labels",
-  "filter.labelSearchPlaceholder": "Search labels",
-  "filter.labelSearchAriaLabel": "Search labels",
-  "filter.recentLabels": "Recent labels",
-  "filter.matchingLabels": "Matching labels",
-  "filter.removeLabelAriaLabel": "Remove {label}",
-  "filter.completion": "Completion state",
-  "filter.includeCompleted": "Include completed tasks",
-  "filter.results": "Results",
-  "filter.select": "Select filters",
-  "filter.clearAll": "Clear all",
-  "tasks.empty": "No tasks",
-  "tasks.reorderAriaLabel": "Reorder tasks",
-  "tasks.completeAriaLabel": "Complete {title}",
-  "tasks.moreAriaLabel": "More actions",
-  "tasks.deleteConfirm": "Move \u201C{title}\u201D to the trash?",
-  "tasks.deletedNotice": "Task moved to the trash",
-  "taskModal.addTitle": "Add task",
-  "taskModal.editTitle": "Edit task",
-  "taskModal.title": "Title",
-  "taskModal.titlePlaceholder": "What needs to be done?",
-  "taskModal.date": "Date",
-  "taskModal.project": "Project",
-  "taskModal.unassigned": "Unassigned",
-  "taskModal.priority": "Priority",
-  "taskModal.noPriority": "None",
-  "taskModal.labels": "Labels",
-  "taskModal.labelsDescription": "Comma-separated, up to 500 unique labels",
-  "taskModal.labelsPlaceholder": "work, calls",
-  "taskModal.recentLabels": "Recently used labels",
-  "taskModal.notes": "Notes",
-  "date.today": "Today",
-  "date.tomorrow": "Tomorrow",
-  "date.sevenDays": "7 days later",
-  "date.none": "No date",
-  "projectModal.addTitle": "Add project",
-  "projectModal.name": "Project name",
-  "projectModal.namePlaceholder": "New project",
-  "settings.language": "Language",
-  "settings.languageDescription": "Choose the language used by TaskMate. Reload the plugin to update command names and the ribbon tooltip.",
-  "settings.languageAuto": "Auto",
-  "settings.languageEnglish": "English",
-  "settings.languageJapanese": "\u65E5\u672C\u8A9E",
-  "settings.taskFolder": "Task folder",
-  "settings.taskFolderDescription": "One Markdown file is stored here for each task.",
-  "settings.projectFolder": "Project folder",
-  "settings.projectFolderDescription": "One Markdown file is stored here for each project.",
-  "settings.proposalFolder": "Proposal folder",
-  "settings.proposalFolderDescription": "AI import proposals are reviewed here before approved items become tasks.",
-  "settings.sourceFolders": "AI source folders",
-  "settings.sourceFoldersDescription": "One vault-relative folder per line. Notes inherit inclusion from these folders.",
-  "settings.includeSubfolders": "Include subfolders",
-  "settings.includeSubfoldersDescription": "Apply every AI source folder rule to its subfolders too.",
-  "command.openRibbon": "Open TaskMate",
-  "command.openList": "Open task list",
-  "command.includeNote": "Include current note as an AI source",
-  "command.excludeNote": "Exclude current note as an AI source",
-  "command.includeFolder": "Include current folder as an AI source",
-  "notice.migratedTaskNames": "Removed IDs from {count} task note names",
-  "notice.migrationFailed": "Some task note names could not be updated",
-  "notice.noteIncluded": "Note included as an AI source",
-  "notice.noteExcluded": "Note excluded as an AI source",
-  "notice.folderIncluded": "Included {folder} as an AI source"
-};
-
-// src/i18n/ja.ts
-var ja = {
-  "nav.date": "\u65E5\u4ED8",
-  "nav.search": "\u691C\u7D22",
-  "nav.projects": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8",
-  "nav.filter": "\u30D5\u30A3\u30EB\u30BF",
-  "nav.ariaLabel": "\u30E1\u30A4\u30F3\u30CA\u30D3\u30B2\u30FC\u30B7\u30E7\u30F3",
-  "view.scheduled": "\u4E88\u5B9A",
-  "view.overdue": "\u671F\u9650\u5207\u308C",
-  "view.today": "\u4ECA\u65E5",
-  "view.later": "\u660E\u65E5\u4EE5\u964D",
-  "view.all": "\u3059\u3079\u3066",
-  "view.unplanned": "\u65E5\u4ED8\u306A\u3057",
-  "sort.label": "\u4E26\u3079\u66FF\u3048",
-  "sort.manual": "\u624B\u52D5",
-  "sort.date": "\u65E5\u4ED8",
-  "sort.priority": "\u512A\u5148\u5EA6",
-  "sort.created": "\u4F5C\u6210\u65E5",
-  "sort.ariaLabel": "\u30BF\u30B9\u30AF\u3092\u4E26\u3079\u66FF\u3048",
-  "sort.ascending": "\u6607\u9806",
-  "sort.descending": "\u964D\u9806",
-  "sort.activeOptionAriaLabel": "{mode}\u3001{direction}\u3002\u3082\u3046\u4E00\u5EA6\u62BC\u3059\u3068\u9806\u5E8F\u3092\u53CD\u8EE2\u3057\u307E\u3059\u3002",
-  "common.add": "\uFF0B \u8FFD\u52A0",
-  "common.edit": "\u7DE8\u96C6",
-  "common.delete": "\u524A\u9664",
-  "common.cancel": "\u30AD\u30E3\u30F3\u30BB\u30EB",
-  "common.save": "\u4FDD\u5B58",
-  "common.back": "\u623B\u308B",
-  "common.clear": "\u6D88\u53BB",
-  "search.title": "\u691C\u7D22",
-  "search.placeholder": "\u30BF\u30B9\u30AF\u3001\u30E9\u30D9\u30EB\u3001\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3092\u691C\u7D22",
-  "search.ariaLabel": "\u30BF\u30B9\u30AF\u3092\u691C\u7D22",
-  "search.recent": "\u6700\u8FD1\u306E\u691C\u7D22",
-  "search.emptyQuery": "\u691C\u7D22\u8A9E\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044",
-  "projects.title": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8",
-  "projects.editTitle": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3092\u7DE8\u96C6",
-  "projects.recent": "\u6700\u8FD1\u4F7F\u3063\u305F\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8",
-  "projects.all": "\u3059\u3079\u3066\u306E\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8",
-  "projects.empty": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306F\u3042\u308A\u307E\u305B\u3093",
-  "projects.taskCountOne": "{count}\u4EF6",
-  "projects.taskCount": "{count}\u4EF6",
-  "projects.name": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u540D",
-  "projects.saveName": "\u540D\u79F0\u3092\u4FDD\u5B58",
-  "projects.delete": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3092\u524A\u9664",
-  "projects.deleteConfirm": "\u300C{project}\u300D\u3092\u524A\u9664\u3057\u307E\u3059\u304B\uFF1F\u30BF\u30B9\u30AF\u306F\u672A\u6240\u5C5E\u3078\u79FB\u52D5\u3057\u307E\u3059\u3002",
-  "projects.deletedNotice": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3092\u524A\u9664\u3057\u3001\u30BF\u30B9\u30AF\u3092\u672A\u6240\u5C5E\u3078\u79FB\u52D5\u3057\u307E\u3057\u305F",
-  "filter.title": "\u30D5\u30A3\u30EB\u30BF",
-  "filter.priority": "\u512A\u5148\u5EA6",
-  "filter.priorityValue": "\u512A\u5148\u5EA6 {priority}",
-  "filter.labels": "\u30E9\u30D9\u30EB",
-  "filter.labelSearchPlaceholder": "\u30E9\u30D9\u30EB\u3092\u691C\u7D22",
-  "filter.labelSearchAriaLabel": "\u30E9\u30D9\u30EB\u3092\u691C\u7D22",
-  "filter.recentLabels": "\u6700\u8FD1\u4F7F\u3063\u305F\u30E9\u30D9\u30EB",
-  "filter.matchingLabels": "\u4E00\u81F4\u3059\u308B\u30E9\u30D9\u30EB",
-  "filter.removeLabelAriaLabel": "{label}\u3092\u89E3\u9664",
-  "filter.completion": "\u5B8C\u4E86\u72B6\u614B",
-  "filter.includeCompleted": "\u5B8C\u4E86\u6E08\u307F\u30BF\u30B9\u30AF\u3092\u8868\u793A",
-  "filter.results": "\u7D50\u679C",
-  "filter.select": "\u30D5\u30A3\u30EB\u30BF\u3092\u9078\u629E",
-  "filter.clearAll": "\u3059\u3079\u3066\u89E3\u9664",
-  "tasks.empty": "\u30BF\u30B9\u30AF\u306F\u3042\u308A\u307E\u305B\u3093",
-  "tasks.reorderAriaLabel": "\u30BF\u30B9\u30AF\u3092\u4E26\u3079\u66FF\u3048",
-  "tasks.completeAriaLabel": "{title}\u3092\u5B8C\u4E86",
-  "tasks.moreAriaLabel": "\u305D\u306E\u4ED6",
-  "tasks.deleteConfirm": "\u300C{title}\u300D\u3092\u30B4\u30DF\u7BB1\u3078\u79FB\u52D5\u3057\u307E\u3059\u304B\uFF1F",
-  "tasks.deletedNotice": "\u30BF\u30B9\u30AF\u3092\u30B4\u30DF\u7BB1\u3078\u79FB\u52D5\u3057\u307E\u3057\u305F",
-  "taskModal.addTitle": "\u30BF\u30B9\u30AF\u3092\u8FFD\u52A0",
-  "taskModal.editTitle": "\u30BF\u30B9\u30AF\u3092\u7DE8\u96C6",
-  "taskModal.title": "\u30BF\u30A4\u30C8\u30EB",
-  "taskModal.titlePlaceholder": "\u3084\u308B\u3053\u3068",
-  "taskModal.date": "\u65E5\u4ED8",
-  "taskModal.project": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8",
-  "taskModal.unassigned": "\u672A\u6240\u5C5E",
-  "taskModal.priority": "\u512A\u5148\u5EA6",
-  "taskModal.noPriority": "\u306A\u3057",
-  "taskModal.labels": "\u30E9\u30D9\u30EB",
-  "taskModal.labelsDescription": "\u30AB\u30F3\u30DE\u533A\u5207\u308A\u3001\u6700\u5927500\u7A2E\u985E",
-  "taskModal.labelsPlaceholder": "\u4ED5\u4E8B, \u9023\u7D61",
-  "taskModal.recentLabels": "\u6700\u8FD1\u4F7F\u3063\u305F\u30E9\u30D9\u30EB",
-  "taskModal.notes": "\u30E1\u30E2",
-  "date.today": "\u4ECA\u65E5",
-  "date.tomorrow": "\u660E\u65E5",
-  "date.sevenDays": "7\u65E5\u5F8C",
-  "date.none": "\u65E5\u4ED8\u306A\u3057",
-  "projectModal.addTitle": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3092\u8FFD\u52A0",
-  "projectModal.name": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u540D",
-  "projectModal.namePlaceholder": "\u65B0\u3057\u3044\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8",
-  "settings.language": "\u8A00\u8A9E",
-  "settings.languageDescription": "TaskMate\u3067\u4F7F\u7528\u3059\u308B\u8A00\u8A9E\u3092\u9078\u629E\u3057\u307E\u3059\u3002\u30B3\u30DE\u30F3\u30C9\u540D\u3068\u30EA\u30DC\u30F3\u306E\u8AAC\u660E\u3092\u66F4\u65B0\u3059\u308B\u306B\u306F\u3001\u30D7\u30E9\u30B0\u30A4\u30F3\u3092\u518D\u8AAD\u307F\u8FBC\u307F\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
-  "settings.languageAuto": "\u81EA\u52D5",
-  "settings.languageEnglish": "English",
-  "settings.languageJapanese": "\u65E5\u672C\u8A9E",
-  "settings.taskFolder": "\u30BF\u30B9\u30AF\u30D5\u30A9\u30EB\u30C0",
-  "settings.taskFolderDescription": "\u30BF\u30B9\u30AF\u3054\u3068\u306B1\u3064\u306EMarkdown\u30D5\u30A1\u30A4\u30EB\u3092\u4FDD\u5B58\u3057\u307E\u3059\u3002",
-  "settings.projectFolder": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u30D5\u30A9\u30EB\u30C0",
-  "settings.projectFolderDescription": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3054\u3068\u306B1\u3064\u306EMarkdown\u30D5\u30A1\u30A4\u30EB\u3092\u4FDD\u5B58\u3057\u307E\u3059\u3002",
-  "settings.proposalFolder": "\u63D0\u6848\u30D5\u30A9\u30EB\u30C0",
-  "settings.proposalFolderDescription": "\u627F\u8A8D\u3057\u305F\u9805\u76EE\u3092\u30BF\u30B9\u30AF\u306B\u3059\u308B\u524D\u306B\u3001AI\u306B\u3088\u308B\u30A4\u30F3\u30DD\u30FC\u30C8\u63D0\u6848\u3092\u3053\u3053\u3067\u78BA\u8A8D\u3057\u307E\u3059\u3002",
-  "settings.sourceFolders": "AI\u5BFE\u8C61\u30D5\u30A9\u30EB\u30C0",
-  "settings.sourceFoldersDescription": "Vault\u304B\u3089\u306E\u76F8\u5BFE\u30D1\u30B9\u30921\u884C\u306B1\u30D5\u30A9\u30EB\u30C0\u5165\u529B\u3057\u307E\u3059\u3002\u914D\u4E0B\u306E\u30CE\u30FC\u30C8\u306F\u3053\u306E\u8A2D\u5B9A\u3092\u5F15\u304D\u7D99\u304E\u307E\u3059\u3002",
-  "settings.includeSubfolders": "\u30B5\u30D6\u30D5\u30A9\u30EB\u30C0\u3092\u542B\u3081\u308B",
-  "settings.includeSubfoldersDescription": "\u5404AI\u5BFE\u8C61\u30D5\u30A9\u30EB\u30C0\u306E\u8A2D\u5B9A\u3092\u3001\u305D\u306E\u30B5\u30D6\u30D5\u30A9\u30EB\u30C0\u306B\u3082\u9069\u7528\u3057\u307E\u3059\u3002",
-  "command.openRibbon": "TaskMate\u3092\u958B\u304F",
-  "command.openList": "\u30BF\u30B9\u30AF\u4E00\u89A7\u3092\u958B\u304F",
-  "command.includeNote": "\u73FE\u5728\u306E\u30CE\u30FC\u30C8\u3092AI\u5BFE\u8C61\u306B\u3059\u308B",
-  "command.excludeNote": "\u73FE\u5728\u306E\u30CE\u30FC\u30C8\u3092AI\u5BFE\u8C61\u5916\u306B\u3059\u308B",
-  "command.includeFolder": "\u73FE\u5728\u306E\u30D5\u30A9\u30EB\u30C0\u3092AI\u5BFE\u8C61\u306B\u3059\u308B",
-  "notice.migratedTaskNames": "{count}\u4EF6\u306E\u30BF\u30B9\u30AF\u30CE\u30FC\u30C8\u540D\u304B\u3089ID\u3092\u53D6\u308A\u9664\u304D\u307E\u3057\u305F",
-  "notice.migrationFailed": "\u4E00\u90E8\u306E\u30BF\u30B9\u30AF\u30CE\u30FC\u30C8\u540D\u3092\u66F4\u65B0\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F",
-  "notice.noteIncluded": "AI\u5BFE\u8C61\u306B\u8FFD\u52A0\u3057\u307E\u3057\u305F",
-  "notice.noteExcluded": "AI\u5BFE\u8C61\u304B\u3089\u9664\u5916\u3057\u307E\u3057\u305F",
-  "notice.folderIncluded": "{folder}\u3092AI\u5BFE\u8C61\u306B\u8FFD\u52A0\u3057\u307E\u3057\u305F"
-};
-
-// src/i18n/index.ts
-var catalogs = { en, ja };
-var PLACEHOLDER = /\{([A-Za-z][A-Za-z0-9]*)\}/g;
-function selectLocalizedMessage(english, localized) {
-  if (!english.trim()) throw new Error("The canonical English translation must not be blank");
-  return localized?.trim() ? localized : english;
-}
-function isLanguagePreference(value) {
-  return value === "auto" || value === "en" || value === "ja";
-}
-function resolveLocale(preference, detectedLanguage) {
-  if (preference === "en" || preference === "ja") return preference;
-  if (preference !== "auto") return "en";
-  const normalized = detectedLanguage?.trim().toLowerCase().replace(/_/g, "-") ?? "";
-  if (normalized === "ja" || normalized.startsWith("ja-")) return "ja";
-  return "en";
-}
-function compareDisplayText(a, b, locale) {
-  return new Intl.Collator(locale).compare(a, b);
-}
-function interpolate(message, values) {
-  return message.replace(PLACEHOLDER, (_placeholder, name) => {
-    if (!values || !(name in values)) throw new Error(`Missing translation value: ${name}`);
-    return String(values[name]);
-  });
-}
-function createI18n(preference, detectedLanguage) {
-  const locale = resolveLocale(preference, detectedLanguage);
-  const t = ((key, ...args) => {
-    const message = selectLocalizedMessage(en[key], catalogs[locale][key]);
-    return interpolate(message, args[0]);
-  });
-  return { locale, t };
-}
-
-// src/project-modal.ts
-var import_obsidian4 = require("obsidian");
-var ProjectModal = class extends import_obsidian4.Modal {
-  constructor(app, i18n, onSave) {
-    super(app);
-    this.i18n = i18n;
-    this.onSave = onSave;
-    this.setTitle(i18n.t("projectModal.addTitle"));
-  }
-  name = "";
-  onOpen() {
-    const { t } = this.i18n;
-    new import_obsidian4.Setting(this.contentEl).setName(t("projectModal.name")).addText((text) => {
-      text.setPlaceholder(t("projectModal.namePlaceholder")).onChange((value) => {
-        this.name = value;
-      });
-      window.setTimeout(() => text.inputEl.focus(), 0);
-    });
-    const actions = this.contentEl.createDiv({ cls: "taskmate-modal-actions" });
-    actions.createEl("button", { text: t("common.cancel") }).addEventListener("click", () => this.close());
-    const save2 = actions.createEl("button", { text: t("common.add"), cls: "mod-cta" });
-    save2.addEventListener("click", async () => {
-      if (!this.name.trim()) return;
-      save2.disabled = true;
-      try {
-        await this.onSave(this.name.trim());
-        this.close();
-      } finally {
-        save2.disabled = false;
-      }
-    });
-  }
-  onClose() {
-    this.contentEl.empty();
-  }
-};
-
-// src/task-modal.ts
-var import_obsidian5 = require("obsidian");
-
-// src/task-input-suggestions.ts
-function taskDateSuggestions(today = todayKey()) {
-  return [
-    { id: "today", date: today },
-    { id: "tomorrow", date: addDays(today, 1) },
-    { id: "seven-days", date: addDays(today, 7) },
-    { id: "none", date: null }
-  ];
-}
-function normalizeLabels(labels) {
-  const result = [];
-  for (const raw of labels) {
-    const label = raw.trim().replace(/^#/, "");
-    if (label && !result.includes(label)) result.push(label);
-  }
-  return result;
-}
-function recentLabelSuggestions(history, limit = 10) {
-  return normalizeLabels(history).slice(0, limit);
-}
-function filterLabelSuggestions(labels, history, query, selected, limit = 10) {
-  const available = normalizeLabels(labels);
-  const selectedSet = new Set(normalizeLabels(selected));
-  const needle = query.trim().toLocaleLowerCase();
-  const candidates = needle ? available.filter((label) => label.toLocaleLowerCase().includes(needle)) : recentLabelSuggestions(history).filter((label) => available.includes(label));
-  return candidates.filter((label) => !selectedSet.has(label)).slice(0, limit);
-}
-function recordRecentLabels(history, savedLabels, limit = 10) {
-  const used = normalizeLabels(savedLabels);
-  if (used.length === 0) return recentLabelSuggestions(history, limit);
-  return normalizeLabels([...used, ...history]).slice(0, limit);
-}
-
-// src/task-modal.ts
-var DATE_SUGGESTION_KEYS = {
-  today: "date.today",
-  tomorrow: "date.tomorrow",
-  "seven-days": "date.sevenDays",
-  none: "date.none"
-};
-var TaskModal = class extends import_obsidian5.Modal {
-  constructor(app, task, projects, recentLabels, defaultProjectId, i18n, onSave) {
-    super(app);
-    this.projects = projects;
-    this.recentLabels = recentLabels;
-    this.i18n = i18n;
-    this.onSave = onSave;
-    this.draft = {
-      title: task?.title ?? "",
-      date: task?.date ?? null,
-      priority: task?.priority ?? null,
-      labels: task?.labels ?? [],
-      projectId: task?.projectId ?? defaultProjectId,
-      notes: task?.notes ?? "",
-      sourceNote: task?.sourceNote ?? null
-    };
-    this.setTitle(task ? i18n.t("taskModal.editTitle") : i18n.t("taskModal.addTitle"));
-  }
-  draft;
-  onOpen() {
-    const { contentEl } = this;
-    const { t } = this.i18n;
-    this.modalEl.addClass("taskmate-task-modal");
-    const fields = contentEl.createDiv({ cls: "taskmate-task-fields" });
-    const titleSetting = new import_obsidian5.Setting(fields).setName(t("taskModal.title"));
-    titleSetting.settingEl.addClass("taskmate-title-setting");
-    titleSetting.addText((text) => {
-      text.setPlaceholder(t("taskModal.titlePlaceholder")).setValue(this.draft.title).onChange((value) => {
-        this.draft.title = value;
-      });
-      window.setTimeout(() => text.inputEl.focus(), 0);
-    });
-    const dateSetting = new import_obsidian5.Setting(fields).setName(t("taskModal.date"));
-    dateSetting.settingEl.addClass("taskmate-date-setting");
-    const datePresets = dateSetting.controlEl.createDiv({ cls: "taskmate-date-presets" });
-    const dateButtons = [];
-    let dateInput;
-    const refreshDateSelection = () => {
-      for (const button of dateButtons) {
-        const selected = button.dataset.date === (this.draft.date ?? "");
-        button.toggleClass("is-active", selected);
-        button.setAttribute("aria-pressed", String(selected));
-      }
-    };
-    for (const suggestion of taskDateSuggestions()) {
-      const button = datePresets.createEl("button", {
-        cls: "taskmate-suggestion-chip",
-        attr: { type: "button", "aria-pressed": "false" }
-      });
-      button.dataset.date = suggestion.date ?? "";
-      button.createSpan({ text: t(DATE_SUGGESTION_KEYS[suggestion.id]) });
-      button.addEventListener("click", () => {
-        this.draft.date = suggestion.date;
-        dateInput.value = suggestion.date ?? "";
-        refreshDateSelection();
-      });
-      dateButtons.push(button);
-    }
-    dateSetting.addText((text) => {
-      text.inputEl.type = "date";
-      text.inputEl.addClass("taskmate-date-input");
-      dateInput = text.inputEl;
-      text.setValue(this.draft.date ?? "").onChange((value) => {
-        this.draft.date = value || null;
-        refreshDateSelection();
-      });
-    });
-    refreshDateSelection();
-    new import_obsidian5.Setting(fields).setName(t("taskModal.project")).addDropdown((dropdown) => {
-      dropdown.addOption("", t("taskModal.unassigned"));
-      for (const project of this.projects) dropdown.addOption(project.id, project.name);
-      dropdown.setValue(this.draft.projectId ?? "").onChange((value) => {
-        this.draft.projectId = value || null;
-      });
-    });
-    new import_obsidian5.Setting(fields).setName(t("taskModal.priority")).addDropdown((dropdown) => {
-      dropdown.addOption("", t("taskModal.noPriority")).addOption("1", t("filter.priorityValue", { priority: 1 })).addOption("2", t("filter.priorityValue", { priority: 2 })).addOption("3", t("filter.priorityValue", { priority: 3 })).setValue(this.draft.priority ? String(this.draft.priority) : "").onChange((value) => {
-        this.draft.priority = value ? Number(value) : null;
-      });
-    });
-    const labelSetting = new import_obsidian5.Setting(fields).setName(t("taskModal.labels")).setDesc(t("taskModal.labelsDescription"));
-    let labelInput;
-    const recentLabelButtons = [];
-    const refreshLabelSelection = () => {
-      for (const button of recentLabelButtons) {
-        const selected = this.draft.labels.includes(button.dataset.label ?? "");
-        button.toggleClass("is-active", selected);
-        button.setAttribute("aria-pressed", String(selected));
-      }
-    };
-    labelSetting.addText((text) => {
-      text.setPlaceholder(t("taskModal.labelsPlaceholder")).setValue(this.draft.labels.join(", ")).onChange((value) => {
-        this.draft.labels = normalizeLabels(value.split(",")).slice(0, 500);
-        refreshLabelSelection();
-      });
-      labelInput = text.inputEl;
-    });
-    const labelSuggestions = recentLabelSuggestions(this.recentLabels);
-    if (labelSuggestions.length > 0) {
-      const recent = fields.createDiv({ cls: "taskmate-recent-labels" });
-      recent.createDiv({ text: t("taskModal.recentLabels"), cls: "taskmate-suggestion-heading" });
-      const chips = recent.createDiv({ cls: "taskmate-suggestion-chips" });
-      for (const label of labelSuggestions) {
-        const button = chips.createEl("button", {
-          text: label,
-          cls: "taskmate-suggestion-chip",
-          attr: { type: "button", "aria-pressed": "false" }
-        });
-        button.dataset.label = label;
-        button.addEventListener("click", () => {
-          this.draft.labels = this.draft.labels.includes(label) ? this.draft.labels.filter((item) => item !== label) : [...this.draft.labels, label].slice(0, 500);
-          labelInput.value = this.draft.labels.join(", ");
-          refreshLabelSelection();
-        });
-        recentLabelButtons.push(button);
-      }
-      refreshLabelSelection();
-    }
-    const notesSetting = new import_obsidian5.Setting(fields).setName(t("taskModal.notes"));
-    notesSetting.settingEl.addClass("taskmate-notes-setting");
-    notesSetting.addTextArea((area) => {
-      area.inputEl.rows = 7;
-      area.setValue(this.draft.notes).onChange((value) => {
-        this.draft.notes = value;
-      });
-    });
-    const actions = contentEl.createDiv({ cls: "taskmate-modal-actions" });
-    const cancel = actions.createEl("button", { text: t("common.cancel") });
-    cancel.addEventListener("click", () => this.close());
-    const save2 = actions.createEl("button", { text: t("common.save"), cls: "mod-cta" });
-    save2.addEventListener("click", async () => {
-      if (!this.draft.title.trim()) return;
-      save2.disabled = true;
-      try {
-        await this.onSave(this.draft);
-        this.close();
-      } finally {
-        save2.disabled = false;
-      }
-    });
-  }
-  onClose() {
-    this.contentEl.empty();
-  }
-};
 
 // src/view.ts
 var TODO_VIEW_TYPE = "taskmate-list";
@@ -3231,7 +3364,7 @@ var TodoListView = class extends import_obsidian6.ItemView {
   labelQuery = "";
   projectScreen = "index";
   activeProjectId = null;
-  sortable = null;
+  renderedTaskList = null;
   generation = 0;
   getViewType() {
     return TODO_VIEW_TYPE;
@@ -3246,7 +3379,7 @@ var TodoListView = class extends import_obsidian6.ItemView {
     await this.render();
   }
   async onClose() {
-    this.sortable?.destroy();
+    this.destroyTaskList();
   }
   requestRender() {
     void this.render();
@@ -3255,8 +3388,7 @@ var TodoListView = class extends import_obsidian6.ItemView {
     const currentGeneration = ++this.generation;
     const [tasks, projects] = await Promise.all([this.plugin.repository.list(), this.plugin.projects.list()]);
     if (currentGeneration !== this.generation) return;
-    this.sortable?.destroy();
-    this.sortable = null;
+    this.destroyTaskList();
     const root = this.contentEl;
     root.empty();
     root.addClass("taskmate-view");
@@ -3342,8 +3474,7 @@ var TodoListView = class extends import_obsidian6.ItemView {
   }
   renderSearchResults(container, tasks, projects) {
     const { t } = this.plugin.i18n();
-    this.sortable?.destroy();
-    this.sortable = null;
+    this.destroyTaskList();
     container.empty();
     const recent = this.plugin.settings.recentSearches ?? [];
     if (recent.length > 0) {
@@ -3599,8 +3730,7 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
   }
   renderFilterResults(container, tasks, projects) {
     const { t } = this.plugin.i18n();
-    this.sortable?.destroy();
-    this.sortable = null;
+    this.destroyTaskList();
     container.empty();
     const selectionCount = this.selectedPriorities.length + this.selectedLabels.length + Number(this.includeCompleted);
     const resultHeader = container.createDiv({ cls: "taskmate-filter-result-heading" });
@@ -3654,87 +3784,65 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
     });
   }
   renderTaskList(container, source, projects, allowReorder) {
-    const { t } = this.plugin.i18n();
-    const visibleTasks = sortTasks(source, this.sortMode, this.sortDirection);
-    const projectNames = new Map(projects.map((project) => [project.id, project.name]));
-    const list = container.createDiv({ cls: "taskmate-list", attr: { role: "list" } });
-    if (visibleTasks.length === 0) {
-      list.createDiv({ cls: "taskmate-empty", text: t("tasks.empty") });
-      return;
-    }
-    visibleTasks.forEach((task) => this.renderTask(list, task, projectNames));
-    this.enableTaskReordering(list, allowReorder);
+    const model = buildTaskListModel({
+      tasks: source,
+      projects,
+      grouping: "flat",
+      sortMode: this.sortMode,
+      sortDirection: this.sortDirection,
+      allowReorder
+    });
+    this.mountTaskList(container, model, source);
   }
   renderScheduledTaskList(container, source, projects) {
-    const { t } = this.plugin.i18n();
-    const groups = groupScheduledTasks(source);
-    const projectNames = new Map(projects.map((project) => [project.id, project.name]));
-    const list = container.createDiv({ cls: "taskmate-list taskmate-scheduled-list", attr: { role: "list" } });
-    const sections = [
-      { key: "overdue", title: t("view.overdue"), cls: "is-overdue" },
-      { key: "today", title: t("view.today"), cls: "is-today" },
-      { key: "later", title: t("view.later"), cls: "is-later" }
-    ];
-    let taskCount = 0;
-    sections.forEach((section) => {
-      const sectionTasks = sortTasks(groups[section.key], this.sortMode, this.sortDirection);
-      if (sectionTasks.length === 0) return;
-      taskCount += sectionTasks.length;
-      list.createDiv({
-        text: section.title,
-        cls: `taskmate-task-section-heading ${section.cls}`,
-        attr: { role: "heading", "aria-level": "3" }
-      });
-      sectionTasks.forEach((task) => this.renderTask(list, task, projectNames));
+    const model = buildTaskListModel({
+      tasks: source,
+      projects,
+      grouping: "scheduled",
+      sortMode: this.sortMode,
+      sortDirection: this.sortDirection,
+      allowReorder: true
     });
-    if (taskCount === 0) {
-      list.createDiv({ cls: "taskmate-empty", text: t("tasks.empty") });
+    this.mountTaskList(container, model, source);
+  }
+  taskListCopy() {
+    const { t } = this.plugin.i18n();
+    return {
+      empty: t("tasks.empty"),
+      reorderAriaLabel: t("tasks.reorderAriaLabel"),
+      completeAriaLabel: (title) => t("tasks.completeAriaLabel", { title }),
+      moreAriaLabel: t("tasks.moreAriaLabel"),
+      sectionTitles: {
+        overdue: t("view.overdue"),
+        today: t("view.today"),
+        later: t("view.later")
+      }
+    };
+  }
+  mountTaskList(container, model, source) {
+    this.destroyTaskList();
+    const tasksById = new Map(source.map((task) => [task.id, task]));
+    this.renderedTaskList = renderTaskList(
+      container,
+      model,
+      this.taskListCopy(),
+      (action) => this.handleTaskListAction(action, tasksById)
+    );
+  }
+  destroyTaskList() {
+    this.renderedTaskList?.destroy();
+    this.renderedTaskList = null;
+  }
+  async handleTaskListAction(action, tasksById) {
+    const { t } = this.plugin.i18n();
+    if (action.type === "reorder") {
+      await this.plugin.repository.reorder(action.taskId, action.previousId, action.nextId);
+      this.requestRender();
       return;
     }
-    this.enableTaskReordering(list, true);
-  }
-  enableTaskReordering(list, allowReorder) {
-    this.sortable = sortable_esm_default.create(list, {
-      animation: 140,
-      handle: ".taskmate-drag",
-      draggable: ".taskmate-task",
-      disabled: this.sortMode !== "manual" || !allowReorder,
-      delay: 120,
-      delayOnTouchOnly: true,
-      touchStartThreshold: 4,
-      onEnd: async (event) => {
-        if (event.oldIndex === event.newIndex) return;
-        const orderedIds = Array.from(list.querySelectorAll(".taskmate-task")).map((element) => element.dataset.taskId ?? "");
-        const id = event.item.dataset.taskId ?? "";
-        const newIndex2 = orderedIds.indexOf(id);
-        if (!id || newIndex2 < 0) return;
-        await this.plugin.repository.reorder(id, orderedIds[newIndex2 - 1] ?? null, orderedIds[newIndex2 + 1] ?? null);
-        this.requestRender();
-      }
-    });
-  }
-  renderTask(list, task, projectNames) {
-    const { t } = this.plugin.i18n();
-    const row = list.createDiv({ cls: `taskmate-task${task.completed ? " is-completed" : ""}`, attr: { role: "listitem" } });
-    row.dataset.taskId = task.id;
-    const drag = row.createEl("button", { text: "\u283F", cls: "taskmate-drag", attr: { "aria-label": t("tasks.reorderAriaLabel") } });
-    drag.disabled = this.sortMode !== "manual" || this.screen === "search" || this.screen === "filter";
-    const checkbox = row.createEl("input", { type: "checkbox", attr: { "aria-label": t("tasks.completeAriaLabel", { title: task.title }) } });
-    checkbox.checked = task.completed;
-    checkbox.addEventListener("change", async () => {
-      await this.plugin.repository.update(task, { completed: checkbox.checked });
-      this.requestRender();
-    });
-    const body = row.createDiv({ cls: "taskmate-task-body" });
-    const title = body.createEl("button", { text: task.title, cls: "taskmate-title" });
-    title.addEventListener("click", () => void this.openEditTask(task));
-    const metadata = body.createDiv({ cls: "taskmate-metadata" });
-    if (task.date) metadata.createSpan({ text: task.date });
-    if (task.priority) metadata.createSpan({ text: `P${task.priority}`, cls: `taskmate-priority taskmate-priority-${task.priority}` });
-    if (task.projectId && projectNames.has(task.projectId)) metadata.createSpan({ text: projectNames.get(task.projectId) });
-    task.labels.slice(0, 3).forEach((label) => metadata.createSpan({ text: `#${label}` }));
-    const more = row.createEl("button", { text: "\u2022\u2022\u2022", cls: "taskmate-more", attr: { "aria-label": t("tasks.moreAriaLabel") } });
-    more.addEventListener("click", (event) => {
+    const task = tasksById.get(action.taskId);
+    if (!task) return;
+    if (action.type === "show-actions") {
       const menu = new import_obsidian6.Menu();
       menu.addItem((item) => item.setTitle(t("common.edit")).setIcon("pencil").onClick(() => void this.openEditTask(task)));
       menu.addItem((item) => item.setTitle(t("common.delete")).setIcon("trash").onClick(async () => {
@@ -3743,8 +3851,18 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
         new import_obsidian6.Notice(t("tasks.deletedNotice"));
         this.requestRender();
       }));
-      menu.showAtMouseEvent(event);
-    });
+      menu.showAtMouseEvent(action.event);
+      return;
+    }
+    if (action.type === "open") {
+      await this.openEditTask(task);
+      return;
+    }
+    if (action.type === "toggle-completed") {
+      await this.plugin.repository.update(task, { completed: action.completed });
+      this.requestRender();
+      return;
+    }
   }
   renderNavigation(root) {
     const { t } = this.plugin.i18n();
