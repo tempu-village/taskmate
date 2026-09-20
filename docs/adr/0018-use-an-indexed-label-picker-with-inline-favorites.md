@@ -8,7 +8,7 @@ The filter modal required users to remember exact label names. A continuously sc
 
 ## Decision
 
-The filter modal opens a two-tab label picker. `Recent & Favorites` presents up to ten favorites and ten non-duplicate recent labels. `All labels` uses one top index containing only populated Latin-initial, Japanese, and numbers-and-symbols groups. The index stays outside the scroll region so only results scroll.
+The filter modal opens a two-tab label picker. `Recent & Favorites` presents up to ten favorites, excludes those favorites from the recent section, and then fills that section with up to ten other recently used labels when available. This produces up to twenty distinct suggestions rather than showing the same label twice. `All labels` uses one top index containing only populated Latin-initial, Japanese, and numbers-and-symbols groups. The index stays outside the scroll region so only results scroll.
 
 A label row toggles filter selection and shows both selected styling and a leading check mark. A separate trailing star toggles the global favorite state immediately without changing selection. Favorites are ordered by most recently favorited, capped at ten, and never evicted automatically.
 
