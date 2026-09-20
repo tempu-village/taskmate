@@ -1,7 +1,7 @@
 import { App, Modal, Setting } from "obsidian";
 import type { Priority, TaskFilters } from "./domain";
 import type { I18n } from "./i18n";
-import { normalizeLabels } from "./task-input-suggestions";
+import { LabelPickerModal } from "./label-picker-modal";
 
 export class TaskFilterModal extends Modal {
   private draft: TaskFilters;
@@ -9,7 +9,11 @@ export class TaskFilterModal extends Modal {
   constructor(
     app: App,
     filters: TaskFilters,
+    private readonly allLabels: string[],
+    private readonly recentLabels: string[],
+    private favoriteLabels: string[],
     private readonly i18n: I18n,
+    private readonly onFavoritesChange: (labels: string[]) => Promise<void>,
     private readonly onApply: (filters: TaskFilters) => void
   ) {
     super(app);
@@ -35,15 +39,33 @@ export class TaskFilterModal extends Modal {
       refresh();
     }));
 
-    new Setting(this.contentEl)
+    const labels = new Setting(this.contentEl)
       .setName(t("filter.labels"))
-      .setDesc(t("filter.labelsDescription"))
-      .addText((text) => text
-        .setPlaceholder(t("filter.labelsPlaceholder"))
-        .setValue(this.draft.labels.join(", "))
-        .onChange((value) => {
-          this.draft.labels = normalizeLabels(value.split(",")).slice(0, 500);
-        }));
+      .setDesc(t("filter.labelsDescription"));
+    const chooseLabels = labels.controlEl.createEl("button", { cls: "taskmate-label-picker-open" });
+    const renderLabelChoice = () => {
+      chooseLabels.textContent = this.draft.labels.length > 0
+        ? t("filter.selectedLabelCount", { count: this.draft.labels.length })
+        : t("filter.chooseLabels");
+    };
+    chooseLabels.addEventListener("click", () => {
+      new LabelPickerModal(this.app, {
+        selectedLabels: this.draft.labels,
+        allLabels: this.allLabels,
+        recentLabels: this.recentLabels,
+        favoriteLabels: this.favoriteLabels,
+        i18n: this.i18n,
+        onSelectionChange: (selected) => {
+          this.draft.labels = selected;
+          renderLabelChoice();
+        },
+        onFavoritesChange: async (favorites) => {
+          this.favoriteLabels = favorites;
+          await this.onFavoritesChange(favorites);
+        }
+      }).open();
+    });
+    renderLabelChoice();
 
     new Setting(this.contentEl)
       .setName(t("filter.completion"))

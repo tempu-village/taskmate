@@ -14,6 +14,10 @@ const taskModalSource = readFileSync(
   fileURLToPath(new URL("../src/task-modal.ts", import.meta.url)),
   "utf8"
 );
+const labelPickerModalSource = readFileSync(
+  fileURLToPath(new URL("../src/label-picker-modal.ts", import.meta.url)),
+  "utf8"
+);
 
 function declarations(selector: string): string {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -140,6 +144,28 @@ describe("mobile layout", () => {
     const notes = declarations(".taskmate-notes-setting textarea");
     expect(notes).toMatch(/width\s*:\s*100%\s*;/);
     expect(notes).toMatch(/min-height\s*:\s*9rem\s*;/);
+  });
+
+  it("keeps the label index outside the scrollable label results", () => {
+    expect(labelPickerModalSource).toContain('this.indexEl = controls.createDiv({ cls: "taskmate-label-picker-index" })');
+    expect(labelPickerModalSource).toContain('this.resultsEl = this.contentEl.createDiv({ cls: "taskmate-label-picker-results" })');
+    expect(labelPickerModalSource).not.toContain("position: sticky");
+
+    const modal = declarations(".taskmate-label-picker-modal .modal-content");
+    expect(modal).toMatch(/display\s*:\s*flex\s*;/);
+    expect(modal).toMatch(/overflow\s*:\s*hidden\s*;/);
+    const results = declarations(".taskmate-label-picker-results");
+    expect(results).toMatch(/flex\s*:\s*1\s+1\s+auto\s*;/);
+    expect(results).toMatch(/min-height\s*:\s*0\s*;/);
+    expect(results).toMatch(/overflow-y\s*:\s*auto\s*;/);
+  });
+
+  it("separates label selection from the favorite star and exposes selected state", () => {
+    expect(labelPickerModalSource).toContain('cls: `taskmate-label-picker-select${selected ? " is-selected" : ""}`');
+    expect(labelPickerModalSource).toContain('text: favorite ? "★" : "☆"');
+    expect(labelPickerModalSource).toContain('attr: { "aria-pressed": String(selected) }');
+    expect(labelPickerModalSource).toContain('text: "✓"');
+    expect(labelPickerModalSource).toContain('star.addEventListener("click", () => void this.toggleFavorite(label))');
   });
 
   it("keeps the end of phone task lists above Obsidian navigation", () => {

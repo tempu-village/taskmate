@@ -496,7 +496,7 @@ export class TodoListView extends ItemView {
       menu.addItem((item) => item
         .setTitle(count > 0 ? t("filter.change") : t("filter.title"))
         .setIcon("list-filter")
-        .onClick(() => this.openFilterModal()));
+        .onClick(() => void this.openFilterModal()));
       if (count > 0) {
         menu.addSeparator();
         menu.addItem((item) => item
@@ -540,11 +540,28 @@ export class TodoListView extends ItemView {
     this.requestRender();
   }
 
-  private openFilterModal(): void {
-    new TaskFilterModal(this.app, this.filterState.value(), this.plugin.i18n(), (filters) => {
-      this.filterState.replace(filters);
-      this.requestRender();
-    }).open();
+  private async openFilterModal(): Promise<void> {
+    const i18n = this.plugin.i18n();
+    const tasks = await this.plugin.repository.list();
+    const allLabels = [...new Set(tasks.flatMap((task) => task.labels))]
+      .sort((a, b) => compareDisplayText(a, b, i18n.locale))
+      .slice(0, 500);
+    new TaskFilterModal(
+      this.app,
+      this.filterState.value(),
+      allLabels,
+      this.plugin.settings.recentLabels ?? [],
+      this.plugin.settings.favoriteLabels ?? [],
+      i18n,
+      async (favorites) => {
+        this.plugin.settings.favoriteLabels = favorites;
+        await this.plugin.saveSettings();
+      },
+      (filters) => {
+        this.filterState.replace(filters);
+        this.requestRender();
+      }
+    ).open();
   }
 
   private clearActiveFilters(): void {

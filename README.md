@@ -22,9 +22,9 @@ TaskMate also includes an optional portable Agent Skill. The Skill turns explici
 - Single-task deletion in the editor and bulk editing or deletion from selection mode
 - Search with up to 10 recent search terms
 - Markdown-backed projects with five recent projects, rename, and safe deletion
-- Priority 1–3 and up to 500 labels, with filters for priority, label, and completion state
+- Priority 1–3 and up to 500 labels, with an indexed label picker, inline favorites, and filters for priority, label, and completion state
 - One-tap Today, Tomorrow, 7 days later, and No date suggestions
-- Up to 10 recently saved label suggestions
+- Up to 10 favorite and 10 non-duplicate recently saved label suggestions
 - One global manual drag order plus date, priority, and creation sorting
 - Auto, English, and 日本語 language settings with English fallback
 - Desktop and mobile Obsidian support

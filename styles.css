@@ -301,6 +301,91 @@
 .taskmate-label-select { flex: 1; min-height: 40px; text-align: left; }
 .taskmate-label-favorite { flex: 0 0 42px; color: var(--text-accent); font-size: 1.1rem; }
 
+.taskmate-label-picker-open {
+  min-width: 10rem;
+  min-height: 42px;
+  text-align: left;
+}
+.taskmate-label-picker-modal .modal-content {
+  display: flex;
+  flex-direction: column;
+  height: min(70dvh, 38rem);
+  min-height: 0;
+  overflow: hidden;
+}
+.taskmate-label-picker-controls { flex: 0 0 auto; }
+.taskmate-label-picker-search { width: 100%; min-height: 44px; }
+.taskmate-label-picker-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+  margin-top: 0.7rem;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+.taskmate-label-picker-tabs button {
+  min-height: 44px;
+  background: transparent;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  box-shadow: none;
+}
+.taskmate-label-picker-tabs button.is-active {
+  color: var(--text-accent);
+  border-bottom-color: var(--interactive-accent);
+}
+.taskmate-label-picker-index {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding: 0.7rem 0;
+  background: var(--background-primary);
+}
+.taskmate-label-picker-index.is-hidden { display: none; }
+.taskmate-label-picker-index button {
+  min-width: 42px;
+  min-height: 42px;
+  padding: 0.35rem 0.55rem;
+}
+.taskmate-label-picker-index button.is-active {
+  color: var(--text-on-accent);
+  background: var(--interactive-accent);
+}
+.taskmate-label-picker-results {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0.35rem 0 0.75rem;
+  overflow-y: auto;
+}
+.taskmate-label-picker-results h3 { margin: 0.65rem 0 0.4rem; }
+.taskmate-label-picker-section + .taskmate-label-picker-section { margin-top: 1rem; }
+.taskmate-label-picker-row { display: flex; gap: 0.45rem; margin-bottom: 0.35rem; }
+.taskmate-label-picker-select {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+  min-height: 44px;
+  text-align: left;
+}
+.taskmate-label-picker-select.is-selected {
+  color: var(--text-on-accent);
+  background: var(--interactive-accent);
+}
+.taskmate-label-picker-check { flex: 0 0 auto; font-weight: 700; }
+.taskmate-label-picker-favorite {
+  flex: 0 0 44px;
+  min-width: 44px;
+  min-height: 44px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  font-size: 1.2rem;
+}
+.taskmate-label-picker-favorite.is-favorite { color: var(--text-accent); }
+
 .taskmate-navigation {
   position: static;
   z-index: 10;
@@ -449,6 +534,11 @@
   .taskmate-task { min-height: 56px; }
   .taskmate-drag { touch-action: none; }
   .taskmate-suggestion-chip { min-height: 44px; }
+  .taskmate-label-picker-modal .modal-content { height: min(65dvh, 32rem); }
+  .taskmate-label-picker-results {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+    scroll-padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  }
 }
 
 .is-phone .taskmate-scroll-region {
