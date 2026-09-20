@@ -12,6 +12,8 @@ Issue #13 made Save visible when the Add Task dialog first opens and separated t
 
 Android diagnostics showed a hybrid layout response: browser viewport metrics stayed near 994 px, while Obsidian reduced TaskMate's root from about 880 px to 484 px, a reduction of about 396 px. This proves the host-facing TaskMate region became smaller; it does not prove that Obsidian explicitly calculated and passed a 396 px keyboard height. TaskMate must therefore measure its own resulting geometry instead of assuming either a pure overlay or a fully resized browser viewport.
 
+The first implementation adjusted only the field scroller. Device verification showed that the entire Obsidian modal remained positioned against the larger browser viewport: the action footer itself could fall behind the keyboard, so neither extra field padding nor field-only scrolling could make Save visible. The complete modal must fit and move inside TaskMate's measured host region before its field scroller is adjusted.
+
 ## Decision
 
 Adopt option A: dynamic clearance plus focus-aware automatic scrolling.
@@ -30,6 +32,7 @@ Clamp the result to zero. Never add the full keyboard height after the host has 
 
 - Apply the behavior to the shared Add Task and Edit Task dialogs on mobile.
 - Keep the existing structure of a scrollable field region and a separate action footer.
+- Constrain and reposition the complete Task modal inside TaskMate's measured host region when that region shrinks, so the action footer remains above the keyboard.
 - When a text field or text area receives focus, move it toward the vertical center of the visible field region when movement is needed and possible without exposing unnecessary artificial blank space.
 - Repeat the adjustment after viewport or modal layout changes settle while the same control remains focused.
 - Determine extra keyboard clearance from current geometry and add only the remaining overlap after host/WebView shrinkage.
@@ -45,6 +48,7 @@ Clamp the result to zero. Never add the full keyboard height after the host has 
 ## Acceptance criteria
 
 - On Android, focusing Title, Labels, and Notes leaves the focused control visible above the keyboard.
+- On Android, Save and Cancel remain visible while the keyboard is open.
 - The implementation does not double-apply the approximately 396 px reduction already observed in the Obsidian host region.
 - When 300 px is covered and the host has already accommodated 300 px, keyboard-avoidance clearance is 0 px.
 - When 300 px is covered and the host has accommodated 200 px, keyboard-avoidance clearance is 100 px.
@@ -83,6 +87,8 @@ Clamp the result to zero. Never add the full keyboard height after the host has 
 
 診断では、ブラウザーの表示高さは約994pxのままなのに、Obsidian内のTaskMateルートは約880pxから484pxへ約396px縮みました。これはTaskMateへ渡る親領域が小さくなった結果を示しますが、Obsidianがキーボード高396pxを明示的に計算したことまでは証明しません。そのため、重なり方式または縮小方式のどちらか一方を決め打ちせず、TaskMate自身から見える実際の座標を使います。
 
+最初の実装は入力欄のスクロール領域だけを調整しました。しかし端末確認では、Obsidianのモーダル全体が大きいブラウザービューポートを基準とした位置に残り、保存フッター自体がキーボードの背面へ入りました。この状態は入力欄への余白だけでは直らないため、先にモーダル全体をTaskMateの親領域内へ収め、その後に入力欄を調整します。
+
 ## 判断
 
 A案の「動的な余白＋フォーカスに応じた自動スクロール」を採用します。
@@ -99,6 +105,7 @@ A案の「動的な余白＋フォーカスに応じた自動スクロール」�
 
 - モバイルのタスク追加・編集で共有するダイアログへ適用する。
 - 入力項目だけがスクロールし、保存・キャンセルが外にある現在の構造を維持する。
+- TaskMateの親領域が縮んだら、モーダル全体をその領域内へ縮小・移動し、保存・キャンセルをキーボードより上に保つ。
 - 入力欄へフォーカスしたら、不要な大空白を見せない範囲で、必要な場合だけ表示領域の中央付近へ動かす。
 - キーボードやモーダルのレイアウト変化が落ち着いた後にも再調整する。
 - 現在の実座標から残っている重なりだけを追加余白にする。
@@ -113,6 +120,7 @@ A案の「動的な余白＋フォーカスに応じた自動スクロール」�
 ## 受け入れ条件
 
 - Androidでタイトル、ラベル、メモがキーボードに隠れない。
+- Androidでキーボード表示中も保存・キャンセルが見える。
 - Obsidian側ですでに観測された約396pxの縮小を二重に適用しない。
 - 隠れる量300px、すでに縮んだ量300pxなら追加余白は0pxになる。
 - 隠れる量300px、すでに縮んだ量200pxなら追加余白は100pxになる。

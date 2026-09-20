@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  calculateModalFit,
   calculateKeyboardLayout,
   clampScrollTop
 } from "../src/mobile-keyboard-layout";
@@ -31,5 +32,19 @@ describe("mobile keyboard layout", () => {
     expect(clampScrollTop(520, 680, 300)).toBe(380);
     expect(clampScrollTop(120, 680, 300)).toBe(120);
     expect(clampScrollTop(-20, 680, 300)).toBe(0);
+  });
+
+  it("fits and shifts the complete modal into the host region", () => {
+    expect(calculateModalFit(
+      { top: 114, bottom: 598, height: 484 },
+      { top: 263, bottom: 731, height: 468 },
+      0
+    )).toEqual({ availableHeight: 468, shift: -141 });
+
+    expect(calculateModalFit(
+      { top: 114, bottom: 994, height: 880 },
+      { top: 180, bottom: 900, height: 720 },
+      0
+    )).toEqual({ availableHeight: 864, shift: 0 });
   });
 });

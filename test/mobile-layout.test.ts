@@ -14,6 +14,10 @@ const taskModalSource = readFileSync(
   fileURLToPath(new URL("../src/task-modal.ts", import.meta.url)),
   "utf8"
 );
+const keyboardLayoutSource = readFileSync(
+  fileURLToPath(new URL("../src/mobile-keyboard-layout.ts", import.meta.url)),
+  "utf8"
+);
 const labelPickerModalSource = readFileSync(
   fileURLToPath(new URL("../src/label-picker-modal.ts", import.meta.url)),
   "utf8"
@@ -109,7 +113,7 @@ describe("mobile layout", () => {
   it("keeps task modal actions outside the scrollable fields", () => {
     expect(taskModalSource).toContain('contentEl.createDiv({ cls: "taskmate-task-fields" })');
     expect(taskModalSource).toContain('contentEl.createDiv({ cls: "taskmate-modal-actions" })');
-    expect(taskModalSource).toContain("new MobileKeyboardScroller(fields)");
+    expect(taskModalSource).toContain("new MobileKeyboardScroller(fields, this.modalEl, this.availableRegion)");
     expect(taskModalSource).toContain("this.keyboardScroller?.disconnect()");
 
     const fields = declarations(".taskmate-task-fields");
@@ -122,6 +126,20 @@ describe("mobile layout", () => {
     expect(modalContent).toMatch(/display\s*:\s*flex\s*;/);
     expect(modalContent).toMatch(/flex-direction\s*:\s*column\s*;/);
     expect(modalContent).toMatch(/overflow\s*:\s*hidden\s*;/);
+  });
+
+  it("fits the entire task modal inside the host region above the keyboard", () => {
+    expect(taskModalSource).toContain("availableRegion: HTMLElement");
+    expect(keyboardLayoutSource).toContain("private readonly modal: HTMLElement");
+    expect(keyboardLayoutSource).toContain("private readonly availableRegion: HTMLElement");
+    expect(keyboardLayoutSource).toContain('"--taskmate-modal-available-height"');
+    expect(keyboardLayoutSource).toContain('"--taskmate-modal-shift"');
+
+    const modal = declarations(".taskmate-task-modal");
+    expect(modal).toMatch(/display\s*:\s*flex\s*;/);
+    expect(modal).toMatch(/max-height\s*:\s*var\(--taskmate-modal-available-height/);
+    expect(modal).toContain("--taskmate-modal-shift");
+    expect(declarations(".taskmate-task-modal .modal-content")).toMatch(/min-height\s*:\s*0\s*;/);
   });
 
   it("shows four compact date presets in one row", () => {

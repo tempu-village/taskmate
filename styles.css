@@ -485,7 +485,15 @@
   font-weight: 700;
 }
 .taskmate-back { flex: 0 0 38px; font-size: 1.5rem; }
+.taskmate-task-modal {
+  display: flex;
+  flex-direction: column;
+  max-height: var(--taskmate-modal-available-height, calc(100dvh - 2rem));
+  translate: 0 var(--taskmate-modal-shift, 0px);
+}
 .taskmate-task-modal .modal-content {
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;

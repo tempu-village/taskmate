@@ -22,6 +22,7 @@ export class TaskModal extends Modal {
     private readonly projects: Project[],
     private readonly recentLabels: string[],
     defaultProjectId: string | null,
+    private readonly availableRegion: HTMLElement,
     private readonly i18n: I18n,
     private readonly onSave: (draft: TaskDraft) => Promise<void>,
     private readonly onDelete: (() => Promise<void>) | null = null
@@ -218,7 +219,7 @@ export class TaskModal extends Modal {
       }
     });
 
-    this.keyboardScroller = new MobileKeyboardScroller(fields);
+    this.keyboardScroller = new MobileKeyboardScroller(fields, this.modalEl, this.availableRegion);
     this.keyboardScroller.connect();
   }
 

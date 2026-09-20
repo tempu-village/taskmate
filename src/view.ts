@@ -718,7 +718,7 @@ export class TodoListView extends ItemView {
 
   private async openCreateTask(projectId: string | null): Promise<void> {
     const projects = await this.plugin.projects.list();
-    new TaskModal(this.app, null, projects, this.plugin.settings.recentLabels ?? [], projectId, this.plugin.i18n(), async (draft) => {
+    new TaskModal(this.app, null, projects, this.plugin.settings.recentLabels ?? [], projectId, this.contentEl, this.plugin.i18n(), async (draft) => {
       await this.plugin.repository.create(draft);
       await this.rememberLabels(draft.labels);
       if (draft.projectId) {
@@ -731,7 +731,7 @@ export class TodoListView extends ItemView {
 
   private async openEditTask(task: Task, afterAction?: () => void): Promise<void> {
     const projects = await this.plugin.projects.list();
-    new TaskModal(this.app, task, projects, this.plugin.settings.recentLabels ?? [], task.projectId, this.plugin.i18n(), async (draft) => {
+    new TaskModal(this.app, task, projects, this.plugin.settings.recentLabels ?? [], task.projectId, this.contentEl, this.plugin.i18n(), async (draft) => {
       await this.plugin.repository.update(task, draft);
       await this.rememberLabels(draft.labels);
       if (draft.projectId) {

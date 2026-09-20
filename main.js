@@ -1383,21 +1383,35 @@ function clampScrollTop(scrollTop, scrollHeight, clientHeight) {
   const maximum = Math.max(0, finiteNonNegative(scrollHeight) - finiteNonNegative(clientHeight));
   return Math.min(Math.max(0, finiteNonNegative(scrollTop)), maximum);
 }
+function calculateModalFit(region, modal, currentShift, edgeGap = 8) {
+  const availableHeight = Math.max(0, region.height - edgeGap * 2);
+  const naturalTop = modal.top - currentShift;
+  const naturalBottom = modal.bottom - currentShift;
+  const topLimit = region.top + edgeGap;
+  const bottomLimit = region.bottom - edgeGap;
+  let shift = 0;
+  if (naturalBottom > bottomLimit) shift = bottomLimit - naturalBottom;
+  if (naturalTop + shift < topLimit) shift += topLimit - (naturalTop + shift);
+  return { availableHeight, shift };
+}
 var KEYBOARD_THRESHOLD = 48;
 var COMFORTABLE_EDGE = 24;
 var MobileKeyboardScroller = class {
-  constructor(fields) {
+  constructor(fields, modal, availableRegion) {
     this.fields = fields;
-    this.baselineFieldHeight = fields.getBoundingClientRect().height;
+    this.modal = modal;
+    this.availableRegion = availableRegion;
+    this.baselineAvailableHeight = availableRegion.getBoundingClientRect().height;
     this.baselineViewportBottom = this.viewportBottom();
   }
-  baselineFieldHeight;
+  baselineAvailableHeight;
   baselineViewportBottom;
   activeControl = null;
   resizeObserver = null;
   scheduledFrame = null;
   delayedAdjustments = [];
   closed = false;
+  modalShift = 0;
   connect() {
     if (!window.matchMedia("(max-width: 700px)").matches) return;
     this.fields.addEventListener("focusin", this.handleFocusIn);
@@ -1408,7 +1422,9 @@ var MobileKeyboardScroller = class {
     if (typeof ResizeObserver !== "undefined") {
       this.resizeObserver = new ResizeObserver(this.scheduleAdjustment);
       this.resizeObserver.observe(this.fields);
+      this.resizeObserver.observe(this.availableRegion);
     }
+    this.scheduleAdjustment();
   }
   disconnect() {
     this.closed = true;
@@ -1421,6 +1437,8 @@ var MobileKeyboardScroller = class {
     if (this.scheduledFrame !== null) window.cancelAnimationFrame(this.scheduledFrame);
     for (const timer of this.delayedAdjustments) window.clearTimeout(timer);
     this.fields.style.removeProperty("--taskmate-keyboard-clearance");
+    this.modal.style.removeProperty("--taskmate-modal-available-height");
+    this.modal.style.removeProperty("--taskmate-modal-shift");
   }
   handleFocusIn = (event) => {
     const target = event.target;
@@ -1446,7 +1464,9 @@ var MobileKeyboardScroller = class {
     });
   };
   adjust() {
-    const hostShrink = Math.max(0, this.baselineFieldHeight - this.fields.getBoundingClientRect().height);
+    this.fitModalToAvailableRegion();
+    const availableHeight = this.availableRegion.getBoundingClientRect().height;
+    const hostShrink = Math.max(0, this.baselineAvailableHeight - availableHeight);
     const keyboardOcclusion = Math.max(0, this.baselineViewportBottom - this.viewportBottom());
     const keyboardLikelyOpen = keyboardOcclusion >= KEYBOARD_THRESHOLD || hostShrink >= KEYBOARD_THRESHOLD;
     if (!keyboardLikelyOpen || !this.activeControl) {
@@ -1490,6 +1510,16 @@ var MobileKeyboardScroller = class {
   setClearance(value) {
     this.fields.style.setProperty("--taskmate-keyboard-clearance", `${Math.max(0, value)}px`);
   }
+  fitModalToAvailableRegion() {
+    const region = this.availableRegion.getBoundingClientRect();
+    if (region.height <= 0) return;
+    const availableHeight = Math.max(0, region.height - 16);
+    this.modal.style.setProperty("--taskmate-modal-available-height", `${availableHeight}px`);
+    const current = this.modal.getBoundingClientRect();
+    const fit = calculateModalFit(region, current, this.modalShift);
+    this.modalShift = fit.shift;
+    this.modal.style.setProperty("--taskmate-modal-shift", `${fit.shift}px`);
+  }
   viewportBottom() {
     const viewport = window.visualViewport;
     return viewport ? viewport.offsetTop + viewport.height : window.innerHeight;
@@ -1504,10 +1534,11 @@ var DATE_SUGGESTION_KEYS = {
   none: "date.none"
 };
 var TaskModal = class extends import_obsidian8.Modal {
-  constructor(app, task, projects, recentLabels, defaultProjectId, i18n, onSave, onDelete = null) {
+  constructor(app, task, projects, recentLabels, defaultProjectId, availableRegion, i18n, onSave, onDelete = null) {
     super(app);
     this.projects = projects;
     this.recentLabels = recentLabels;
+    this.availableRegion = availableRegion;
     this.i18n = i18n;
     this.onSave = onSave;
     this.onDelete = onDelete;
@@ -1688,7 +1719,7 @@ var TaskModal = class extends import_obsidian8.Modal {
         save2.disabled = false;
       }
     });
-    this.keyboardScroller = new MobileKeyboardScroller(fields);
+    this.keyboardScroller = new MobileKeyboardScroller(fields, this.modalEl, this.availableRegion);
     this.keyboardScroller.connect();
   }
   onClose() {
@@ -4842,7 +4873,7 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
   }
   async openCreateTask(projectId) {
     const projects = await this.plugin.projects.list();
-    new TaskModal(this.app, null, projects, this.plugin.settings.recentLabels ?? [], projectId, this.plugin.i18n(), async (draft) => {
+    new TaskModal(this.app, null, projects, this.plugin.settings.recentLabels ?? [], projectId, this.contentEl, this.plugin.i18n(), async (draft) => {
       await this.plugin.repository.create(draft);
       await this.rememberLabels(draft.labels);
       if (draft.projectId) {
@@ -4854,7 +4885,7 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
   }
   async openEditTask(task, afterAction) {
     const projects = await this.plugin.projects.list();
-    new TaskModal(this.app, task, projects, this.plugin.settings.recentLabels ?? [], task.projectId, this.plugin.i18n(), async (draft) => {
+    new TaskModal(this.app, task, projects, this.plugin.settings.recentLabels ?? [], task.projectId, this.contentEl, this.plugin.i18n(), async (draft) => {
       await this.plugin.repository.update(task, draft);
       await this.rememberLabels(draft.labels);
       if (draft.projectId) {
