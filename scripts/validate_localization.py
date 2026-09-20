@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate TaskMate's maintained README translation without personal Skill paths."""
+"""Validate TaskMate's maintained translations without personal Skill paths."""
 
 from __future__ import annotations
 
@@ -11,6 +11,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "README.md"
 TRANSLATION = ROOT / "README.ja.md"
+PRODUCT_SPEC = ROOT / "docs" / "product-spec.md"
+PRODUCT_SPEC_DIVIDER = "\n---\n\n# TaskMate 製品仕様\n"
 
 
 def fail(message: str) -> None:
@@ -49,7 +51,7 @@ def content_structure(text: str) -> tuple[list[int], list[tuple[int, str]], list
         if item:
             lists.append((len(item.group(1)), "ordered" if item.group(2).endswith(".") else "unordered"))
     if fence_info is not None:
-        fail("README contains an unclosed fenced code block")
+        fail("document contains an unclosed fenced code block")
     return headings, lists, fences
 
 
@@ -87,6 +89,26 @@ def main() -> None:
     check_local_links(SOURCE, source)
     check_local_links(TRANSLATION, translation)
     print("OK README.md and README.ja.md localization")
+
+    product_spec = normalized_bytes(PRODUCT_SPEC).decode()
+    if product_spec.count(PRODUCT_SPEC_DIVIDER) != 1:
+        fail("product-spec.md must contain exactly one English/Japanese divider")
+    english_spec, japanese_body = product_spec.split(PRODUCT_SPEC_DIVIDER)
+    japanese_spec = "# TaskMate 製品仕様\n" + japanese_body
+    if japanese_spec.count("<!-- translation-status: ai-translated -->") != 1:
+        fail("product-spec.md Japanese section must have exactly one ai-translated marker")
+    if "英語版が正本です" not in japanese_spec:
+        fail("product-spec.md must show its AI translation status to readers")
+    english_structure = content_structure(english_spec)
+    japanese_structure = content_structure(japanese_spec)
+    if english_structure[0] != japanese_structure[0]:
+        fail("product specification heading levels do not correspond")
+    if english_structure[1] != japanese_structure[1]:
+        fail("product specification list shapes do not correspond")
+    if english_structure[2] != japanese_structure[2]:
+        fail("product specification fenced code blocks do not correspond")
+    check_local_links(PRODUCT_SPEC, product_spec)
+    print("OK docs/product-spec.md localization")
 
 
 if __name__ == "__main__":
