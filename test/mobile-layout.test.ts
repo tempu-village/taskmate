@@ -113,7 +113,8 @@ describe("mobile layout", () => {
   it("keeps task modal actions outside the scrollable fields", () => {
     expect(taskModalSource).toContain('contentEl.createDiv({ cls: "taskmate-task-fields" })');
     expect(taskModalSource).toContain('contentEl.createDiv({ cls: "taskmate-modal-actions" })');
-    expect(taskModalSource).toContain("new MobileKeyboardScroller(fields, this.modalEl, this.availableRegion)");
+    expect(taskModalSource).toContain("new MobileKeyboardScroller(");
+    expect(taskModalSource).toContain("this.baselineAvailableHeight");
     expect(taskModalSource).toContain("this.keyboardScroller?.disconnect()");
 
     const fields = declarations(".taskmate-task-fields");

@@ -67,6 +67,15 @@ export function calculateModalFit(
 const KEYBOARD_THRESHOLD = 48;
 const COMFORTABLE_EDGE = 24;
 
+export function shouldConstrainModal(
+  hasActiveControl: boolean,
+  keyboardOcclusion: number,
+  hostShrink: number
+): boolean {
+  if (!hasActiveControl) return false;
+  return keyboardOcclusion >= KEYBOARD_THRESHOLD || hostShrink >= KEYBOARD_THRESHOLD;
+}
+
 export class MobileKeyboardScroller {
   private readonly baselineAvailableHeight: number;
   private readonly baselineViewportBottom: number;
@@ -82,9 +91,10 @@ export class MobileKeyboardScroller {
   constructor(
     private readonly fields: HTMLElement,
     private readonly modal: HTMLElement,
-    private readonly availableRegion: HTMLElement
+    private readonly availableRegion: HTMLElement,
+    baselineAvailableHeight?: number
   ) {
-    this.baselineAvailableHeight = availableRegion.getBoundingClientRect().height;
+    this.baselineAvailableHeight = baselineAvailableHeight ?? availableRegion.getBoundingClientRect().height;
     this.baselineViewportBottom = this.viewportBottom();
   }
 
@@ -146,13 +156,17 @@ export class MobileKeyboardScroller {
   };
 
   private adjust(): void {
-    this.fitModalToAvailableRegion();
     const availableHeight = this.availableRegion.getBoundingClientRect().height;
     const hostShrink = Math.max(0, this.baselineAvailableHeight - availableHeight);
     const keyboardOcclusion = Math.max(0, this.baselineViewportBottom - this.viewportBottom());
-    const keyboardLikelyOpen = keyboardOcclusion >= KEYBOARD_THRESHOLD || hostShrink >= KEYBOARD_THRESHOLD;
+    const keyboardLikelyOpen = shouldConstrainModal(
+      this.activeControl !== null,
+      keyboardOcclusion,
+      hostShrink
+    );
 
     if (!keyboardLikelyOpen || !this.activeControl) {
+      this.resetModalFit();
       this.alignmentClearance = 0;
       this.setClearance(0);
       this.fields.scrollTop = clampScrollTop(
@@ -162,6 +176,8 @@ export class MobileKeyboardScroller {
       );
       return;
     }
+
+    this.fitModalToAvailableRegion();
 
     const keyboardLayout = calculateKeyboardLayout({
       keyboardOcclusion,
@@ -222,6 +238,13 @@ export class MobileKeyboardScroller {
     const fit = calculateModalFit(region, current, this.modalShift);
     this.modalShift = fit.shift;
     this.modal.style.setProperty("--taskmate-modal-shift", `${fit.shift}px`);
+  }
+
+  private resetModalFit(): void {
+    if (this.modalShift === 0 && !this.modal.style.getPropertyValue("--taskmate-modal-available-height")) return;
+    this.modalShift = 0;
+    this.modal.style.removeProperty("--taskmate-modal-available-height");
+    this.modal.style.removeProperty("--taskmate-modal-shift");
   }
 
   private viewportBottom(): number {

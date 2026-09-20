@@ -3,7 +3,8 @@ import {
   calculateModalFit,
   calculateKeyboardLayout,
   clampScrollTop,
-  retainAlignmentClearance
+  retainAlignmentClearance,
+  shouldConstrainModal
 } from "../src/mobile-keyboard-layout";
 
 describe("mobile keyboard layout", () => {
@@ -53,5 +54,12 @@ describe("mobile keyboard layout", () => {
     expect(retainAlignmentClearance(72, 0, true)).toBe(72);
     expect(retainAlignmentClearance(72, 96, true)).toBe(96);
     expect(retainAlignmentClearance(72, 0, false)).toBe(0);
+  });
+
+  it("never constrains the modal before a field and keyboard are active", () => {
+    expect(shouldConstrainModal(false, 0, 800)).toBe(false);
+    expect(shouldConstrainModal(false, 500, 0)).toBe(false);
+    expect(shouldConstrainModal(true, 0, 0)).toBe(false);
+    expect(shouldConstrainModal(true, 0, 60)).toBe(true);
   });
 });

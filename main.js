@@ -1400,12 +1400,16 @@ function calculateModalFit(region, modal, currentShift, edgeGap = 8) {
 }
 var KEYBOARD_THRESHOLD = 48;
 var COMFORTABLE_EDGE = 24;
+function shouldConstrainModal(hasActiveControl, keyboardOcclusion, hostShrink) {
+  if (!hasActiveControl) return false;
+  return keyboardOcclusion >= KEYBOARD_THRESHOLD || hostShrink >= KEYBOARD_THRESHOLD;
+}
 var MobileKeyboardScroller = class {
-  constructor(fields, modal, availableRegion) {
+  constructor(fields, modal, availableRegion, baselineAvailableHeight) {
     this.fields = fields;
     this.modal = modal;
     this.availableRegion = availableRegion;
-    this.baselineAvailableHeight = availableRegion.getBoundingClientRect().height;
+    this.baselineAvailableHeight = baselineAvailableHeight ?? availableRegion.getBoundingClientRect().height;
     this.baselineViewportBottom = this.viewportBottom();
   }
   baselineAvailableHeight;
@@ -1471,12 +1475,16 @@ var MobileKeyboardScroller = class {
     });
   };
   adjust() {
-    this.fitModalToAvailableRegion();
     const availableHeight = this.availableRegion.getBoundingClientRect().height;
     const hostShrink = Math.max(0, this.baselineAvailableHeight - availableHeight);
     const keyboardOcclusion = Math.max(0, this.baselineViewportBottom - this.viewportBottom());
-    const keyboardLikelyOpen = keyboardOcclusion >= KEYBOARD_THRESHOLD || hostShrink >= KEYBOARD_THRESHOLD;
+    const keyboardLikelyOpen = shouldConstrainModal(
+      this.activeControl !== null,
+      keyboardOcclusion,
+      hostShrink
+    );
     if (!keyboardLikelyOpen || !this.activeControl) {
+      this.resetModalFit();
       this.alignmentClearance = 0;
       this.setClearance(0);
       this.fields.scrollTop = clampScrollTop(
@@ -1486,6 +1494,7 @@ var MobileKeyboardScroller = class {
       );
       return;
     }
+    this.fitModalToAvailableRegion();
     const keyboardLayout = calculateKeyboardLayout({
       keyboardOcclusion,
       hostShrink,
@@ -1540,6 +1549,12 @@ var MobileKeyboardScroller = class {
     this.modalShift = fit.shift;
     this.modal.style.setProperty("--taskmate-modal-shift", `${fit.shift}px`);
   }
+  resetModalFit() {
+    if (this.modalShift === 0 && !this.modal.style.getPropertyValue("--taskmate-modal-available-height")) return;
+    this.modalShift = 0;
+    this.modal.style.removeProperty("--taskmate-modal-available-height");
+    this.modal.style.removeProperty("--taskmate-modal-shift");
+  }
   viewportBottom() {
     const viewport = window.visualViewport;
     return viewport ? viewport.offsetTop + viewport.height : window.innerHeight;
@@ -1580,6 +1595,7 @@ var TaskModal = class extends import_obsidian8.Modal {
     this.i18n = i18n;
     this.onSave = onSave;
     this.onDelete = onDelete;
+    this.baselineAvailableHeight = availableRegion.getBoundingClientRect().height;
     this.draft = {
       title: task?.title ?? "",
       date: task?.date ?? null,
@@ -1593,6 +1609,7 @@ var TaskModal = class extends import_obsidian8.Modal {
   }
   draft;
   keyboardScroller = null;
+  baselineAvailableHeight;
   onOpen() {
     const { contentEl } = this;
     const { t } = this.i18n;
@@ -1776,7 +1793,12 @@ var TaskModal = class extends import_obsidian8.Modal {
         save2.disabled = false;
       }
     });
-    this.keyboardScroller = new MobileKeyboardScroller(fields, this.modalEl, this.availableRegion);
+    this.keyboardScroller = new MobileKeyboardScroller(
+      fields,
+      this.modalEl,
+      this.availableRegion,
+      this.baselineAvailableHeight
+    );
     this.keyboardScroller.connect();
   }
   onClose() {

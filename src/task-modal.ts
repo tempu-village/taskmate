@@ -35,6 +35,7 @@ function addEmbeddedLabel(setting: Setting, label: string): void {
 export class TaskModal extends Modal {
   private draft: TaskDraft;
   private keyboardScroller: MobileKeyboardScroller | null = null;
+  private readonly baselineAvailableHeight: number;
 
   constructor(
     app: App,
@@ -48,6 +49,7 @@ export class TaskModal extends Modal {
     private readonly onDelete: (() => Promise<void>) | null = null
   ) {
     super(app);
+    this.baselineAvailableHeight = availableRegion.getBoundingClientRect().height;
     this.draft = {
       title: task?.title ?? "",
       date: task?.date ?? null,
@@ -258,7 +260,12 @@ export class TaskModal extends Modal {
       }
     });
 
-    this.keyboardScroller = new MobileKeyboardScroller(fields, this.modalEl, this.availableRegion);
+    this.keyboardScroller = new MobileKeyboardScroller(
+      fields,
+      this.modalEl,
+      this.availableRegion,
+      this.baselineAvailableHeight
+    );
     this.keyboardScroller.connect();
   }
 

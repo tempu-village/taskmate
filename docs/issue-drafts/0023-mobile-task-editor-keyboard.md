@@ -33,6 +33,7 @@ Clamp the result to zero. Never add the full keyboard height after the host has 
 - Apply the behavior to the shared Add Task and Edit Task dialogs on mobile.
 - Keep the existing structure of a scrollable field region and a separate action footer.
 - Constrain and reposition the complete Task modal inside TaskMate's measured host region when that region shrinks, so the action footer remains above the keyboard.
+- Do not constrain or reposition the modal before an editable field is focused and keyboard-related occlusion or host shrinkage is detected; transient opening measurements must not collapse the initial dialog.
 - When a text field or text area receives focus, move it toward the vertical center of the visible field region when movement is needed and possible without exposing unnecessary artificial blank space.
 - Repeat the adjustment after viewport or modal layout changes settle while the same control remains focused.
 - Determine extra keyboard clearance from current geometry and add only the remaining overlap after host/WebView shrinkage.
@@ -50,6 +51,7 @@ Clamp the result to zero. Never add the full keyboard height after the host has 
 
 - On Android, focusing Title, Labels, and Notes leaves the focused control visible above the keyboard.
 - On Android, Save and Cancel remain visible while the keyboard is open.
+- Opening Add or Edit with the keyboard closed shows the complete dialog in its normal Obsidian position rather than collapsing it to the top edge.
 - The implementation does not double-apply the approximately 396 px reduction already observed in the Obsidian host region.
 - When 300 px is covered and the host has already accommodated 300 px, keyboard-avoidance clearance is 0 px.
 - When 300 px is covered and the host has accommodated 200 px, keyboard-avoidance clearance is 100 px.
@@ -108,6 +110,7 @@ A案の「動的な余白＋フォーカスに応じた自動スクロール」�
 - モバイルのタスク追加・編集で共有するダイアログへ適用する。
 - 入力項目だけがスクロールし、保存・キャンセルが外にある現在の構造を維持する。
 - TaskMateの親領域が縮んだら、モーダル全体をその領域内へ縮小・移動し、保存・キャンセルをキーボードより上に保つ。
+- 入力欄へのフォーカスとキーボード由来の重なりまたは親領域縮小を検出する前は、モーダルを縮小・移動しない。表示開始時の一時的な寸法で初期画面を潰さない。
 - 入力欄へフォーカスしたら、不要な大空白を見せない範囲で、必要な場合だけ表示領域の中央付近へ動かす。
 - キーボードやモーダルのレイアウト変化が落ち着いた後にも再調整する。
 - 現在の実座標から残っている重なりだけを追加余白にする。
@@ -124,6 +127,7 @@ A案の「動的な余白＋フォーカスに応じた自動スクロール」�
 
 - Androidでタイトル、ラベル、メモがキーボードに隠れない。
 - Androidでキーボード表示中も保存・キャンセルが見える。
+- キーボードを閉じた状態で追加・編集を開くと、上端へ潰れずObsidian標準の位置に画面全体が表示される。
 - Obsidian側ですでに観測された約396pxの縮小を二重に適用しない。
 - 隠れる量300px、すでに縮んだ量300pxなら追加余白は0pxになる。
 - 隠れる量300px、すでに縮んだ量200pxなら追加余白は100pxになる。
