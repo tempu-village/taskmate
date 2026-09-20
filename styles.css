@@ -219,6 +219,21 @@
 .taskmate-task-body { flex: 1; min-width: 0; }
 .taskmate-title { display: block; width: 100%; padding: 0; color: var(--text-normal); text-align: left; font-weight: 600; }
 .taskmate-metadata { display: flex; flex-wrap: wrap; gap: 0.55rem; margin-top: 0.2rem; color: var(--text-muted); font-size: var(--font-smallest); }
+.taskmate-extra-labels {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+.taskmate-label-overflow-toggle {
+  min-height: 28px;
+  padding: 0.1rem 0.5rem;
+  color: var(--text-accent);
+  background: var(--background-modifier-hover);
+  border: 0;
+  border-radius: 999px;
+  box-shadow: none;
+  font-size: inherit;
+}
 .taskmate-priority { font-weight: 700; }
 .taskmate-priority-1 { color: var(--color-red); }
 .taskmate-priority-2 { color: var(--color-orange); }
@@ -387,6 +402,39 @@
 }
 .taskmate-label-picker-favorite.is-favorite { color: var(--text-accent); }
 
+.taskmate-label-manager-modal .modal-content {
+  display: flex;
+  flex-direction: column;
+  height: min(70dvh, 38rem);
+  min-height: 0;
+  overflow: hidden;
+}
+.taskmate-label-manager-search { flex: 0 0 auto; width: 100%; min-height: 44px; }
+.taskmate-label-manager-results {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 0.75rem;
+  overflow-y: auto;
+}
+.taskmate-label-manager-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px 44px;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 52px;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+.taskmate-label-manager-summary { min-width: 0; }
+.taskmate-label-manager-name { display: block; overflow-wrap: anywhere; font-weight: 600; }
+.taskmate-label-manager-count { display: block; color: var(--text-muted); font-size: var(--font-smallest); }
+.taskmate-label-manager-row > button { min-width: 44px; min-height: 44px; padding: 0.4rem; }
+.taskmate-label-manager-delete { color: var(--text-error); }
+.taskmate-label-manager-editor { grid-column: 1 / -1; display: grid; gap: 0.5rem; }
+.taskmate-label-manager-editor input { width: 100%; min-height: 42px; }
+.taskmate-label-manager-impact { color: var(--text-muted); font-size: var(--font-smallest); }
+.taskmate-label-manager-editor-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+
 .taskmate-navigation {
   position: static;
   z-index: 10;
@@ -456,6 +504,20 @@
   margin-top: 0.45rem;
 }
 .taskmate-title-setting input { width: 100%; }
+.taskmate-editor-label-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  width: 100%;
+  margin-top: 0.35rem;
+}
+.taskmate-editor-label-chip {
+  padding: 0.2rem 0.5rem;
+  color: var(--text-muted);
+  background: var(--background-modifier-hover);
+  border-radius: 999px;
+  font-size: var(--font-smallest);
+}
 .taskmate-notes-setting textarea {
   width: 100%;
   min-height: 9rem;

@@ -17,6 +17,9 @@ const copy = {
   reorderAriaLabel: "Reorder",
   completeAriaLabel: (title: string) => `Complete ${title}`,
   selectAriaLabel: (title: string) => `Select ${title}`,
+  moreLabels: (count: number) => `${count} more`,
+  moreLabelsAriaLabel: (count: number) => `Show ${count} more labels`,
+  hideExtraLabels: "Hide extra labels",
   sectionTitles: { overdue: "Overdue", today: "Today", later: "Later" }
 };
 
@@ -78,6 +81,27 @@ describe("task-list renderer", () => {
     expect(container.querySelector(".taskmate-drag")).toBeNull();
     container.querySelector<HTMLElement>(".taskmate-metadata")?.click();
     expect(dispatch).toHaveBeenCalledWith({ type: "toggle-selected", taskId: "task-1" });
+  });
+
+  it("reveals every overflow label with one click without mutating task data", () => {
+    const container = document.createElement("div");
+    const dispatch = vi.fn();
+    const labels = ["l1", "l2", "l3", "l4", "l5", "l6", "l7", "l8", "l9"];
+    renderTaskList(container, {
+      ...model,
+      sections: [{ id: "default", rows: [{ ...model.sections[0].rows[0], labels }] }]
+    }, copy, dispatch);
+    const toggle = container.querySelector<HTMLButtonElement>(".taskmate-label-overflow-toggle");
+    const extra = container.querySelector<HTMLElement>(".taskmate-extra-labels");
+    expect(toggle?.textContent).toBe("6 more");
+    expect(toggle?.getAttribute("aria-expanded")).toBe("false");
+    expect(extra?.hidden).toBe(true);
+    toggle?.click();
+    expect(extra?.hidden).toBe(false);
+    expect(extra?.textContent).toContain("#l9");
+    expect(toggle?.textContent).toBe("Hide extra labels");
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(labels).toHaveLength(9);
   });
 
   it("destroys renderer-owned resources", () => {

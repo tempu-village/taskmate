@@ -50,7 +50,7 @@ describe("task-list presentation model", () => {
     expect(model.sections).toEqual([{
       id: "default",
       rows: [
-        expect.objectContaining({ id: "first", projectName: "Work", labels: ["a", "b", "c"] }),
+        expect.objectContaining({ id: "first", projectName: "Work", labels: ["a", "b", "c", "hidden"] }),
         expect.objectContaining({ id: "later", projectName: null })
       ]
     }]);

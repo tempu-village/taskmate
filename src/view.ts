@@ -12,6 +12,8 @@ import { ProjectModal } from "./project-modal";
 import { TaskModal } from "./task-modal";
 import { recordRecentLabels } from "./task-input-suggestions";
 import { availableFilterLabels } from "./label-picker-model";
+import { LabelManagerModal } from "./label-manager-modal";
+import { buildManagedLabels, removeLabelValue, renameLabelValues } from "./label-management";
 import { buildTaskListModel } from "./task-list-model";
 import type { TaskListModel } from "./task-list-model";
 import { renderTaskList as renderTaskListDom } from "./task-list-renderer";
@@ -396,6 +398,9 @@ export class TodoListView extends ItemView {
       reorderAriaLabel: t("tasks.reorderAriaLabel"),
       completeAriaLabel: (title) => t("tasks.completeAriaLabel", { title }),
       selectAriaLabel: (title) => t("tasks.selectAriaLabel", { title }),
+      moreLabels: (count) => t("tasks.moreLabels", { count }),
+      moreLabelsAriaLabel: (count) => t("tasks.moreLabelsAriaLabel", { count }),
+      hideExtraLabels: t("tasks.hideExtraLabels"),
       sectionTitles: {
         overdue: t("view.overdue"),
         today: t("view.today"),
@@ -498,6 +503,10 @@ export class TodoListView extends ItemView {
         .setTitle(count > 0 ? t("filter.change") : t("filter.title"))
         .setIcon("list-filter")
         .onClick(() => void this.openFilterModal()));
+      menu.addItem((item) => item
+        .setTitle(t("labelManager.menu"))
+        .setIcon("tags")
+        .onClick(() => void this.openLabelManager()));
       if (count > 0) {
         menu.addSeparator();
         menu.addItem((item) => item
@@ -567,6 +576,69 @@ export class TodoListView extends ItemView {
         this.requestRender();
       }
     ).open();
+  }
+
+  private async openLabelManager(): Promise<void> {
+    const tasks = await this.plugin.repository.list();
+    const labels = buildManagedLabels(
+      tasks,
+      this.plugin.settings.recentLabels ?? [],
+      this.plugin.settings.favoriteLabels ?? []
+    );
+    new LabelManagerModal(this.app, {
+      labels,
+      i18n: this.plugin.i18n(),
+      onRename: async (from, to) => this.renameManagedLabel(tasks, from, to),
+      onDelete: async (label) => this.deleteManagedLabel(tasks, label)
+    }).open();
+  }
+
+  private async renameManagedLabel(tasks: Task[], from: string, to: string): Promise<void> {
+    const affected = tasks.filter((task) => task.labels.includes(from));
+    const results = await Promise.allSettled(affected.map((task) =>
+      this.plugin.repository.update(task, { labels: renameLabelValues(task.labels, from, to) })
+    ));
+    if (this.reportLabelWriteFailures(affected, results)) return;
+    this.plugin.settings.recentLabels = renameLabelValues(this.plugin.settings.recentLabels ?? [], from, to);
+    this.plugin.settings.favoriteLabels = renameLabelValues(this.plugin.settings.favoriteLabels ?? [], from, to);
+    const filters = this.filterState.value();
+    this.filterState.replace({ ...filters, labels: renameLabelValues(filters.labels, from, to) });
+    await this.plugin.saveSettings();
+    const { t } = this.plugin.i18n();
+    new Notice(affected.length === 1
+      ? t("labelManager.renamedNoticeOne", { from, to, count: affected.length })
+      : t("labelManager.renamedNotice", { from, to, count: affected.length }));
+    this.requestRender();
+  }
+
+  private async deleteManagedLabel(tasks: Task[], label: string): Promise<void> {
+    const affected = tasks.filter((task) => task.labels.includes(label));
+    const results = await Promise.allSettled(affected.map((task) =>
+      this.plugin.repository.update(task, { labels: removeLabelValue(task.labels, label) })
+    ));
+    if (this.reportLabelWriteFailures(affected, results)) return;
+    this.plugin.settings.recentLabels = removeLabelValue(this.plugin.settings.recentLabels ?? [], label);
+    this.plugin.settings.favoriteLabels = removeLabelValue(this.plugin.settings.favoriteLabels ?? [], label);
+    const filters = this.filterState.value();
+    this.filterState.replace({ ...filters, labels: removeLabelValue(filters.labels, label) });
+    await this.plugin.saveSettings();
+    const { t } = this.plugin.i18n();
+    new Notice(affected.length === 1
+      ? t("labelManager.deletedNoticeOne", { label, count: affected.length })
+      : t("labelManager.deletedNotice", { label, count: affected.length }));
+    this.requestRender();
+  }
+
+  private reportLabelWriteFailures(tasks: Task[], results: PromiseSettledResult<unknown>[]): boolean {
+    const failed = failedBulkTasks(tasks, results);
+    if (failed.length === 0) return false;
+    new Notice(this.plugin.i18n().t("labelManager.partialFailure", {
+      failed: failed.length,
+      total: tasks.length,
+      paths: failed.map((task) => task.path).join(", ")
+    }), 0);
+    this.requestRender();
+    return true;
   }
 
   private clearActiveFilters(): void {

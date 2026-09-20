@@ -2,6 +2,7 @@ import { App, Modal, Setting, setIcon } from "obsidian";
 import type { Project, Task, TaskDraft } from "./domain";
 import { normalizeLabels, recentLabelSuggestions, taskDateSuggestions } from "./task-input-suggestions";
 import type { I18n, TranslationKey } from "./i18n";
+import { summarizeLabels } from "./label-summary";
 
 const DATE_SUGGESTION_KEYS = {
   today: "date.today",
@@ -110,6 +111,8 @@ export class TaskModal extends Modal {
 
     const labelSetting = new Setting(fields).setName(t("taskModal.labels")).setDesc(t("taskModal.labelsDescription"));
     let labelInput: HTMLInputElement;
+    let labelsExpanded = false;
+    let refreshLabelSummary = () => {};
     const recentLabelButtons: HTMLButtonElement[] = [];
     const refreshLabelSelection = () => {
       for (const button of recentLabelButtons) {
@@ -122,9 +125,32 @@ export class TaskModal extends Modal {
       text.setPlaceholder(t("taskModal.labelsPlaceholder")).setValue(this.draft.labels.join(", ")).onChange((value) => {
         this.draft.labels = normalizeLabels(value.split(",")).slice(0, 500);
         refreshLabelSelection();
+        refreshLabelSummary();
       });
       labelInput = text.inputEl;
     });
+    const labelSummaryEl = labelSetting.controlEl.createDiv({ cls: "taskmate-editor-label-summary" });
+    refreshLabelSummary = () => {
+      labelSummaryEl.empty();
+      const summary = summarizeLabels(this.draft.labels);
+      const visible = labelsExpanded ? this.draft.labels : summary.visible;
+      for (const label of visible) labelSummaryEl.createSpan({ text: `#${label}`, cls: "taskmate-editor-label-chip" });
+      if (summary.hidden.length === 0) return;
+      const toggle = labelSummaryEl.createEl("button", {
+        text: labelsExpanded ? t("tasks.hideExtraLabels") : t("tasks.moreLabels", { count: summary.hidden.length }),
+        cls: "taskmate-label-overflow-toggle",
+        attr: {
+          type: "button",
+          "aria-expanded": String(labelsExpanded),
+          "aria-label": labelsExpanded ? t("tasks.hideExtraLabels") : t("tasks.moreLabelsAriaLabel", { count: summary.hidden.length })
+        }
+      });
+      toggle.addEventListener("click", () => {
+        labelsExpanded = !labelsExpanded;
+        refreshLabelSummary();
+      });
+    };
+    refreshLabelSummary();
     const labelSuggestions = recentLabelSuggestions(this.recentLabels);
     if (labelSuggestions.length > 0) {
       const recent = fields.createDiv({ cls: "taskmate-recent-labels" });
@@ -143,6 +169,7 @@ export class TaskModal extends Modal {
             : [...this.draft.labels, label].slice(0, 500);
           labelInput.value = this.draft.labels.join(", ");
           refreshLabelSelection();
+          refreshLabelSummary();
         });
         recentLabelButtons.push(button);
       }

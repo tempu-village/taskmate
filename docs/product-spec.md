@@ -97,6 +97,12 @@ All labels provides search and a fixed top index. The index contains only groups
 
 With completed Tasks excluded, the picker shows only Labels assigned to at least one incomplete Task. When completed Tasks are included, Labels used only by completed Tasks can also appear. Hidden history and favorites remain stored and can reappear when they become eligible again.
 
+### Label management
+
+Manage labels in the Adjust menu searches the union of Labels attached to Tasks, recent Labels, and favorites. Each Label shows its Task count; a value kept only by recent or favorite storage is marked Stored only.
+
+Renaming replaces the Label on every affected Task, including completed Tasks, and updates recent Labels, favorites, and active filters. Renaming into an existing Label merges the two without creating duplicates. Deleting requires confirmation with the affected count, removes the Label from Tasks and saved UI state, and never deletes a Task. A partial file-write failure identifies the failed Task files instead of reporting complete success.
+
 ### Selection and bulk actions
 
 Select Tasks replaces the main navigation with an explicit selection mode. The selectable set is frozen to the Tasks visible when selection begins, and Select all affects only that set.
@@ -108,6 +114,8 @@ A single selected Task opens the normal editor. Multiple selected Tasks can chan
 The Task editor supports title, date, Project, Priority, Labels, and notes. Date shortcuts provide Today, Tomorrow, 7 days later, and No date, followed by a custom date field. The primary save action is visible when the editor opens on mobile.
 
 The editor suggests up to ten recently saved Labels. Saving a Task updates that history. Selecting a Task title opens the editor. A Task can be completed from its list row, and single-Task deletion is located in the editor action footer with a destructive icon and confirmation.
+
+Task rows and the editor initially show up to three selected Labels. If more exist, a localized N more control reveals every remaining Label by click, tap, or keyboard and can collapse the expanded set again. Expanding this summary changes presentation only and never saves the Task.
 
 ## Sorting and manual order
 
@@ -251,6 +259,12 @@ TaskMateは、Obsidian向けのシンプルなローカルファースト・タ�
 
 完了済みタスクを除外している場合、少なくとも一つの未完了タスクに付いているラベルだけを表示します。完了済みタスクを含める場合は、完了済みタスクだけに使われているラベルも表示できます。非表示の履歴とお気に入りは保存したままとし、再び対象になれば表示します。
 
+### ラベル管理
+
+「調整」メニューの「ラベル管理」では、タスクに付いたラベル、最近使ったラベル、お気に入りの和集合を検索できます。各ラベルには対象タスク件数を表示し、履歴またはお気に入りだけに残る値は「保存のみ」と示します。
+
+名前変更は完了済みを含むすべての対象タスクでラベルを置き換え、履歴、お気に入り、有効なフィルターも更新します。既存ラベルへの名前変更は重複させずに統合します。削除は対象件数を示して確認し、タスクと保存済みUI状態からラベルを外しますが、タスク自体は削除しません。一部のファイル書き込みに失敗した場合、完全成功として扱わず、失敗したタスクファイルを示します。
+
 ### 選択と一括操作
 
 「タスクを選択」は、メインナビゲーションを明示的な選択モードへ置き換えます。選択可能な集合は選択開始時に表示されていたタスクへ固定し、「すべて選択」はその集合だけを対象にします。
@@ -262,6 +276,8 @@ TaskMateは、Obsidian向けのシンプルなローカルファースト・タ�
 タスク編集画面では、タスク名、日付、プロジェクト、優先度、ラベル、メモを扱います。日付の候補として、今日、明日、7日後、日付なしを表示し、その下に任意の日付欄を設けます。モバイルで編集画面を開いた時点から、主要な保存操作を利用できます。
 
 編集画面には、最近保存したラベルを最大10件提示します。タスクを保存すると、この履歴を更新します。タスク名を選ぶと編集画面を開きます。タスク一覧の行から完了にでき、単一タスクの削除は、削除用アイコンと確認を伴う編集画面下部の操作領域に置きます。
+
+タスク一覧と編集画面では、選択済みラベルを最初に最大3件表示します。残りがある場合、ローカライズされた「ほかN件」をクリック、タップ、またはキーボードで操作すると、残りをすべて表示し、再び折りたためます。この概要の開閉は表示だけを変更し、タスクを保存しません。
 
 ## 並べ替えと手動順
 

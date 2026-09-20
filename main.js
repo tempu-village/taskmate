@@ -22,7 +22,7 @@ __export(main_exports, {
   default: () => TaskMatePlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian11 = require("obsidian");
+var import_obsidian12 = require("obsidian");
 
 // src/repository.ts
 var import_obsidian = require("obsidian");
@@ -445,7 +445,7 @@ var TaskMateSettingTab = class extends import_obsidian3.PluginSettingTab {
 };
 
 // src/view.ts
-var import_obsidian9 = require("obsidian");
+var import_obsidian10 = require("obsidian");
 
 // src/bulk-task-modal.ts
 var import_obsidian4 = require("obsidian");
@@ -707,6 +707,27 @@ var en = {
   "filter.labelsPlaceholder": "work, calls",
   "adjust.ariaLabel": "View and task actions",
   "adjust.ariaLabelActive": "View and task actions, {count} active filters",
+  "labelManager.menu": "Manage labels",
+  "labelManager.title": "Manage labels",
+  "labelManager.search": "Search labels",
+  "labelManager.empty": "No matching labels",
+  "labelManager.storedOnly": "Stored only",
+  "labelManager.taskCountOne": "{count} task",
+  "labelManager.taskCount": "{count} tasks",
+  "labelManager.renameAriaLabel": "Rename {label}",
+  "labelManager.deleteAriaLabel": "Delete {label}",
+  "labelManager.renameUsed": "Rename \u201C{label}\u201D on {count} tasks",
+  "labelManager.renameUsedOne": "Rename \u201C{label}\u201D on {count} task",
+  "labelManager.renameStoredOnly": "Rename stored label \u201C{label}\u201D",
+  "labelManager.confirmRename": "Rename",
+  "labelManager.deleteConfirm": "Remove \u201C{label}\u201D from {count} tasks? The tasks themselves will not be deleted.",
+  "labelManager.deleteConfirmOne": "Remove \u201C{label}\u201D from {count} task? The task itself will not be deleted.",
+  "labelManager.deleteStoredOnlyConfirm": "Delete stored label \u201C{label}\u201D? No task files will be changed.",
+  "labelManager.renamedNotice": "Renamed \u201C{from}\u201D to \u201C{to}\u201D on {count} tasks",
+  "labelManager.renamedNoticeOne": "Renamed \u201C{from}\u201D to \u201C{to}\u201D on {count} task",
+  "labelManager.deletedNotice": "Removed \u201C{label}\u201D from {count} tasks",
+  "labelManager.deletedNoticeOne": "Removed \u201C{label}\u201D from {count} task",
+  "labelManager.partialFailure": "Could not update {failed} of {total} tasks: {paths}",
   "selection.start": "Select tasks",
   "selection.ariaLabel": "Task selection actions",
   "selection.exit": "Exit",
@@ -723,6 +744,9 @@ var en = {
   "tasks.selectAriaLabel": "Select {title}",
   "tasks.deleteConfirm": "Move \u201C{title}\u201D to the trash?",
   "tasks.deletedNotice": "Task moved to the trash",
+  "tasks.moreLabels": "{count} more",
+  "tasks.moreLabelsAriaLabel": "Show {count} more labels",
+  "tasks.hideExtraLabels": "Hide extra labels",
   "taskModal.addTitle": "Add task",
   "taskModal.editTitle": "Edit task",
   "taskModal.title": "Title",
@@ -859,6 +883,27 @@ var ja = {
   "filter.labelsPlaceholder": "\u4ED5\u4E8B, \u9023\u7D61",
   "adjust.ariaLabel": "\u8868\u793A\u3068\u30BF\u30B9\u30AF\u306E\u64CD\u4F5C",
   "adjust.ariaLabelActive": "\u8868\u793A\u3068\u30BF\u30B9\u30AF\u306E\u64CD\u4F5C\u3001{count}\u4EF6\u306E\u30D5\u30A3\u30EB\u30BF\u304C\u6709\u52B9",
+  "labelManager.menu": "\u30E9\u30D9\u30EB\u7BA1\u7406",
+  "labelManager.title": "\u30E9\u30D9\u30EB\u7BA1\u7406",
+  "labelManager.search": "\u30E9\u30D9\u30EB\u3092\u691C\u7D22",
+  "labelManager.empty": "\u4E00\u81F4\u3059\u308B\u30E9\u30D9\u30EB\u306F\u3042\u308A\u307E\u305B\u3093",
+  "labelManager.storedOnly": "\u4FDD\u5B58\u306E\u307F",
+  "labelManager.taskCountOne": "{count}\u4EF6\u306E\u30BF\u30B9\u30AF",
+  "labelManager.taskCount": "{count}\u4EF6\u306E\u30BF\u30B9\u30AF",
+  "labelManager.renameAriaLabel": "{label}\u306E\u540D\u524D\u3092\u5909\u66F4",
+  "labelManager.deleteAriaLabel": "{label}\u3092\u524A\u9664",
+  "labelManager.renameUsed": "{count}\u4EF6\u306E\u30BF\u30B9\u30AF\u306B\u3042\u308B\u300C{label}\u300D\u306E\u540D\u524D\u3092\u5909\u66F4",
+  "labelManager.renameUsedOne": "{count}\u4EF6\u306E\u30BF\u30B9\u30AF\u306B\u3042\u308B\u300C{label}\u300D\u306E\u540D\u524D\u3092\u5909\u66F4",
+  "labelManager.renameStoredOnly": "\u4FDD\u5B58\u6E08\u307F\u30E9\u30D9\u30EB\u300C{label}\u300D\u306E\u540D\u524D\u3092\u5909\u66F4",
+  "labelManager.confirmRename": "\u540D\u524D\u3092\u5909\u66F4",
+  "labelManager.deleteConfirm": "\u300C{label}\u300D\u3092{count}\u4EF6\u306E\u30BF\u30B9\u30AF\u304B\u3089\u5916\u3057\u307E\u3059\u304B\uFF1F\u30BF\u30B9\u30AF\u81EA\u4F53\u306F\u524A\u9664\u3055\u308C\u307E\u305B\u3093\u3002",
+  "labelManager.deleteConfirmOne": "\u300C{label}\u300D\u3092{count}\u4EF6\u306E\u30BF\u30B9\u30AF\u304B\u3089\u5916\u3057\u307E\u3059\u304B\uFF1F\u30BF\u30B9\u30AF\u81EA\u4F53\u306F\u524A\u9664\u3055\u308C\u307E\u305B\u3093\u3002",
+  "labelManager.deleteStoredOnlyConfirm": "\u4FDD\u5B58\u6E08\u307F\u30E9\u30D9\u30EB\u300C{label}\u300D\u3092\u524A\u9664\u3057\u307E\u3059\u304B\uFF1F\u30BF\u30B9\u30AF\u30D5\u30A1\u30A4\u30EB\u306F\u5909\u66F4\u3055\u308C\u307E\u305B\u3093\u3002",
+  "labelManager.renamedNotice": "\u300C{from}\u300D\u3092\u300C{to}\u300D\u3078\u5909\u66F4\u3057\u307E\u3057\u305F\uFF08{count}\u4EF6\uFF09",
+  "labelManager.renamedNoticeOne": "\u300C{from}\u300D\u3092\u300C{to}\u300D\u3078\u5909\u66F4\u3057\u307E\u3057\u305F\uFF08{count}\u4EF6\uFF09",
+  "labelManager.deletedNotice": "\u300C{label}\u300D\u3092{count}\u4EF6\u306E\u30BF\u30B9\u30AF\u304B\u3089\u5916\u3057\u307E\u3057\u305F",
+  "labelManager.deletedNoticeOne": "\u300C{label}\u300D\u3092{count}\u4EF6\u306E\u30BF\u30B9\u30AF\u304B\u3089\u5916\u3057\u307E\u3057\u305F",
+  "labelManager.partialFailure": "{total}\u4EF6\u4E2D{failed}\u4EF6\u3092\u66F4\u65B0\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F: {paths}",
   "selection.start": "\u30BF\u30B9\u30AF\u3092\u9078\u629E",
   "selection.ariaLabel": "\u30BF\u30B9\u30AF\u9078\u629E\u306E\u64CD\u4F5C",
   "selection.exit": "\u89E3\u9664",
@@ -875,6 +920,9 @@ var ja = {
   "tasks.selectAriaLabel": "{title}\u3092\u9078\u629E",
   "tasks.deleteConfirm": "\u300C{title}\u300D\u3092\u30B4\u30DF\u7BB1\u3078\u79FB\u52D5\u3057\u307E\u3059\u304B\uFF1F",
   "tasks.deletedNotice": "\u30BF\u30B9\u30AF\u3092\u30B4\u30DF\u7BB1\u3078\u79FB\u52D5\u3057\u307E\u3057\u305F",
+  "tasks.moreLabels": "\u307B\u304B{count}\u4EF6",
+  "tasks.moreLabelsAriaLabel": "\u6B8B\u308A{count}\u4EF6\u306E\u30E9\u30D9\u30EB\u3092\u8868\u793A",
+  "tasks.hideExtraLabels": "\u8FFD\u52A0\u306E\u30E9\u30D9\u30EB\u3092\u9589\u3058\u308B",
   "taskModal.addTitle": "\u30BF\u30B9\u30AF\u3092\u8FFD\u52A0",
   "taskModal.editTitle": "\u30BF\u30B9\u30AF\u3092\u7DE8\u96C6",
   "taskModal.title": "\u30BF\u30A4\u30C8\u30EB",
@@ -1304,6 +1352,18 @@ var ProjectModal = class extends import_obsidian7.Modal {
 
 // src/task-modal.ts
 var import_obsidian8 = require("obsidian");
+
+// src/label-summary.ts
+var COMPACT_LABEL_LIMIT = 3;
+function summarizeLabels(labels, limit = COMPACT_LABEL_LIMIT) {
+  const safeLimit = Math.max(0, limit);
+  return {
+    visible: labels.slice(0, safeLimit),
+    hidden: labels.slice(safeLimit)
+  };
+}
+
+// src/task-modal.ts
 var DATE_SUGGESTION_KEYS = {
   today: "date.today",
   tomorrow: "date.tomorrow",
@@ -1393,6 +1453,9 @@ var TaskModal = class extends import_obsidian8.Modal {
     });
     const labelSetting = new import_obsidian8.Setting(fields).setName(t("taskModal.labels")).setDesc(t("taskModal.labelsDescription"));
     let labelInput;
+    let labelsExpanded = false;
+    let refreshLabelSummary = () => {
+    };
     const recentLabelButtons = [];
     const refreshLabelSelection = () => {
       for (const button of recentLabelButtons) {
@@ -1405,9 +1468,32 @@ var TaskModal = class extends import_obsidian8.Modal {
       text.setPlaceholder(t("taskModal.labelsPlaceholder")).setValue(this.draft.labels.join(", ")).onChange((value) => {
         this.draft.labels = normalizeLabels(value.split(",")).slice(0, 500);
         refreshLabelSelection();
+        refreshLabelSummary();
       });
       labelInput = text.inputEl;
     });
+    const labelSummaryEl = labelSetting.controlEl.createDiv({ cls: "taskmate-editor-label-summary" });
+    refreshLabelSummary = () => {
+      labelSummaryEl.empty();
+      const summary = summarizeLabels(this.draft.labels);
+      const visible = labelsExpanded ? this.draft.labels : summary.visible;
+      for (const label of visible) labelSummaryEl.createSpan({ text: `#${label}`, cls: "taskmate-editor-label-chip" });
+      if (summary.hidden.length === 0) return;
+      const toggle = labelSummaryEl.createEl("button", {
+        text: labelsExpanded ? t("tasks.hideExtraLabels") : t("tasks.moreLabels", { count: summary.hidden.length }),
+        cls: "taskmate-label-overflow-toggle",
+        attr: {
+          type: "button",
+          "aria-expanded": String(labelsExpanded),
+          "aria-label": labelsExpanded ? t("tasks.hideExtraLabels") : t("tasks.moreLabelsAriaLabel", { count: summary.hidden.length })
+        }
+      });
+      toggle.addEventListener("click", () => {
+        labelsExpanded = !labelsExpanded;
+        refreshLabelSummary();
+      });
+    };
+    refreshLabelSummary();
     const labelSuggestions = recentLabelSuggestions(this.recentLabels);
     if (labelSuggestions.length > 0) {
       const recent = fields.createDiv({ cls: "taskmate-recent-labels" });
@@ -1424,6 +1510,7 @@ var TaskModal = class extends import_obsidian8.Modal {
           this.draft.labels = this.draft.labels.includes(label) ? this.draft.labels.filter((item) => item !== label) : [...this.draft.labels, label].slice(0, 500);
           labelInput.value = this.draft.labels.join(", ");
           refreshLabelSelection();
+          refreshLabelSummary();
         });
         recentLabelButtons.push(button);
       }
@@ -1473,6 +1560,143 @@ var TaskModal = class extends import_obsidian8.Modal {
   }
 };
 
+// src/label-manager-modal.ts
+var import_obsidian9 = require("obsidian");
+
+// src/label-management.ts
+function buildManagedLabels(tasks, recentLabels, favoriteLabels) {
+  const counts = /* @__PURE__ */ new Map();
+  for (const task of tasks) {
+    for (const label of normalizeLabels(task.labels)) counts.set(label, (counts.get(label) ?? 0) + 1);
+  }
+  const labels = normalizeLabels([...counts.keys(), ...recentLabels, ...favoriteLabels]);
+  return labels.map((label) => ({
+    label,
+    taskCount: counts.get(label) ?? 0,
+    storedOnly: !counts.has(label)
+  }));
+}
+function normalizeManagedLabel(value) {
+  const labels = normalizeLabels(value.split(","));
+  return labels.length === 1 ? labels[0] : null;
+}
+function renameLabelValues(labels, from, to) {
+  return normalizeLabels([...labels].map((label) => label === from ? to : label));
+}
+function removeLabelValue(labels, label) {
+  return normalizeLabels(labels).filter((item) => item !== label);
+}
+
+// src/label-manager-modal.ts
+var LabelManagerModal = class extends import_obsidian9.Modal {
+  constructor(app, options) {
+    super(app);
+    this.options = options;
+    this.setTitle(options.i18n.t("labelManager.title"));
+  }
+  query = "";
+  editingLabel = null;
+  resultsEl = null;
+  onOpen() {
+    const { t } = this.options.i18n;
+    this.modalEl.addClass("taskmate-label-manager-modal");
+    const search = this.contentEl.createEl("input", {
+      type: "text",
+      cls: "taskmate-label-manager-search",
+      attr: { placeholder: t("labelManager.search"), "aria-label": t("labelManager.search") }
+    });
+    search.addEventListener("input", () => {
+      this.query = search.value;
+      this.editingLabel = null;
+      this.renderResults();
+    });
+    this.resultsEl = this.contentEl.createDiv({ cls: "taskmate-label-manager-results" });
+    this.renderResults();
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+  renderResults() {
+    if (!this.resultsEl) return;
+    const { t, locale } = this.options.i18n;
+    const needle = this.query.trim().toLocaleLowerCase(locale);
+    const labels = this.options.labels.filter((item) => item.label.toLocaleLowerCase(locale).includes(needle)).sort((left, right) => compareDisplayText(left.label, right.label, locale));
+    this.resultsEl.empty();
+    if (labels.length === 0) {
+      this.resultsEl.createDiv({ text: t("labelManager.empty"), cls: "taskmate-empty-compact" });
+      return;
+    }
+    for (const item of labels) this.renderRow(item);
+  }
+  renderRow(item) {
+    if (!this.resultsEl) return;
+    const { t } = this.options.i18n;
+    const row = this.resultsEl.createDiv({ cls: "taskmate-label-manager-row" });
+    if (this.editingLabel === item.label) {
+      const editor = row.createDiv({ cls: "taskmate-label-manager-editor" });
+      editor.createDiv({
+        text: item.storedOnly ? t("labelManager.renameStoredOnly", { label: item.label }) : item.taskCount === 1 ? t("labelManager.renameUsedOne", { label: item.label, count: item.taskCount }) : t("labelManager.renameUsed", { label: item.label, count: item.taskCount }),
+        cls: "taskmate-label-manager-impact"
+      });
+      const input = editor.createEl("input", { type: "text", value: item.label });
+      const actions = editor.createDiv({ cls: "taskmate-label-manager-editor-actions" });
+      const cancel = actions.createEl("button", { text: t("common.cancel") });
+      const confirm = actions.createEl("button", { text: t("labelManager.confirmRename"), cls: "mod-cta" });
+      const refreshValidity = () => {
+        const normalized = normalizeManagedLabel(input.value);
+        confirm.disabled = normalized === null || normalized === item.label;
+      };
+      input.addEventListener("input", refreshValidity);
+      cancel.addEventListener("click", () => {
+        this.editingLabel = null;
+        this.renderResults();
+      });
+      confirm.addEventListener("click", async () => {
+        const normalized = normalizeManagedLabel(input.value);
+        if (!normalized || normalized === item.label) return;
+        confirm.disabled = true;
+        try {
+          await this.options.onRename(item.label, normalized);
+          this.close();
+        } finally {
+          confirm.disabled = false;
+        }
+      });
+      refreshValidity();
+      window.setTimeout(() => input.focus(), 0);
+      return;
+    }
+    const summary = row.createDiv({ cls: "taskmate-label-manager-summary" });
+    summary.createSpan({ text: item.label, cls: "taskmate-label-manager-name" });
+    summary.createSpan({
+      text: item.storedOnly ? t("labelManager.storedOnly") : item.taskCount === 1 ? t("labelManager.taskCountOne", { count: item.taskCount }) : t("labelManager.taskCount", { count: item.taskCount }),
+      cls: "taskmate-label-manager-count"
+    });
+    const rename = row.createEl("button", { attr: { "aria-label": t("labelManager.renameAriaLabel", { label: item.label }) } });
+    (0, import_obsidian9.setIcon)(rename, "pencil");
+    rename.addEventListener("click", () => {
+      this.editingLabel = item.label;
+      this.renderResults();
+    });
+    const remove = row.createEl("button", {
+      cls: "taskmate-label-manager-delete",
+      attr: { "aria-label": t("labelManager.deleteAriaLabel", { label: item.label }) }
+    });
+    (0, import_obsidian9.setIcon)(remove, "trash-2");
+    remove.addEventListener("click", async () => {
+      const message = item.storedOnly ? t("labelManager.deleteStoredOnlyConfirm", { label: item.label }) : item.taskCount === 1 ? t("labelManager.deleteConfirmOne", { label: item.label, count: item.taskCount }) : t("labelManager.deleteConfirm", { label: item.label, count: item.taskCount });
+      if (!window.confirm(message)) return;
+      remove.disabled = true;
+      try {
+        await this.options.onDelete(item.label);
+        this.close();
+      } finally {
+        remove.disabled = false;
+      }
+    });
+  }
+};
+
 // src/task-list-model.ts
 function toRow(task, projectNames) {
   return {
@@ -1482,7 +1706,7 @@ function toRow(task, projectNames) {
     date: task.date,
     priority: task.priority,
     projectName: task.projectId ? projectNames.get(task.projectId) ?? null : null,
-    labels: task.labels.slice(0, 3),
+    labels: [...task.labels],
     selected: false
   };
 }
@@ -3755,7 +3979,30 @@ function renderRow(list, row, reorderEnabled, selectionMode, copy, signal, dispa
     className: `taskmate-priority taskmate-priority-${row.priority}`
   });
   if (row.projectName) appendElement(metadata, "span", { text: row.projectName });
-  row.labels.forEach((label) => appendElement(metadata, "span", { text: `#${label}` }));
+  const labels = summarizeLabels(row.labels);
+  labels.visible.forEach((label) => appendElement(metadata, "span", { text: `#${label}` }));
+  if (labels.hidden.length > 0) {
+    const extra = appendElement(metadata, "span", { className: "taskmate-extra-labels" });
+    extra.hidden = true;
+    labels.hidden.forEach((label) => appendElement(extra, "span", { text: `#${label}` }));
+    const toggle = appendElement(metadata, "button", {
+      className: "taskmate-label-overflow-toggle",
+      text: copy.moreLabels(labels.hidden.length),
+      attributes: {
+        type: "button",
+        "aria-expanded": "false",
+        "aria-label": copy.moreLabelsAriaLabel(labels.hidden.length)
+      }
+    });
+    toggle.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const expanded = toggle.getAttribute("aria-expanded") === "true";
+      extra.hidden = expanded;
+      toggle.setAttribute("aria-expanded", String(!expanded));
+      toggle.setAttribute("aria-label", expanded ? copy.moreLabelsAriaLabel(labels.hidden.length) : copy.hideExtraLabels);
+      toggle.textContent = expanded ? copy.moreLabels(labels.hidden.length) : copy.hideExtraLabels;
+    }, { signal });
+  }
 }
 function renderTaskList(container, model, copy, dispatch) {
   const AbortControllerClass = container.ownerDocument.defaultView?.AbortController ?? AbortController;
@@ -3860,7 +4107,7 @@ var NAV_ITEMS = [
   { screen: "search", icon: "\u2315", labelKey: "nav.search" },
   { screen: "projects", icon: "\u25A3", labelKey: "nav.projects" }
 ];
-var TodoListView = class extends import_obsidian9.ItemView {
+var TodoListView = class extends import_obsidian10.ItemView {
   constructor(leaf, plugin) {
     super(leaf);
     this.plugin = plugin;
@@ -4111,7 +4358,7 @@ var TodoListView = class extends import_obsidian9.ItemView {
       await this.plugin.projects.remove(project);
       this.activeProjectId = null;
       this.projectScreen = "index";
-      new import_obsidian9.Notice(t("projects.deletedNotice"));
+      new import_obsidian10.Notice(t("projects.deletedNotice"));
       this.requestRender();
     });
   }
@@ -4180,6 +4427,9 @@ var TodoListView = class extends import_obsidian9.ItemView {
       reorderAriaLabel: t("tasks.reorderAriaLabel"),
       completeAriaLabel: (title) => t("tasks.completeAriaLabel", { title }),
       selectAriaLabel: (title) => t("tasks.selectAriaLabel", { title }),
+      moreLabels: (count) => t("tasks.moreLabels", { count }),
+      moreLabelsAriaLabel: (count) => t("tasks.moreLabelsAriaLabel", { count }),
+      hideExtraLabels: t("tasks.hideExtraLabels"),
       sectionTitles: {
         overdue: t("view.overdue"),
         today: t("view.today"),
@@ -4262,10 +4512,10 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
       cls: `taskmate-adjust${count > 0 ? " is-active" : ""}`,
       attr: { "aria-label": count > 0 ? t("adjust.ariaLabelActive", { count }) : t("adjust.ariaLabel") }
     });
-    (0, import_obsidian9.setIcon)(button, "sliders-horizontal");
+    (0, import_obsidian10.setIcon)(button, "sliders-horizontal");
     if (count > 0) button.createSpan({ text: String(count), cls: "taskmate-adjust-count" });
     button.addEventListener("click", (event) => {
-      const menu = new import_obsidian9.Menu();
+      const menu = new import_obsidian10.Menu();
       const scope = selectionScope();
       menu.addItem((item) => item.setTitle(t("selection.start")).setIcon("list-checks").setDisabled(scope.length === 0).onClick(() => {
         this.selectionScopeIds = new Set(scope.map((task) => task.id));
@@ -4274,6 +4524,7 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
         this.requestRender();
       }));
       menu.addItem((item) => item.setTitle(count > 0 ? t("filter.change") : t("filter.title")).setIcon("list-filter").onClick(() => void this.openFilterModal()));
+      menu.addItem((item) => item.setTitle(t("labelManager.menu")).setIcon("tags").onClick(() => void this.openLabelManager()));
       if (count > 0) {
         menu.addSeparator();
         menu.addItem((item) => item.setTitle(t("filter.clearActive")).setIcon("filter-x").onClick(() => this.clearActiveFilters()));
@@ -4332,9 +4583,64 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
       }
     ).open();
   }
+  async openLabelManager() {
+    const tasks = await this.plugin.repository.list();
+    const labels = buildManagedLabels(
+      tasks,
+      this.plugin.settings.recentLabels ?? [],
+      this.plugin.settings.favoriteLabels ?? []
+    );
+    new LabelManagerModal(this.app, {
+      labels,
+      i18n: this.plugin.i18n(),
+      onRename: async (from, to) => this.renameManagedLabel(tasks, from, to),
+      onDelete: async (label) => this.deleteManagedLabel(tasks, label)
+    }).open();
+  }
+  async renameManagedLabel(tasks, from, to) {
+    const affected = tasks.filter((task) => task.labels.includes(from));
+    const results = await Promise.allSettled(affected.map(
+      (task) => this.plugin.repository.update(task, { labels: renameLabelValues(task.labels, from, to) })
+    ));
+    if (this.reportLabelWriteFailures(affected, results)) return;
+    this.plugin.settings.recentLabels = renameLabelValues(this.plugin.settings.recentLabels ?? [], from, to);
+    this.plugin.settings.favoriteLabels = renameLabelValues(this.plugin.settings.favoriteLabels ?? [], from, to);
+    const filters = this.filterState.value();
+    this.filterState.replace({ ...filters, labels: renameLabelValues(filters.labels, from, to) });
+    await this.plugin.saveSettings();
+    const { t } = this.plugin.i18n();
+    new import_obsidian10.Notice(affected.length === 1 ? t("labelManager.renamedNoticeOne", { from, to, count: affected.length }) : t("labelManager.renamedNotice", { from, to, count: affected.length }));
+    this.requestRender();
+  }
+  async deleteManagedLabel(tasks, label) {
+    const affected = tasks.filter((task) => task.labels.includes(label));
+    const results = await Promise.allSettled(affected.map(
+      (task) => this.plugin.repository.update(task, { labels: removeLabelValue(task.labels, label) })
+    ));
+    if (this.reportLabelWriteFailures(affected, results)) return;
+    this.plugin.settings.recentLabels = removeLabelValue(this.plugin.settings.recentLabels ?? [], label);
+    this.plugin.settings.favoriteLabels = removeLabelValue(this.plugin.settings.favoriteLabels ?? [], label);
+    const filters = this.filterState.value();
+    this.filterState.replace({ ...filters, labels: removeLabelValue(filters.labels, label) });
+    await this.plugin.saveSettings();
+    const { t } = this.plugin.i18n();
+    new import_obsidian10.Notice(affected.length === 1 ? t("labelManager.deletedNoticeOne", { label, count: affected.length }) : t("labelManager.deletedNotice", { label, count: affected.length }));
+    this.requestRender();
+  }
+  reportLabelWriteFailures(tasks, results) {
+    const failed = failedBulkTasks(tasks, results);
+    if (failed.length === 0) return false;
+    new import_obsidian10.Notice(this.plugin.i18n().t("labelManager.partialFailure", {
+      failed: failed.length,
+      total: tasks.length,
+      paths: failed.map((task) => task.path).join(", ")
+    }), 0);
+    this.requestRender();
+    return true;
+  }
   clearActiveFilters() {
     this.filterState.clear();
-    new import_obsidian9.Notice(this.plugin.i18n().t("filter.clearedNotice"));
+    new import_obsidian10.Notice(this.plugin.i18n().t("filter.clearedNotice"));
     this.requestRender();
   }
   async editSelectedTasks(tasks) {
@@ -4371,13 +4677,13 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
     const { t } = this.plugin.i18n();
     const failed = failedBulkTasks(tasks, results);
     if (failed.length === 0) {
-      new import_obsidian9.Notice(t(successKey, { count: tasks.length }));
+      new import_obsidian10.Notice(t(successKey, { count: tasks.length }));
       this.exitSelectionMode();
       return;
     }
     this.selectedTaskIds = new Set(failed.map((task) => task.id));
     this.selectionScopeIds = new Set(failed.map((task) => task.id));
-    new import_obsidian9.Notice(t("selection.partialFailure", { failed: failed.length, total: tasks.length }));
+    new import_obsidian10.Notice(t("selection.partialFailure", { failed: failed.length, total: tasks.length }));
     this.requestRender();
   }
   addBackButton(header, action) {
@@ -4421,7 +4727,7 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
       else this.requestRender();
     }, async () => {
       await this.plugin.repository.remove(task);
-      new import_obsidian9.Notice(this.plugin.i18n().t("tasks.deletedNotice"));
+      new import_obsidian10.Notice(this.plugin.i18n().t("tasks.deletedNotice"));
       if (afterAction) afterAction();
       else this.requestRender();
     }).open();
@@ -4444,17 +4750,17 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
 };
 
 // src/i18n/obsidian-locale.ts
-var import_obsidian10 = require("obsidian");
+var import_obsidian11 = require("obsidian");
 function detectObsidianLanguage() {
   try {
-    return typeof import_obsidian10.getLanguage === "function" ? (0, import_obsidian10.getLanguage)() : void 0;
+    return typeof import_obsidian11.getLanguage === "function" ? (0, import_obsidian11.getLanguage)() : void 0;
   } catch {
     return void 0;
   }
 }
 
 // src/main.ts
-var TaskMatePlugin = class extends import_obsidian11.Plugin {
+var TaskMatePlugin = class extends import_obsidian12.Plugin {
   settings = DEFAULT_SETTINGS;
   repository;
   projects;
@@ -4466,10 +4772,10 @@ var TaskMatePlugin = class extends import_obsidian11.Plugin {
     this.projects = new ProjectRepository(this.app, () => this.settings.projectFolder);
     try {
       const migrated = await this.repository.migrateLegacyFileNames();
-      if (migrated > 0) new import_obsidian11.Notice(t("notice.migratedTaskNames", { count: migrated }));
+      if (migrated > 0) new import_obsidian12.Notice(t("notice.migratedTaskNames", { count: migrated }));
     } catch (error) {
       console.error("TaskMate could not migrate legacy task filenames", error);
-      new import_obsidian11.Notice(t("notice.migrationFailed"));
+      new import_obsidian12.Notice(t("notice.migrationFailed"));
     }
     this.registerView(TODO_VIEW_TYPE, (leaf) => new TodoListView(leaf, this));
     this.addSettingTab(new TaskMateSettingTab(this.app, this));
@@ -4491,23 +4797,23 @@ var TaskMatePlugin = class extends import_obsidian11.Plugin {
       checkCallback: (checking) => this.includeCurrentFolder(checking)
     });
     const scheduleRefresh = (file) => {
-      const taskPrefix = `${(0, import_obsidian11.normalizePath)(this.settings.taskFolder)}/`;
-      const projectPrefix = `${(0, import_obsidian11.normalizePath)(this.settings.projectFolder)}/`;
+      const taskPrefix = `${(0, import_obsidian12.normalizePath)(this.settings.taskFolder)}/`;
+      const projectPrefix = `${(0, import_obsidian12.normalizePath)(this.settings.projectFolder)}/`;
       if (!file.path.startsWith(taskPrefix) && !file.path.startsWith(projectPrefix)) return;
       if (this.refreshTimer !== null) window.clearTimeout(this.refreshTimer);
       this.refreshTimer = window.setTimeout(() => this.refreshViews(), 100);
     };
     this.registerEvent(this.app.vault.on("create", (file) => {
-      if (file instanceof import_obsidian11.TFile) scheduleRefresh(file);
+      if (file instanceof import_obsidian12.TFile) scheduleRefresh(file);
     }));
     this.registerEvent(this.app.vault.on("modify", (file) => {
-      if (file instanceof import_obsidian11.TFile) scheduleRefresh(file);
+      if (file instanceof import_obsidian12.TFile) scheduleRefresh(file);
     }));
     this.registerEvent(this.app.vault.on("delete", (file) => {
-      if (file instanceof import_obsidian11.TFile) scheduleRefresh(file);
+      if (file instanceof import_obsidian12.TFile) scheduleRefresh(file);
     }));
     this.registerEvent(this.app.vault.on("rename", (file) => {
-      if (file instanceof import_obsidian11.TFile) scheduleRefresh(file);
+      if (file instanceof import_obsidian12.TFile) scheduleRefresh(file);
     }));
   }
   onunload() {
@@ -4548,7 +4854,7 @@ var TaskMatePlugin = class extends import_obsidian11.Plugin {
         frontmatter["taskmate-source"] = value;
       }).then(() => {
         const { t } = this.i18n();
-        new import_obsidian11.Notice(value ? t("notice.noteIncluded") : t("notice.noteExcluded"));
+        new import_obsidian12.Notice(value ? t("notice.noteIncluded") : t("notice.noteExcluded"));
       });
     }
     return true;
@@ -4558,9 +4864,9 @@ var TaskMatePlugin = class extends import_obsidian11.Plugin {
     const folder = file?.parent?.path;
     if (!file || !folder || folder === "/") return false;
     if (!checking) {
-      const normalized = (0, import_obsidian11.normalizePath)(folder);
+      const normalized = (0, import_obsidian12.normalizePath)(folder);
       if (!this.settings.sourceFolders.includes(normalized)) this.settings.sourceFolders.push(normalized);
-      void this.saveSettings().then(() => new import_obsidian11.Notice(this.i18n().t("notice.folderIncluded", { folder: normalized })));
+      void this.saveSettings().then(() => new import_obsidian12.Notice(this.i18n().t("notice.folderIncluded", { folder: normalized })));
     }
     return true;
   }

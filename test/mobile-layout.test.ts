@@ -18,6 +18,10 @@ const labelPickerModalSource = readFileSync(
   fileURLToPath(new URL("../src/label-picker-modal.ts", import.meta.url)),
   "utf8"
 );
+const labelManagerModalSource = readFileSync(
+  fileURLToPath(new URL("../src/label-manager-modal.ts", import.meta.url)),
+  "utf8"
+);
 
 function declarations(selector: string): string {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -176,6 +180,24 @@ describe("mobile layout", () => {
 
     const actions = declarations(".taskmate-label-picker-actions");
     expect(actions).toMatch(/flex\s*:\s*0\s+0\s+auto\s*;/);
+  });
+
+  it("keeps label management results scrollable and uses mobile-sized actions", () => {
+    expect(viewSource).toContain('setTitle(t("labelManager.menu"))');
+    expect(labelManagerModalSource).toContain('this.modalEl.addClass("taskmate-label-manager-modal")');
+    const modal = declarations(".taskmate-label-manager-modal .modal-content");
+    expect(modal).toMatch(/display\s*:\s*flex\s*;/);
+    expect(modal).toMatch(/overflow\s*:\s*hidden\s*;/);
+    const results = declarations(".taskmate-label-manager-results");
+    expect(results).toMatch(/flex\s*:\s*1\s+1\s+auto\s*;/);
+    expect(results).toMatch(/overflow-y\s*:\s*auto\s*;/);
+  });
+
+  it("uses a click-or-tap label overflow summary in rows and the editor", () => {
+    expect(taskModalSource).toContain('cls: "taskmate-editor-label-summary"');
+    expect(taskModalSource).toContain('t("tasks.moreLabels", { count: summary.hidden.length })');
+    expect(taskModalSource).toContain('"aria-expanded": String(labelsExpanded)');
+    expect(declarations(".taskmate-editor-label-summary")).toMatch(/flex-wrap\s*:\s*wrap\s*;/);
   });
 
   it("keeps the end of phone task lists above Obsidian navigation", () => {

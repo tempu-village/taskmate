@@ -1,5 +1,6 @@
 import Sortable from "sortablejs";
 import type { TaskListModel, TaskListRow, TaskListSectionId } from "./task-list-model";
+import { summarizeLabels } from "./label-summary";
 
 export type TaskListAction =
   | { type: "open"; taskId: string }
@@ -12,6 +13,9 @@ export interface TaskListCopy {
   reorderAriaLabel: string;
   completeAriaLabel: (title: string) => string;
   selectAriaLabel: (title: string) => string;
+  moreLabels: (count: number) => string;
+  moreLabelsAriaLabel: (count: number) => string;
+  hideExtraLabels: string;
   sectionTitles: Record<Exclude<TaskListSectionId, "default">, string>;
 }
 
@@ -94,7 +98,30 @@ function renderRow(
     className: `taskmate-priority taskmate-priority-${row.priority}`
   });
   if (row.projectName) appendElement(metadata, "span", { text: row.projectName });
-  row.labels.forEach((label) => appendElement(metadata, "span", { text: `#${label}` }));
+  const labels = summarizeLabels(row.labels);
+  labels.visible.forEach((label) => appendElement(metadata, "span", { text: `#${label}` }));
+  if (labels.hidden.length > 0) {
+    const extra = appendElement(metadata, "span", { className: "taskmate-extra-labels" });
+    extra.hidden = true;
+    labels.hidden.forEach((label) => appendElement(extra, "span", { text: `#${label}` }));
+    const toggle = appendElement(metadata, "button", {
+      className: "taskmate-label-overflow-toggle",
+      text: copy.moreLabels(labels.hidden.length),
+      attributes: {
+        type: "button",
+        "aria-expanded": "false",
+        "aria-label": copy.moreLabelsAriaLabel(labels.hidden.length)
+      }
+    });
+    toggle.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const expanded = toggle.getAttribute("aria-expanded") === "true";
+      extra.hidden = expanded;
+      toggle.setAttribute("aria-expanded", String(!expanded));
+      toggle.setAttribute("aria-label", expanded ? copy.moreLabelsAriaLabel(labels.hidden.length) : copy.hideExtraLabels);
+      toggle.textContent = expanded ? copy.moreLabels(labels.hidden.length) : copy.hideExtraLabels;
+    }, { signal });
+  }
 
 }
 

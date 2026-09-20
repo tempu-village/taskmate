@@ -47,7 +47,7 @@ function toRow(task: Task, projectNames: Map<string, string>): TaskListRow {
     date: task.date,
     priority: task.priority,
     projectName: task.projectId ? projectNames.get(task.projectId) ?? null : null,
-    labels: task.labels.slice(0, 3),
+    labels: [...task.labels],
     selected: false
   };
 }
