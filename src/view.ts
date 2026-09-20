@@ -11,6 +11,7 @@ import { TaskFilterModal } from "./filter-modal";
 import { ProjectModal } from "./project-modal";
 import { TaskModal } from "./task-modal";
 import { recordRecentLabels } from "./task-input-suggestions";
+import { availableFilterLabels } from "./label-picker-model";
 import { buildTaskListModel } from "./task-list-model";
 import type { TaskListModel } from "./task-list-model";
 import { renderTaskList as renderTaskListDom } from "./task-list-renderer";
@@ -543,13 +544,17 @@ export class TodoListView extends ItemView {
   private async openFilterModal(): Promise<void> {
     const i18n = this.plugin.i18n();
     const tasks = await this.plugin.repository.list();
-    const allLabels = [...new Set(tasks.flatMap((task) => task.labels))]
+    const incompleteTaskLabels = availableFilterLabels(tasks, false)
+      .sort((a, b) => compareDisplayText(a, b, i18n.locale))
+      .slice(0, 500);
+    const allTaskLabels = availableFilterLabels(tasks, true)
       .sort((a, b) => compareDisplayText(a, b, i18n.locale))
       .slice(0, 500);
     new TaskFilterModal(
       this.app,
       this.filterState.value(),
-      allLabels,
+      incompleteTaskLabels,
+      allTaskLabels,
       this.plugin.settings.recentLabels ?? [],
       this.plugin.settings.favoriteLabels ?? [],
       i18n,

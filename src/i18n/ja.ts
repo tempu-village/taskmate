@@ -56,6 +56,7 @@ export const ja = {
   "filter.allLabelsTab": "すべてのラベル",
   "filter.favoriteLabels": "お気に入り",
   "filter.chooseLabels": "ラベルを選択",
+  "filter.confirmLabelSelection": "選択を確定",
   "filter.selectedLabelCount": "{count}件選択中",
   "filter.labelSearchPlaceholder": "ラベルを検索",
   "filter.labelSearchAriaLabel": "ラベルを検索",

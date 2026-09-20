@@ -23,6 +23,11 @@ export interface FavoriteToggleResult {
   atLimit: boolean;
 }
 
+export interface LabelledTaskState {
+  completed: boolean;
+  labels: string[];
+}
+
 function firstCharacter(label: string): string {
   return Array.from(label.trim())[0] ?? "";
 }
@@ -39,6 +44,18 @@ function groupOrder(id: LabelGroupId): number {
   if (id.startsWith("latin:")) return id.charCodeAt(id.length - 1) - 65;
   if (id === "japanese") return 26;
   return 27;
+}
+
+export function availableFilterLabels(
+  tasks: Iterable<LabelledTaskState>,
+  includeCompleted: boolean
+): string[] {
+  const labels: string[] = [];
+  for (const task of tasks) {
+    if (!includeCompleted && task.completed) continue;
+    labels.push(...task.labels);
+  }
+  return normalizeLabels(labels);
 }
 
 export function buildLabelGroups(labels: Iterable<string>, query: string, locale: SupportedLocale): LabelGroup[] {

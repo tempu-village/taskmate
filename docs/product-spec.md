@@ -90,9 +90,12 @@ Choosing Labels from Filter opens a picker with Recent & Favorites and All label
 - The tab therefore presents up to twenty distinct suggestions without duplicates.
 - Favorites are ordered by most recently favorited, limited to ten, and are never evicted automatically.
 - A row selects or deselects a Label for the filter. Selection uses both styling and a check mark.
-- A separate star toggles favorite state without changing filter selection.
+- A separate star changes the draft favorite state without changing filter selection.
+- Confirm selection commits both drafts to the parent Filter dialog. Closing or cancelling the picker discards both kinds of pending change.
 
 All labels provides search and a fixed top index. The index contains only groups that have results: populated Latin initials, Japanese, and numbers-and-symbols. Only the Label results scroll; the index remains available.
+
+With completed Tasks excluded, the picker shows only Labels assigned to at least one incomplete Task. When completed Tasks are included, Labels used only by completed Tasks can also appear. Hidden history and favorites remain stored and can reappear when they become eligible again.
 
 ### Selection and bulk actions
 
@@ -241,9 +244,12 @@ TaskMateは、Obsidian向けのシンプルなローカルファースト・タ�
 - したがって、このタブには重複なしで最大20件の候補を表示します。
 - お気に入りは、直近にお気に入り登録した順に並べ、最大10件とし、自動では追い出しません。
 - 行を操作すると、フィルター対象のラベルを選択または選択解除します。選択状態は、色だけでなくチェックマークでも示します。
-- 独立した星を操作すると、フィルター選択を変えずにお気に入り状態を切り替えます。
+- 独立した星を操作すると、フィルター選択を変えずにお気に入りの下書き状態を切り替えます。
+- 「選択を確定」で両方の下書きを親のフィルターダイアログへ反映します。ラベル選択画面を閉じるかキャンセルすると、どちらの未確定変更も破棄します。
 
 「すべてのラベル」には、検索と上部固定の索引を設けます。索引には、結果が存在するラテン文字の頭文字、日本語、数字・記号のグループだけを表示します。ラベル結果だけをスクロールし、索引は利用できる状態を保ちます。
+
+完了済みタスクを除外している場合、少なくとも一つの未完了タスクに付いているラベルだけを表示します。完了済みタスクを含める場合は、完了済みタスクだけに使われているラベルも表示できます。非表示の履歴とお気に入りは保存したままとし、再び対象になれば表示します。
 
 ### 選択と一括操作
 

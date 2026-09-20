@@ -358,6 +358,7 @@
   overflow-y: auto;
 }
 .taskmate-label-picker-results h3 { margin: 0.65rem 0 0.4rem; }
+.taskmate-label-picker-actions { flex: 0 0 auto; margin-top: 0; }
 .taskmate-label-picker-section + .taskmate-label-picker-section { margin-top: 1rem; }
 .taskmate-label-picker-row { display: flex; gap: 0.45rem; margin-bottom: 0.35rem; }
 .taskmate-label-picker-select {
@@ -536,9 +537,10 @@
   .taskmate-suggestion-chip { min-height: 44px; }
   .taskmate-label-picker-modal .modal-content { height: min(65dvh, 32rem); }
   .taskmate-label-picker-results {
-    padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
-    scroll-padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+    padding-bottom: 1rem;
+    scroll-padding-bottom: 1rem;
   }
+  .taskmate-label-picker-actions { padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px)); }
 }
 
 .is-phone .taskmate-scroll-region {

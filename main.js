@@ -680,6 +680,7 @@ var en = {
   "filter.allLabelsTab": "All labels",
   "filter.favoriteLabels": "Favorites",
   "filter.chooseLabels": "Choose labels",
+  "filter.confirmLabelSelection": "Confirm selection",
   "filter.selectedLabelCount": "{count} selected",
   "filter.labelSearchPlaceholder": "Search labels",
   "filter.labelSearchAriaLabel": "Search labels",
@@ -831,6 +832,7 @@ var ja = {
   "filter.allLabelsTab": "\u3059\u3079\u3066\u306E\u30E9\u30D9\u30EB",
   "filter.favoriteLabels": "\u304A\u6C17\u306B\u5165\u308A",
   "filter.chooseLabels": "\u30E9\u30D9\u30EB\u3092\u9078\u629E",
+  "filter.confirmLabelSelection": "\u9078\u629E\u3092\u78BA\u5B9A",
   "filter.selectedLabelCount": "{count}\u4EF6\u9078\u629E\u4E2D",
   "filter.labelSearchPlaceholder": "\u30E9\u30D9\u30EB\u3092\u691C\u7D22",
   "filter.labelSearchAriaLabel": "\u30E9\u30D9\u30EB\u3092\u691C\u7D22",
@@ -986,6 +988,14 @@ function groupOrder(id) {
   if (id === "japanese") return 26;
   return 27;
 }
+function availableFilterLabels(tasks, includeCompleted) {
+  const labels = [];
+  for (const task of tasks) {
+    if (!includeCompleted && task.completed) continue;
+    labels.push(...task.labels);
+  }
+  return normalizeLabels(labels);
+}
 function buildLabelGroups(labels, query, locale) {
   const needle = query.trim().toLocaleLowerCase(locale);
   const grouped = /* @__PURE__ */ new Map();
@@ -1016,7 +1026,8 @@ var LabelPickerModal = class extends import_obsidian5.Modal {
   constructor(app, options) {
     super(app);
     this.options = options;
-    this.selectedLabels = normalizeLabels(options.selectedLabels);
+    const availableLabels = new Set(normalizeLabels(options.allLabels));
+    this.selectedLabels = normalizeLabels(options.selectedLabels).filter((label) => availableLabels.has(label));
     this.favoriteLabels = normalizeLabels(options.favoriteLabels);
     this.setTitle(options.i18n.t("filter.labelPickerTitle"));
   }
@@ -1068,6 +1079,19 @@ var LabelPickerModal = class extends import_obsidian5.Modal {
     });
     this.indexEl = controls.createDiv({ cls: "taskmate-label-picker-index" });
     this.resultsEl = this.contentEl.createDiv({ cls: "taskmate-label-picker-results" });
+    const actions = this.contentEl.createDiv({ cls: "taskmate-modal-actions taskmate-label-picker-actions" });
+    const cancel = actions.createEl("button", { text: t("common.cancel") });
+    cancel.addEventListener("click", () => this.close());
+    const confirm = actions.createEl("button", { text: t("filter.confirmLabelSelection"), cls: "mod-cta" });
+    confirm.addEventListener("click", async () => {
+      confirm.disabled = true;
+      try {
+        await this.options.onConfirm([...this.selectedLabels], [...this.favoriteLabels]);
+        this.close();
+      } finally {
+        confirm.disabled = false;
+      }
+    });
     this.renderPicker();
   }
   onClose() {
@@ -1138,7 +1162,6 @@ var LabelPickerModal = class extends import_obsidian5.Modal {
     select.createSpan({ text: label });
     select.addEventListener("click", () => {
       this.selectedLabels = selected ? this.selectedLabels.filter((item) => item !== label) : [...this.selectedLabels, label].slice(0, 500);
-      this.options.onSelectionChange([...this.selectedLabels]);
       this.renderPicker();
     });
     const star = row.createEl("button", {
@@ -1149,9 +1172,9 @@ var LabelPickerModal = class extends import_obsidian5.Modal {
         "aria-pressed": String(favorite)
       }
     });
-    star.addEventListener("click", () => void this.toggleFavorite(label));
+    star.addEventListener("click", () => this.toggleFavorite(label));
   }
-  async toggleFavorite(label) {
+  toggleFavorite(label) {
     const result = toggleFavoriteLabel(this.favoriteLabels, label);
     if (result.atLimit) {
       new import_obsidian5.Notice(this.options.i18n.t("filter.favoriteLimitNotice", { count: FAVORITE_LABEL_LIMIT }));
@@ -1159,7 +1182,6 @@ var LabelPickerModal = class extends import_obsidian5.Modal {
     }
     if (!result.changed) return;
     this.favoriteLabels = result.favorites;
-    await this.options.onFavoritesChange([...this.favoriteLabels]);
     this.renderPicker();
   }
   groupLabel(group) {
@@ -1174,9 +1196,10 @@ var LabelPickerModal = class extends import_obsidian5.Modal {
 
 // src/filter-modal.ts
 var TaskFilterModal = class extends import_obsidian6.Modal {
-  constructor(app, filters, allLabels, recentLabels, favoriteLabels, i18n, onFavoritesChange, onApply) {
+  constructor(app, filters, incompleteTaskLabels, allTaskLabels, recentLabels, favoriteLabels, i18n, onFavoritesChange, onApply) {
     super(app);
-    this.allLabels = allLabels;
+    this.incompleteTaskLabels = incompleteTaskLabels;
+    this.allTaskLabels = allTaskLabels;
     this.recentLabels = recentLabels;
     this.favoriteLabels = favoriteLabels;
     this.i18n = i18n;
@@ -1209,15 +1232,13 @@ var TaskFilterModal = class extends import_obsidian6.Modal {
     chooseLabels.addEventListener("click", () => {
       new LabelPickerModal(this.app, {
         selectedLabels: this.draft.labels,
-        allLabels: this.allLabels,
+        allLabels: this.draft.includeCompleted ? this.allTaskLabels : this.incompleteTaskLabels,
         recentLabels: this.recentLabels,
         favoriteLabels: this.favoriteLabels,
         i18n: this.i18n,
-        onSelectionChange: (selected) => {
+        onConfirm: async (selected, favorites) => {
           this.draft.labels = selected;
           renderLabelChoice();
-        },
-        onFavoritesChange: async (favorites) => {
           this.favoriteLabels = favorites;
           await this.onFavoritesChange(favorites);
         }
@@ -4291,11 +4312,13 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
   async openFilterModal() {
     const i18n = this.plugin.i18n();
     const tasks = await this.plugin.repository.list();
-    const allLabels = [...new Set(tasks.flatMap((task) => task.labels))].sort((a, b) => compareDisplayText(a, b, i18n.locale)).slice(0, 500);
+    const incompleteTaskLabels = availableFilterLabels(tasks, false).sort((a, b) => compareDisplayText(a, b, i18n.locale)).slice(0, 500);
+    const allTaskLabels = availableFilterLabels(tasks, true).sort((a, b) => compareDisplayText(a, b, i18n.locale)).slice(0, 500);
     new TaskFilterModal(
       this.app,
       this.filterState.value(),
-      allLabels,
+      incompleteTaskLabels,
+      allTaskLabels,
       this.plugin.settings.recentLabels ?? [],
       this.plugin.settings.favoriteLabels ?? [],
       i18n,

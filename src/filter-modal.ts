@@ -9,7 +9,8 @@ export class TaskFilterModal extends Modal {
   constructor(
     app: App,
     filters: TaskFilters,
-    private readonly allLabels: string[],
+    private readonly incompleteTaskLabels: string[],
+    private readonly allTaskLabels: string[],
     private readonly recentLabels: string[],
     private favoriteLabels: string[],
     private readonly i18n: I18n,
@@ -51,15 +52,13 @@ export class TaskFilterModal extends Modal {
     chooseLabels.addEventListener("click", () => {
       new LabelPickerModal(this.app, {
         selectedLabels: this.draft.labels,
-        allLabels: this.allLabels,
+        allLabels: this.draft.includeCompleted ? this.allTaskLabels : this.incompleteTaskLabels,
         recentLabels: this.recentLabels,
         favoriteLabels: this.favoriteLabels,
         i18n: this.i18n,
-        onSelectionChange: (selected) => {
+        onConfirm: async (selected, favorites) => {
           this.draft.labels = selected;
           renderLabelChoice();
-        },
-        onFavoritesChange: async (favorites) => {
           this.favoriteLabels = favorites;
           await this.onFavoritesChange(favorites);
         }

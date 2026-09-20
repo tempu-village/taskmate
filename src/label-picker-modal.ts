@@ -12,8 +12,7 @@ export interface LabelPickerOptions {
   recentLabels: string[];
   favoriteLabels: string[];
   i18n: I18n;
-  onSelectionChange: (labels: string[]) => void;
-  onFavoritesChange: (labels: string[]) => Promise<void>;
+  onConfirm: (selectedLabels: string[], favoriteLabels: string[]) => Promise<void>;
 }
 
 export class LabelPickerModal extends Modal {
@@ -27,7 +26,8 @@ export class LabelPickerModal extends Modal {
 
   constructor(app: App, private readonly options: LabelPickerOptions) {
     super(app);
-    this.selectedLabels = normalizeLabels(options.selectedLabels);
+    const availableLabels = new Set(normalizeLabels(options.allLabels));
+    this.selectedLabels = normalizeLabels(options.selectedLabels).filter((label) => availableLabels.has(label));
     this.favoriteLabels = normalizeLabels(options.favoriteLabels);
     this.setTitle(options.i18n.t("filter.labelPickerTitle"));
   }
@@ -73,6 +73,19 @@ export class LabelPickerModal extends Modal {
     });
     this.indexEl = controls.createDiv({ cls: "taskmate-label-picker-index" });
     this.resultsEl = this.contentEl.createDiv({ cls: "taskmate-label-picker-results" });
+    const actions = this.contentEl.createDiv({ cls: "taskmate-modal-actions taskmate-label-picker-actions" });
+    const cancel = actions.createEl("button", { text: t("common.cancel") });
+    cancel.addEventListener("click", () => this.close());
+    const confirm = actions.createEl("button", { text: t("filter.confirmLabelSelection"), cls: "mod-cta" });
+    confirm.addEventListener("click", async () => {
+      confirm.disabled = true;
+      try {
+        await this.options.onConfirm([...this.selectedLabels], [...this.favoriteLabels]);
+        this.close();
+      } finally {
+        confirm.disabled = false;
+      }
+    });
     this.renderPicker();
   }
 
@@ -151,7 +164,6 @@ export class LabelPickerModal extends Modal {
       this.selectedLabels = selected
         ? this.selectedLabels.filter((item) => item !== label)
         : [...this.selectedLabels, label].slice(0, 500);
-      this.options.onSelectionChange([...this.selectedLabels]);
       this.renderPicker();
     });
 
@@ -163,10 +175,10 @@ export class LabelPickerModal extends Modal {
         "aria-pressed": String(favorite)
       }
     });
-    star.addEventListener("click", () => void this.toggleFavorite(label));
+    star.addEventListener("click", () => this.toggleFavorite(label));
   }
 
-  private async toggleFavorite(label: string): Promise<void> {
+  private toggleFavorite(label: string): void {
     const result = toggleFavoriteLabel(this.favoriteLabels, label);
     if (result.atLimit) {
       new Notice(this.options.i18n.t("filter.favoriteLimitNotice", { count: FAVORITE_LABEL_LIMIT }));
@@ -174,7 +186,6 @@ export class LabelPickerModal extends Modal {
     }
     if (!result.changed) return;
     this.favoriteLabels = result.favorites;
-    await this.options.onFavoritesChange([...this.favoriteLabels]);
     this.renderPicker();
   }
 

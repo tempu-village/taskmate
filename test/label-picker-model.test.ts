@@ -1,7 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { buildLabelGroups, suggestedLabels, toggleFavoriteLabel } from "../src/label-picker-model";
+import { availableFilterLabels, buildLabelGroups, suggestedLabels, toggleFavoriteLabel } from "../src/label-picker-model";
 
 describe("label picker model", () => {
+  it("offers labels from incomplete tasks unless completed tasks are included", () => {
+    const tasks = [
+      { completed: false, labels: ["Work", "Calls"] },
+      { completed: false, labels: ["Work"] },
+      { completed: true, labels: ["Archive"] }
+    ];
+
+    expect(availableFilterLabels(tasks, false)).toEqual(["Work", "Calls"]);
+    expect(availableFilterLabels(tasks, true)).toEqual(["Work", "Calls", "Archive"]);
+  });
+
   it("shows only populated indexed groups and sorts labels for the active locale", () => {
     expect(buildLabelGroups(["Work", "Admin", "あとで", "会議", "2026"], "", "ja")).toEqual([
       { id: "latin:A", labels: ["Admin"] },

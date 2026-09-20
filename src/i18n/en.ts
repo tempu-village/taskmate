@@ -52,6 +52,7 @@ export const en = {
   "filter.allLabelsTab": "All labels",
   "filter.favoriteLabels": "Favorites",
   "filter.chooseLabels": "Choose labels",
+  "filter.confirmLabelSelection": "Confirm selection",
   "filter.selectedLabelCount": "{count} selected",
   "filter.labelSearchPlaceholder": "Search labels",
   "filter.labelSearchAriaLabel": "Search labels",

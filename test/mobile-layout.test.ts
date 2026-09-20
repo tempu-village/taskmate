@@ -165,7 +165,17 @@ describe("mobile layout", () => {
     expect(labelPickerModalSource).toContain('text: favorite ? "★" : "☆"');
     expect(labelPickerModalSource).toContain('attr: { "aria-pressed": String(selected) }');
     expect(labelPickerModalSource).toContain('text: "✓"');
-    expect(labelPickerModalSource).toContain('star.addEventListener("click", () => void this.toggleFavorite(label))');
+    expect(labelPickerModalSource).toContain('star.addEventListener("click", () => this.toggleFavorite(label))');
+  });
+
+  it("keeps label-picker changes in a draft until explicit confirmation", () => {
+    expect(labelPickerModalSource).toContain('text: t("filter.confirmLabelSelection")');
+    expect(labelPickerModalSource).toContain('await this.options.onConfirm([...this.selectedLabels], [...this.favoriteLabels])');
+    expect(labelPickerModalSource).not.toContain("onSelectionChange");
+    expect(labelPickerModalSource).not.toContain("onFavoritesChange");
+
+    const actions = declarations(".taskmate-label-picker-actions");
+    expect(actions).toMatch(/flex\s*:\s*0\s+0\s+auto\s*;/);
   });
 
   it("keeps the end of phone task lists above Obsidian navigation", () => {
