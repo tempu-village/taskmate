@@ -493,8 +493,10 @@
 .taskmate-task-fields {
   flex: 1 1 auto;
   min-height: 0;
+  padding-bottom: var(--taskmate-keyboard-clearance, 0px);
   padding-inline-end: 0.25rem;
   overflow-y: auto;
+  scroll-padding-bottom: var(--taskmate-keyboard-clearance, 0px);
 }
 .taskmate-title-setting,
 .taskmate-notes-setting { display: block; }

@@ -3,6 +3,7 @@ import type { Project, Task, TaskDraft } from "./domain";
 import { normalizeLabels, recentLabelSuggestions, taskDateSuggestions } from "./task-input-suggestions";
 import type { I18n, TranslationKey } from "./i18n";
 import { summarizeLabels } from "./label-summary";
+import { MobileKeyboardScroller } from "./mobile-keyboard-layout";
 
 const DATE_SUGGESTION_KEYS = {
   today: "date.today",
@@ -13,6 +14,7 @@ const DATE_SUGGESTION_KEYS = {
 
 export class TaskModal extends Modal {
   private draft: TaskDraft;
+  private keyboardScroller: MobileKeyboardScroller | null = null;
 
   constructor(
     app: App,
@@ -215,9 +217,14 @@ export class TaskModal extends Modal {
         save.disabled = false;
       }
     });
+
+    this.keyboardScroller = new MobileKeyboardScroller(fields);
+    this.keyboardScroller.connect();
   }
 
   onClose(): void {
+    this.keyboardScroller?.disconnect();
+    this.keyboardScroller = null;
     this.contentEl.empty();
   }
 }
