@@ -171,6 +171,21 @@ describe("mobile layout", () => {
     expect(notes).toMatch(/min-height\s*:\s*9rem\s*;/);
   });
 
+  it("uses compact icon-led task fields without mobile autofocus", () => {
+    expect(taskModalSource).toContain('decorateField(titleSetting, "circle-check"');
+    expect(taskModalSource).toContain('decorateField(dateSetting, "calendar-days"');
+    expect(taskModalSource).toContain('decorateField(projectSetting, "folder"');
+    expect(taskModalSource).toContain('decorateField(prioritySetting, "flag"');
+    expect(taskModalSource).toContain('decorateField(labelSetting, "tags"');
+    expect(taskModalSource).toContain('decorateField(notesSetting, "notebook-pen"');
+    expect(taskModalSource).toContain('addClass("taskmate-embedded-select")');
+    expect(taskModalSource).toContain('window.matchMedia("(max-width: 700px)").matches');
+
+    expect(declarations(".taskmate-compact-setting")).toMatch(/display\s*:\s*grid\s*;/);
+    expect(declarations(".taskmate-compact-setting .setting-item-info")).toMatch(/display\s*:\s*none\s*;/);
+    expect(declarations(".taskmate-embedded-field-label")).toMatch(/position\s*:\s*absolute\s*;/);
+  });
+
   it("keeps the label index outside the scrollable label results", () => {
     expect(labelPickerModalSource).toContain('this.indexEl = controls.createDiv({ cls: "taskmate-label-picker-index" })');
     expect(labelPickerModalSource).toContain('this.resultsEl = this.contentEl.createDiv({ cls: "taskmate-label-picker-results" })');

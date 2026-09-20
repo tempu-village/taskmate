@@ -12,6 +12,26 @@ const DATE_SUGGESTION_KEYS = {
   none: "date.none"
 } satisfies Record<ReturnType<typeof taskDateSuggestions>[number]["id"], TranslationKey>;
 
+function decorateField(setting: Setting, icon: string, accessibleName: string): void {
+  setting.settingEl.addClass("taskmate-compact-setting");
+  const marker = document.createElement("span");
+  marker.addClass("taskmate-field-icon");
+  marker.setAttribute("aria-hidden", "true");
+  setIcon(marker, icon);
+  setting.settingEl.prepend(marker);
+  setting.controlEl.setAttribute("aria-label", accessibleName);
+}
+
+function addEmbeddedLabel(setting: Setting, label: string): void {
+  setting.controlEl.addClass("taskmate-embedded-select");
+  const labelEl = setting.controlEl.createSpan({
+    text: label,
+    cls: "taskmate-embedded-field-label",
+    attr: { "aria-hidden": "true" }
+  });
+  setting.controlEl.prepend(labelEl);
+}
+
 export class TaskModal extends Modal {
   private draft: TaskDraft;
   private keyboardScroller: MobileKeyboardScroller | null = null;
@@ -48,15 +68,20 @@ export class TaskModal extends Modal {
 
     const titleSetting = new Setting(fields).setName(t("taskModal.title"));
     titleSetting.settingEl.addClass("taskmate-title-setting");
+    decorateField(titleSetting, "circle-check", t("taskModal.title"));
     titleSetting.addText((text) => {
+      text.inputEl.setAttribute("aria-label", t("taskModal.title"));
       text.setPlaceholder(t("taskModal.titlePlaceholder")).setValue(this.draft.title).onChange((value) => {
         this.draft.title = value;
       });
-      window.setTimeout(() => text.inputEl.focus(), 0);
+      if (!window.matchMedia("(max-width: 700px)").matches) {
+        window.setTimeout(() => text.inputEl.focus(), 0);
+      }
     });
 
     const dateSetting = new Setting(fields).setName(t("taskModal.date"));
     dateSetting.settingEl.addClass("taskmate-date-setting");
+    decorateField(dateSetting, "calendar-days", t("taskModal.date"));
     const datePresets = dateSetting.controlEl.createDiv({ cls: "taskmate-date-presets" });
     const dateButtons: HTMLButtonElement[] = [];
     let dateInput: HTMLInputElement;
@@ -84,6 +109,7 @@ export class TaskModal extends Modal {
     dateSetting.addText((text) => {
       text.inputEl.type = "date";
       text.inputEl.addClass("taskmate-date-input");
+      text.inputEl.setAttribute("aria-label", t("taskModal.date"));
       dateInput = text.inputEl;
       text.setValue(this.draft.date ?? "").onChange((value) => {
         this.draft.date = value || null;
@@ -92,7 +118,11 @@ export class TaskModal extends Modal {
     });
     refreshDateSelection();
 
-    new Setting(fields).setName(t("taskModal.project")).addDropdown((dropdown) => {
+    const projectSetting = new Setting(fields).setName(t("taskModal.project"));
+    decorateField(projectSetting, "folder", t("taskModal.project"));
+    addEmbeddedLabel(projectSetting, t("taskModal.project"));
+    projectSetting.addDropdown((dropdown) => {
+      dropdown.selectEl.setAttribute("aria-label", t("taskModal.project"));
       dropdown.addOption("", t("taskModal.unassigned"));
       for (const project of this.projects) dropdown.addOption(project.id, project.name);
       dropdown.setValue(this.draft.projectId ?? "").onChange((value) => {
@@ -100,7 +130,11 @@ export class TaskModal extends Modal {
       });
     });
 
-    new Setting(fields).setName(t("taskModal.priority")).addDropdown((dropdown) => {
+    const prioritySetting = new Setting(fields).setName(t("taskModal.priority"));
+    decorateField(prioritySetting, "flag", t("taskModal.priority"));
+    addEmbeddedLabel(prioritySetting, t("taskModal.priority"));
+    prioritySetting.addDropdown((dropdown) => {
+      dropdown.selectEl.setAttribute("aria-label", t("taskModal.priority"));
       dropdown
         .addOption("", t("taskModal.noPriority"))
         .addOption("1", t("filter.priorityValue", { priority: 1 }))
@@ -113,6 +147,7 @@ export class TaskModal extends Modal {
     });
 
     const labelSetting = new Setting(fields).setName(t("taskModal.labels")).setDesc(t("taskModal.labelsDescription"));
+    decorateField(labelSetting, "tags", t("taskModal.labels"));
     let labelInput: HTMLInputElement;
     let labelsExpanded = false;
     let refreshLabelSummary = () => {};
@@ -125,6 +160,7 @@ export class TaskModal extends Modal {
       }
     };
     labelSetting.addText((text) => {
+      text.inputEl.setAttribute("aria-label", t("taskModal.labels"));
       text.setPlaceholder(t("taskModal.labelsPlaceholder")).setValue(this.draft.labels.join(", ")).onChange((value) => {
         this.draft.labels = normalizeLabels(value.split(",")).slice(0, 500);
         refreshLabelSelection();
@@ -181,8 +217,11 @@ export class TaskModal extends Modal {
 
     const notesSetting = new Setting(fields).setName(t("taskModal.notes"));
     notesSetting.settingEl.addClass("taskmate-notes-setting");
+    decorateField(notesSetting, "notebook-pen", t("taskModal.notes"));
     notesSetting.addTextArea((area) => {
       area.inputEl.rows = 7;
+      area.inputEl.setAttribute("aria-label", t("taskModal.notes"));
+      area.inputEl.placeholder = t("taskModal.notes");
       area.setValue(this.draft.notes).onChange((value) => {
         this.draft.notes = value;
       });

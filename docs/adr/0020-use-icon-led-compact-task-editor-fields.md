@@ -1,0 +1,3 @@
+# Use icon-led compact Task editor fields
+
+TaskMate removes redundant external field labels from the shared Add/Edit Task editor to preserve scarce vertical space on phones. Distinct leading icons act as shape-based landmarks and section boundaries, while placeholders and accessible names communicate the field meaning; Project and Priority are kept on separate rows and retain small persistent labels inside their selectors because their selected values alone can be ambiguous. This chooses the icon-led compact layout over text-label rows, a label-free value-only layout, and a two-column Project/Priority row because it improves scan speed and usable editing space without sacrificing meaning on narrow screens.

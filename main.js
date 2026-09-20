@@ -1383,6 +1383,10 @@ function clampScrollTop(scrollTop, scrollHeight, clientHeight) {
   const maximum = Math.max(0, finiteNonNegative(scrollHeight) - finiteNonNegative(clientHeight));
   return Math.min(Math.max(0, finiteNonNegative(scrollTop)), maximum);
 }
+function retainAlignmentClearance(currentClearance, requiredClearance, keyboardOpen) {
+  if (!keyboardOpen) return 0;
+  return Math.max(finiteNonNegative(currentClearance), finiteNonNegative(requiredClearance));
+}
 function calculateModalFit(region, modal, currentShift, edgeGap = 8) {
   const availableHeight = Math.max(0, region.height - edgeGap * 2);
   const naturalTop = modal.top - currentShift;
@@ -1412,6 +1416,8 @@ var MobileKeyboardScroller = class {
   delayedAdjustments = [];
   closed = false;
   modalShift = 0;
+  alignmentClearance = 0;
+  currentClearance = 0;
   connect() {
     if (!window.matchMedia("(max-width: 700px)").matches) return;
     this.fields.addEventListener("focusin", this.handleFocusIn);
@@ -1443,6 +1449,7 @@ var MobileKeyboardScroller = class {
   handleFocusIn = (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement) || !target.matches("input, textarea, [contenteditable='true']")) return;
+    if (this.activeControl !== target) this.alignmentClearance = 0;
     this.activeControl = target;
     this.scheduleAdjustment();
     for (const delay of [80, 180, 360, 600]) {
@@ -1470,6 +1477,7 @@ var MobileKeyboardScroller = class {
     const keyboardOcclusion = Math.max(0, this.baselineViewportBottom - this.viewportBottom());
     const keyboardLikelyOpen = keyboardOcclusion >= KEYBOARD_THRESHOLD || hostShrink >= KEYBOARD_THRESHOLD;
     if (!keyboardLikelyOpen || !this.activeControl) {
+      this.alignmentClearance = 0;
       this.setClearance(0);
       this.fields.scrollTop = clampScrollTop(
         this.fields.scrollTop,
@@ -1483,7 +1491,6 @@ var MobileKeyboardScroller = class {
       hostShrink,
       alignmentShortfall: 0
     });
-    this.setClearance(keyboardLayout.keyboardClearance);
     window.requestAnimationFrame(() => {
       if (this.closed || !this.activeControl) return;
       const fieldsRect = this.fields.getBoundingClientRect();
@@ -1496,19 +1503,32 @@ var MobileKeyboardScroller = class {
         desiredDelta = (controlRect.top + controlRect.bottom) / 2 - (visibleTop + visibleBottom) / 2;
       }
       if (desiredDelta > 0) {
+        const baseScrollHeight = Math.max(0, this.fields.scrollHeight - this.currentClearance);
         const remainingScroll = Math.max(
           0,
-          this.fields.scrollHeight - this.fields.clientHeight - this.fields.scrollTop
+          baseScrollHeight + keyboardLayout.keyboardClearance - this.fields.clientHeight - this.fields.scrollTop
         );
         const alignmentShortfall = Math.max(0, desiredDelta - remainingScroll);
-        const layout = calculateKeyboardLayout({ keyboardOcclusion, hostShrink, alignmentShortfall });
-        this.setClearance(layout.totalClearance);
+        this.alignmentClearance = retainAlignmentClearance(
+          this.alignmentClearance,
+          alignmentShortfall,
+          true
+        );
       }
-      if (desiredDelta !== 0) this.fields.scrollBy({ top: desiredDelta, behavior: "smooth" });
+      const layout = calculateKeyboardLayout({
+        keyboardOcclusion,
+        hostShrink,
+        alignmentShortfall: this.alignmentClearance
+      });
+      this.setClearance(layout.totalClearance);
+      if (desiredDelta !== 0) this.fields.scrollBy({ top: desiredDelta, behavior: "auto" });
     });
   }
   setClearance(value) {
-    this.fields.style.setProperty("--taskmate-keyboard-clearance", `${Math.max(0, value)}px`);
+    const next = Math.max(0, value);
+    if (Math.abs(next - this.currentClearance) < 1) return;
+    this.currentClearance = next;
+    this.fields.style.setProperty("--taskmate-keyboard-clearance", `${next}px`);
   }
   fitModalToAvailableRegion() {
     const region = this.availableRegion.getBoundingClientRect();
@@ -1533,6 +1553,24 @@ var DATE_SUGGESTION_KEYS = {
   "seven-days": "date.sevenDays",
   none: "date.none"
 };
+function decorateField(setting, icon, accessibleName) {
+  setting.settingEl.addClass("taskmate-compact-setting");
+  const marker = document.createElement("span");
+  marker.addClass("taskmate-field-icon");
+  marker.setAttribute("aria-hidden", "true");
+  (0, import_obsidian8.setIcon)(marker, icon);
+  setting.settingEl.prepend(marker);
+  setting.controlEl.setAttribute("aria-label", accessibleName);
+}
+function addEmbeddedLabel(setting, label) {
+  setting.controlEl.addClass("taskmate-embedded-select");
+  const labelEl = setting.controlEl.createSpan({
+    text: label,
+    cls: "taskmate-embedded-field-label",
+    attr: { "aria-hidden": "true" }
+  });
+  setting.controlEl.prepend(labelEl);
+}
 var TaskModal = class extends import_obsidian8.Modal {
   constructor(app, task, projects, recentLabels, defaultProjectId, availableRegion, i18n, onSave, onDelete = null) {
     super(app);
@@ -1562,14 +1600,19 @@ var TaskModal = class extends import_obsidian8.Modal {
     const fields = contentEl.createDiv({ cls: "taskmate-task-fields" });
     const titleSetting = new import_obsidian8.Setting(fields).setName(t("taskModal.title"));
     titleSetting.settingEl.addClass("taskmate-title-setting");
+    decorateField(titleSetting, "circle-check", t("taskModal.title"));
     titleSetting.addText((text) => {
+      text.inputEl.setAttribute("aria-label", t("taskModal.title"));
       text.setPlaceholder(t("taskModal.titlePlaceholder")).setValue(this.draft.title).onChange((value) => {
         this.draft.title = value;
       });
-      window.setTimeout(() => text.inputEl.focus(), 0);
+      if (!window.matchMedia("(max-width: 700px)").matches) {
+        window.setTimeout(() => text.inputEl.focus(), 0);
+      }
     });
     const dateSetting = new import_obsidian8.Setting(fields).setName(t("taskModal.date"));
     dateSetting.settingEl.addClass("taskmate-date-setting");
+    decorateField(dateSetting, "calendar-days", t("taskModal.date"));
     const datePresets = dateSetting.controlEl.createDiv({ cls: "taskmate-date-presets" });
     const dateButtons = [];
     let dateInput;
@@ -1597,6 +1640,7 @@ var TaskModal = class extends import_obsidian8.Modal {
     dateSetting.addText((text) => {
       text.inputEl.type = "date";
       text.inputEl.addClass("taskmate-date-input");
+      text.inputEl.setAttribute("aria-label", t("taskModal.date"));
       dateInput = text.inputEl;
       text.setValue(this.draft.date ?? "").onChange((value) => {
         this.draft.date = value || null;
@@ -1604,19 +1648,28 @@ var TaskModal = class extends import_obsidian8.Modal {
       });
     });
     refreshDateSelection();
-    new import_obsidian8.Setting(fields).setName(t("taskModal.project")).addDropdown((dropdown) => {
+    const projectSetting = new import_obsidian8.Setting(fields).setName(t("taskModal.project"));
+    decorateField(projectSetting, "folder", t("taskModal.project"));
+    addEmbeddedLabel(projectSetting, t("taskModal.project"));
+    projectSetting.addDropdown((dropdown) => {
+      dropdown.selectEl.setAttribute("aria-label", t("taskModal.project"));
       dropdown.addOption("", t("taskModal.unassigned"));
       for (const project of this.projects) dropdown.addOption(project.id, project.name);
       dropdown.setValue(this.draft.projectId ?? "").onChange((value) => {
         this.draft.projectId = value || null;
       });
     });
-    new import_obsidian8.Setting(fields).setName(t("taskModal.priority")).addDropdown((dropdown) => {
+    const prioritySetting = new import_obsidian8.Setting(fields).setName(t("taskModal.priority"));
+    decorateField(prioritySetting, "flag", t("taskModal.priority"));
+    addEmbeddedLabel(prioritySetting, t("taskModal.priority"));
+    prioritySetting.addDropdown((dropdown) => {
+      dropdown.selectEl.setAttribute("aria-label", t("taskModal.priority"));
       dropdown.addOption("", t("taskModal.noPriority")).addOption("1", t("filter.priorityValue", { priority: 1 })).addOption("2", t("filter.priorityValue", { priority: 2 })).addOption("3", t("filter.priorityValue", { priority: 3 })).setValue(this.draft.priority ? String(this.draft.priority) : "").onChange((value) => {
         this.draft.priority = value ? Number(value) : null;
       });
     });
     const labelSetting = new import_obsidian8.Setting(fields).setName(t("taskModal.labels")).setDesc(t("taskModal.labelsDescription"));
+    decorateField(labelSetting, "tags", t("taskModal.labels"));
     let labelInput;
     let labelsExpanded = false;
     let refreshLabelSummary = () => {
@@ -1630,6 +1683,7 @@ var TaskModal = class extends import_obsidian8.Modal {
       }
     };
     labelSetting.addText((text) => {
+      text.inputEl.setAttribute("aria-label", t("taskModal.labels"));
       text.setPlaceholder(t("taskModal.labelsPlaceholder")).setValue(this.draft.labels.join(", ")).onChange((value) => {
         this.draft.labels = normalizeLabels(value.split(",")).slice(0, 500);
         refreshLabelSelection();
@@ -1683,8 +1737,11 @@ var TaskModal = class extends import_obsidian8.Modal {
     }
     const notesSetting = new import_obsidian8.Setting(fields).setName(t("taskModal.notes"));
     notesSetting.settingEl.addClass("taskmate-notes-setting");
+    decorateField(notesSetting, "notebook-pen", t("taskModal.notes"));
     notesSetting.addTextArea((area) => {
       area.inputEl.rows = 7;
+      area.inputEl.setAttribute("aria-label", t("taskModal.notes"));
+      area.inputEl.placeholder = t("taskModal.notes");
       area.setValue(this.draft.notes).onChange((value) => {
         this.draft.notes = value;
       });

@@ -111,11 +111,11 @@ A single selected Task opens the normal editor. Multiple selected Tasks can chan
 
 ## Creating and editing Tasks
 
-The Task editor supports title, date, Project, Priority, Labels, and notes. Date shortcuts provide Today, Tomorrow, 7 days later, and No date, followed by a custom date field. The primary save action is visible when the editor opens on mobile.
+The Task editor supports title, date, Project, Priority, Labels, and notes. It uses distinct leading icons as compact visual landmarks instead of separate external text-label rows. Project and Priority remain on separate rows and keep small persistent property names inside their selectors. Date shortcuts provide Today, Tomorrow, 7 days later, and No date, followed by a custom date field. The primary save action is visible when the editor opens on mobile, and opening Add Task on mobile does not automatically focus Title or open the keyboard.
 
 The editor suggests up to ten recently saved Labels. Saving a Task updates that history. Selecting a Task title opens the editor. A Task can be completed from its list row, and single-Task deletion is located in the editor action footer with a destructive icon and confirmation.
 
-On a narrow mobile screen, the complete editor is fitted and shifted inside TaskMate's measured host region so its action footer remains available above the software keyboard. The field region then adds only the remaining clearance not already accommodated by Obsidian or the WebView and scrolls the focused field toward a comfortable visible position when needed. Temporary clearance is removed when the keyboard closes, and the current scroll position is clamped rather than reset.
+On a narrow mobile screen, the complete editor is fitted and shifted inside TaskMate's measured host region so its action footer remains available above the software keyboard. The field region then adds only the remaining clearance not already accommodated by Obsidian or the WebView and scrolls the focused field toward a comfortable visible position when needed. Alignment clearance remains stable while the same field and keyboard stay active, preventing resize observations from repeatedly removing and restoring it. Temporary clearance is removed when the keyboard closes, and the current scroll position is clamped rather than reset.
 
 Task rows and the editor initially show up to three selected Labels. If more exist, a localized N more control reveals every remaining Label by click, tap, or keyboard and can collapse the expanded set again. Expanding this summary changes presentation only and never saves the Task.
 
@@ -275,11 +275,11 @@ TaskMateは、Obsidian向けのシンプルなローカルファースト・タ�
 
 ## タスクの作成と編集
 
-タスク編集画面では、タスク名、日付、プロジェクト、優先度、ラベル、メモを扱います。日付の候補として、今日、明日、7日後、日付なしを表示し、その下に任意の日付欄を設けます。モバイルで編集画面を開いた時点から、主要な保存操作を利用できます。
+タスク編集画面では、タスク名、日付、プロジェクト、優先度、ラベル、メモを扱います。外側の説明文字を行ごとに置く代わりに、形の異なる先頭アイコンをコンパクトな目印として使います。プロジェクトと優先度は別々の行にし、選択欄内へ小さい項目名を常に表示します。日付の候補として、今日、明日、7日後、日付なしを表示し、その下に任意の日付欄を設けます。モバイルで編集画面を開いた時点から主要な保存操作を利用でき、追加画面を開いただけではタイトルへ自動フォーカスせず、キーボードも表示しません。
 
 編集画面には、最近保存したラベルを最大10件提示します。タスクを保存すると、この履歴を更新します。タスク名を選ぶと編集画面を開きます。タスク一覧の行から完了にでき、単一タスクの削除は、削除用アイコンと確認を伴う編集画面下部の操作領域に置きます。
 
-幅の狭いモバイル画面では、編集画面全体をTaskMateの実測した親領域内へ収めて移動し、操作フッターをソフトウェアキーボードより上に保ちます。そのうえで、ObsidianまたはWebView側ですでに確保された量を二重に足さず、入力領域へまだ不足する余白だけを加え、必要な場合はフォーカス中の入力欄を見やすい位置へスクロールします。キーボードを閉じると一時余白を削除し、スクロール位置は先頭へ戻さず有効範囲へ収めます。
+幅の狭いモバイル画面では、編集画面全体をTaskMateの実測した親領域内へ収めて移動し、操作フッターをソフトウェアキーボードより上に保ちます。そのうえで、ObsidianまたはWebView側ですでに確保された量を二重に足さず、入力領域へまだ不足する余白だけを加え、必要な場合はフォーカス中の入力欄を見やすい位置へスクロールします。同じ欄とキーボードが有効な間は整列余白を維持し、サイズ監視による余白の削除と再追加の往復を防ぎます。キーボードを閉じると一時余白を削除し、スクロール位置は先頭へ戻さず有効範囲へ収めます。
 
 タスク一覧と編集画面では、選択済みラベルを最初に最大3件表示します。残りがある場合、ローカライズされた「ほかN件」をクリック、タップ、またはキーボードで操作すると、残りをすべて表示し、再び折りたためます。この概要の開閉は表示だけを変更し、タスクを保存しません。
 

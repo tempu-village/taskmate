@@ -38,6 +38,7 @@ Clamp the result to zero. Never add the full keyboard height after the host has 
 - Determine extra keyboard clearance from current geometry and add only the remaining overlap after host/WebView shrinkage.
 - Clamp negative residual overlap to zero and do not use a fixed keyboard-height constant.
 - Add only the minimum extra alignment clearance needed when the last field otherwise lacks enough scroll range.
+- While the same field remains focused and the keyboard remains open, retain already-required alignment clearance instead of repeatedly removing and restoring it during resize observations.
 - Remove temporary clearance when the keyboard closes.
 - After removal, clamp the field scroller to its new maximum valid position without resetting it to the top.
 - Keep Save and Cancel outside the field scroller and reachable while editing.
@@ -56,6 +57,7 @@ Clamp the result to zero. Never add the full keyboard height after the host has 
 - Closing the keyboard removes temporary clearance and leaves no persistent empty gap.
 - Closing the keyboard clamps the current scroll position instead of jumping to the top.
 - Save and Cancel remain reachable, and desktop behavior does not regress.
+- Labels, Notes, and their surrounding content remain visually stable without rapid up-and-down movement or motion trails.
 
 ## Verification
 
@@ -111,6 +113,7 @@ A案の「動的な余白＋フォーカスに応じた自動スクロール」�
 - 現在の実座標から残っている重なりだけを追加余白にする。
 - 負の値は0にし、固定のキーボード高さを使わない。
 - 最後の入力欄を動かすスクロール量が足りない場合だけ、最小限の整列余白を加える。
+- 同じ入力欄へフォーカスしキーボードを開いている間は、サイズ監視のたびに必要済みの整列余白を削除・再追加せず維持する。
 - キーボードを閉じたら一時余白を削除する。
 - 余白削除後はスクロール位置を新しい最大値以内へ収め、先頭へ戻さない。
 - 公開ブラウザーAPIを機能検出し、寸法が得られない場合は安全なフォーカス・スクロールへフォールバックする。
@@ -128,6 +131,7 @@ A案の「動的な余白＋フォーカスに応じた自動スクロール」�
 - キーボードを閉じると余白が消え、大きな空白が残らない。
 - 閉じた際は先頭へ飛ばず、現在位置を有効範囲へ補正する。
 - 保存・キャンセルとデスクトップ表示が退行しない。
+- ラベル、メモ、その周辺が高速で上下せず、残像が見えない。
 
 ## 検証方法
 

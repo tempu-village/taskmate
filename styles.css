@@ -506,12 +506,48 @@
   overflow-y: auto;
   scroll-padding-bottom: var(--taskmate-keyboard-clearance, 0px);
 }
-.taskmate-title-setting,
-.taskmate-notes-setting { display: block; }
+.taskmate-compact-setting {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: start;
+  gap: 0.65rem;
+}
+.taskmate-compact-setting .setting-item-info { display: none; }
+.taskmate-compact-setting .setting-item-control {
+  grid-column: 2;
+  width: 100%;
+  margin: 0;
+}
+.taskmate-field-icon {
+  grid-column: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  min-height: 44px;
+  color: var(--text-muted);
+}
+.taskmate-field-icon svg { width: 18px; height: 18px; }
+.taskmate-embedded-select { position: relative; }
+.taskmate-embedded-field-label {
+  position: absolute;
+  z-index: 1;
+  top: 0.25rem;
+  left: 0.75rem;
+  color: var(--text-muted);
+  font-size: var(--font-smallest);
+  line-height: 1;
+  pointer-events: none;
+}
+.taskmate-embedded-select select {
+  width: 100%;
+  min-height: 54px;
+  padding-top: 1rem;
+}
 .taskmate-title-setting .setting-item-control,
 .taskmate-notes-setting .setting-item-control {
   width: 100%;
-  margin-top: 0.45rem;
+  margin-top: 0;
 }
 .taskmate-title-setting input { width: 100%; }
 .taskmate-editor-label-summary {

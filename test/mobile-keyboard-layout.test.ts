@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   calculateModalFit,
   calculateKeyboardLayout,
-  clampScrollTop
+  clampScrollTop,
+  retainAlignmentClearance
 } from "../src/mobile-keyboard-layout";
 
 describe("mobile keyboard layout", () => {
@@ -46,5 +47,11 @@ describe("mobile keyboard layout", () => {
       { top: 180, bottom: 900, height: 720 },
       0
     )).toEqual({ availableHeight: 864, shift: 0 });
+  });
+
+  it("does not remove alignment clearance during repeated resize observations", () => {
+    expect(retainAlignmentClearance(72, 0, true)).toBe(72);
+    expect(retainAlignmentClearance(72, 96, true)).toBe(96);
+    expect(retainAlignmentClearance(72, 0, false)).toBe(0);
   });
 });

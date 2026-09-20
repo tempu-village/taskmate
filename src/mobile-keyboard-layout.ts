@@ -32,6 +32,15 @@ export function clampScrollTop(scrollTop: number, scrollHeight: number, clientHe
   return Math.min(Math.max(0, finiteNonNegative(scrollTop)), maximum);
 }
 
+export function retainAlignmentClearance(
+  currentClearance: number,
+  requiredClearance: number,
+  keyboardOpen: boolean
+): number {
+  if (!keyboardOpen) return 0;
+  return Math.max(finiteNonNegative(currentClearance), finiteNonNegative(requiredClearance));
+}
+
 export interface VerticalBounds {
   top: number;
   bottom: number;
@@ -67,6 +76,8 @@ export class MobileKeyboardScroller {
   private delayedAdjustments: number[] = [];
   private closed = false;
   private modalShift = 0;
+  private alignmentClearance = 0;
+  private currentClearance = 0;
 
   constructor(
     private readonly fields: HTMLElement,
@@ -110,6 +121,7 @@ export class MobileKeyboardScroller {
   private readonly handleFocusIn = (event: FocusEvent): void => {
     const target = event.target;
     if (!(target instanceof HTMLElement) || !target.matches("input, textarea, [contenteditable='true']")) return;
+    if (this.activeControl !== target) this.alignmentClearance = 0;
     this.activeControl = target;
     this.scheduleAdjustment();
     for (const delay of [80, 180, 360, 600]) {
@@ -141,6 +153,7 @@ export class MobileKeyboardScroller {
     const keyboardLikelyOpen = keyboardOcclusion >= KEYBOARD_THRESHOLD || hostShrink >= KEYBOARD_THRESHOLD;
 
     if (!keyboardLikelyOpen || !this.activeControl) {
+      this.alignmentClearance = 0;
       this.setClearance(0);
       this.fields.scrollTop = clampScrollTop(
         this.fields.scrollTop,
@@ -155,8 +168,6 @@ export class MobileKeyboardScroller {
       hostShrink,
       alignmentShortfall: 0
     });
-    this.setClearance(keyboardLayout.keyboardClearance);
-
     window.requestAnimationFrame(() => {
       if (this.closed || !this.activeControl) return;
       const fieldsRect = this.fields.getBoundingClientRect();
@@ -171,21 +182,34 @@ export class MobileKeyboardScroller {
       }
 
       if (desiredDelta > 0) {
+        const baseScrollHeight = Math.max(0, this.fields.scrollHeight - this.currentClearance);
         const remainingScroll = Math.max(
           0,
-          this.fields.scrollHeight - this.fields.clientHeight - this.fields.scrollTop
+          baseScrollHeight + keyboardLayout.keyboardClearance - this.fields.clientHeight - this.fields.scrollTop
         );
         const alignmentShortfall = Math.max(0, desiredDelta - remainingScroll);
-        const layout = calculateKeyboardLayout({ keyboardOcclusion, hostShrink, alignmentShortfall });
-        this.setClearance(layout.totalClearance);
+        this.alignmentClearance = retainAlignmentClearance(
+          this.alignmentClearance,
+          alignmentShortfall,
+          true
+        );
       }
 
-      if (desiredDelta !== 0) this.fields.scrollBy({ top: desiredDelta, behavior: "smooth" });
+      const layout = calculateKeyboardLayout({
+        keyboardOcclusion,
+        hostShrink,
+        alignmentShortfall: this.alignmentClearance
+      });
+      this.setClearance(layout.totalClearance);
+      if (desiredDelta !== 0) this.fields.scrollBy({ top: desiredDelta, behavior: "auto" });
     });
   }
 
   private setClearance(value: number): void {
-    this.fields.style.setProperty("--taskmate-keyboard-clearance", `${Math.max(0, value)}px`);
+    const next = Math.max(0, value);
+    if (Math.abs(next - this.currentClearance) < 1) return;
+    this.currentClearance = next;
+    this.fields.style.setProperty("--taskmate-keyboard-clearance", `${next}px`);
   }
 
   private fitModalToAvailableRegion(): void {
