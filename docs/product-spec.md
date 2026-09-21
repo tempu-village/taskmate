@@ -129,6 +129,8 @@ Manual order is one global sequence shared across Smart views and other Task lis
 
 Navigation and other persistent controls are separate siblings of the scrolling result region. TaskMate does not use viewport-fixed or sticky positioning to simulate this boundary. This prevents mobile software-keyboard viewport changes from collapsing or obscuring text inputs and keeps the end of long Task lists above Obsidian's bottom controls.
 
+Task rows remain within the available content width. Long Task titles, including strings without spaces, wrap onto additional lines so the complete title remains readable without making Task-result regions horizontally scrollable.
+
 Controls that must remain available are placed outside the result scroller. Modals may scroll their content while keeping their action footer usable.
 
 ## Localization

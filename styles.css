@@ -174,7 +174,12 @@
 .taskmate-recent-searches button,
 .taskmate-filter-buttons button { border-radius: 999px; }
 
-.taskmate-list { display: grid; gap: 0.35rem; }
+.taskmate-list {
+  display: grid;
+  min-width: 0;
+  max-width: 100%;
+  gap: 0.35rem;
+}
 .taskmate-task-section-heading {
   margin: 0.7rem 0 0.15rem;
   padding: 0.35rem 0.45rem;
@@ -191,6 +196,10 @@
 }
 .taskmate-task {
   gap: 0.6rem;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   min-height: 52px;
   padding: 0.45rem 0.35rem;
   border-bottom: 1px solid var(--background-modifier-border);
@@ -216,8 +225,20 @@
 
 .taskmate-drag { cursor: grab; color: var(--text-faint); font-size: 1.1rem; padding: 0.45rem; }
 .taskmate-drag:disabled { visibility: hidden; }
-.taskmate-task-body { flex: 1; min-width: 0; }
-.taskmate-title { display: block; width: 100%; padding: 0; color: var(--text-normal); text-align: left; font-weight: 600; }
+.taskmate-task-body { flex: 1; min-width: 0; max-width: 100%; }
+.taskmate-title {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0;
+  color: var(--text-normal);
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-weight: 600;
+}
 .taskmate-metadata { display: flex; flex-wrap: wrap; gap: 0.55rem; margin-top: 0.2rem; color: var(--text-muted); font-size: var(--font-smallest); }
 .taskmate-extra-labels {
   display: inline-flex;
@@ -693,6 +714,12 @@
   .taskmate-label-picker-actions { padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px)); }
   .taskmate-label-setting .setting-item-control { grid-template-columns: minmax(0, 1fr); }
   .taskmate-editor-label-picker-open { width: 100%; }
+}
+
+.taskmate-scroll-region {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .is-phone .taskmate-scroll-region {

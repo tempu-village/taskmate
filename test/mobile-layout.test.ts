@@ -34,6 +34,13 @@ function declarations(selector: string): string {
   return match?.[1] ?? "";
 }
 
+function exactDeclarations(selector: string): string {
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = stylesheet.match(new RegExp(`(?:^|\\n)${escaped}\\s*\\{([^}]*)\\}`, "m"));
+  expect(match, `${selector} must have an exact CSS rule`).not.toBeNull();
+  return match?.[1] ?? "";
+}
+
 describe("mobile layout", () => {
   it("keeps navigation outside the scrollable screen body", () => {
     const view = declarations(".taskmate-view");
@@ -95,6 +102,31 @@ describe("mobile layout", () => {
     expect(rule).toMatch(/flex\s*:\s*1\s+1\s+auto\s*;/);
     expect(rule).toMatch(/min-height\s*:\s*0\s*;/);
     expect(rule).toMatch(/overflow-y\s*:\s*auto\s*;/);
+  });
+
+  it("wraps long task titles within their task row", () => {
+    const title = exactDeclarations(".taskmate-title");
+    expect(title).toMatch(/min-width\s*:\s*0\s*;/);
+    expect(title).toMatch(/max-width\s*:\s*100%\s*;/);
+    expect(title).toMatch(/white-space\s*:\s*normal\s*;/);
+    expect(title).toMatch(/overflow-wrap\s*:\s*anywhere\s*;/);
+  });
+
+  it("constrains shared task rows to the available list width", () => {
+    const list = exactDeclarations(".taskmate-list");
+    expect(list).toMatch(/min-width\s*:\s*0\s*;/);
+    expect(list).toMatch(/max-width\s*:\s*100%\s*;/);
+
+    const task = exactDeclarations(".taskmate-task");
+    expect(task).toMatch(/min-width\s*:\s*0\s*;/);
+    expect(task).toMatch(/max-width\s*:\s*100%\s*;/);
+  });
+
+  it("contains accidental horizontal overflow in task scroll regions", () => {
+    const scrollRegion = exactDeclarations(".taskmate-scroll-region");
+    expect(scrollRegion).toMatch(/min-width\s*:\s*0\s*;/);
+    expect(scrollRegion).toMatch(/max-width\s*:\s*100%\s*;/);
+    expect(scrollRegion).toMatch(/overflow-x\s*:\s*hidden\s*;/);
   });
 
   it("offers direct filter clearing only while criteria are active", () => {
