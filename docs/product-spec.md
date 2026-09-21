@@ -113,7 +113,7 @@ A single selected Task opens the normal editor. Multiple selected Tasks can chan
 
 The Task editor supports title, date, Project, Priority, Labels, and notes. It uses distinct leading icons as compact visual landmarks instead of separate external text-label rows. Project and Priority remain on separate rows and keep small persistent property names inside their selectors. Date shortcuts provide Today, Tomorrow, 7 days later, and No date, followed by a custom date field. The primary save action is visible when the editor opens on mobile, and opening Add Task on mobile does not automatically focus Title or open the keyboard.
 
-The editor suggests up to ten recently saved Labels. Saving a Task updates that history. Selecting a Task title opens the editor. A Task can be completed from its list row, and single-Task deletion is located in the editor action footer with a destructive icon and confirmation.
+The editor uses a chip-based Label input instead of permanently displaying recent-Label suggestions. Selected Labels are removable chips followed by a persistent text input. Pending text becomes a Label through the visible Add action, Enter after IME composition has ended, or an ASCII comma; confirmation keeps the input focused when possible so Japanese Labels can be entered continuously on desktop and mobile. The input and labeled Add action are separate bordered controls on one row, making the type-then-add sequence visible even before focus. On narrow screens, the labeled Choose action moves to a full-width row below them. Save also commits non-empty pending text. At most three chips are initially visible, with the localized overflow control revealing the rest. Choose opens the same indexed multi-select Label picker used by Filter and offers Labels attached to any current Task. Pending text and newly typed draft Labels survive picker use. Confirming the picker updates only the editor draft, while closing or canceling it discards picker changes. Saving a Task updates recent Label history. Selecting a Task title opens the editor. A Task can be completed from its list row, and single-Task deletion is located in the editor action footer with a destructive icon and confirmation.
 
 On a narrow mobile screen, the editor keeps Obsidian's normal size and position until an editable field is focused and keyboard-related shrinkage is detected. It is then fitted and shifted inside TaskMate's measured host region so its action footer remains available above the software keyboard. The field region adds only the remaining clearance not already accommodated by Obsidian or the WebView and scrolls the focused field toward a comfortable visible position when needed. Alignment clearance remains stable while the same field and keyboard stay active, preventing resize observations from repeatedly removing and restoring it. Temporary clearance is removed when the keyboard closes, and the current scroll position is clamped rather than reset.
 
@@ -141,7 +141,13 @@ TaskMate uses static bundled dictionaries. It does not send vault content to an 
 
 Tasks, Projects, and proposal sessions are stored in configurable folders under `TaskMate` by default. TaskMate uses Obsidian's vault and file-management APIs and has no telemetry, hosted TaskMate account, runtime AI, translation service, or TaskMate synchronization server. Uninstalling the plugin leaves its Markdown data in the vault.
 
-Synchronization is provided by the user's chosen vault synchronization service, not TaskMate. Users should wait for synchronization to finish before editing the same Task on another device. Simultaneous or offline edits to the same file can become provider-managed conflicts; TaskMate does not merge them.
+Synchronization is provided by the user's chosen vault synchronization service, not TaskMate. Users should wait for synchronization to finish before editing the same Task on another device. Simultaneous or offline edits to the same file can become provider-managed conflicts. TaskMate does not replace the synchronization provider's remote conflict handling.
+
+When Obsidian Sync is used and the user wants to reduce the risk of one concurrent edit being silently lost, TaskMate recommends selecting **Create conflict file** under Obsidian Sync's conflict-resolution setting on every device. This setting is device-specific. When Obsidian Sync detects a conflict, it retains a separate conflicted copy instead of relying only on automatic merging, allowing both versions to be reviewed. TaskMate treats copies carrying the same stable Task ID as an identity conflict and stops their normal processing until the user resolves them. This setting preserves reviewable copies for conflicts detected by Obsidian Sync; it does not prevent concurrent editing or guarantee that every timing race will be detected.
+
+The Task editor retains its opening state as an in-memory baseline. At Save, TaskMate compares the opening state, the user's draft, and the latest file that has reached the local vault. Changes to different fields are preserved together. Different changes to the same field leave the file unchanged and open conflict review so the user can choose between the current value and their draft. A field containing a collection or another compound value is compared as one complete value rather than merged element by element. Fields the editor did not change and properties TaskMate does not recognize retain their latest file values.
+
+Conflict review also retains the exact file content shown to the user as a temporary baseline. If another device, Codex, another plugin, or another view changes the file again while review is open, TaskMate does not apply the obsolete decision and instead refreshes review against the latest content. Multiple files carrying the same stable Task ID are hidden from normal Task processing and reported as an identity conflict. These safeguards protect writes after versions reach the local vault; they do not replace Obsidian Sync's automatic merge or conflict-copy behavior.
 
 ## Optional Agent Skill
 
@@ -154,7 +160,7 @@ Every identified candidate must be accounted for exactly once in a coverage revi
 - Desktop and Android Obsidian are the verified environments. The code remains mobile-compatible, but iOS device behavior has not yet been verified.
 - TaskMate is not yet listed in the Obsidian Community directory.
 - Calendar, Kanban, recurrence, and reminders are not part of the current product.
-- TaskMate does not provide a synchronization service or automatic conflict merging.
+- TaskMate does not provide a synchronization service or remote conflict merging. It prevents silent overwrites of changes that have reached the local vault through guarded three-way comparison in the Task editor.
 - The optional Agent Skill depends on the permissions and capabilities of its host agent client.
 
 ---
@@ -277,7 +283,7 @@ TaskMateは、Obsidian向けのシンプルなローカルファースト・タ�
 
 タスク編集画面では、タスク名、日付、プロジェクト、優先度、ラベル、メモを扱います。外側の説明文字を行ごとに置く代わりに、形の異なる先頭アイコンをコンパクトな目印として使います。プロジェクトと優先度は別々の行にし、選択欄内へ小さい項目名を常に表示します。日付の候補として、今日、明日、7日後、日付なしを表示し、その下に任意の日付欄を設けます。モバイルで編集画面を開いた時点から主要な保存操作を利用でき、追加画面を開いただけではタイトルへ自動フォーカスせず、キーボードも表示しません。
 
-編集画面には、最近保存したラベルを最大10件提示します。タスクを保存すると、この履歴を更新します。タスク名を選ぶと編集画面を開きます。タスク一覧の行から完了にでき、単一タスクの削除は、削除用アイコンと確認を伴う編集画面下部の操作領域に置きます。
+編集画面では、最近使ったラベルを常時並べる代わりに、チップ方式でラベルを入力します。選択済みラベルは個別に削除できるチップになり、その末尾に入力欄を常設します。入力途中の文字は、文字付きの追加操作、IME変換終了後のEnter、または半角カンマで確定します。可能な場合は確定後もフォーカスを維持するため、PCとスマホの両方で日本語ラベルを続けて入力できます。入力欄と文字付きの追加操作は、別の枠として同じ行へ並べ、フォーカス前でも入力してから追加する流れと境界が分かるようにします。幅の狭い画面では、文字付きの選択操作をその下の全幅行へ移します。保存時には空でない入力途中の文字も確定します。最初は最大3個のチップを表示し、残りは既存の省略表示から展開します。選択操作は、フィルターと同じ索引付き複数選択画面を開きます。この画面には、現在のいずれかのタスクに設定されたラベルを提示します。入力途中の文字と保存前に手入力した新規ラベルは、ピッカーを利用しても維持します。ピッカーの確定は編集中の内容だけを更新し、×またはキャンセルでは変更を破棄します。タスクを保存すると、最近使ったラベルの履歴を更新します。タスク名を選ぶと編集画面を開きます。タスク一覧の行から完了にでき、単一タスクの削除は、削除用アイコンと確認を伴う編集画面下部の操作領域に置きます。
 
 幅の狭いモバイル画面では、入力欄へのフォーカスとキーボード由来の領域縮小を検出するまで、Obsidian標準の大きさと位置を維持します。検出後は編集画面全体をTaskMateの実測した親領域内へ収めて移動し、操作フッターをソフトウェアキーボードより上に保ちます。そのうえで、ObsidianまたはWebView側ですでに確保された量を二重に足さず、入力領域へまだ不足する余白だけを加え、必要な場合はフォーカス中の入力欄を見やすい位置へスクロールします。同じ欄とキーボードが有効な間は整列余白を維持し、サイズ監視による余白の削除と再追加の往復を防ぎます。キーボードを閉じると一時余白を削除し、スクロール位置は先頭へ戻さず有効範囲へ収めます。
 
@@ -305,7 +311,13 @@ TaskMateは、同梱した静的辞書を使います。Vaultの内容を外部�
 
 タスク、プロジェクト、提案セッションは、初期状態では`TaskMate`配下の設定可能なフォルダーへ保存します。TaskMateはObsidianのVault APIとファイル管理APIを使い、テレメトリー、TaskMateのホスト型アカウント、実行時AI、翻訳サービス、TaskMate独自の同期サーバーを持ちません。プラグインをアンインストールしても、MarkdownデータはVaultに残ります。
 
-同期はTaskMateではなく、ユーザーが選んだVault同期サービスが提供します。別の端末で同じタスクを編集する前に、同期完了を待つ必要があります。同じファイルを複数端末で同時またはオフライン編集すると、同期サービス側が扱う競合になる場合があり、TaskMate自身はそれをマージしません。
+同期はTaskMateではなく、ユーザーが選んだVault同期サービスが提供します。別の端末で同じタスクを編集する前に、同期完了を待つ必要があります。同じファイルを複数端末で同時またはオフライン編集すると、同期サービス側が扱う競合になる場合があります。TaskMateは同期サービスのリモート競合処理を置き換えません。
+
+Obsidian Syncを使い、同時編集の片方が黙って失われる危険を減らしたい場合、TaskMateはObsidian Syncの競合解決設定で**競合ファイルを作成**をすべての端末に設定することを推奨します。この設定は端末ごとに行う必要があります。Obsidian Syncが競合を検出すると、自動統合だけに任せず別の競合コピーを残すため、両方の内容を確認できます。同じ安定タスクIDを持つコピーをTaskMateが検出した場合は識別競合として扱い、ユーザーが解決するまで通常処理を止めます。この設定はObsidian Syncが検出した競合を確認可能な形で残すものであり、同時編集そのものを禁止したり、すべてのタイミング競合の検出を保証したりするものではありません。
+
+TaskMateのタスク編集画面は、開いた時点の内容をメモリ上の基準として保持します。保存時には編集開始時、ユーザーの編集内容、ローカルVaultへ届いている最新ファイルを3方向比較し、異なる項目への変更は両方維持します。同じ項目に異なる変更がある場合はファイルを書き換えず、現在の値と自分の編集を比較して選ぶ競合確認を表示します。複数値または複合値を持つ項目は、その項目全体を一つの値として比較し、要素単位では自動統合しません。編集画面で変更していない項目とTaskMateが認識しないプロパティは、最新ファイルの値を維持します。
+
+競合確認を表示した時点のファイル内容も一時的な基準として保持します。確認中に別端末、Codex、別プラグインなどが再びファイルを変更した場合、以前の判断をそのまま適用せず、最新内容に対する確認へ更新します。同じ安定タスクIDを持つ複数ファイルは通常タスクとして表示せず、識別競合として通知します。これらはローカルVaultへ届いた内容を安全に保存するための機能であり、Obsidian Sync自身が行う自動マージや競合コピー作成を代替するものではありません。
 
 ## 任意のAgent Skill
 
@@ -318,5 +330,5 @@ TaskMateは、同梱した静的辞書を使います。Vaultの内容を外部�
 - デスクトップ版とAndroid版Obsidianが検証済み環境です。コードはモバイル互換を維持していますが、iOS実機の挙動はまだ検証していません。
 - TaskMateは、まだObsidian Communityディレクトリに掲載されていません。
 - カレンダー、カンバン、繰り返し、リマインダーは、現在の製品に含まれません。
-- TaskMateは、同期サービスや競合の自動マージを提供しません。
+- TaskMateは同期サービスやリモート競合マージを提供しません。ローカルVaultへ届いた変更については、タスク編集画面の3方向比較で黙った上書きを防ぎます。
 - 任意のAgent Skillは、実行元のエージェントクライアントの権限と能力に依存します。

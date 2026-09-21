@@ -550,19 +550,70 @@
   margin-top: 0;
 }
 .taskmate-title-setting input { width: 100%; }
-.taskmate-editor-label-summary {
+.taskmate-label-setting .setting-item-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.5rem;
+}
+.taskmate-label-entry-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.taskmate-editor-label-picker-open { min-width: 64px; min-height: 44px; }
+.taskmate-label-chip-editor {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.35rem;
+  min-width: 0;
+  min-height: 44px;
   width: 100%;
-  margin-top: 0.35rem;
+  padding: 0.25rem 0.35rem;
+  background: var(--background-modifier-form-field);
+  border: var(--input-border-width, 1px) solid var(--background-modifier-border);
+  border-radius: var(--input-radius, 5px);
+}
+.taskmate-label-chip-editor:focus-within {
+  border-color: var(--background-modifier-border-focus);
+  box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
+}
+.taskmate-label-chip-input {
+  flex: 1 1 7rem;
+  min-width: 5rem;
+  min-height: 34px;
+  padding: 0.2rem;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.taskmate-label-chip-input:focus { border: 0; box-shadow: none; }
+.taskmate-label-add {
+  flex: 0 0 auto;
+  min-width: 52px;
+  min-height: 44px;
 }
 .taskmate-editor-label-chip {
-  padding: 0.2rem 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  min-height: 34px;
+  padding: 0.1rem 0.15rem 0.1rem 0.5rem;
   color: var(--text-muted);
   background: var(--background-modifier-hover);
   border-radius: 999px;
   font-size: var(--font-smallest);
+}
+.taskmate-label-chip-remove {
+  min-width: 30px;
+  min-height: 30px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 .taskmate-notes-setting textarea {
   width: 100%;
@@ -609,12 +660,6 @@
   padding-inline: 0.35rem;
   white-space: nowrap;
 }
-.taskmate-suggestion-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  width: 100%;
-}
 .taskmate-date-input { width: 100%; margin-top: 0.35rem; }
 .taskmate-suggestion-chip {
   display: inline-flex;
@@ -629,9 +674,6 @@
   color: var(--text-on-accent);
   background: var(--interactive-accent);
 }
-.taskmate-recent-labels { margin: -0.45rem 0 1rem; }
-.taskmate-suggestion-heading { margin-bottom: 0.4rem; color: var(--text-muted); font-size: var(--font-smallest); }
-
 @media (max-width: 600px) {
   .taskmate-content { padding: 0.75rem 0.65rem 1rem; }
   .taskmate-search-controls,
@@ -649,6 +691,8 @@
     scroll-padding-bottom: 1rem;
   }
   .taskmate-label-picker-actions { padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px)); }
+  .taskmate-label-setting .setting-item-control { grid-template-columns: minmax(0, 1fr); }
+  .taskmate-editor-label-picker-open { width: 100%; }
 }
 
 .is-phone .taskmate-scroll-region {
@@ -660,4 +704,69 @@
     6rem,
     calc(var(--mobile-toolbar-height, 0px) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 1rem)
   );
+}
+.taskmate-identity-conflict {
+  margin: 0.75rem 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-orange);
+  border-radius: var(--radius-m);
+  color: var(--text-warning);
+  background: var(--background-modifier-error-hover);
+}
+
+.taskmate-identity-conflict-details {
+  margin-top: 0.35rem;
+  overflow-wrap: anywhere;
+  color: var(--text-muted);
+  font-family: var(--font-monospace);
+  font-size: var(--font-ui-smaller);
+}
+
+.taskmate-conflict-description {
+  color: var(--text-muted);
+}
+
+.taskmate-conflict-list {
+  display: grid;
+  gap: 0.75rem;
+  max-height: min(60vh, 34rem);
+  overflow-y: auto;
+}
+
+.taskmate-conflict-field {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+}
+
+.taskmate-conflict-field legend {
+  padding: 0 0.25rem;
+  font-weight: var(--font-semibold);
+}
+
+.taskmate-conflict-choice {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.625rem;
+  align-items: start;
+  padding: 0.625rem;
+  border-radius: var(--radius-s);
+  background: var(--background-secondary);
+}
+
+.taskmate-conflict-choice-heading {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.taskmate-conflict-choice-value {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.taskmate-conflict-actions {
+  justify-content: flex-end;
 }

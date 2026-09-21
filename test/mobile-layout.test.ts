@@ -187,6 +187,44 @@ describe("mobile layout", () => {
     expect(declarations(".taskmate-embedded-field-label")).toMatch(/position\s*:\s*absolute\s*;/);
   });
 
+  it("uses continuous chip entry beside the shared indexed label picker", () => {
+    expect(taskModalSource).toContain("new LabelPickerModal(this.app");
+    expect(taskModalSource).toContain("preserveUnavailableSelectedLabels: true");
+    expect(taskModalSource).toContain('text: t("taskModal.addLabel")');
+    expect(taskModalSource).toContain('text: t("taskModal.chooseLabels")');
+    expect(taskModalSource).toContain('addEventListener("compositionstart"');
+    expect(taskModalSource).toContain('addEventListener("compositionend"');
+    expect(taskModalSource).toContain("event.isComposing");
+    expect(taskModalSource).toContain('addEventListener("input"');
+    expect(taskModalSource).toContain('addEventListener("keydown"');
+    expect(taskModalSource).toContain('addEventListener("pointerdown"');
+    expect(taskModalSource).toContain("updateFromInput(true, true)");
+    expect(taskModalSource).toContain("updateFromInput(true, false)");
+    expect(taskModalSource).toContain('createDiv({ cls: "taskmate-label-entry-row" })');
+    expect(taskModalSource).toContain('const addLabel = labelEntryRow.createEl("button"');
+    expect(taskModalSource).not.toContain('event.key === "Backspace"');
+    expect(taskModalSource).not.toContain("recentLabelSuggestions");
+    expect(taskModalSource).not.toContain("taskmate-recent-labels");
+    expect(viewSource).toContain("this.taskModalLabelOptions(tasks)");
+    expect(viewSource).toContain("availableFilterLabels(tasks, true)");
+
+    const controls = declarations(".taskmate-label-setting .setting-item-control");
+    expect(controls).toMatch(/display\s*:\s*grid\s*;/);
+    expect(controls).toMatch(/grid-template-columns\s*:\s*minmax\(0,\s*1fr\)\s+auto\s*;/);
+    const entryRow = declarations(".taskmate-label-entry-row");
+    expect(entryRow).toMatch(/display\s*:\s*grid\s*;/);
+    expect(entryRow).toMatch(/grid-template-columns\s*:\s*minmax\(0,\s*1fr\)\s+auto\s*;/);
+    expect(stylesheet).toMatch(
+      /@media \(max-width: 600px\)[\s\S]*?\.taskmate-label-setting \.setting-item-control\s*\{\s*grid-template-columns:\s*minmax\(0,\s*1fr\);\s*\}/
+    );
+    expect(stylesheet).toMatch(
+      /@media \(max-width: 600px\)[\s\S]*?\.taskmate-editor-label-picker-open\s*\{\s*width:\s*100%;\s*\}/
+    );
+    expect(declarations(".taskmate-label-chip-editor")).toMatch(/flex-wrap\s*:\s*wrap\s*;/);
+    expect(declarations(".taskmate-label-add")).toMatch(/min-height\s*:\s*44px\s*;/);
+    expect(declarations(".taskmate-editor-label-picker-open")).toMatch(/min-height\s*:\s*44px\s*;/);
+  });
+
   it("keeps the label index outside the scrollable label results", () => {
     expect(labelPickerModalSource).toContain('this.indexEl = controls.createDiv({ cls: "taskmate-label-picker-index" })');
     expect(labelPickerModalSource).toContain('this.resultsEl = this.contentEl.createDiv({ cls: "taskmate-label-picker-results" })');
@@ -231,10 +269,10 @@ describe("mobile layout", () => {
   });
 
   it("uses a click-or-tap label overflow summary in rows and the editor", () => {
-    expect(taskModalSource).toContain('cls: "taskmate-editor-label-summary"');
+    expect(taskModalSource).toContain("taskmate-editor-label-summary taskmate-label-chip-editor");
     expect(taskModalSource).toContain('t("tasks.moreLabels", { count: summary.hidden.length })');
-    expect(taskModalSource).toContain('"aria-expanded": String(labelsExpanded)');
-    expect(declarations(".taskmate-editor-label-summary")).toMatch(/flex-wrap\s*:\s*wrap\s*;/);
+    expect(taskModalSource).toContain('"aria-expanded", String(labelsExpanded)');
+    expect(declarations(".taskmate-label-chip-editor")).toMatch(/flex-wrap\s*:\s*wrap\s*;/);
   });
 
   it("keeps the end of phone task lists above Obsidian navigation", () => {

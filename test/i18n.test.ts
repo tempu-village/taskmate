@@ -36,6 +36,12 @@ describe("translation catalogs", () => {
     const dynamicTranslate = createI18n("en", "en").t as (key: "projects.taskCount", values?: Record<string, string | number>) => string;
     expect(() => dynamicTranslate("projects.taskCount")).toThrow("Missing translation value: count");
   });
+
+  it("distinguishes automatic external preservation from reviewed conflict resolution", () => {
+    const japanese = createI18n("ja", "ja-JP");
+    expect(japanese.t("conflict.externalPreserved")).toContain("別の場所");
+    expect(japanese.t("conflict.resolved")).toBe("選択した内容で競合を解決し、タスクを保存しました。");
+  });
 });
 
 describe("locale resolution", () => {

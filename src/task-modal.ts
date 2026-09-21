@@ -1,8 +1,10 @@
 import { App, Modal, Setting, setIcon } from "obsidian";
 import type { Project, Task, TaskDraft } from "./domain";
-import { normalizeLabels, recentLabelSuggestions, taskDateSuggestions } from "./task-input-suggestions";
+import { taskDateSuggestions } from "./task-input-suggestions";
 import type { I18n, TranslationKey } from "./i18n";
+import { shouldCommitLabelOnEnter, updateLabelChipInput } from "./label-chip-input";
 import { summarizeLabels } from "./label-summary";
+import { LabelPickerModal } from "./label-picker-modal";
 import { MobileKeyboardScroller } from "./mobile-keyboard-layout";
 
 const DATE_SUGGESTION_KEYS = {
@@ -32,6 +34,13 @@ function addEmbeddedLabel(setting: Setting, label: string): void {
   setting.controlEl.prepend(labelEl);
 }
 
+export interface TaskModalLabelOptions {
+  allLabels: string[];
+  recentLabels: string[];
+  favoriteLabels: string[];
+  onFavoriteLabelsChange: (labels: string[]) => Promise<void>;
+}
+
 export class TaskModal extends Modal {
   private draft: TaskDraft;
   private keyboardScroller: MobileKeyboardScroller | null = null;
@@ -41,12 +50,12 @@ export class TaskModal extends Modal {
     app: App,
     task: Task | null,
     private readonly projects: Project[],
-    private readonly recentLabels: string[],
+    private readonly labelOptions: TaskModalLabelOptions,
     defaultProjectId: string | null,
     private readonly availableRegion: HTMLElement,
     private readonly i18n: I18n,
-    private readonly onSave: (draft: TaskDraft) => Promise<void>,
-    private readonly onDelete: (() => Promise<void>) | null = null
+    private readonly onSave: (draft: TaskDraft) => Promise<boolean>,
+    private readonly onDelete: (() => Promise<boolean>) | null = null
   ) {
     super(app);
     this.baselineAvailableHeight = availableRegion.getBoundingClientRect().height;
@@ -149,73 +158,129 @@ export class TaskModal extends Modal {
     });
 
     const labelSetting = new Setting(fields).setName(t("taskModal.labels")).setDesc(t("taskModal.labelsDescription"));
+    labelSetting.settingEl.addClass("taskmate-label-setting");
     decorateField(labelSetting, "tags", t("taskModal.labels"));
-    let labelInput: HTMLInputElement;
-    let labelsExpanded = false;
-    let refreshLabelSummary = () => {};
-    const recentLabelButtons: HTMLButtonElement[] = [];
-    const refreshLabelSelection = () => {
-      for (const button of recentLabelButtons) {
-        const selected = this.draft.labels.includes(button.dataset.label ?? "");
-        button.toggleClass("is-active", selected);
-        button.setAttribute("aria-pressed", String(selected));
-      }
-    };
-    labelSetting.addText((text) => {
-      text.inputEl.setAttribute("aria-label", t("taskModal.labels"));
-      text.setPlaceholder(t("taskModal.labelsPlaceholder")).setValue(this.draft.labels.join(", ")).onChange((value) => {
-        this.draft.labels = normalizeLabels(value.split(",")).slice(0, 500);
-        refreshLabelSelection();
-        refreshLabelSummary();
-      });
-      labelInput = text.inputEl;
+    const labelEntryRow = labelSetting.controlEl.createDiv({ cls: "taskmate-label-entry-row" });
+    const labelEditor = labelEntryRow.createDiv({
+      cls: "taskmate-editor-label-summary taskmate-label-chip-editor"
     });
-    const labelSummaryEl = labelSetting.controlEl.createDiv({ cls: "taskmate-editor-label-summary" });
-    refreshLabelSummary = () => {
-      labelSummaryEl.empty();
+    const labelInput = labelEditor.createEl("input", {
+      type: "text",
+      cls: "taskmate-label-chip-input",
+      placeholder: t("taskModal.labelsPlaceholder"),
+      attr: {
+        "aria-label": t("taskModal.labels"),
+        enterkeyhint: "enter"
+      }
+    });
+    const addLabel = labelEntryRow.createEl("button", {
+      text: t("taskModal.addLabel"),
+      cls: "taskmate-label-add",
+      attr: {
+        type: "button",
+        "aria-label": t("taskModal.addLabelAriaLabel")
+      }
+    });
+    let pendingLabelInput = "";
+    let labelInputComposing = false;
+    let labelsExpanded = false;
+    const refreshLabelEditor = () => {
+      labelEditor.querySelectorAll("[data-taskmate-label-chip], .taskmate-label-overflow-toggle")
+        .forEach((element) => element.remove());
       const summary = summarizeLabels(this.draft.labels);
       const visible = labelsExpanded ? this.draft.labels : summary.visible;
-      for (const label of visible) labelSummaryEl.createSpan({ text: `#${label}`, cls: "taskmate-editor-label-chip" });
-      if (summary.hidden.length === 0) return;
-      const toggle = labelSummaryEl.createEl("button", {
-        text: labelsExpanded ? t("tasks.hideExtraLabels") : t("tasks.moreLabels", { count: summary.hidden.length }),
-        cls: "taskmate-label-overflow-toggle",
-        attr: {
-          type: "button",
-          "aria-expanded": String(labelsExpanded),
-          "aria-label": labelsExpanded ? t("tasks.hideExtraLabels") : t("tasks.moreLabelsAriaLabel", { count: summary.hidden.length })
-        }
-      });
-      toggle.addEventListener("click", () => {
-        labelsExpanded = !labelsExpanded;
-        refreshLabelSummary();
-      });
-    };
-    refreshLabelSummary();
-    const labelSuggestions = recentLabelSuggestions(this.recentLabels);
-    if (labelSuggestions.length > 0) {
-      const recent = fields.createDiv({ cls: "taskmate-recent-labels" });
-      recent.createDiv({ text: t("taskModal.recentLabels"), cls: "taskmate-suggestion-heading" });
-      const chips = recent.createDiv({ cls: "taskmate-suggestion-chips" });
-      for (const label of labelSuggestions) {
-        const button = chips.createEl("button", {
-          text: label,
-          cls: "taskmate-suggestion-chip",
-          attr: { type: "button", "aria-pressed": "false" }
+      for (const label of visible) {
+        const chip = document.createElement("span");
+        chip.addClass("taskmate-editor-label-chip");
+        chip.dataset.taskmateLabelChip = label;
+        chip.createSpan({ text: label });
+        const remove = chip.createEl("button", {
+          cls: "taskmate-label-chip-remove",
+          attr: {
+            type: "button",
+            "aria-label": t("taskModal.removeLabelAriaLabel", { label })
+          }
         });
-        button.dataset.label = label;
-        button.addEventListener("click", () => {
-          this.draft.labels = this.draft.labels.includes(label)
-            ? this.draft.labels.filter((item) => item !== label)
-            : [...this.draft.labels, label].slice(0, 500);
-          labelInput.value = this.draft.labels.join(", ");
-          refreshLabelSelection();
-          refreshLabelSummary();
+        setIcon(remove, "x");
+        remove.addEventListener("click", () => {
+          this.draft.labels = this.draft.labels.filter((item) => item !== label);
+          if (this.draft.labels.length <= 3) labelsExpanded = false;
+          refreshLabelEditor();
         });
-        recentLabelButtons.push(button);
+        labelEditor.insertBefore(chip, labelInput);
       }
-      refreshLabelSelection();
-    }
+      if (summary.hidden.length > 0) {
+        const toggle = document.createElement("button");
+        toggle.addClass("taskmate-label-overflow-toggle");
+        toggle.type = "button";
+        toggle.textContent = labelsExpanded
+          ? t("tasks.hideExtraLabels")
+          : t("tasks.moreLabels", { count: summary.hidden.length });
+        toggle.setAttribute("aria-expanded", String(labelsExpanded));
+        toggle.setAttribute("aria-label", labelsExpanded
+          ? t("tasks.hideExtraLabels")
+          : t("tasks.moreLabelsAriaLabel", { count: summary.hidden.length }));
+        toggle.addEventListener("click", () => {
+          labelsExpanded = !labelsExpanded;
+          refreshLabelEditor();
+        });
+        labelEditor.insertBefore(toggle, labelInput);
+      }
+      addLabel.disabled = pendingLabelInput.trim().length === 0;
+    };
+    const updateFromInput = (commitPending: boolean, keepFocus: boolean) => {
+      const next = updateLabelChipInput(this.draft.labels, labelInput.value, commitPending);
+      this.draft.labels = next.labels;
+      pendingLabelInput = next.pending;
+      labelInput.value = pendingLabelInput;
+      refreshLabelEditor();
+      if (keepFocus) window.requestAnimationFrame(() => labelInput.focus({ preventScroll: true }));
+    };
+    labelInput.addEventListener("compositionstart", () => { labelInputComposing = true; });
+    labelInput.addEventListener("compositionend", () => {
+      labelInputComposing = false;
+      updateFromInput(false, false);
+    });
+    labelInput.addEventListener("input", (event) => {
+      pendingLabelInput = labelInput.value;
+      addLabel.disabled = pendingLabelInput.trim().length === 0;
+      if (labelInputComposing || (event as InputEvent).isComposing) return;
+      updateFromInput(false, false);
+    });
+    labelInput.addEventListener("keydown", (event) => {
+      if (!shouldCommitLabelOnEnter(event.key, labelInputComposing || event.isComposing, event.keyCode)) return;
+      event.preventDefault();
+      updateFromInput(true, true);
+    });
+    addLabel.addEventListener("pointerdown", (event) => event.preventDefault());
+    addLabel.addEventListener("click", () => updateFromInput(true, true));
+    const chooseLabels = labelSetting.controlEl.createEl("button", {
+      text: t("taskModal.chooseLabels"),
+      cls: "taskmate-editor-label-picker-open",
+      attr: {
+        type: "button",
+        "aria-label": t("taskModal.chooseExistingLabelsAriaLabel"),
+        title: t("taskModal.chooseExistingLabelsAriaLabel")
+      }
+    });
+    chooseLabels.addEventListener("click", () => {
+      new LabelPickerModal(this.app, {
+        selectedLabels: this.draft.labels,
+        allLabels: this.labelOptions.allLabels,
+        recentLabels: this.labelOptions.recentLabels,
+        favoriteLabels: this.labelOptions.favoriteLabels,
+        preserveUnavailableSelectedLabels: true,
+        i18n: this.i18n,
+        onConfirm: async (selected, favorites) => {
+          this.draft.labels = selected.slice(0, 500);
+          labelsExpanded = false;
+          refreshLabelEditor();
+          this.labelOptions.favoriteLabels = favorites;
+          await this.labelOptions.onFavoriteLabelsChange(favorites);
+        }
+      }).open();
+    });
+    refreshLabelEditor();
 
     const notesSetting = new Setting(fields).setName(t("taskModal.notes"));
     notesSetting.settingEl.addClass("taskmate-notes-setting");
@@ -238,8 +303,7 @@ export class TaskModal extends Modal {
         if (!window.confirm(t("tasks.deleteConfirm", { title: this.draft.title }))) return;
         remove.disabled = true;
         try {
-          await this.onDelete?.();
-          this.close();
+          if (await this.onDelete?.()) this.close();
         } finally {
           remove.disabled = false;
         }
@@ -251,10 +315,10 @@ export class TaskModal extends Modal {
     const save = ordinaryActions.createEl("button", { text: t("common.save"), cls: "mod-cta" });
     save.addEventListener("click", async () => {
       if (!this.draft.title.trim()) return;
+      updateFromInput(true, false);
       save.disabled = true;
       try {
-        await this.onSave(this.draft);
-        this.close();
+        if (await this.onSave(this.draft)) this.close();
       } finally {
         save.disabled = false;
       }

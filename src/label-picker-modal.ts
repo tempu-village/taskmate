@@ -1,7 +1,13 @@
 import { App, Modal, Notice } from "obsidian";
 import type { I18n } from "./i18n";
 import type { LabelGroupId } from "./label-picker-model";
-import { buildLabelGroups, FAVORITE_LABEL_LIMIT, suggestedLabels, toggleFavoriteLabel } from "./label-picker-model";
+import {
+  buildLabelGroups,
+  FAVORITE_LABEL_LIMIT,
+  initialLabelPickerSelection,
+  suggestedLabels,
+  toggleFavoriteLabel
+} from "./label-picker-model";
 import { normalizeLabels } from "./task-input-suggestions";
 
 type PickerTab = "suggested" | "all";
@@ -11,6 +17,7 @@ export interface LabelPickerOptions {
   allLabels: string[];
   recentLabels: string[];
   favoriteLabels: string[];
+  preserveUnavailableSelectedLabels?: boolean;
   i18n: I18n;
   onConfirm: (selectedLabels: string[], favoriteLabels: string[]) => Promise<void>;
 }
@@ -26,8 +33,11 @@ export class LabelPickerModal extends Modal {
 
   constructor(app: App, private readonly options: LabelPickerOptions) {
     super(app);
-    const availableLabels = new Set(normalizeLabels(options.allLabels));
-    this.selectedLabels = normalizeLabels(options.selectedLabels).filter((label) => availableLabels.has(label));
+    this.selectedLabels = initialLabelPickerSelection(
+      options.selectedLabels,
+      options.allLabels,
+      options.preserveUnavailableSelectedLabels ?? false
+    );
     this.favoriteLabels = normalizeLabels(options.favoriteLabels);
     this.setTitle(options.i18n.t("filter.labelPickerTitle"));
   }

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { availableFilterLabels, buildLabelGroups, suggestedLabels, toggleFavoriteLabel } from "../src/label-picker-model";
+import {
+  availableFilterLabels,
+  buildLabelGroups,
+  initialLabelPickerSelection,
+  suggestedLabels,
+  toggleFavoriteLabel
+} from "../src/label-picker-model";
 
 describe("label picker model", () => {
   it("offers labels from incomplete tasks unless completed tasks are included", () => {
@@ -26,6 +32,13 @@ describe("label picker model", () => {
     expect(buildLabelGroups(["Admin", "Calls", "Design"], "de", "en")).toEqual([
       { id: "latin:D", labels: ["Design"] }
     ]);
+  });
+
+  it("preserves editor draft labels outside the existing candidate set without changing filter behavior", () => {
+    expect(initialLabelPickerSelection(["Work", "New draft"], ["Work", "Calls"], true))
+      .toEqual(["Work", "New draft"]);
+    expect(initialLabelPickerSelection(["Work", "Unavailable"], ["Work", "Calls"], false))
+      .toEqual(["Work"]);
   });
 
   it("keeps favorites first and backfills recent suggestions without duplicates", () => {

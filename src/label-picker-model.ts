@@ -58,6 +58,17 @@ export function availableFilterLabels(
   return normalizeLabels(labels);
 }
 
+export function initialLabelPickerSelection(
+  selectedLabels: Iterable<string>,
+  availableLabels: Iterable<string>,
+  preserveUnavailable: boolean
+): string[] {
+  const selected = normalizeLabels(selectedLabels);
+  if (preserveUnavailable) return selected;
+  const available = new Set(normalizeLabels(availableLabels));
+  return selected.filter((label) => available.has(label));
+}
+
 export function buildLabelGroups(labels: Iterable<string>, query: string, locale: SupportedLocale): LabelGroup[] {
   const needle = query.trim().toLocaleLowerCase(locale);
   const grouped = new Map<LabelGroupId, string[]>();

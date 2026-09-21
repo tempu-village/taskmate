@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { filterTasks, groupScheduledTasks, sortTasks, taskMatchesView } from "../src/domain";
 import type { Project, Task } from "../src/domain";
-import { encodeTask, legacyTaskFileName, nextAvailableTaskFileName, parseTaskMarkdown, taskFileName } from "../src/markdown";
+import { encodeTask, encodeTaskPreservingProperties, legacyTaskFileName, nextAvailableTaskFileName, parseTaskMarkdown, taskFileName } from "../src/markdown";
 import { encodeProject, parseProjectMarkdown, projectFileName } from "../src/project-markdown";
 import { filterLabelSuggestions, recordRecentLabels, recentLabelSuggestions, taskDateSuggestions } from "../src/task-input-suggestions";
 
@@ -119,6 +119,27 @@ describe("task Markdown", () => {
   it("round trips the canonical task shape", () => {
     const original = task({ title: "日本語のタスク", date: "2026-09-12", priority: 1, labels: ["仕事", "連絡"], projectId: "project-1", notes: "補足\n二行目" });
     expect(parseTaskMarkdown(original.path, encodeTask(original))).toEqual(original);
+  });
+
+  it("preserves unknown frontmatter properties while replacing managed values", () => {
+    const original = `${encodeTask(task({ title: "Before" })).replace("---\n\n#", "custom-field: keep me\nnested:\n  value: untouched\n---\n\n#")}`;
+    const updated = encodeTaskPreservingProperties(task({ title: "After", priority: 2 }), original);
+
+    expect(updated).toContain("custom-field: keep me");
+    expect(updated).toContain("nested:\n  value: untouched");
+    expect(parseTaskMarkdown("TaskMate/Tasks/After.md", updated)).toEqual(task({
+      path: "TaskMate/Tasks/After.md",
+      title: "After",
+      priority: 2
+    }));
+  });
+
+  it("removes the legacy important property after writing canonical priority", () => {
+    const original = encodeTask(task()).replace("priority: null", "priority: null\nimportant: true");
+    const updated = encodeTaskPreservingProperties(task({ priority: null }), original);
+
+    expect(updated).not.toContain("important:");
+    expect(parseTaskMarkdown("TaskMate/Tasks/one.md", updated)?.priority).toBeNull();
   });
 
   it("uses the readable title without exposing the task ID", () => {

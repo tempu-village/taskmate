@@ -2,6 +2,23 @@ import type { Priority, Task, TaskDraft } from "./domain";
 
 const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
 
+const TASK_PROPERTY_LINES = {
+  type: (task: Task) => "type: todo",
+  id: (task: Task) => `id: ${scalar(task.id)}`,
+  completed: (task: Task) => `completed: ${scalar(task.completed)}`,
+  date: (task: Task) => `date: ${scalar(task.date)}`,
+  priority: (task: Task) => `priority: ${scalar(task.priority)}`,
+  labels: (task: Task) => `labels: ${JSON.stringify(task.labels)}`,
+  project: (task: Task) => `project: ${scalar(task.projectId)}`,
+  rank: (task: Task) => `rank: ${scalar(task.rank)}`,
+  "created-at": (task: Task) => `created-at: ${scalar(task.createdAt)}`,
+  "updated-at": (task: Task) => `updated-at: ${scalar(task.updatedAt)}`,
+  "completed-at": (task: Task) => `completed-at: ${scalar(task.completedAt)}`,
+  "source-note": (task: Task) => `source-note: ${scalar(task.sourceNote)}`
+} satisfies Record<string, (task: Task) => string>;
+
+const LEGACY_TASK_PROPERTIES = new Set(["important"]);
+
 function scalar(value: string | null | boolean | number): string {
   if (value === null) return "null";
   if (typeof value === "string") return JSON.stringify(value);
@@ -70,24 +87,37 @@ export function parseTaskMarkdown(path: string, content: string): Task | null {
 }
 
 export function encodeTask(task: Task): string {
-  const frontmatter = [
-    "---",
-    "type: todo",
-    `id: ${scalar(task.id)}`,
-    `completed: ${scalar(task.completed)}`,
-    `date: ${scalar(task.date)}`,
-    `priority: ${scalar(task.priority)}`,
-    `labels: ${JSON.stringify(task.labels)}`,
-    `project: ${scalar(task.projectId)}`,
-    `rank: ${scalar(task.rank)}`,
-    `created-at: ${scalar(task.createdAt)}`,
-    `updated-at: ${scalar(task.updatedAt)}`,
-    `completed-at: ${scalar(task.completedAt)}`,
-    `source-note: ${scalar(task.sourceNote)}`,
-    "---"
-  ].join("\n");
+  const frontmatter = ["---", ...Object.values(TASK_PROPERTY_LINES).map((line) => line(task)), "---"].join("\n");
   const notes = task.notes.trim();
   return `${frontmatter}\n\n# ${task.title.trim()}${notes ? `\n\n${notes}` : ""}\n`;
+}
+
+export function encodeTaskPreservingProperties(task: Task, currentContent: string): string {
+  const match = currentContent.match(FRONTMATTER);
+  if (!match) return encodeTask(task);
+
+  const emitted = new Set<string>();
+  const frontmatterLines: string[] = [];
+  for (const line of match[1].split(/\r?\n/)) {
+    const property = line.match(/^([^\s:#][^:]*):/)?.[1]?.trim();
+    if (!property) {
+      frontmatterLines.push(line);
+      continue;
+    }
+    const render = TASK_PROPERTY_LINES[property as keyof typeof TASK_PROPERTY_LINES];
+    if (render) {
+      if (!emitted.has(property)) frontmatterLines.push(render(task));
+      emitted.add(property);
+      continue;
+    }
+    if (!LEGACY_TASK_PROPERTIES.has(property)) frontmatterLines.push(line);
+  }
+  for (const [property, render] of Object.entries(TASK_PROPERTY_LINES)) {
+    if (!emitted.has(property)) frontmatterLines.push(render(task));
+  }
+
+  const notes = task.notes.trim();
+  return `---\n${frontmatterLines.join("\n")}\n---\n\n# ${task.title.trim()}${notes ? `\n\n${notes}` : ""}\n`;
 }
 
 export function taskFromDraft(id: string, path: string, draft: TaskDraft, rank: number, now: string): Task {
