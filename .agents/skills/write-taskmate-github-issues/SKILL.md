@@ -1,6 +1,6 @@
 ---
 name: write-taskmate-github-issues
-description: Draft, revise, or register TaskMate GitHub Issues with an English canonical specification and a folded Japanese reference translation. Use for TaskMate Issue writing and Issue updates, not for README or ADR localization.
+description: Draft, revise, register, or classify TaskMate GitHub Issues, including proposing and applying labels when requested. Use for TaskMate Issue writing, Issue updates, and label assignment, not for README or ADR localization.
 ---
 
 # Write TaskMate GitHub Issues
@@ -8,6 +8,8 @@ description: Draft, revise, or register TaskMate GitHub Issues with an English c
 Create an Issue that remains readable to international contributors while giving the project owner a complete Japanese implementation reference.
 
 Before drafting or editing an Issue, read [references/issue-template.md](references/issue-template.md). Inspect the relevant TaskMate ADRs, domain terms, existing Issue, and implementation state before stating requirements.
+
+When the user asks to classify or label Issues, read [references/label-workflow.md](references/label-workflow.md) and follow its preview-and-confirm workflow before changing GitHub.
 
 ## Workflow
 
@@ -24,6 +26,8 @@ Before drafting or editing an Issue, read [references/issue-template.md](referen
 
 Create or update a live GitHub Issue only when the user's request includes that external action. Otherwise, return or save a draft without changing GitHub.
 
+Label creation, label assignment, label removal, and restoring an archived label are also live GitHub mutations. A request to inspect, recommend, or design labels does not authorize those mutations. Follow the confirmation boundary in the label workflow even when the requested classification criteria are already clear.
+
 ## Completion criteria
 
-The Issue is complete when the English body is internally consistent, the Japanese coverage labels are accurate, every normative English item appears in the corresponding Japanese `全項目` section, and no requirement exists only in Japanese.
+The Issue is complete when the English body is internally consistent, the Japanese coverage labels are accurate, every normative English item appears in the corresponding Japanese `全項目` section, and no requirement exists only in Japanese. A labeling task is complete when the confirmed labels have been applied to the confirmed Issues and the final report identifies every affected Issue and any label created.
