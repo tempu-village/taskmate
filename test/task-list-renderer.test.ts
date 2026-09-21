@@ -2,7 +2,11 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { TaskListModel } from "../src/task-list-model";
-import { renderTaskList, taskTitleNeedsDisclosure } from "../src/task-list-renderer";
+import {
+  renderTaskList,
+  syncTaskTitleDisclosure,
+  taskTitleNeedsDisclosure
+} from "../src/task-list-renderer";
 
 const sortableDestroy = vi.fn();
 
@@ -118,7 +122,9 @@ describe("task-list renderer", () => {
     }, copy, dispatch);
 
     const title = container.querySelector<HTMLElement>(".taskmate-title");
+    const titleText = container.querySelector<HTMLElement>(".taskmate-title-text");
     const toggle = container.querySelector<HTMLButtonElement>(".taskmate-title-overflow-toggle");
+    expect(titleText?.textContent).toContain("A long task title");
     expect(title?.classList.contains("is-expanded")).toBe(false);
     expect(toggle?.textContent).toBe("Show full title");
     expect(toggle?.getAttribute("aria-expanded")).toBe("false");
@@ -134,16 +140,30 @@ describe("task-list renderer", () => {
     expect(toggle?.textContent).toBe("Show full title");
   });
 
-  it("offers disclosure only when the collapsed title has hidden content", () => {
-    const title = document.createElement("button");
-    Object.defineProperties(title, {
-      clientHeight: { configurable: true, value: 40 },
-      scrollHeight: { configurable: true, value: 82 }
-    });
-    expect(taskTitleNeedsDisclosure(title)).toBe(true);
+  it("shows disclosure only when text is actually hidden beyond two lines", () => {
+    const titleText = document.createElement("span");
+    const toggle = document.createElement("button");
+    const setHeights = (clientHeight: number, scrollHeight: number) => {
+      Object.defineProperties(titleText, {
+        clientHeight: { configurable: true, value: clientHeight },
+        scrollHeight: { configurable: true, value: scrollHeight }
+      });
+    };
 
-    Object.defineProperty(title, "scrollHeight", { configurable: true, value: 40 });
-    expect(taskTitleNeedsDisclosure(title)).toBe(false);
+    setHeights(24, 24);
+    syncTaskTitleDisclosure(titleText, toggle);
+    expect(taskTitleNeedsDisclosure(titleText)).toBe(false);
+    expect(toggle.hidden).toBe(true);
+
+    setHeights(48, 48);
+    syncTaskTitleDisclosure(titleText, toggle);
+    expect(taskTitleNeedsDisclosure(titleText)).toBe(false);
+    expect(toggle.hidden).toBe(true);
+
+    setHeights(48, 72);
+    syncTaskTitleDisclosure(titleText, toggle);
+    expect(taskTitleNeedsDisclosure(titleText)).toBe(true);
+    expect(toggle.hidden).toBe(false);
   });
 
   it("destroys renderer-owned resources", () => {

@@ -111,9 +111,14 @@ describe("mobile layout", () => {
     expect(title).toMatch(/white-space\s*:\s*normal\s*;/);
     expect(title).toMatch(/overflow-wrap\s*:\s*anywhere\s*;/);
     expect(title).toMatch(/height\s*:\s*auto\s*;/);
-    expect(title).toMatch(/-webkit-line-clamp\s*:\s*2\s*;/);
-    expect(title).toMatch(/overflow\s*:\s*hidden\s*;/);
-    expect(exactDeclarations(".taskmate-title.is-expanded")).toMatch(/-webkit-line-clamp\s*:\s*unset\s*;/);
+    expect(title).toMatch(/appearance\s*:\s*none\s*;/);
+    expect(title).toMatch(/border-radius\s*:\s*0\s*!important\s*;/);
+    expect(title).toMatch(/overflow\s*:\s*visible\s*;/);
+    const titleText = exactDeclarations(".taskmate-title-text");
+    expect(titleText).toMatch(/line-height\s*:\s*1\.5\s*;/);
+    expect(titleText).toMatch(/max-height\s*:\s*3em\s*;/);
+    expect(titleText).toMatch(/overflow\s*:\s*hidden\s*;/);
+    expect(exactDeclarations(".taskmate-title.is-expanded .taskmate-title-text")).toMatch(/max-height\s*:\s*none\s*;/);
     expect(exactDeclarations(".taskmate-title-overflow-toggle")).toMatch(/min-height\s*:\s*44px\s*;/);
   });
 

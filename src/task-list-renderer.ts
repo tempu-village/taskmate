@@ -27,17 +27,26 @@ export interface RenderedTaskList {
 
 type DispatchTaskListAction = (action: TaskListAction) => void | Promise<void>;
 
-export function taskTitleNeedsDisclosure(title: HTMLElement): boolean {
-  return title.clientHeight > 0 && title.scrollHeight > title.clientHeight + 1;
+export function taskTitleNeedsDisclosure(titleText: HTMLElement): boolean {
+  return titleText.clientHeight > 0 && titleText.scrollHeight > titleText.clientHeight + 1;
 }
 
-function observeTitleOverflow(title: HTMLElement, toggle: HTMLButtonElement, signal: AbortSignal): void {
-  const view = title.ownerDocument.defaultView;
+export function syncTaskTitleDisclosure(titleText: HTMLElement, toggle: HTMLButtonElement): void {
+  toggle.hidden = !taskTitleNeedsDisclosure(titleText);
+}
+
+function observeTitleOverflow(
+  title: HTMLElement,
+  titleText: HTMLElement,
+  toggle: HTMLButtonElement,
+  signal: AbortSignal
+): void {
+  const view = titleText.ownerDocument.defaultView;
   let animationFrame: number | null = null;
   const refresh = () => {
     animationFrame = null;
     if (signal.aborted || title.classList.contains("is-expanded")) return;
-    toggle.hidden = !taskTitleNeedsDisclosure(title);
+    syncTaskTitleDisclosure(titleText, toggle);
   };
   const scheduleRefresh = () => {
     if (animationFrame !== null || signal.aborted) return;
@@ -46,7 +55,7 @@ function observeTitleOverflow(title: HTMLElement, toggle: HTMLButtonElement, sig
   };
   const ResizeObserverClass = view?.ResizeObserver;
   const observer = ResizeObserverClass ? new ResizeObserverClass(scheduleRefresh) : null;
-  observer?.observe(title);
+  observer?.observe(titleText);
   scheduleRefresh();
   signal.addEventListener("abort", () => {
     observer?.disconnect();
@@ -115,7 +124,14 @@ function renderRow(
   }
 
   const body = appendElement(task, "div", { className: "taskmate-task-body" });
-  const title = appendElement(body, "button", { className: "taskmate-title", text: row.title });
+  const title = appendElement(body, "button", {
+    className: "taskmate-title",
+    attributes: { type: "button" }
+  });
+  const titleText = appendElement(title, "span", {
+    className: "taskmate-title-text",
+    text: row.title
+  });
   title.addEventListener("click", () => {
     if (!selectionMode) void dispatch({ type: "open", taskId: row.id });
   }, { signal });
@@ -133,7 +149,7 @@ function renderRow(
     titleToggle.setAttribute("aria-expanded", String(expanded));
     titleToggle.textContent = expanded ? copy.hideFullTitle : copy.showFullTitle;
   }, { signal });
-  observeTitleOverflow(title, titleToggle, signal);
+  observeTitleOverflow(title, titleText, titleToggle, signal);
 
   const metadata = appendElement(body, "div", { className: "taskmate-metadata" });
   if (row.date) appendElement(metadata, "span", { text: row.date });

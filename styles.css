@@ -227,26 +227,35 @@
 .taskmate-drag:disabled { visibility: hidden; }
 .taskmate-task-body { flex: 1; min-width: 0; max-width: 100%; }
 .taskmate-title {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  display: block;
+  appearance: none;
   width: 100%;
   height: auto;
   min-height: 0;
   min-width: 0;
   max-width: 100%;
-  overflow: hidden;
-  padding: 0;
+  overflow: visible;
+  box-sizing: border-box;
+  padding: 0.15rem 0.35rem;
   color: var(--text-normal);
+  background: var(--background-modifier-hover) !important;
+  border: 1px solid var(--background-modifier-border) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
   text-align: left;
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
   font-weight: 600;
 }
-.taskmate-title.is-expanded {
+.taskmate-title-text {
   display: block;
-  -webkit-line-clamp: unset;
+  max-height: 3em;
+  overflow: hidden;
+  line-height: 1.5;
+}
+.taskmate-title.is-expanded .taskmate-title-text {
+  max-height: none;
   overflow: visible;
 }
 .taskmate-title-overflow-toggle {

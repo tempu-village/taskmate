@@ -9,7 +9,7 @@ After the Issue #28 Variant A implementation, two title-display defects remain o
 - `Show full title` can appear even when a title fits without hidden content.
 - A title that occupies two lines can look clipped at the bottom, and the title control has a pill-like rounded appearance that makes it look like an input box.
 
-This Issue records the follow-up only. Implementation is intentionally deferred.
+The implementation measures a dedicated inner title-text element, reserves two complete line boxes, and resets the outer title action to an explicit rectangular shape.
 
 ## Background
 
@@ -45,6 +45,12 @@ Variant A should disclose extra text only when the two-line collapsed layout act
 - Expand and collapse a long title by touch and keyboard, then open the editor from the title.
 - Run the repository's required typecheck, unit tests, build, Python behavior tests, skill validation, and `git diff --check`.
 
+## Implementation status
+
+- Implemented in the Issue #28 working branch.
+- Automated tests cover one-line, exactly-two-line, and overflowing title measurements as separate states.
+- Android visual verification remains required before closing the Issue.
+
 ## Out of scope
 
 - Changing Task title contents or the Markdown schema.
@@ -62,7 +68,7 @@ Variant A should disclose extra text only when the two-line collapsed layout act
 
 > 対応範囲：英語版「Summary」の要約
 
-Issue #28のA案実装後、モバイル表示に2つの問題が残っています。本文が1行に収まる場合にも「全文を見る」が表示されること、2行のタイトルが下端で切れて見えること、さらにタイトル操作が楕円形の入力欄のように見えることです。本Issueでは実装せず、後で修正します。
+Issue #28のA案実装後、モバイル表示に2つの問題が残っています。本文が1行に収まる場合にも「全文を見る」が表示されること、2行のタイトルが下端で切れて見えること、さらにタイトル操作が楕円形の入力欄のように見えることです。実装では内側のタイトル文字列を測定対象として分離し、完全な2行分の高さと矩形の外側操作を設けます。
 
 ## 背景
 
@@ -103,6 +109,14 @@ Issue #28のA案実装後、モバイル表示に2つの問題が残っていま
 - 2行タイトルの文字が欠けず、タイトル操作が矩形であることを確認する。
 - 長いタイトルをタッチとキーボードで展開・折りたたみし、タイトル操作から編集画面を開く。
 - リポジトリ指定の型チェック、ユニットテスト、ビルド、Python動作テスト、Skill検証、`git diff --check`を実行する。
+
+## 実装状況
+
+> 対応範囲：英語版「Implementation status」の全項目
+
+- Issue #28の作業ブランチへ実装済み。
+- 1行、ちょうど2行、はみ出すタイトルの測定状態を個別に自動テストで確認する。
+- Issueを閉じる前にAndroidでの目視確認が必要。
 
 ## 対象外
 

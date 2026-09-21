@@ -111,7 +111,7 @@ Selection-only renders preserve the active Task list's vertical scroll position 
 
 A single selected Task opens the normal editor. Multiple selected Tasks can change date, Project, Priority, and Labels together. Bulk editing distinguishes keeping a current value from clearing it; Labels are added or removed rather than implicitly replacing every existing Label. Bulk deletion moves the selected Task files to the Obsidian trash after confirmation and reports partial failures.
 
-Task-list titles initially occupy at most two lines. When additional text is hidden, a localized Show full title control appears beneath the title; click, tap, or keyboard activation expands that title in place, and the same control collapses it again. The metadata remains in normal document flow below the title and never overlaps it. Selecting the title itself continues to open the Task editor.
+Task-list titles initially occupy at most two complete line boxes inside a rectangular, non-pill title action. The disclosure decision measures the rendered inner title text rather than the outer button: a localized Show full title control appears only when content is actually hidden beyond the second line, never for a one-line or fully visible two-line title. Click, tap, or keyboard activation expands that title in place, and the same control collapses it again. The metadata remains in normal document flow below the title and never overlaps it. Selecting the title itself continues to open the Task editor.
 
 ## Creating and editing Tasks
 
@@ -284,6 +284,8 @@ TaskMateは、Obsidian向けのシンプルなローカルファースト・タ�
 「タスクを選択」は、メインナビゲーションを明示的な選択モードへ置き換えます。選択可能な集合は選択開始時に表示されていたタスクへ固定し、「すべて選択」はその集合だけを対象にします。
 
 選択が1件なら通常の編集画面を開きます。複数件では、日付、プロジェクト、優先度、ラベルをまとめて変更できます。一括編集では、現在値を維持することと値を消すことを区別し、既存ラベルすべてを暗黙に置換せず、追加または削除します。一括削除は、確認後に選択したタスクファイルをObsidianのゴミ箱へ移動し、部分的な失敗を報告します。
+
+タスク一覧のタイトルは、矩形で楕円形ではないタイトル操作の中に、最初は最大2行分の完全な行領域を確保して表示します。展開の要否は外側のボタンではなく、内側に描画されたタイトル文字列を測定して判定します。「全文を見る」は3行目以降が実際に隠れる場合だけ表示し、1行または2行に完全に収まるタイトルには表示しません。クリック、タップ、またはキーボード操作でその場に全文を展開し、同じ操作で折りたためます。メタ情報はタイトルの下の通常フローに置き、重ねません。タイトル自体を選ぶと従来どおり編集画面を開きます。
 
 ## タスクの作成と編集
 
