@@ -107,6 +107,8 @@ Renaming replaces the Label on every affected Task, including completed Tasks, a
 
 Select Tasks replaces the main navigation with an explicit selection mode. The selectable set is frozen to the Tasks visible when selection begins, and Select all affects only that set.
 
+Selection-only renders preserve the active Task list's vertical scroll position when entering selection mode, selecting or deselecting Tasks, selecting all, and leaving selection mode. Navigation to another screen does not inherit that position.
+
 A single selected Task opens the normal editor. Multiple selected Tasks can change date, Project, Priority, and Labels together. Bulk editing distinguishes keeping a current value from clearing it; Labels are added or removed rather than implicitly replacing every existing Label. Bulk deletion moves the selected Task files to the Obsidian trash after confirmation and reports partial failures.
 
 ## Creating and editing Tasks

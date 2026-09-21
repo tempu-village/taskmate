@@ -23,11 +23,13 @@ import type { TaskListModel } from "./task-list-model";
 import { renderTaskList as renderTaskListDom } from "./task-list-renderer";
 import type { RenderedTaskList, TaskListAction, TaskListCopy } from "./task-list-renderer";
 import { TaskFilterState } from "./task-filter-state";
+import { captureTaskListScrollTop, restoreTaskListScrollTop } from "./scroll-position";
 
 export const TODO_VIEW_TYPE = "taskmate-list";
 
 type MainScreen = "date" | "search" | "projects";
 type ProjectScreen = "index" | "detail" | "edit";
+type RenderOptions = { preserveScroll?: boolean };
 
 const SMART_VIEW_KEYS = {
   scheduled: "view.scheduled",
@@ -87,11 +89,14 @@ export class TodoListView extends ItemView {
     this.destroyTaskList();
   }
 
-  requestRender(): void {
-    void this.render();
+  requestRender(options: RenderOptions = {}): void {
+    const preservedScrollTop = options.preserveScroll
+      ? captureTaskListScrollTop(this.contentEl)
+      : null;
+    void this.render(preservedScrollTop);
   }
 
-  private async render(): Promise<void> {
+  private async render(preservedScrollTop: number | null = null): Promise<void> {
     const currentGeneration = ++this.generation;
     const [taskScan, projects] = await Promise.all([this.plugin.repository.scan(), this.plugin.projects.list()]);
     if (currentGeneration !== this.generation) return;
@@ -125,6 +130,7 @@ export class TodoListView extends ItemView {
       const content = page.createDiv({ cls: "taskmate-content taskmate-scroll-region" });
       this.renderProjectsScreen(content, tasks, projects);
     }
+    restoreTaskListScrollTop(this.contentEl, preservedScrollTop);
   }
 
   private renderHeader(
@@ -456,7 +462,7 @@ export class TodoListView extends ItemView {
     if (action.type === "toggle-selected") {
       if (this.selectedTaskIds.has(task.id)) this.selectedTaskIds.delete(task.id);
       else this.selectedTaskIds.add(task.id);
-      this.requestRender();
+      this.requestRender({ preserveScroll: true });
       return;
     }
     if (action.type === "open") {
@@ -515,7 +521,7 @@ export class TodoListView extends ItemView {
         this.selectionScopeIds = new Set(scope.map((task) => task.id));
         this.selectedTaskIds.clear();
         this.selectionMode = true;
-        this.requestRender();
+        this.requestRender({ preserveScroll: true });
       }));
       menu.addItem((item) => item
         .setTitle(count > 0 ? t("filter.change") : t("filter.title"))
@@ -551,7 +557,7 @@ export class TodoListView extends ItemView {
       this.selectedTaskIds = this.selectedTaskIds.size === this.selectionScopeIds.size
         ? new Set<string>()
         : new Set(this.selectionScopeIds);
-      this.requestRender();
+      this.requestRender({ preserveScroll: true });
     });
     const edit = toolbar.createEl("button", { text: t("common.edit") });
     edit.disabled = this.selectedTaskIds.size === 0;
@@ -565,7 +571,7 @@ export class TodoListView extends ItemView {
     this.selectionMode = false;
     this.selectedTaskIds.clear();
     this.selectionScopeIds.clear();
-    this.requestRender();
+    this.requestRender({ preserveScroll: true });
   }
 
   private async openFilterModal(): Promise<void> {

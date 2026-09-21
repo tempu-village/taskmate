@@ -104,6 +104,23 @@ describe("mobile layout", () => {
     expect(viewSource).toContain("this.filterState.clear()");
   });
 
+  it("preserves task-list scroll position across selection-only renders", () => {
+    expect(viewSource).toContain("captureTaskListScrollTop(this.contentEl)");
+    expect(viewSource).toContain("restoreTaskListScrollTop(this.contentEl, preservedScrollTop)");
+
+    const selectionAction = viewSource.slice(
+      viewSource.indexOf('if (action.type === "toggle-selected")'),
+      viewSource.indexOf('if (action.type === "open")')
+    );
+    expect(selectionAction).toContain("preserveScroll: true");
+
+    const selectionToolbar = viewSource.slice(
+      viewSource.indexOf("private renderSelectionToolbar"),
+      viewSource.indexOf("private async openFilterModal")
+    );
+    expect(selectionToolbar).toContain("preserveScroll: true");
+  });
+
   it("avoids Android WebView's native search-input focus behavior", () => {
     expect(viewSource).not.toMatch(/\btype:\s*"search",/);
     expect(viewSource.match(/"inputmode": "search"/g)).toHaveLength(1);

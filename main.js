@@ -4778,6 +4778,18 @@ var TaskFilterState = class {
   }
 };
 
+// src/scroll-position.ts
+var TASK_LIST_SCROLL_REGION = ".taskmate-scroll-region";
+function captureTaskListScrollTop(root) {
+  const region = root.querySelector(TASK_LIST_SCROLL_REGION);
+  return region ? Math.max(0, region.scrollTop) : null;
+}
+function restoreTaskListScrollTop(root, scrollTop) {
+  if (scrollTop === null) return;
+  const region = root.querySelector(TASK_LIST_SCROLL_REGION);
+  if (region) region.scrollTop = scrollTop;
+}
+
 // src/view.ts
 var TODO_VIEW_TYPE = "taskmate-list";
 var SMART_VIEW_KEYS = {
@@ -4829,10 +4841,11 @@ var TodoListView = class extends import_obsidian11.ItemView {
   async onClose() {
     this.destroyTaskList();
   }
-  requestRender() {
-    void this.render();
+  requestRender(options = {}) {
+    const preservedScrollTop = options.preserveScroll ? captureTaskListScrollTop(this.contentEl) : null;
+    void this.render(preservedScrollTop);
   }
-  async render() {
+  async render(preservedScrollTop = null) {
     const currentGeneration = ++this.generation;
     const [taskScan, projects] = await Promise.all([this.plugin.repository.scan(), this.plugin.projects.list()]);
     if (currentGeneration !== this.generation) return;
@@ -4865,6 +4878,7 @@ var TodoListView = class extends import_obsidian11.ItemView {
       const content = page.createDiv({ cls: "taskmate-content taskmate-scroll-region" });
       this.renderProjectsScreen(content, tasks, projects);
     }
+    restoreTaskListScrollTop(this.contentEl, preservedScrollTop);
   }
   renderHeader(container, title, addTaskProjectId, selectionScope) {
     const { t } = this.plugin.i18n();
@@ -5165,7 +5179,7 @@ var TodoListView = class extends import_obsidian11.ItemView {
     if (action.type === "toggle-selected") {
       if (this.selectedTaskIds.has(task.id)) this.selectedTaskIds.delete(task.id);
       else this.selectedTaskIds.add(task.id);
-      this.requestRender();
+      this.requestRender({ preserveScroll: true });
       return;
     }
     if (action.type === "open") {
@@ -5224,7 +5238,7 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
         this.selectionScopeIds = new Set(scope.map((task) => task.id));
         this.selectedTaskIds.clear();
         this.selectionMode = true;
-        this.requestRender();
+        this.requestRender({ preserveScroll: true });
       }));
       menu.addItem((item) => item.setTitle(count > 0 ? t("filter.change") : t("filter.title")).setIcon("list-filter").onClick(() => void this.openFilterModal()));
       menu.addItem((item) => item.setTitle(t("labelManager.menu")).setIcon("tags").onClick(() => void this.openLabelManager()));
@@ -5248,7 +5262,7 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
     selectAll.disabled = this.selectionScopeIds.size === 0;
     selectAll.addEventListener("click", () => {
       this.selectedTaskIds = this.selectedTaskIds.size === this.selectionScopeIds.size ? /* @__PURE__ */ new Set() : new Set(this.selectionScopeIds);
-      this.requestRender();
+      this.requestRender({ preserveScroll: true });
     });
     const edit = toolbar.createEl("button", { text: t("common.edit") });
     edit.disabled = this.selectedTaskIds.size === 0;
@@ -5261,7 +5275,7 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
     this.selectionMode = false;
     this.selectedTaskIds.clear();
     this.selectionScopeIds.clear();
-    this.requestRender();
+    this.requestRender({ preserveScroll: true });
   }
   async openFilterModal() {
     const i18n = this.plugin.i18n();
