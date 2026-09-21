@@ -119,6 +119,8 @@ export const en = {
   "tasks.moreLabels": "{count} more",
   "tasks.moreLabelsAriaLabel": "Show {count} more labels",
   "tasks.hideExtraLabels": "Hide extra labels",
+  "tasks.showFullTitle": "Show full title",
+  "tasks.hideFullTitle": "Collapse title",
   "taskModal.addTitle": "Add task",
   "taskModal.editTitle": "Edit task",
   "taskModal.title": "Title",

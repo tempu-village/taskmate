@@ -2,7 +2,7 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { TaskListModel } from "../src/task-list-model";
-import { renderTaskList } from "../src/task-list-renderer";
+import { renderTaskList, taskTitleNeedsDisclosure } from "../src/task-list-renderer";
 
 const sortableDestroy = vi.fn();
 
@@ -20,6 +20,8 @@ const copy = {
   moreLabels: (count: number) => `${count} more`,
   moreLabelsAriaLabel: (count: number) => `Show ${count} more labels`,
   hideExtraLabels: "Hide extra labels",
+  showFullTitle: "Show full title",
+  hideFullTitle: "Collapse title",
   sectionTitles: { overdue: "Overdue", today: "Today", later: "Later" }
 };
 
@@ -102,6 +104,46 @@ describe("task-list renderer", () => {
     expect(toggle?.textContent).toBe("Hide extra labels");
     expect(dispatch).not.toHaveBeenCalled();
     expect(labels).toHaveLength(9);
+  });
+
+  it("expands and collapses a long title without opening the task", () => {
+    const container = document.createElement("div");
+    const dispatch = vi.fn();
+    renderTaskList(container, {
+      ...model,
+      sections: [{ id: "default", rows: [{
+        ...model.sections[0].rows[0],
+        title: "A long task title that occupies more than two lines on a narrow mobile screen"
+      }] }]
+    }, copy, dispatch);
+
+    const title = container.querySelector<HTMLElement>(".taskmate-title");
+    const toggle = container.querySelector<HTMLButtonElement>(".taskmate-title-overflow-toggle");
+    expect(title?.classList.contains("is-expanded")).toBe(false);
+    expect(toggle?.textContent).toBe("Show full title");
+    expect(toggle?.getAttribute("aria-expanded")).toBe("false");
+
+    toggle?.click();
+    expect(title?.classList.contains("is-expanded")).toBe(true);
+    expect(toggle?.textContent).toBe("Collapse title");
+    expect(toggle?.getAttribute("aria-expanded")).toBe("true");
+    expect(dispatch).not.toHaveBeenCalled();
+
+    toggle?.click();
+    expect(title?.classList.contains("is-expanded")).toBe(false);
+    expect(toggle?.textContent).toBe("Show full title");
+  });
+
+  it("offers disclosure only when the collapsed title has hidden content", () => {
+    const title = document.createElement("button");
+    Object.defineProperties(title, {
+      clientHeight: { configurable: true, value: 40 },
+      scrollHeight: { configurable: true, value: 82 }
+    });
+    expect(taskTitleNeedsDisclosure(title)).toBe(true);
+
+    Object.defineProperty(title, "scrollHeight", { configurable: true, value: 40 });
+    expect(taskTitleNeedsDisclosure(title)).toBe(false);
   });
 
   it("destroys renderer-owned resources", () => {

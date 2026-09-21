@@ -110,6 +110,11 @@ describe("mobile layout", () => {
     expect(title).toMatch(/max-width\s*:\s*100%\s*;/);
     expect(title).toMatch(/white-space\s*:\s*normal\s*;/);
     expect(title).toMatch(/overflow-wrap\s*:\s*anywhere\s*;/);
+    expect(title).toMatch(/height\s*:\s*auto\s*;/);
+    expect(title).toMatch(/-webkit-line-clamp\s*:\s*2\s*;/);
+    expect(title).toMatch(/overflow\s*:\s*hidden\s*;/);
+    expect(exactDeclarations(".taskmate-title.is-expanded")).toMatch(/-webkit-line-clamp\s*:\s*unset\s*;/);
+    expect(exactDeclarations(".taskmate-title-overflow-toggle")).toMatch(/min-height\s*:\s*44px\s*;/);
   });
 
   it("constrains shared task rows to the available list width", () => {
@@ -198,7 +203,11 @@ describe("mobile layout", () => {
   it("gives title and notes the full modal width", () => {
     expect(taskModalSource).toContain('addClass("taskmate-title-setting")');
     expect(taskModalSource).toContain('addClass("taskmate-notes-setting")');
-    expect(declarations(".taskmate-title-setting input")).toMatch(/width\s*:\s*100%\s*;/);
+    expect(taskModalSource).toContain("titleSetting.addTextArea");
+    expect(taskModalSource).toContain('event.key === "Enter"');
+    const title = declarations(".taskmate-title-setting textarea");
+    expect(title).toMatch(/width\s*:\s*100%\s*;/);
+    expect(title).toMatch(/min-height\s*:\s*4\.5rem\s*;/);
     const notes = declarations(".taskmate-notes-setting textarea");
     expect(notes).toMatch(/width\s*:\s*100%\s*;/);
     expect(notes).toMatch(/min-height\s*:\s*9rem\s*;/);

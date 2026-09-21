@@ -6,6 +6,7 @@ import { shouldCommitLabelOnEnter, updateLabelChipInput } from "./label-chip-inp
 import { summarizeLabels } from "./label-summary";
 import { LabelPickerModal } from "./label-picker-modal";
 import { MobileKeyboardScroller } from "./mobile-keyboard-layout";
+import { normalizeTaskTitleInput } from "./task-title";
 
 const DATE_SUGGESTION_KEYS = {
   today: "date.today",
@@ -80,13 +81,27 @@ export class TaskModal extends Modal {
     const titleSetting = new Setting(fields).setName(t("taskModal.title"));
     titleSetting.settingEl.addClass("taskmate-title-setting");
     decorateField(titleSetting, "circle-check", t("taskModal.title"));
-    titleSetting.addText((text) => {
-      text.inputEl.setAttribute("aria-label", t("taskModal.title"));
+    titleSetting.addTextArea((text) => {
+      const titleInput = text.inputEl;
+      titleInput.rows = 3;
+      titleInput.wrap = "soft";
+      titleInput.setAttribute("aria-label", t("taskModal.title"));
+      const resizeTitleInput = () => {
+        titleInput.style.height = "auto";
+        titleInput.style.height = `${titleInput.scrollHeight}px`;
+      };
       text.setPlaceholder(t("taskModal.titlePlaceholder")).setValue(this.draft.title).onChange((value) => {
-        this.draft.title = value;
+        const normalized = normalizeTaskTitleInput(value);
+        if (normalized !== value) titleInput.value = normalized;
+        this.draft.title = normalized;
+        resizeTitleInput();
       });
+      titleInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") event.preventDefault();
+      });
+      window.requestAnimationFrame(resizeTitleInput);
       if (!window.matchMedia("(max-width: 700px)").matches) {
-        window.setTimeout(() => text.inputEl.focus(), 0);
+        window.setTimeout(() => titleInput.focus(), 0);
       }
     });
 

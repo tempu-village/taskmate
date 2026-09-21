@@ -123,6 +123,8 @@ export const ja = {
   "tasks.moreLabels": "ほか{count}件",
   "tasks.moreLabelsAriaLabel": "残り{count}件のラベルを表示",
   "tasks.hideExtraLabels": "追加のラベルを閉じる",
+  "tasks.showFullTitle": "全文を見る",
+  "tasks.hideFullTitle": "折りたたむ",
   "taskModal.addTitle": "タスクを追加",
   "taskModal.editTitle": "タスクを編集",
   "taskModal.title": "タイトル",

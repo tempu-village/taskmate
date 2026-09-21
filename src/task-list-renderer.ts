@@ -16,6 +16,8 @@ export interface TaskListCopy {
   moreLabels: (count: number) => string;
   moreLabelsAriaLabel: (count: number) => string;
   hideExtraLabels: string;
+  showFullTitle: string;
+  hideFullTitle: string;
   sectionTitles: Record<Exclude<TaskListSectionId, "default">, string>;
 }
 
@@ -24,6 +26,33 @@ export interface RenderedTaskList {
 }
 
 type DispatchTaskListAction = (action: TaskListAction) => void | Promise<void>;
+
+export function taskTitleNeedsDisclosure(title: HTMLElement): boolean {
+  return title.clientHeight > 0 && title.scrollHeight > title.clientHeight + 1;
+}
+
+function observeTitleOverflow(title: HTMLElement, toggle: HTMLButtonElement, signal: AbortSignal): void {
+  const view = title.ownerDocument.defaultView;
+  let animationFrame: number | null = null;
+  const refresh = () => {
+    animationFrame = null;
+    if (signal.aborted || title.classList.contains("is-expanded")) return;
+    toggle.hidden = !taskTitleNeedsDisclosure(title);
+  };
+  const scheduleRefresh = () => {
+    if (animationFrame !== null || signal.aborted) return;
+    if (view?.requestAnimationFrame) animationFrame = view.requestAnimationFrame(refresh);
+    else queueMicrotask(refresh);
+  };
+  const ResizeObserverClass = view?.ResizeObserver;
+  const observer = ResizeObserverClass ? new ResizeObserverClass(scheduleRefresh) : null;
+  observer?.observe(title);
+  scheduleRefresh();
+  signal.addEventListener("abort", () => {
+    observer?.disconnect();
+    if (animationFrame !== null && view?.cancelAnimationFrame) view.cancelAnimationFrame(animationFrame);
+  }, { once: true });
+}
 
 function appendElement<K extends keyof HTMLElementTagNameMap>(
   parent: HTMLElement,
@@ -90,6 +119,21 @@ function renderRow(
   title.addEventListener("click", () => {
     if (!selectionMode) void dispatch({ type: "open", taskId: row.id });
   }, { signal });
+
+  const titleToggle = appendElement(body, "button", {
+    className: "taskmate-title-overflow-toggle",
+    text: copy.showFullTitle,
+    attributes: { type: "button", "aria-expanded": "false" }
+  });
+  titleToggle.hidden = true;
+  titleToggle.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const expanded = title.classList.toggle("is-expanded");
+    titleToggle.hidden = false;
+    titleToggle.setAttribute("aria-expanded", String(expanded));
+    titleToggle.textContent = expanded ? copy.hideFullTitle : copy.showFullTitle;
+  }, { signal });
+  observeTitleOverflow(title, titleToggle, signal);
 
   const metadata = appendElement(body, "div", { className: "taskmate-metadata" });
   if (row.date) appendElement(metadata, "span", { text: row.date });

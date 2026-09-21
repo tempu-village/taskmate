@@ -986,6 +986,8 @@ var en = {
   "tasks.moreLabels": "{count} more",
   "tasks.moreLabelsAriaLabel": "Show {count} more labels",
   "tasks.hideExtraLabels": "Hide extra labels",
+  "tasks.showFullTitle": "Show full title",
+  "tasks.hideFullTitle": "Collapse title",
   "taskModal.addTitle": "Add task",
   "taskModal.editTitle": "Edit task",
   "taskModal.title": "Title",
@@ -1180,6 +1182,8 @@ var ja = {
   "tasks.moreLabels": "\u307B\u304B{count}\u4EF6",
   "tasks.moreLabelsAriaLabel": "\u6B8B\u308A{count}\u4EF6\u306E\u30E9\u30D9\u30EB\u3092\u8868\u793A",
   "tasks.hideExtraLabels": "\u8FFD\u52A0\u306E\u30E9\u30D9\u30EB\u3092\u9589\u3058\u308B",
+  "tasks.showFullTitle": "\u5168\u6587\u3092\u898B\u308B",
+  "tasks.hideFullTitle": "\u6298\u308A\u305F\u305F\u3080",
   "taskModal.addTitle": "\u30BF\u30B9\u30AF\u3092\u8FFD\u52A0",
   "taskModal.editTitle": "\u30BF\u30B9\u30AF\u3092\u7DE8\u96C6",
   "taskModal.title": "\u30BF\u30A4\u30C8\u30EB",
@@ -1859,6 +1863,11 @@ var MobileKeyboardScroller = class {
   }
 };
 
+// src/task-title.ts
+function normalizeTaskTitleInput(value) {
+  return value.replace(/[ \t]*(?:\r\n?|\n)+[ \t]*/g, " ");
+}
+
 // src/task-modal.ts
 var DATE_SUGGESTION_KEYS = {
   today: "date.today",
@@ -1916,13 +1925,27 @@ var TaskModal = class extends import_obsidian8.Modal {
     const titleSetting = new import_obsidian8.Setting(fields).setName(t("taskModal.title"));
     titleSetting.settingEl.addClass("taskmate-title-setting");
     decorateField(titleSetting, "circle-check", t("taskModal.title"));
-    titleSetting.addText((text) => {
-      text.inputEl.setAttribute("aria-label", t("taskModal.title"));
+    titleSetting.addTextArea((text) => {
+      const titleInput = text.inputEl;
+      titleInput.rows = 3;
+      titleInput.wrap = "soft";
+      titleInput.setAttribute("aria-label", t("taskModal.title"));
+      const resizeTitleInput = () => {
+        titleInput.style.height = "auto";
+        titleInput.style.height = `${titleInput.scrollHeight}px`;
+      };
       text.setPlaceholder(t("taskModal.titlePlaceholder")).setValue(this.draft.title).onChange((value) => {
-        this.draft.title = value;
+        const normalized = normalizeTaskTitleInput(value);
+        if (normalized !== value) titleInput.value = normalized;
+        this.draft.title = normalized;
+        resizeTitleInput();
       });
+      titleInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") event.preventDefault();
+      });
+      window.requestAnimationFrame(resizeTitleInput);
       if (!window.matchMedia("(max-width: 700px)").matches) {
-        window.setTimeout(() => text.inputEl.focus(), 0);
+        window.setTimeout(() => titleInput.focus(), 0);
       }
     });
     const dateSetting = new import_obsidian8.Setting(fields).setName(t("taskModal.date"));
@@ -4612,6 +4635,31 @@ Sortable.mount(Remove, Revert);
 var sortable_esm_default = Sortable;
 
 // src/task-list-renderer.ts
+function taskTitleNeedsDisclosure(title) {
+  return title.clientHeight > 0 && title.scrollHeight > title.clientHeight + 1;
+}
+function observeTitleOverflow(title, toggle, signal) {
+  const view = title.ownerDocument.defaultView;
+  let animationFrame = null;
+  const refresh = () => {
+    animationFrame = null;
+    if (signal.aborted || title.classList.contains("is-expanded")) return;
+    toggle.hidden = !taskTitleNeedsDisclosure(title);
+  };
+  const scheduleRefresh = () => {
+    if (animationFrame !== null || signal.aborted) return;
+    if (view?.requestAnimationFrame) animationFrame = view.requestAnimationFrame(refresh);
+    else queueMicrotask(refresh);
+  };
+  const ResizeObserverClass = view?.ResizeObserver;
+  const observer = ResizeObserverClass ? new ResizeObserverClass(scheduleRefresh) : null;
+  observer?.observe(title);
+  scheduleRefresh();
+  signal.addEventListener("abort", () => {
+    observer?.disconnect();
+    if (animationFrame !== null && view?.cancelAnimationFrame) view.cancelAnimationFrame(animationFrame);
+  }, { once: true });
+}
 function appendElement(parent, tag, options = {}) {
   const element = parent.ownerDocument.createElement(tag);
   if (options.className) element.className = options.className;
@@ -4661,6 +4709,20 @@ function renderRow(list, row, reorderEnabled, selectionMode, copy, signal, dispa
   title.addEventListener("click", () => {
     if (!selectionMode) void dispatch({ type: "open", taskId: row.id });
   }, { signal });
+  const titleToggle = appendElement(body, "button", {
+    className: "taskmate-title-overflow-toggle",
+    text: copy.showFullTitle,
+    attributes: { type: "button", "aria-expanded": "false" }
+  });
+  titleToggle.hidden = true;
+  titleToggle.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const expanded = title.classList.toggle("is-expanded");
+    titleToggle.hidden = false;
+    titleToggle.setAttribute("aria-expanded", String(expanded));
+    titleToggle.textContent = expanded ? copy.hideFullTitle : copy.showFullTitle;
+  }, { signal });
+  observeTitleOverflow(title, titleToggle, signal);
   const metadata = appendElement(body, "div", { className: "taskmate-metadata" });
   if (row.date) appendElement(metadata, "span", { text: row.date });
   if (row.priority) appendElement(metadata, "span", {
@@ -5133,6 +5195,8 @@ var TodoListView = class extends import_obsidian11.ItemView {
       moreLabels: (count) => t("tasks.moreLabels", { count }),
       moreLabelsAriaLabel: (count) => t("tasks.moreLabelsAriaLabel", { count }),
       hideExtraLabels: t("tasks.hideExtraLabels"),
+      showFullTitle: t("tasks.showFullTitle"),
+      hideFullTitle: t("tasks.hideFullTitle"),
       sectionTitles: {
         overdue: t("view.overdue"),
         today: t("view.today"),
