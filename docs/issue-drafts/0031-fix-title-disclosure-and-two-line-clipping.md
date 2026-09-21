@@ -52,7 +52,7 @@ The selected design keeps Variant A's naturally variable row height but gives it
 
 - Implemented in the Issue #28 working branch.
 - Automated tests cover the 100- and 101-character boundaries, an extended emoji grapheme at the boundary, complete accessible text, and removal of disclosure CSS and controls.
-- Desktop and Android visual verification remains required before closing the Issue.
+- The project owner completed visual verification and approved closing the Issue.
 
 ## Out of scope
 
@@ -124,7 +124,7 @@ DOMの高さ比較はObsidianのボタンスタイル、フォント、レイア
 
 - Issue #28の作業ブランチへ実装済み。
 - 100文字と101文字の境界、境界上の拡張絵文字書記素、完全なアクセシブル文字列、展開用CSSと操作の削除を自動テストで確認する。
-- Issueを閉じる前にPCとAndroidでの目視確認が必要。
+- プロジェクト所有者が目視確認を完了し、Issueを閉じることを承認した。
 
 ## 対象外
 
