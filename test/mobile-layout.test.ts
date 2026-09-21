@@ -114,12 +114,8 @@ describe("mobile layout", () => {
     expect(title).toMatch(/appearance\s*:\s*none\s*;/);
     expect(title).toMatch(/border-radius\s*:\s*0\s*!important\s*;/);
     expect(title).toMatch(/overflow\s*:\s*visible\s*;/);
-    const titleText = exactDeclarations(".taskmate-title-text");
-    expect(titleText).toMatch(/line-height\s*:\s*1\.5\s*;/);
-    expect(titleText).toMatch(/max-height\s*:\s*3em\s*;/);
-    expect(titleText).toMatch(/overflow\s*:\s*hidden\s*;/);
-    expect(exactDeclarations(".taskmate-title.is-expanded .taskmate-title-text")).toMatch(/max-height\s*:\s*none\s*;/);
-    expect(exactDeclarations(".taskmate-title-overflow-toggle")).toMatch(/min-height\s*:\s*44px\s*;/);
+    expect(stylesheet).not.toContain(".taskmate-title-text");
+    expect(stylesheet).not.toContain(".taskmate-title-overflow-toggle");
   });
 
   it("constrains shared task rows to the available list width", () => {

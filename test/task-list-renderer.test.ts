@@ -2,11 +2,7 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { TaskListModel } from "../src/task-list-model";
-import {
-  renderTaskList,
-  syncTaskTitleDisclosure,
-  taskTitleNeedsDisclosure
-} from "../src/task-list-renderer";
+import { renderTaskList } from "../src/task-list-renderer";
 
 const sortableDestroy = vi.fn();
 
@@ -24,8 +20,6 @@ const copy = {
   moreLabels: (count: number) => `${count} more`,
   moreLabelsAriaLabel: (count: number) => `Show ${count} more labels`,
   hideExtraLabels: "Hide extra labels",
-  showFullTitle: "Show full title",
-  hideFullTitle: "Collapse title",
   sectionTitles: { overdue: "Overdue", today: "Today", later: "Later" }
 };
 
@@ -110,60 +104,48 @@ describe("task-list renderer", () => {
     expect(labels).toHaveLength(9);
   });
 
-  it("expands and collapses a long title without opening the task", () => {
+  it("renders the complete title through 100 characters without a disclosure control", () => {
     const container = document.createElement("div");
     const dispatch = vi.fn();
+    const fullTitle = "あ".repeat(100);
     renderTaskList(container, {
       ...model,
       sections: [{ id: "default", rows: [{
         ...model.sections[0].rows[0],
-        title: "A long task title that occupies more than two lines on a narrow mobile screen"
+        title: fullTitle
       }] }]
     }, copy, dispatch);
 
-    const title = container.querySelector<HTMLElement>(".taskmate-title");
-    const titleText = container.querySelector<HTMLElement>(".taskmate-title-text");
-    const toggle = container.querySelector<HTMLButtonElement>(".taskmate-title-overflow-toggle");
-    expect(titleText?.textContent).toContain("A long task title");
-    expect(title?.classList.contains("is-expanded")).toBe(false);
-    expect(toggle?.textContent).toBe("Show full title");
-    expect(toggle?.getAttribute("aria-expanded")).toBe("false");
-
-    toggle?.click();
-    expect(title?.classList.contains("is-expanded")).toBe(true);
-    expect(toggle?.textContent).toBe("Collapse title");
-    expect(toggle?.getAttribute("aria-expanded")).toBe("true");
-    expect(dispatch).not.toHaveBeenCalled();
-
-    toggle?.click();
-    expect(title?.classList.contains("is-expanded")).toBe(false);
-    expect(toggle?.textContent).toBe("Show full title");
+    const title = container.querySelector<HTMLButtonElement>(".taskmate-title");
+    expect(title?.textContent).toBe(fullTitle);
+    expect(title?.getAttribute("aria-label")).toBe(fullTitle);
+    expect(container.querySelector(".taskmate-title-overflow-toggle")).toBeNull();
   });
 
-  it("shows disclosure only when text is actually hidden beyond two lines", () => {
-    const titleText = document.createElement("span");
-    const toggle = document.createElement("button");
-    const setHeights = (clientHeight: number, scrollHeight: number) => {
-      Object.defineProperties(titleText, {
-        clientHeight: { configurable: true, value: clientHeight },
-        scrollHeight: { configurable: true, value: scrollHeight }
-      });
-    };
+  it("truncates titles beyond 100 visible characters without changing the accessible title", () => {
+    const container = document.createElement("div");
+    const fullTitle = `${"あ".repeat(100)}い`;
+    renderTaskList(container, {
+      ...model,
+      sections: [{ id: "default", rows: [{ ...model.sections[0].rows[0], title: fullTitle }] }]
+    }, copy, vi.fn());
 
-    setHeights(24, 24);
-    syncTaskTitleDisclosure(titleText, toggle);
-    expect(taskTitleNeedsDisclosure(titleText)).toBe(false);
-    expect(toggle.hidden).toBe(true);
+    const title = container.querySelector<HTMLButtonElement>(".taskmate-title");
+    expect(title?.textContent).toBe(`${"あ".repeat(100)}…`);
+    expect(title?.getAttribute("aria-label")).toBe(fullTitle);
+  });
 
-    setHeights(48, 48);
-    syncTaskTitleDisclosure(titleText, toggle);
-    expect(taskTitleNeedsDisclosure(titleText)).toBe(false);
-    expect(toggle.hidden).toBe(true);
+  it("does not split an extended grapheme cluster at the 100-character boundary", () => {
+    const container = document.createElement("div");
+    const familyEmoji = "👨‍👩‍👧‍👦";
+    const fullTitle = `${"あ".repeat(99)}${familyEmoji}終`;
+    renderTaskList(container, {
+      ...model,
+      sections: [{ id: "default", rows: [{ ...model.sections[0].rows[0], title: fullTitle }] }]
+    }, copy, vi.fn());
 
-    setHeights(48, 72);
-    syncTaskTitleDisclosure(titleText, toggle);
-    expect(taskTitleNeedsDisclosure(titleText)).toBe(true);
-    expect(toggle.hidden).toBe(false);
+    expect(container.querySelector(".taskmate-title")?.textContent)
+      .toBe(`${"あ".repeat(99)}${familyEmoji}…`);
   });
 
   it("destroys renderer-owned resources", () => {

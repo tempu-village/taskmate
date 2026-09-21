@@ -248,25 +248,6 @@
   word-break: break-word;
   font-weight: 600;
 }
-.taskmate-title-text {
-  display: block;
-  max-height: 3em;
-  overflow: hidden;
-  line-height: 1.5;
-}
-.taskmate-title.is-expanded .taskmate-title-text {
-  max-height: none;
-  overflow: visible;
-}
-.taskmate-title-overflow-toggle {
-  min-height: 44px;
-  padding: 0.2rem 0;
-  color: var(--text-accent);
-  background: transparent;
-  border: 0;
-  box-shadow: none;
-  font-size: var(--font-smallest);
-}
 .taskmate-metadata { display: flex; flex-wrap: wrap; gap: 0.55rem; margin-top: 0.2rem; color: var(--text-muted); font-size: var(--font-smallest); }
 .taskmate-extra-labels {
   display: inline-flex;

@@ -986,8 +986,6 @@ var en = {
   "tasks.moreLabels": "{count} more",
   "tasks.moreLabelsAriaLabel": "Show {count} more labels",
   "tasks.hideExtraLabels": "Hide extra labels",
-  "tasks.showFullTitle": "Show full title",
-  "tasks.hideFullTitle": "Collapse title",
   "taskModal.addTitle": "Add task",
   "taskModal.editTitle": "Edit task",
   "taskModal.title": "Title",
@@ -1182,8 +1180,6 @@ var ja = {
   "tasks.moreLabels": "\u307B\u304B{count}\u4EF6",
   "tasks.moreLabelsAriaLabel": "\u6B8B\u308A{count}\u4EF6\u306E\u30E9\u30D9\u30EB\u3092\u8868\u793A",
   "tasks.hideExtraLabels": "\u8FFD\u52A0\u306E\u30E9\u30D9\u30EB\u3092\u9589\u3058\u308B",
-  "tasks.showFullTitle": "\u5168\u6587\u3092\u898B\u308B",
-  "tasks.hideFullTitle": "\u6298\u308A\u305F\u305F\u3080",
   "taskModal.addTitle": "\u30BF\u30B9\u30AF\u3092\u8FFD\u52A0",
   "taskModal.editTitle": "\u30BF\u30B9\u30AF\u3092\u7DE8\u96C6",
   "taskModal.title": "\u30BF\u30A4\u30C8\u30EB",
@@ -4635,33 +4631,22 @@ Sortable.mount(Remove, Revert);
 var sortable_esm_default = Sortable;
 
 // src/task-list-renderer.ts
-function taskTitleNeedsDisclosure(titleText) {
-  return titleText.clientHeight > 0 && titleText.scrollHeight > titleText.clientHeight + 1;
+var TASK_LIST_TITLE_CHARACTER_LIMIT = 100;
+var taskTitleSegmenter = typeof Intl.Segmenter === "function" ? new Intl.Segmenter(void 0, { granularity: "grapheme" }) : null;
+function* titleGraphemes(title) {
+  if (taskTitleSegmenter) {
+    for (const { segment } of taskTitleSegmenter.segment(title)) yield segment;
+    return;
+  }
+  yield* title;
 }
-function syncTaskTitleDisclosure(titleText, toggle) {
-  toggle.hidden = !taskTitleNeedsDisclosure(titleText);
-}
-function observeTitleOverflow(title, titleText, toggle, signal) {
-  const view = titleText.ownerDocument.defaultView;
-  let animationFrame = null;
-  const refresh = () => {
-    animationFrame = null;
-    if (signal.aborted || title.classList.contains("is-expanded")) return;
-    syncTaskTitleDisclosure(titleText, toggle);
-  };
-  const scheduleRefresh = () => {
-    if (animationFrame !== null || signal.aborted) return;
-    if (view?.requestAnimationFrame) animationFrame = view.requestAnimationFrame(refresh);
-    else queueMicrotask(refresh);
-  };
-  const ResizeObserverClass = view?.ResizeObserver;
-  const observer = ResizeObserverClass ? new ResizeObserverClass(scheduleRefresh) : null;
-  observer?.observe(titleText);
-  scheduleRefresh();
-  signal.addEventListener("abort", () => {
-    observer?.disconnect();
-    if (animationFrame !== null && view?.cancelAnimationFrame) view.cancelAnimationFrame(animationFrame);
-  }, { once: true });
+function taskListTitleText(title, limit = TASK_LIST_TITLE_CHARACTER_LIMIT) {
+  const visible = [];
+  for (const segment of titleGraphemes(title)) {
+    if (visible.length === limit) return `${visible.join("")}\u2026`;
+    visible.push(segment);
+  }
+  return title;
 }
 function appendElement(parent, tag, options = {}) {
   const element = parent.ownerDocument.createElement(tag);
@@ -4710,29 +4695,12 @@ function renderRow(list, row, reorderEnabled, selectionMode, copy, signal, dispa
   const body = appendElement(task, "div", { className: "taskmate-task-body" });
   const title = appendElement(body, "button", {
     className: "taskmate-title",
-    attributes: { type: "button" }
-  });
-  const titleText = appendElement(title, "span", {
-    className: "taskmate-title-text",
-    text: row.title
+    text: taskListTitleText(row.title),
+    attributes: { type: "button", "aria-label": row.title }
   });
   title.addEventListener("click", () => {
     if (!selectionMode) void dispatch({ type: "open", taskId: row.id });
   }, { signal });
-  const titleToggle = appendElement(body, "button", {
-    className: "taskmate-title-overflow-toggle",
-    text: copy.showFullTitle,
-    attributes: { type: "button", "aria-expanded": "false" }
-  });
-  titleToggle.hidden = true;
-  titleToggle.addEventListener("click", (event) => {
-    event.stopPropagation();
-    const expanded = title.classList.toggle("is-expanded");
-    titleToggle.hidden = false;
-    titleToggle.setAttribute("aria-expanded", String(expanded));
-    titleToggle.textContent = expanded ? copy.hideFullTitle : copy.showFullTitle;
-  }, { signal });
-  observeTitleOverflow(title, titleText, titleToggle, signal);
   const metadata = appendElement(body, "div", { className: "taskmate-metadata" });
   if (row.date) appendElement(metadata, "span", { text: row.date });
   if (row.priority) appendElement(metadata, "span", {
@@ -5219,8 +5187,6 @@ var TodoListView = class extends import_obsidian11.ItemView {
       moreLabels: (count) => t("tasks.moreLabels", { count }),
       moreLabelsAriaLabel: (count) => t("tasks.moreLabelsAriaLabel", { count }),
       hideExtraLabels: t("tasks.hideExtraLabels"),
-      showFullTitle: t("tasks.showFullTitle"),
-      hideFullTitle: t("tasks.hideFullTitle"),
       sectionTitles: {
         overdue: t("view.overdue"),
         today: t("view.today"),

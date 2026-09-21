@@ -111,7 +111,7 @@ Selection-only renders preserve the active Task list's vertical scroll position 
 
 A single selected Task opens the normal editor. Multiple selected Tasks can change date, Project, Priority, and Labels together. Bulk editing distinguishes keeping a current value from clearing it; Labels are added or removed rather than implicitly replacing every existing Label. Bulk deletion moves the selected Task files to the Obsidian trash after confirmation and reports partial failures.
 
-Task-list titles initially occupy at most two complete line boxes inside a rectangular, non-pill title action. The disclosure decision measures the rendered inner title text rather than the outer button: a localized Show full title control appears only when content is actually hidden beyond the second line, never for a one-line or fully visible two-line title. Click, tap, or keyboard activation expands that title in place, and the same control collapses it again. The metadata remains in normal document flow below the title and never overlaps it. Selecting the title itself continues to open the Task editor.
+Task-list titles use a rectangular, non-pill title action and naturally wrap to variable height. The list displays at most the first 100 user-perceived characters and appends `…` only when the complete title exceeds that boundary. This deterministic presentation does not measure rendered height or offer an inline title-disclosure control. The complete title remains unchanged in Markdown, search data, actions, and accessible names; selecting the displayed title opens the Task editor, where the existing auto-growing multi-line field shows the complete title. Metadata remains in normal document flow below the title and never overlaps it.
 
 ## Creating and editing Tasks
 
@@ -285,7 +285,7 @@ TaskMateは、Obsidian向けのシンプルなローカルファースト・タ�
 
 選択が1件なら通常の編集画面を開きます。複数件では、日付、プロジェクト、優先度、ラベルをまとめて変更できます。一括編集では、現在値を維持することと値を消すことを区別し、既存ラベルすべてを暗黙に置換せず、追加または削除します。一括削除は、確認後に選択したタスクファイルをObsidianのゴミ箱へ移動し、部分的な失敗を報告します。
 
-タスク一覧のタイトルは、矩形で楕円形ではないタイトル操作の中に、最初は最大2行分の完全な行領域を確保して表示します。展開の要否は外側のボタンではなく、内側に描画されたタイトル文字列を測定して判定します。「全文を見る」は3行目以降が実際に隠れる場合だけ表示し、1行または2行に完全に収まるタイトルには表示しません。クリック、タップ、またはキーボード操作でその場に全文を展開し、同じ操作で折りたためます。メタ情報はタイトルの下の通常フローに置き、重ねません。タイトル自体を選ぶと従来どおり編集画面を開きます。
+タスク一覧のタイトルは、矩形で楕円形ではないタイトル操作の中で、文字数に応じて自然に折り返し、高さを変えます。一覧には見た目上の先頭100文字までを表示し、完全なタイトルがその境界を超える場合だけ末尾へ`…`を付けます。この表示では描画高さを測定せず、一覧内のタイトル展開操作も設けません。Markdown、検索用データ、操作、アクセシブル名には省略しない完全なタイトルを維持します。一覧のタイトルを選ぶと編集画面を開き、既存の自動拡張する複数行欄で全文を表示します。メタ情報はタイトルの下の通常フローに置き、重ねません。
 
 ## タスクの作成と編集
 
