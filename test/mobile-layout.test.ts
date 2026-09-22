@@ -218,6 +218,15 @@ describe("mobile layout", () => {
     expect(options).toMatch(/grid-template-columns\s*:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)\s*;/);
   });
 
+  it("explains the scope of Date sorting in the Scheduled view", () => {
+    expect(viewSource).toContain('this.smartView === "scheduled" && this.sortMode === "date"');
+    expect(viewSource).toContain('text: t("sort.scheduledDateScope")');
+    expect(viewSource).toContain('cls: "taskmate-sort-scope-note"');
+
+    const note = declarations(".taskmate-sort-scope-note");
+    expect(note).toMatch(/color\s*:\s*var\(--text-muted\)\s*;/);
+  });
+
   it("gives title and notes the full modal width", () => {
     expect(taskModalSource).toContain('addClass("taskmate-title-setting")');
     expect(taskModalSource).toContain('addClass("taskmate-notes-setting")');

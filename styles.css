@@ -110,6 +110,12 @@
   background: var(--interactive-accent);
 }
 .taskmate-sort-direction { font-weight: 800; }
+.taskmate-sort-scope-note {
+  margin-top: 0.35rem;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  line-height: 1.35;
+}
 
 .taskmate-search-input,
 .taskmate-label-search,

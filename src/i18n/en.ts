@@ -19,6 +19,7 @@ export const en = {
   "sort.ascending": "ascending",
   "sort.descending": "descending",
   "sort.activeOptionAriaLabel": "{mode}, {direction}. Activate again to reverse the order.",
+  "sort.scheduledDateScope": "Date order applies within each section: Overdue, Today, and Later.",
   "common.add": "+ Add",
   "common.edit": "Edit",
   "common.delete": "Delete",
