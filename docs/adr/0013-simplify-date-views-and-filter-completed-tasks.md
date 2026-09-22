@@ -34,6 +34,10 @@ Within Scheduled, divide the list into these sections in this order:
 
 Give Today a consistent accent marker or badge. This preserves daily focus without restoring Today as a separate primary view.
 
+Keep the Scheduled section order fixed even when an automatic sort is active. Scheduled answers “when should I do this task?” and “when is it due?” at a glance. A stable sequence gives users a predictable place to scan for Overdue, Today, and Later; making the section order follow a sort direction would force them to rediscover each category on every change. The small cost of scanning within a known section is lower than that repeated navigation cost. Date sorting therefore changes task order within each Scheduled section only.
+
+Keep All as one flat list. Its purpose is to assess the complete task set and to let an automatic sort order that complete set globally. Grouping All into date sections would limit sorting to each group and make the view nearly the same as Scheduled, differing mainly by the presence of tasks without dates. No date also remains flat because its tasks share the same absence of a date and have no date-based section to distinguish.
+
 ### Completed tasks
 
 Remove Completed from the date controls. Add an off-by-default `Include completed tasks` control to the Filter screen, after Priority and Labels. Enabling it includes completed tasks in the results while retaining the other active filter criteria.
@@ -62,6 +66,8 @@ Do not use viewport-fixed or sticky positioning for these controls. This avoids 
 - Keep all six date controls: rejected because they consume two rows and include overlapping categories.
 - Keep Seven days: rejected because it substantially overlaps Scheduled, and users can scan the near-term portion of Scheduled.
 - Keep Today as a primary view: rejected because it duplicates Scheduled; a prominent Today section preserves its importance with less navigation.
+- Reorder Scheduled sections with Date sort: rejected because a moving section order makes the fixed date-category scan path less predictable than sorting within stable sections.
+- Group All by date: rejected because it prevents a single global order and makes All overlap with Scheduled.
 - Name the dated view Upcoming: rejected because the view intentionally contains overdue tasks.
 - Keep Completed as a fourth date control: rejected because completion is a state filter rather than a date category.
 - Use `position: sticky` or `position: fixed`: rejected because the controls and results can instead be separated structurally, consistent with ADR 0009.
