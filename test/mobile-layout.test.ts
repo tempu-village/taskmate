@@ -280,6 +280,12 @@ describe("mobile layout", () => {
       /@media \(max-width: 600px\)[\s\S]*?\.taskmate-editor-label-picker-open\s*\{\s*width:\s*100%;\s*\}/
     );
     expect(declarations(".taskmate-label-chip-editor")).toMatch(/flex-wrap\s*:\s*wrap\s*;/);
+    expect(declarations(".taskmate-label-chip-editor")).toMatch(/border\s*:\s*var\(--input-border-width,\s*1px\)\s+solid/);
+    expect(declarations(".taskmate-label-chip-editor:focus-within")).toMatch(/box-shadow\s*:\s*0\s+0\s+0\s+2px/);
+    const focusedInput = declarations(".taskmate-label-chip-input:focus");
+    expect(focusedInput).toMatch(/border\s*:\s*0\s*;/);
+    expect(focusedInput).toMatch(/box-shadow\s*:\s*none\s*;/);
+    expect(focusedInput).toMatch(/outline\s*:\s*none\s*;/);
     expect(declarations(".taskmate-label-add")).toMatch(/min-height\s*:\s*44px\s*;/);
     expect(declarations(".taskmate-editor-label-picker-open")).toMatch(/min-height\s*:\s*44px\s*;/);
   });

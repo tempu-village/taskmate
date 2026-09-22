@@ -625,7 +625,11 @@
   border: 0;
   box-shadow: none;
 }
-.taskmate-label-chip-input:focus { border: 0; box-shadow: none; }
+.taskmate-label-chip-input:focus {
+  border: 0;
+  box-shadow: none;
+  outline: none;
+}
 .taskmate-label-add {
   flex: 0 0 auto;
   min-width: 52px;
