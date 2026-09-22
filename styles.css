@@ -622,16 +622,17 @@
   border-color: var(--background-modifier-border-focus);
   box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
 }
-.taskmate-label-chip-input {
+.taskmate-label-chip-editor > input.taskmate-label-chip-input {
   flex: 1 1 7rem;
   min-width: 5rem;
   min-height: 34px;
   padding: 0.2rem;
-  background: transparent;
-  border: 0;
-  box-shadow: none;
+  appearance: none;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
 }
-.taskmate-label-chip-input:focus { border: 0; box-shadow: none; }
+.taskmate-label-chip-editor > input.taskmate-label-chip-input:focus { outline: none !important; }
 .taskmate-label-add {
   flex: 0 0 auto;
   min-width: 52px;

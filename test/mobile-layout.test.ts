@@ -343,6 +343,21 @@ describe("mobile layout", () => {
     expect(declarations(".taskmate-label-chip-editor")).toMatch(/flex-wrap\s*:\s*wrap\s*;/);
   });
 
+  it("uses the chip editor as the only visible Label-input focus boundary", () => {
+    const editor = declarations(".taskmate-label-chip-editor");
+    const focusedEditor = exactDeclarations(".taskmate-label-chip-editor:focus-within");
+    const input = exactDeclarations(".taskmate-label-chip-editor > input.taskmate-label-chip-input");
+    const focusedInput = exactDeclarations(".taskmate-label-chip-editor > input.taskmate-label-chip-input:focus");
+
+    expect(editor).toMatch(/border\s*:/);
+    expect(focusedEditor).toMatch(/box-shadow\s*:/);
+    expect(input).toMatch(/appearance\s*:\s*none\s*;/);
+    expect(input).toMatch(/background\s*:\s*transparent\s*!important\s*;/);
+    expect(input).toMatch(/border\s*:\s*0\s*!important\s*;/);
+    expect(input).toMatch(/box-shadow\s*:\s*none\s*!important\s*;/);
+    expect(focusedInput).toMatch(/outline\s*:\s*none\s*!important\s*;/);
+  });
+
   it("keeps the end of phone task lists above Obsidian navigation", () => {
     expect(viewSource).toContain('cls: "taskmate-content taskmate-scroll-region"');
     expect(viewSource).toContain('cls: "taskmate-search-results taskmate-scroll-region"');
