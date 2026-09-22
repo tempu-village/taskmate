@@ -23,6 +23,7 @@ export const ja = {
   "sort.ascending": "昇順",
   "sort.descending": "降順",
   "sort.activeOptionAriaLabel": "{mode}、{direction}。もう一度押すと順序を反転します。",
+  "sort.scheduledDateScope": "日付順は「期限切れ・今日・明日以降」の各セクション内に適用されます。",
   "common.add": "＋ 追加",
   "common.edit": "編集",
   "common.delete": "削除",

@@ -1,10 +1,10 @@
-# P2: Scheduled view date sorting does not reorder the overdue section
+# P2: Explain Scheduled view date-sort scope
 
 > English is canonical. The folded Japanese section is an AI-generated reference translation and has not been fully reviewed by a human.
 
 ## Summary
 
-The Scheduled view keeps the overdue section at the top even after the user selects Date sorting and toggles its direction. The All view sorts the same tasks by date as expected.
+The Scheduled view intentionally keeps Overdue, Today, and Later in a fixed order, but it does not explain that Date sorting applies only within each section. This can make the direction control appear ineffective when each section contains only one task.
 
 ## Background
 
@@ -12,18 +12,19 @@ The Scheduled view currently groups tasks into fixed `overdue`, `today`, and `la
 
 ## Requirements
 
-- Confirm whether Date sorting in Scheduled is intended to order all scheduled tasks globally or only tasks within the existing sections.
-- If global sorting is intended, make the selected Date direction determine the order of every scheduled task, including overdue tasks.
-- If the sections are intentionally fixed, make the UI and documentation explain that Date sorting applies only within each section and add a regression test for that contract.
+- Keep the Scheduled sections in the fixed Overdue, Today, and Later order.
+- While Date sorting is active in Scheduled, explain that it applies within each section.
+- Add a regression test for the fixed section order and the selected direction within each section.
 - Keep the Scheduled view definition unchanged: it includes every incomplete task with a date, including overdue, today, and future tasks.
 - Do not change manual rank or persist automatic sorting changes to task files.
 
 ## Acceptance criteria
 
-- Repeatedly activating Date in Scheduled produces an observable ascending/descending change according to the confirmed contract.
+- Repeatedly activating Date in Scheduled changes the task order within sections that contain multiple dates.
 - The same task set in All continues to sort by Date in both directions.
-- Overdue tasks do not appear permanently first unless the confirmed design explicitly requires fixed section order.
-- A regression test covers a Scheduled list containing overdue, today, and future tasks.
+- Overdue, Today, and Later remain in their fixed order.
+- A persistent, mobile-safe explanation of the Date-sort scope appears while Date sorting is active in Scheduled.
+- A regression test covers multiple overdue and future tasks as well as a task due today.
 
 ## Verification
 
@@ -50,7 +51,7 @@ The Scheduled view currently groups tasks into fixed `overdue`, `today`, and `la
 
 > 対応範囲：英語版「Summary」の要約
 
-予定ビューでは、日付順と昇順・降順を切り替えても期限切れセクションが常に先頭に残ります。すべてビューでは同じタスクが日付順に並ぶため、予定ビューだけ並べ替えが効いていないように見えます。
+予定ビューは意図どおり期限切れ、今日、明日以降の順を固定していますが、日付順が各セクション内だけに適用されることを説明していません。各セクションにタスクが1件しかない場合、方向の切り替えが効いていないように見えます。
 
 ## 背景
 
@@ -62,9 +63,9 @@ The Scheduled view currently groups tasks into fixed `overdue`, `today`, and `la
 
 > 対応範囲：英語版「Requirements」の全項目
 
-- 予定ビューの日付順が、すべての予定タスクを横断して並べ替える仕様か、各セクション内だけを並べ替える仕様かを確認する。
-- 全体の日付順が仕様なら、期限切れ・今日・未来を含むすべての予定タスクの順番を日付順の方向に従わせる。
-- セクション順を固定する仕様なら、日付順はセクション内だけに適用されることをUIと文書で説明し、その契約を回帰テストにする。
+- 予定ビューのセクションを、期限切れ、今日、明日以降の固定順に保つ。
+- 予定ビューで日付順が有効な間、各セクション内に適用されることを説明する。
+- 固定セクション順と、各セクション内で選択した方向が反映されることを回帰テストにする。
 - 予定ビューの定義（期限切れ・今日・未来を含む、日付付き未完了タスク）を変更しない。
 - 手動順位を変更せず、自動並べ替えをタスクファイルへ保存しない。
 
@@ -72,10 +73,11 @@ The Scheduled view currently groups tasks into fixed `overdue`, `today`, and `la
 
 > 対応範囲：英語版「Acceptance criteria」の全項目
 
-- 予定ビューで日付順を繰り返し押すと、確定した仕様に従って昇順・降順の変化が目視できる。
+- 予定ビューで日付順を繰り返し押すと、複数の日付を含むセクション内のタスク順が変化する。
 - すべてビューでは、これまでどおり日付順の両方向が動作する。
-- 確定した設計で固定セクションが必要でない限り、期限切れタスクが常に先頭へ固定されない。
-- 期限切れ・今日・未来を含む予定ビューの回帰テストがある。
+- 期限切れ、今日、明日以降は固定順を保つ。
+- 予定ビューで日付順が有効な間、日付順の適用範囲を説明する常設のモバイル対応表示がある。
+- 複数の期限切れ・未来タスクと、今日のタスクを含む回帰テストがある。
 
 ## 検証方法
 

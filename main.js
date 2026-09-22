@@ -886,6 +886,7 @@ var en = {
   "sort.ascending": "ascending",
   "sort.descending": "descending",
   "sort.activeOptionAriaLabel": "{mode}, {direction}. Activate again to reverse the order.",
+  "sort.scheduledDateScope": "Date order applies within each section: Overdue, Today, and Later.",
   "common.add": "+ Add",
   "common.edit": "Edit",
   "common.delete": "Delete",
@@ -1080,6 +1081,7 @@ var ja = {
   "sort.ascending": "\u6607\u9806",
   "sort.descending": "\u964D\u9806",
   "sort.activeOptionAriaLabel": "{mode}\u3001{direction}\u3002\u3082\u3046\u4E00\u5EA6\u62BC\u3059\u3068\u9806\u5E8F\u3092\u53CD\u8EE2\u3057\u307E\u3059\u3002",
+  "sort.scheduledDateScope": "\u65E5\u4ED8\u9806\u306F\u300C\u671F\u9650\u5207\u308C\u30FB\u4ECA\u65E5\u30FB\u660E\u65E5\u4EE5\u964D\u300D\u306E\u5404\u30BB\u30AF\u30B7\u30E7\u30F3\u5185\u306B\u9069\u7528\u3055\u308C\u307E\u3059\u3002",
   "common.add": "\uFF0B \u8FFD\u52A0",
   "common.edit": "\u7DE8\u96C6",
   "common.delete": "\u524A\u9664",
@@ -4950,6 +4952,12 @@ var TodoListView = class extends import_obsidian11.ItemView {
       button.disabled = this.selectionMode;
     });
     this.renderSortControl(controls);
+    if (this.smartView === "scheduled" && this.sortMode === "date") {
+      controls.createDiv({
+        text: t("sort.scheduledDateScope"),
+        cls: "taskmate-sort-scope-note"
+      });
+    }
     const results = container.createDiv({ cls: "taskmate-date-results taskmate-scroll-region" });
     if (this.smartView === "scheduled") this.renderScheduledTaskList(results, visibleTasks, projects);
     else this.renderTaskList(results, visibleTasks, projects, true);

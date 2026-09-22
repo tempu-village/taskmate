@@ -127,6 +127,8 @@ Task rows and the editor initially show up to three selected Labels. If more exi
 
 Task lists support Manual, Date, Priority, and Created sorting. Selecting an already active automatic sort toggles ascending and descending order; the active button displays the direction.
 
+Scheduled keeps its section order fixed as Overdue, Today, and Later. Date sorting changes the task order within each section, and the interface explains this scope while Date sorting is active.
+
 Manual order is one global sequence shared across Smart views and other Task lists. Dragging changes that sequence only in Manual sorting. Date, Priority, and Created sorting are display-only and do not rewrite the stored manual rank.
 
 ## Layout and mobile behavior
@@ -300,6 +302,8 @@ TaskMateは、Obsidian向けのシンプルなローカルファースト・タ�
 ## 並べ替えと手動順
 
 タスク一覧は、手動、日付、優先度、作成日の並べ替えに対応します。有効な自動並べ替えをもう一度選ぶと昇順と降順が切り替わり、有効なボタンに方向を表示します。
+
+予定ビューでは、期限切れ、今日、明日以降のセクション順を固定します。日付順は各セクション内のタスク順を変更し、日付順が有効な間は画面にこの適用範囲を説明します。
 
 手動順は、スマートビューや他のタスク一覧をまたいで共有する一つの並びです。ドラッグは手動並べ替えのときだけ、この並びを変更します。日付、優先度、作成日の並べ替えは表示だけに作用し、保存済みの手動順位を書き換えません。
 

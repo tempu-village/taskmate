@@ -170,6 +170,12 @@ export class TodoListView extends ItemView {
     });
 
     this.renderSortControl(controls);
+    if (this.smartView === "scheduled" && this.sortMode === "date") {
+      controls.createDiv({
+        text: t("sort.scheduledDateScope"),
+        cls: "taskmate-sort-scope-note"
+      });
+    }
     const results = container.createDiv({ cls: "taskmate-date-results taskmate-scroll-region" });
     if (this.smartView === "scheduled") this.renderScheduledTaskList(results, visibleTasks, projects);
     else this.renderTaskList(results, visibleTasks, projects, true);

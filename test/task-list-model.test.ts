@@ -56,17 +56,19 @@ describe("task-list presentation model", () => {
     }]);
   });
 
-  it("builds scheduled sections in overdue, today, and later order", () => {
+  it("keeps scheduled sections fixed while reversing date order within each section", () => {
     const model = buildTaskListModel({
       tasks: [
-        task({ id: "later", date: "2026-09-20" }),
-        task({ id: "overdue", date: "2026-09-18" }),
+        task({ id: "later-near", date: "2026-09-20" }),
+        task({ id: "later-far", date: "2026-09-21" }),
+        task({ id: "overdue-old", date: "2026-09-17" }),
+        task({ id: "overdue-new", date: "2026-09-18" }),
         task({ id: "today", date: "2026-09-19" })
       ],
       projects: [],
       grouping: "scheduled",
       sortMode: "date",
-      sortDirection: "asc",
+      sortDirection: "desc",
       allowReorder: true,
       today: "2026-09-19"
     });
@@ -74,9 +76,9 @@ describe("task-list presentation model", () => {
     expect(model.reorderEnabled).toBe(false);
     expect(model.grouping).toBe("scheduled");
     expect(model.sections.map((section) => [section.id, section.rows.map((row) => row.id)])).toEqual([
-      ["overdue", ["overdue"]],
+      ["overdue", ["overdue-new", "overdue-old"]],
       ["today", ["today"]],
-      ["later", ["later"]]
+      ["later", ["later-far", "later-near"]]
     ]);
   });
 
