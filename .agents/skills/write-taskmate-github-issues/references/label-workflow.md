@@ -1,6 +1,17 @@
 # TaskMate Issue label workflow
 
-Use this workflow only when the user asks to classify Issues or add labels. Do not silently add labels while drafting or updating an Issue.
+Use this workflow for every new TaskMate Issue and when the user asks to classify or add labels to an existing Issue. A new Issue has a label-preview gate before body authoring; an existing Issue has the same gate before any label mutation.
+
+## 0. New-Issue preview gate
+
+Before drafting a new Issue body:
+
+1. Inspect the active repository labels and the relevant repository context.
+2. Propose a label plan using the preview format in section 3. Identify the target as `New Issue — <provisional English title>` and use a one-line intent rather than a body summary.
+3. State the exact selection rule and whether any new or archived label would be needed. If no label is appropriate, explicitly propose `No label` and explain why.
+4. Wait for the user to confirm or revise the plan. Do not draft the Issue body or create the Issue before confirmation.
+
+After confirmation, draft the body. Create the Issue with confirmed reusable labels; create or restore only the confirmed labels needed by the plan, then apply them. Recheck repository labels immediately before the live mutation.
 
 ## 1. Resolve the requested scope
 
