@@ -17,6 +17,8 @@ function task(overrides: Partial<Task> = {}): Task {
     updatedAt: "2026-09-01T00:00:00.000Z",
     completedAt: null,
     sourceNote: null,
+    steps: [],
+    stepSectionRemainder: "",
     notes: "Original notes",
     ...overrides
   };
@@ -29,6 +31,7 @@ function draft(base: Task, overrides: Partial<TaskDraft> = {}): TaskDraft {
     priority: base.priority,
     labels: [...base.labels],
     projectId: base.projectId,
+    steps: base.steps.map((step) => ({ ...step })),
     notes: base.notes,
     sourceNote: base.sourceNote,
     ...overrides

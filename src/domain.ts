@@ -4,6 +4,8 @@ export type SortMode = "manual" | "date" | "priority" | "created";
 export type SortDirection = "asc" | "desc";
 export type Priority = 1 | 2 | 3;
 
+export interface TaskStep { text: string; completed: boolean; date: string | null; }
+
 export interface Project {
   path: string;
   id: string;
@@ -27,6 +29,8 @@ export interface Task {
   updatedAt: string;
   completedAt: string | null;
   sourceNote: string | null;
+  steps: TaskStep[];
+  stepSectionRemainder: string;
   notes: string;
 }
 
@@ -36,6 +40,7 @@ export interface TaskDraft {
   priority: Priority | null;
   labels: string[];
   projectId: string | null;
+  steps: TaskStep[];
   notes: string;
   sourceNote?: string | null;
 }
@@ -86,7 +91,8 @@ export function filterTasks(tasks: Task[], view: SmartView, filters: TaskFilters
     if (!taskMatchesView(task, view, today, filters.includeCompleted)) return false;
     if (filters.priorities.length > 0 && (task.priority === null || !filters.priorities.includes(task.priority))) return false;
     if (filters.labels.length > 0 && !filters.labels.some((label) => task.labels.includes(label))) return false;
-    return needle.length === 0 || `${task.title}\n${task.notes}\n${task.labels.join(" ")}`.toLocaleLowerCase().includes(needle);
+    const stepText = task.steps.map((step) => step.text).join("\n");
+    return needle.length === 0 || `${task.title}\n${task.notes}\n${stepText}\n${task.labels.join(" ")}`.toLocaleLowerCase().includes(needle);
   });
 }
 

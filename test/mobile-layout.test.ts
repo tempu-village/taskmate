@@ -14,6 +14,10 @@ const taskModalSource = readFileSync(
   fileURLToPath(new URL("../src/task-modal.ts", import.meta.url)),
   "utf8"
 );
+const stepModalSource = readFileSync(
+  fileURLToPath(new URL("../src/step-modal.ts", import.meta.url)),
+  "utf8"
+);
 const keyboardLayoutSource = readFileSync(
   fileURLToPath(new URL("../src/mobile-keyboard-layout.ts", import.meta.url)),
   "utf8"
@@ -182,6 +186,24 @@ describe("mobile layout", () => {
     expect(modalContent).toMatch(/display\s*:\s*flex\s*;/);
     expect(modalContent).toMatch(/flex-direction\s*:\s*column\s*;/);
     expect(modalContent).toMatch(/overflow\s*:\s*hidden\s*;/);
+  });
+
+  it("keeps Steps compact and separates list actions from editing", () => {
+    expect(taskModalSource).toContain('handle: ".taskmate-step-body"');
+    expect(taskModalSource).toContain("delay: 250");
+    expect(taskModalSource).not.toContain("taskmate-step-drag");
+    expect(taskModalSource).toContain('cls: "taskmate-step-completed"');
+    expect(taskModalSource).toContain("new StepModal(");
+    expect(taskModalSource).not.toContain('setIcon(moveUp, "arrow-up")');
+    expect(taskModalSource).not.toContain('setIcon(removeStep, "trash-2")');
+    expect(stepModalSource).toContain('setName(t("stepModal.title"))');
+    expect(stepModalSource).toContain('setName(t("stepModal.date"))');
+    expect(stepModalSource).toContain('setIcon(remove, "trash-2")');
+    expect(stepModalSource).not.toContain("completed.checked");
+
+    const row = declarations(".taskmate-step-row");
+    expect(row).toMatch(/grid-template-columns\s*:\s*28px\s+minmax\(0,\s*1fr\)\s+28px\s*;/);
+    expect(row).toMatch(/min-height\s*:\s*54px\s*;/);
   });
 
   it("fits the entire task modal inside the host region above the keyboard", () => {

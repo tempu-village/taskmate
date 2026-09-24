@@ -4,17 +4,22 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { TaskListModel } from "../src/task-list-model";
 import { renderTaskList } from "../src/task-list-renderer";
 
-const sortableDestroy = vi.fn();
+const { sortableDestroy, sortableCreate } = vi.hoisted(() => {
+  const destroy = vi.fn();
+  return {
+    sortableDestroy: destroy,
+    sortableCreate: vi.fn(() => ({ destroy }))
+  };
+});
 
 vi.mock("sortablejs", () => ({
   default: {
-    create: vi.fn(() => ({ destroy: sortableDestroy }))
+    create: sortableCreate
   }
 }));
 
 const copy = {
   empty: "No tasks",
-  reorderAriaLabel: "Reorder",
   completeAriaLabel: (title: string) => `Complete ${title}`,
   selectAriaLabel: (title: string) => `Select ${title}`,
   moreLabels: (count: number) => `${count} more`,
@@ -46,6 +51,7 @@ describe("task-list renderer", () => {
   beforeEach(() => {
     document.body.replaceChildren();
     sortableDestroy.mockClear();
+    sortableCreate.mockClear();
   });
 
   it("renders rows and dispatches user intent without performing persistence", () => {
@@ -66,6 +72,14 @@ describe("task-list renderer", () => {
     expect(container.querySelector(".taskmate-more")).toBeNull();
     expect(container.textContent).toContain("Project");
     expect(container.textContent).toContain("#label");
+    expect(container.querySelector(".taskmate-drag")).toBeNull();
+    expect(sortableCreate).toHaveBeenCalledWith(expect.any(HTMLElement), expect.objectContaining({
+      handle: ".taskmate-task-body",
+      filter: ".taskmate-label-overflow-toggle",
+      preventOnFilter: false,
+      delay: 250,
+      delayOnTouchOnly: true
+    }));
   });
 
   it("uses one selection checkbox and row title toggles selection in selection mode", () => {

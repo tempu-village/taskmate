@@ -17,6 +17,8 @@ function task(overrides: Partial<Task> = {}): Task {
     updatedAt: "2026-09-01T00:00:00.000Z",
     completedAt: null,
     sourceNote: null,
+    steps: [],
+    stepSectionRemainder: "",
     notes: "",
     ...overrides
   };

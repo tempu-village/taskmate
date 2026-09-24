@@ -29,7 +29,7 @@ When these records disagree, implementation and tests show the observable curren
 
 ### Task
 
-Each Task is stored as one Markdown file. Its frontmatter contains a stable UUID, completion state, optional date, optional Priority from 1 through 3, Labels, optional Project ID, one global manual rank, and creation and update timestamps. The Markdown body contains the Task title and optional notes.
+Each Task is stored as one Markdown file. Its frontmatter contains a stable UUID, completion state, optional date, optional Priority from 1 through 3, Labels, optional Project ID, one global manual rank, and creation and update timestamps. The Markdown body contains the Task title, optional ordered Steps, and optional notes. A Step is part of its parent Task and has text, completion state, and an optional date, but no independent identity or lifecycle.
 
 Task filenames are readable and derived from the title. The stable ID is not exposed in the filename. Renaming a Task title may rename its file without changing its identity.
 
@@ -115,7 +115,9 @@ Task-list titles use a rectangular, non-pill title action and naturally wrap to 
 
 ## Creating and editing Tasks
 
-The Task editor supports title, date, Project, Priority, Labels, and notes. It uses distinct leading icons as compact visual landmarks instead of separate external text-label rows. Title is a visually multi-line, auto-growing field so a long value can be reviewed and edited without horizontal panning; visual wrapping does not add line breaks to the stored Task title. Project and Priority remain on separate rows and keep small persistent property names inside their selectors. Date shortcuts provide Today, Tomorrow, 7 days later, and No date, followed by a custom date field. The primary save action is visible when the editor opens on mobile, and opening Add Task on mobile does not automatically focus Title or open the keyboard.
+The Task editor supports title, date, Project, Priority, Labels, ordered Steps, and notes. It uses distinct leading icons as compact visual landmarks instead of separate external text-label rows. Title is a visually multi-line, auto-growing field so a long value can be reviewed and edited without horizontal panning; visual wrapping does not add line breaks to the stored Task title. Project and Priority remain on separate rows and keep small persistent property names inside their selectors. Date shortcuts provide Today, Tomorrow, 7 days later, and No date, followed by a custom date field. The primary save action is visible when the editor opens on mobile, and opening Add Task on mobile does not automatically focus Title or open the keyboard.
+
+Steps use a compact list matching the information density of Task rows: a completion checkbox, title with smaller date metadata beneath it, and edit disclosure. Thin dividers separate white rows without surrounding each title in a wide button surface. Completion changes directly in the list, and dragging the content area reorders the whole Step; touch dragging starts after a 250 ms hold. Adding a Step or selecting its title opens a separate editor containing only Step title and date; deletion is available only when editing an existing Step. The Step editor does not duplicate completion or ordering controls.
 
 The editor uses a chip-based Label input instead of permanently displaying recent-Label suggestions. Selected Labels are removable chips followed by a persistent text input. Pending text becomes a Label through the visible Add action, Enter after IME composition has ended, or an ASCII comma; confirmation keeps the input focused when possible so Japanese Labels can be entered continuously on desktop and mobile. The input and labeled Add action are separate bordered controls on one row, making the type-then-add sequence visible even before focus. On narrow screens, the labeled Choose action moves to a full-width row below them. Save also commits non-empty pending text. At most three chips are initially visible, with the localized overflow control revealing the rest. Choose opens the same indexed multi-select Label picker used by Filter and offers Labels attached to any current Task. Pending text and newly typed draft Labels survive picker use. Confirming the picker updates only the editor draft, while closing or canceling it discards picker changes. Saving a Task updates recent Label history. Selecting a Task title opens the editor. A Task can be completed from its list row, and single-Task deletion is located in the editor action footer with a destructive icon and confirmation.
 
@@ -126,6 +128,8 @@ Task rows and the editor initially show up to three selected Labels. If more exi
 ## Sorting and manual order
 
 Task lists support Manual, Date, Priority, and Created sorting. Selecting an already active automatic sort toggles ascending and descending order; the active button displays the direction.
+
+Task rows do not reserve horizontal space for visible drag handles. In Manual sorting, dragging the Task content reorders it directly, with a 250 ms hold required on touch devices. Checkbox and auxiliary controls retain their own actions. Multiple selection begins through the explicit Select Tasks action rather than a long press, and automatic sorting disables Task dragging.
 
 Scheduled keeps its section order fixed as Overdue, Today, and Later. Date sorting changes the task order within each section, and the interface explains this scope while Date sorting is active.
 
@@ -207,7 +211,7 @@ TaskMateは、Obsidian向けのシンプルなローカルファースト・タ�
 
 ### タスク
 
-各タスクは、一つのMarkdownファイルとして保存します。フロントマターには、安定したUUID、完了状態、任意の日付、1から3の任意の優先度、ラベル、任意のプロジェクトID、全体で一つの手動順位、作成・更新日時を保存します。Markdown本文には、タスク名と任意のメモを保存します。
+各タスクは、一つのMarkdownファイルとして保存します。フロントマターには、安定したUUID、完了状態、任意の日付、1から3の任意の優先度、ラベル、任意のプロジェクトID、全体で一つの手動順位、作成・更新日時を保存します。Markdown本文には、タスク名、任意の順序付きステップ、任意のメモを保存します。ステップは親タスクの一部であり、本文、完了状態、任意の日付を持ちますが、独立した識別子やライフサイクルは持ちません。
 
 タスクのファイル名は読みやすく、タスク名から生成します。安定IDはファイル名に出しません。タスク名を変更してファイル名が変わっても、タスクの同一性は変わりません。
 
@@ -291,7 +295,9 @@ TaskMateは、Obsidian向けのシンプルなローカルファースト・タ�
 
 ## タスクの作成と編集
 
-タスク編集画面では、タスク名、日付、プロジェクト、優先度、ラベル、メモを扱います。外側の説明文字を行ごとに置く代わりに、形の異なる先頭アイコンをコンパクトな目印として使います。プロジェクトと優先度は別々の行にし、選択欄内へ小さい項目名を常に表示します。日付の候補として、今日、明日、7日後、日付なしを表示し、その下に任意の日付欄を設けます。モバイルで編集画面を開いた時点から主要な保存操作を利用でき、追加画面を開いただけではタイトルへ自動フォーカスせず、キーボードも表示しません。
+タスク編集画面では、タスク名、日付、プロジェクト、優先度、ラベル、順序付きステップ、メモを扱います。外側の説明文字を行ごとに置く代わりに、形の異なる先頭アイコンをコンパクトな目印として使います。プロジェクトと優先度は別々の行にし、選択欄内へ小さい項目名を常に表示します。日付の候補として、今日、明日、7日後、日付なしを表示し、その下に任意の日付欄を設けます。モバイルで編集画面を開いた時点から主要な保存操作を利用でき、追加画面を開いただけではタイトルへ自動フォーカスせず、キーボードも表示しません。
+
+ステップはタスク行と同程度の密度を持つコンパクトな一覧として表示し、完了チェック、件名、その下の小さい日付情報、編集を示す表示を持ちます。白い行を細い区切り線で分け、件名を横長のボタン面で囲みません。完了状態は一覧で直接変更し、本文領域のドラッグでステップ全体を並べ替えます。タッチ操作では250ミリ秒の長押し後にドラッグを開始します。ステップの追加または件名の選択で、ステップ名と日付だけを扱う専用編集画面を開きます。削除は既存ステップの編集時だけ利用でき、専用編集画面には完了や並べ替えの操作を重複して置きません。
 
 編集画面では、最近使ったラベルを常時並べる代わりに、チップ方式でラベルを入力します。選択済みラベルは個別に削除できるチップになり、その末尾に入力欄を常設します。入力途中の文字は、文字付きの追加操作、IME変換終了後のEnter、または半角カンマで確定します。可能な場合は確定後もフォーカスを維持するため、PCとスマホの両方で日本語ラベルを続けて入力できます。入力欄と文字付きの追加操作は、別の枠として同じ行へ並べ、フォーカス前でも入力してから追加する流れと境界が分かるようにします。幅の狭い画面では、文字付きの選択操作をその下の全幅行へ移します。保存時には空でない入力途中の文字も確定します。最初は最大3個のチップを表示し、残りは既存の省略表示から展開します。選択操作は、フィルターと同じ索引付き複数選択画面を開きます。この画面には、現在のいずれかのタスクに設定されたラベルを提示します。入力途中の文字と保存前に手入力した新規ラベルは、ピッカーを利用しても維持します。ピッカーの確定は編集中の内容だけを更新し、×またはキャンセルでは変更を破棄します。タスクを保存すると、最近使ったラベルの履歴を更新します。タスク名を選ぶと編集画面を開きます。タスク一覧の行から完了にでき、単一タスクの削除は、削除用アイコンと確認を伴う編集画面下部の操作領域に置きます。
 
@@ -302,6 +308,8 @@ TaskMateは、Obsidian向けのシンプルなローカルファースト・タ�
 ## 並べ替えと手動順
 
 タスク一覧は、手動、日付、優先度、作成日の並べ替えに対応します。有効な自動並べ替えをもう一度選ぶと昇順と降順が切り替わり、有効なボタンに方向を表示します。
+
+タスク行には、横幅を消費する見えるドラッグハンドルを置きません。手動順ではタスク本文を直接ドラッグして並べ替え、タッチ端末では250ミリ秒の長押しを必要とします。チェックボックスと補助操作はそれぞれ固有の操作を維持します。複数選択は長押しではなく、明示的な「タスクを選択」操作から開始し、自動並べ替え中はタスクのドラッグを無効にします。
 
 予定ビューでは、期限切れ、今日、明日以降のセクション順を固定します。日付順は各セクション内のタスク順を変更し、日付順が有効な間は画面にこの適用範囲を説明します。
 

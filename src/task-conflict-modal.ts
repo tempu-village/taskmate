@@ -10,6 +10,7 @@ const FIELD_LABEL_KEYS = {
   priority: "taskModal.priority",
   labels: "taskModal.labels",
   projectId: "taskModal.project",
+  steps: "taskModal.steps",
   notes: "taskModal.notes",
   sourceNote: "conflict.sourceNote"
 } satisfies Record<EditableTaskField, TranslationKey>;
@@ -105,6 +106,12 @@ export class TaskConflictModal extends Modal {
     }
     if (field === "priority" && typeof value === "number") {
       return this.i18n.t("filter.priorityValue", { priority: value });
+    }
+    if (field === "steps" && Array.isArray(value)) {
+      return value.length > 0 ? value.map((step) => {
+        const item = step as { text?: string; completed?: boolean; date?: string | null };
+        return `${item.completed ? "[x]" : "[ ]"} ${item.text ?? ""}${item.date ? ` (${item.date})` : ""}`;
+      }).join("\n") : this.i18n.t("conflict.none");
     }
     if (Array.isArray(value)) return value.length > 0 ? value.join(", ") : this.i18n.t("conflict.none");
     if (value === null || value === undefined || value === "") return this.i18n.t("conflict.none");

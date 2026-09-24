@@ -20,6 +20,8 @@ function task(overrides: Partial<Task> = {}): Task {
     updatedAt: "2026-09-01T00:00:00.000Z",
     completedAt: null,
     sourceNote: null,
+    steps: [],
+    stepSectionRemainder: "",
     notes: "",
     ...overrides
   };
@@ -119,6 +121,27 @@ describe("task Markdown", () => {
   it("round trips the canonical task shape", () => {
     const original = task({ title: "日本語のタスク", date: "2026-09-12", priority: 1, labels: ["仕事", "連絡"], projectId: "project-1", notes: "補足\n二行目" });
     expect(parseTaskMarkdown(original.path, encodeTask(original))).toEqual(original);
+  });
+
+  it("round trips ordered dated Steps and Notes", () => {
+    const original = task({ steps: [
+      { text: "Reserve the hotel", completed: false, date: "2026-10-01" },
+      { text: "Check the train", completed: true, date: null }
+    ], notes: "Remember the passport." });
+    const encoded = encodeTask(original);
+    expect(encoded).toContain("- [ ] Reserve the hotel <!-- due: 2026-10-01 -->\n- [x] Check the train");
+    expect(parseTaskMarkdown(original.path, encoded)).toEqual(original);
+  });
+
+  it("keeps invalid Step deadline comments as text", () => {
+    const content = encodeTask(task()).replace("# One\n", "# One\n\n## Steps\n\n- [ ] Keep this <!-- due: 2026-02-30 -->\n");
+    const parsed = parseTaskMarkdown("TaskMate/Tasks/One.md", content)!;
+    expect(parsed.steps).toEqual([{ text: "Keep this <!-- due: 2026-02-30 -->", completed: false, date: null }]);
+  });
+
+  it("finds a task by Step text", () => {
+    const tasks = [task({ steps: [{ text: "Distinctive hotel phrase", completed: false, date: null }] })];
+    expect(filterTasks(tasks, "all", { priorities: [], labels: [], search: "hotel phrase", includeCompleted: false })).toHaveLength(1);
   });
 
   it("preserves unknown frontmatter properties while replacing managed values", () => {

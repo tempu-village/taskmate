@@ -10,7 +10,6 @@ export type TaskListAction =
 
 export interface TaskListCopy {
   empty: string;
-  reorderAriaLabel: string;
   completeAriaLabel: (title: string) => string;
   selectAriaLabel: (title: string) => string;
   moreLabels: (count: number) => string;
@@ -63,7 +62,6 @@ function appendElement<K extends keyof HTMLElementTagNameMap>(
 function renderRow(
   list: HTMLElement,
   row: TaskListRow,
-  reorderEnabled: boolean,
   selectionMode: boolean,
   copy: TaskListCopy,
   signal: AbortSignal,
@@ -91,13 +89,6 @@ function renderRow(
       void dispatch({ type: "toggle-selected", taskId: row.id });
     }, { signal });
   } else {
-    const drag = appendElement(task, "button", {
-      className: "taskmate-drag",
-      text: "⠿",
-      attributes: { "aria-label": copy.reorderAriaLabel }
-    });
-    drag.disabled = !reorderEnabled;
-
     const checkbox = appendElement(task, "input", {
       attributes: { type: "checkbox", "aria-label": copy.completeAriaLabel(row.title) }
     });
@@ -160,7 +151,7 @@ export function renderTaskList(
   const AbortControllerClass = container.ownerDocument.defaultView?.AbortController ?? AbortController;
   const controller = new AbortControllerClass();
   const list = appendElement(container, "div", {
-    className: `taskmate-list${model.grouping === "scheduled" ? " taskmate-scheduled-list" : ""}${model.selectionMode ? " is-selection-mode" : ""}`,
+    className: `taskmate-list${model.grouping === "scheduled" ? " taskmate-scheduled-list" : ""}${model.selectionMode ? " is-selection-mode" : ""}${model.reorderEnabled ? " is-reorder-enabled" : ""}`,
     attributes: { role: "list" }
   });
   const rowCount = model.sections.reduce((count, section) => count + section.rows.length, 0);
@@ -177,15 +168,17 @@ export function renderTaskList(
         attributes: { role: "heading", "aria-level": "3" }
       });
     }
-    section.rows.forEach((row) => renderRow(list, row, model.reorderEnabled, model.selectionMode, copy, controller.signal, dispatch));
+    section.rows.forEach((row) => renderRow(list, row, model.selectionMode, copy, controller.signal, dispatch));
   });
 
   const sortable = Sortable.create(list, {
     animation: 140,
-    handle: ".taskmate-drag",
+    handle: ".taskmate-task-body",
     draggable: ".taskmate-task",
+    filter: ".taskmate-label-overflow-toggle",
+    preventOnFilter: false,
     disabled: !model.reorderEnabled,
-    delay: 120,
+    delay: 250,
     delayOnTouchOnly: true,
     touchStartThreshold: 4,
     onEnd: (event) => {

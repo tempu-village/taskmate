@@ -8,6 +8,10 @@ TaskMate is a local-first task system in which Markdown remains inspectable and 
 A single independently completable action stored as one Markdown file.
 _Avoid_: Item, card, task note
 
+**Step**:
+A lightweight, optionally dated checklist entry inside one Task. It supports the parent outcome but has no independent identity or lifecycle.
+_Avoid_: Subtask, child Task, checklist Task
+
 **Smart view**:
 A built-in projection of tasks selected by a fixed date or completion rule.
 _Avoid_: Filter, saved search

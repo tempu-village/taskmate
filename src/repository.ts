@@ -134,7 +134,7 @@ export class TaskRepository {
     return task;
   }
 
-  async update(task: Task, patch: Partial<Pick<Task, "title" | "date" | "priority" | "labels" | "projectId" | "notes" | "completed" | "rank">>): Promise<Task> {
+  async update(task: Task, patch: Partial<Pick<Task, "title" | "date" | "priority" | "labels" | "projectId" | "steps" | "notes" | "completed" | "rank">>): Promise<Task> {
     const located = await this.locateTask(task.id, task.path);
     if (located.status === "identity-conflict") throw new DuplicateTaskIdError(located.conflict);
     if (located.status === "missing") throw new Error(`Task file not found: ${task.path}`);
@@ -170,7 +170,7 @@ export class TaskRepository {
       session: {
         taskId: located.task.id,
         openingPath: located.file.path,
-        baseTask: { ...located.task, labels: [...located.task.labels] },
+        baseTask: { ...located.task, labels: [...located.task.labels], steps: located.task.steps.map((step) => ({ ...step })) },
         baseContent: located.content
       }
     };
@@ -279,7 +279,7 @@ export class TaskRepository {
   }
 
   private cloneDraft(draft: TaskDraft): TaskDraft {
-    return { ...draft, labels: [...draft.labels] };
+    return { ...draft, labels: [...draft.labels], steps: draft.steps.map((step) => ({ ...step })) };
   }
 
   private conflictResult(
@@ -293,14 +293,14 @@ export class TaskRepository {
       status: "conflict",
       session,
       draft: this.cloneDraft(draft),
-      current: { ...current, labels: [...current.labels] },
+      current: { ...current, labels: [...current.labels], steps: current.steps.map((step) => ({ ...step })) },
       currentContent,
       comparison
     };
   }
 
   private withUpdatedTimestamp(task: Task): Task {
-    return { ...task, labels: [...task.labels], updatedAt: new Date().toISOString() };
+    return { ...task, labels: [...task.labels], steps: task.steps.map((step) => ({ ...step })), updatedAt: new Date().toISOString() };
   }
 
   private async finishSavedTask(file: TFile, outcome: TaskSaveResult): Promise<TaskSaveResult> {

@@ -1,4 +1,5 @@
 import type { Priority, Task, TaskDraft } from "./domain";
+import { encodeTaskBody, parseTaskBody } from "./task-body";
 
 const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
 
@@ -64,7 +65,7 @@ export function parseTaskMarkdown(path: string, content: string): Task | null {
   const lines = body.split(/\r?\n/);
   const heading = lines.findIndex((line) => line.startsWith("# "));
   const title = heading >= 0 ? lines[heading].slice(2).trim() : "Untitled task";
-  const notes = lines.filter((_, index) => index !== heading).join("\n").trim();
+  const parsedBody = parseTaskBody(lines.filter((_, index) => index !== heading).join("\n").trim());
 
   return {
     path,
@@ -82,14 +83,16 @@ export function parseTaskMarkdown(path: string, content: string): Task | null {
     updatedAt: typeof properties["updated-at"] === "string" ? properties["updated-at"] : "",
     completedAt: typeof properties["completed-at"] === "string" ? properties["completed-at"] : null,
     sourceNote: typeof properties["source-note"] === "string" ? properties["source-note"] : null,
-    notes
+    steps: parsedBody.steps,
+    stepSectionRemainder: parsedBody.stepSectionRemainder,
+    notes: parsedBody.notes
   };
 }
 
 export function encodeTask(task: Task): string {
   const frontmatter = ["---", ...Object.values(TASK_PROPERTY_LINES).map((line) => line(task)), "---"].join("\n");
-  const notes = task.notes.trim();
-  return `${frontmatter}\n\n# ${task.title.trim()}${notes ? `\n\n${notes}` : ""}\n`;
+  const body = encodeTaskBody(task.steps, task.notes, task.stepSectionRemainder);
+  return `${frontmatter}\n\n# ${task.title.trim()}${body ? `\n\n${body}` : ""}\n`;
 }
 
 export function encodeTaskPreservingProperties(task: Task, currentContent: string): string {
@@ -116,8 +119,8 @@ export function encodeTaskPreservingProperties(task: Task, currentContent: strin
     if (!emitted.has(property)) frontmatterLines.push(render(task));
   }
 
-  const notes = task.notes.trim();
-  return `---\n${frontmatterLines.join("\n")}\n---\n\n# ${task.title.trim()}${notes ? `\n\n${notes}` : ""}\n`;
+  const body = encodeTaskBody(task.steps, task.notes, task.stepSectionRemainder);
+  return `---\n${frontmatterLines.join("\n")}\n---\n\n# ${task.title.trim()}${body ? `\n\n${body}` : ""}\n`;
 }
 
 export function taskFromDraft(id: string, path: string, draft: TaskDraft, rank: number, now: string): Task {
@@ -135,6 +138,8 @@ export function taskFromDraft(id: string, path: string, draft: TaskDraft, rank: 
     updatedAt: now,
     completedAt: null,
     sourceNote: draft.sourceNote ?? null,
+    steps: draft.steps.map((step) => ({ ...step })),
+    stepSectionRemainder: "",
     notes: draft.notes.trim()
   };
 }

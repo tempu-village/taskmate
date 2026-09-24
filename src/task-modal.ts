@@ -1,5 +1,7 @@
 import { App, Modal, Setting, setIcon } from "obsidian";
+import Sortable from "sortablejs";
 import type { Project, Task, TaskDraft } from "./domain";
+import { todayKey } from "./domain";
 import { taskDateSuggestions } from "./task-input-suggestions";
 import type { I18n, TranslationKey } from "./i18n";
 import { shouldCommitLabelOnEnter, updateLabelChipInput } from "./label-chip-input";
@@ -7,6 +9,9 @@ import { summarizeLabels } from "./label-summary";
 import { LabelPickerModal } from "./label-picker-modal";
 import { MobileKeyboardScroller } from "./mobile-keyboard-layout";
 import { normalizeTaskTitleInput } from "./task-title";
+import { moveTaskStep, stepDateState } from "./task-steps";
+import { normalizeTaskSteps } from "./task-body";
+import { StepModal } from "./step-modal";
 
 const DATE_SUGGESTION_KEYS = {
   today: "date.today",
@@ -45,6 +50,7 @@ export interface TaskModalLabelOptions {
 export class TaskModal extends Modal {
   private draft: TaskDraft;
   private keyboardScroller: MobileKeyboardScroller | null = null;
+  private stepSortable: Sortable | null = null;
   private readonly baselineAvailableHeight: number;
 
   constructor(
@@ -66,6 +72,7 @@ export class TaskModal extends Modal {
       priority: task?.priority ?? null,
       labels: task?.labels ?? [],
       projectId: task?.projectId ?? defaultProjectId,
+      steps: task?.steps.map((step) => ({ ...step })) ?? [],
       notes: task?.notes ?? "",
       sourceNote: task?.sourceNote ?? null
     };
@@ -297,6 +304,79 @@ export class TaskModal extends Modal {
     });
     refreshLabelEditor();
 
+    const stepsSetting = new Setting(fields).setName(t("taskModal.steps"));
+    stepsSetting.settingEl.addClass("taskmate-steps-setting");
+    decorateField(stepsSetting, "list-checks", t("taskModal.steps"));
+    const stepsEditor = stepsSetting.controlEl.createDiv({ cls: "taskmate-steps-editor" });
+    const stepsHeader = stepsEditor.createDiv({ cls: "taskmate-steps-header" });
+    stepsHeader.createSpan({ text: t("taskModal.steps") });
+    const stepsCount = stepsHeader.createSpan({ cls: "taskmate-steps-count" });
+    const stepsList = stepsEditor.createDiv({ cls: "taskmate-steps-list" });
+    const addStep = stepsEditor.createEl("button", { text: t("taskModal.addStep"), cls: "taskmate-add-step", attr: { type: "button" } });
+    const renderSteps = () => {
+      this.stepSortable?.destroy();
+      this.stepSortable = null;
+      stepsList.empty();
+      const completedCount = this.draft.steps.filter((step) => step.completed).length;
+      stepsCount.textContent = t("taskModal.stepProgress", { completed: completedCount, total: this.draft.steps.length });
+      this.draft.steps.forEach((step, index) => {
+        const row = stepsList.createDiv({ cls: "taskmate-step-row" });
+        row.dataset.stepIndex = String(index);
+        row.toggleClass("is-completed", step.completed);
+        const completed = row.createEl("input", { type: "checkbox", cls: "taskmate-step-completed", attr: { "aria-label": t("taskModal.stepCompletedAriaLabel", { step: index + 1 }) } });
+        completed.checked = step.completed;
+        completed.addEventListener("change", () => {
+          step.completed = completed.checked;
+          row.toggleClass("is-completed", step.completed);
+          const nextCompletedCount = this.draft.steps.filter((item) => item.completed).length;
+          stepsCount.textContent = t("taskModal.stepProgress", { completed: nextCompletedCount, total: this.draft.steps.length });
+        });
+        const body = row.createEl("button", {
+          cls: "taskmate-step-body",
+          attr: { type: "button", "aria-label": t("taskModal.editStepAriaLabel", { title: step.text }) }
+        });
+        body.createDiv({ text: step.text, cls: "taskmate-step-title" });
+        const dateState = stepDateState(step.date, todayKey());
+        const dateText = step.date
+          ? `${step.date}${dateState === "overdue" ? ` · ${t("taskModal.stepOverdue")}` : dateState === "today" ? ` · ${t("taskModal.stepDueToday")}` : ""}`
+          : t("date.none");
+        body.createDiv({ text: dateText, cls: `taskmate-step-metadata${dateState === "overdue" ? " is-overdue" : ""}` });
+        body.addEventListener("click", () => {
+          new StepModal(this.app, step, this.availableRegion, this.i18n, (updated) => {
+            this.draft.steps[index] = updated;
+            renderSteps();
+          }, () => {
+            this.draft.steps.splice(index, 1);
+            renderSteps();
+          }).open();
+        });
+        const disclosure = row.createSpan({ cls: "taskmate-step-disclosure", attr: { "aria-hidden": "true" } });
+        setIcon(disclosure, "chevron-right");
+      });
+      if (this.draft.steps.length > 1) {
+        this.stepSortable = Sortable.create(stepsList, {
+          animation: 140,
+          handle: ".taskmate-step-body",
+          draggable: ".taskmate-step-row",
+          delay: 250,
+          delayOnTouchOnly: true,
+          touchStartThreshold: 4,
+          onEnd: (event) => {
+            if (event.oldIndex === undefined || event.newIndex === undefined || event.oldIndex === event.newIndex) return;
+            this.draft.steps = moveTaskStep(this.draft.steps, event.oldIndex, event.newIndex);
+            renderSteps();
+          }
+        });
+      }
+    };
+    addStep.addEventListener("click", () => {
+      new StepModal(this.app, null, this.availableRegion, this.i18n, (step) => {
+        this.draft.steps.push(step);
+        renderSteps();
+      }).open();
+    });
+    renderSteps();
+
     const notesSetting = new Setting(fields).setName(t("taskModal.notes"));
     notesSetting.settingEl.addClass("taskmate-notes-setting");
     decorateField(notesSetting, "notebook-pen", t("taskModal.notes"));
@@ -331,6 +411,7 @@ export class TaskModal extends Modal {
     save.addEventListener("click", async () => {
       if (!this.draft.title.trim()) return;
       updateFromInput(true, false);
+      this.draft.steps = normalizeTaskSteps(this.draft.steps);
       save.disabled = true;
       try {
         if (await this.onSave(this.draft)) this.close();
@@ -349,6 +430,8 @@ export class TaskModal extends Modal {
   }
 
   onClose(): void {
+    this.stepSortable?.destroy();
+    this.stepSortable = null;
     this.keyboardScroller?.disconnect();
     this.keyboardScroller = null;
     this.contentEl.empty();

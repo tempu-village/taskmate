@@ -72,7 +72,7 @@ describe("locale resolution", () => {
 
 describe("UI copy boundaries", () => {
   it("keeps Japanese user-facing copy in the Japanese catalog", () => {
-    const files = ["domain.ts", "label-manager-modal.ts", "label-picker-modal.ts", "main.ts", "project-modal.ts", "settings.ts", "task-input-suggestions.ts", "task-modal.ts", "view.ts"];
+    const files = ["domain.ts", "label-manager-modal.ts", "label-picker-modal.ts", "main.ts", "project-modal.ts", "settings.ts", "step-modal.ts", "task-input-suggestions.ts", "task-modal.ts", "view.ts"];
     for (const file of files) {
       const source = readFileSync(fileURLToPath(new URL(`../src/${file}`, import.meta.url)), "utf8");
       expect(source, file).not.toMatch(/[ぁ-んァ-ヶ一-龠]/);
@@ -80,7 +80,7 @@ describe("UI copy boundaries", () => {
   });
 
   it("rejects new literal copy at known rendering seams", () => {
-    const files = ["label-manager-modal.ts", "label-picker-modal.ts", "main.ts", "project-modal.ts", "settings.ts", "task-modal.ts", "view.ts"];
+    const files = ["label-manager-modal.ts", "label-picker-modal.ts", "main.ts", "project-modal.ts", "settings.ts", "step-modal.ts", "task-modal.ts", "view.ts"];
     const allowedText = new Set(["TaskMate", "⠿", "•••", "‹", "✓"]);
     for (const file of files) {
       const source = readFileSync(fileURLToPath(new URL(`../src/${file}`, import.meta.url)), "utf8");

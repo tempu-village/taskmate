@@ -24,6 +24,7 @@ TaskMate also includes an optional portable Agent Skill. The Skill turns explici
 - Markdown-backed projects with five recent projects, rename, and safe deletion
 - Priority 1–3 and up to 500 labels, with an indexed label picker, inline favorites, and filters for priority, label, and completion state
 - One-tap Today, Tomorrow, 7 days later, and No date suggestions
+- Compact ordered Steps with completion controls, optional dates, drag reordering, and a focused editor
 - Up to 10 favorite and 10 non-duplicate recently saved label suggestions
 - One global manual drag order plus date, priority, and creation sorting
 - Auto, English, and 日本語 language settings with English fallback

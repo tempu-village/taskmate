@@ -24,12 +24,23 @@ source-note: "Notes/meeting.md"
 
 # Independently completable action
 
-Optional context, acceptance details, or steps.
+## Steps
+
+- [ ] Reserve the hotel <!-- due: 2026-10-01 -->
+- [x] Check the train schedule
+
+## Notes
+
+Optional context or acceptance details.
 ```
 
 Use one `date` with `YYYY-MM-DD` semantics. `priority` is `1`, `2`, `3`, or `null`; 1 is highest. `labels` is an inline JSON string array with no more than 500 distinct labels exposed by the plugin. `project` is a project ID or `null`, never a display name. `completed-at` is an ISO timestamp when completed and `null` otherwise. `rank` is the single global manual order; automatic sorting is display-only and must not rewrite it.
 
 Older files with `important: true` are read as priority 1 for migration compatibility. New writes must use `priority`.
+
+## Steps and Notes
+
+A Step is part of its parent Task, not a child Task. Keep Step order exactly as written. Use `- [ ] text` or `- [x] text`; an optional date is a calendar-valid trailing `<!-- due: YYYY-MM-DD -->` comment. Treat any other comment as visible Step text and preserve it. Parent completion and Step completion stay independent. Use `--steps-json` with `create` or `update` to pass an ordered array of `{ "text": string, "completed": boolean, "date": "YYYY-MM-DD" | null }` objects.
 
 ## Task boundaries
 

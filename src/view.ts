@@ -9,8 +9,6 @@ import { compareDisplayText } from "./i18n";
 import type TaskMatePlugin from "./main";
 import { TaskFilterModal } from "./filter-modal";
 import { ProjectModal } from "./project-modal";
-import { TaskModal } from "./task-modal";
-import type { TaskModalLabelOptions } from "./task-modal";
 import { TaskConflictModal } from "./task-conflict-modal";
 import { DuplicateTaskIdError } from "./repository";
 import type { TaskSaveConflict, TaskSaveResult } from "./repository";
@@ -22,6 +20,8 @@ import { buildTaskListModel } from "./task-list-model";
 import type { TaskListModel } from "./task-list-model";
 import { renderTaskList as renderTaskListDom } from "./task-list-renderer";
 import type { RenderedTaskList, TaskListAction, TaskListCopy } from "./task-list-renderer";
+import { TaskModal } from "./task-modal";
+import type { TaskModalLabelOptions } from "./task-modal";
 import { TaskFilterState } from "./task-filter-state";
 import { captureTaskListScrollTop, restoreTaskListScrollTop } from "./scroll-position";
 
@@ -425,7 +425,6 @@ export class TodoListView extends ItemView {
     const { t } = this.plugin.i18n();
     return {
       empty: t("tasks.empty"),
-      reorderAriaLabel: t("tasks.reorderAriaLabel"),
       completeAriaLabel: (title) => t("tasks.completeAriaLabel", { title }),
       selectAriaLabel: (title) => t("tasks.selectAriaLabel", { title }),
       moreLabels: (count) => t("tasks.moreLabels", { count }),

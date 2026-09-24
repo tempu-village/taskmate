@@ -219,7 +219,6 @@
   outline-offset: -2px;
 }
 .taskmate-task.is-completed .taskmate-title { text-decoration: line-through; color: var(--text-muted); }
-.taskmate-drag,
 .taskmate-more,
 .taskmate-title,
 .taskmate-project-open,
@@ -229,9 +228,14 @@
   box-shadow: none;
 }
 
-.taskmate-drag { cursor: grab; color: var(--text-faint); font-size: 1.1rem; padding: 0.45rem; }
-.taskmate-drag:disabled { visibility: hidden; }
 .taskmate-task-body { flex: 1; min-width: 0; max-width: 100%; }
+.taskmate-list.is-reorder-enabled .taskmate-task-body {
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.taskmate-list.is-reorder-enabled .taskmate-task-body:active { cursor: grabbing; }
 .taskmate-title {
   display: block;
   appearance: none;
@@ -527,6 +531,12 @@
   max-height: var(--taskmate-modal-available-height, calc(100dvh - 2rem));
   translate: 0 var(--taskmate-modal-shift, 0px);
 }
+.taskmate-step-modal {
+  display: flex;
+  flex-direction: column;
+  max-height: var(--taskmate-modal-available-height, calc(100dvh - 2rem));
+  translate: 0 var(--taskmate-modal-shift, 0px);
+}
 .taskmate-task-modal .modal-content {
   flex: 1 1 auto;
   min-height: 0;
@@ -534,7 +544,22 @@
   flex-direction: column;
   overflow: hidden;
 }
+.taskmate-step-modal .modal-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 .taskmate-task-fields {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding-bottom: var(--taskmate-keyboard-clearance, 0px);
+  padding-inline-end: 0.25rem;
+  overflow-y: auto;
+  scroll-padding-bottom: var(--taskmate-keyboard-clearance, 0px);
+}
+.taskmate-step-modal-fields {
   flex: 1 1 auto;
   min-height: 0;
   padding-bottom: var(--taskmate-keyboard-clearance, 0px);
@@ -662,6 +687,65 @@
   min-height: 9rem;
   resize: vertical;
 }
+.taskmate-steps-setting .setting-item-control { width: 100%; }
+.taskmate-steps-editor { width: 100%; }
+.taskmate-steps-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 30px;
+  color: var(--text-muted);
+  font-size: var(--font-smallest);
+  font-weight: 600;
+}
+.taskmate-steps-list {
+  width: 100%;
+  border-top: 1px solid var(--background-modifier-border);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+.taskmate-step-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 28px;
+  align-items: center;
+  min-height: 54px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+.taskmate-step-row:last-child { border-bottom: 0; }
+.taskmate-step-completed { width: 20px; height: 20px; margin: 0; }
+.taskmate-step-body {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 50px;
+  padding: 6px 8px;
+  text-align: left;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.taskmate-step-body:active { cursor: grabbing; }
+.taskmate-step-title {
+  overflow: hidden;
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.taskmate-step-metadata { margin-top: 2px; color: var(--text-muted); font-size: var(--font-smallest); }
+.taskmate-step-metadata.is-overdue { color: var(--text-error); }
+.taskmate-step-row.is-completed .taskmate-step-title { color: var(--text-muted); text-decoration: line-through; }
+.taskmate-step-disclosure { display: inline-flex; color: var(--text-muted); }
+.taskmate-step-disclosure svg { width: 16px; height: 16px; }
+.taskmate-add-step { width: 100%; min-height: 42px; margin-top: 0.5rem; }
+.taskmate-step-modal-fields .setting-item { display: block; }
+.taskmate-step-modal-fields .setting-item-info { margin-bottom: 0.35rem; }
+.taskmate-step-modal-fields .setting-item-control,
+.taskmate-step-modal-fields input { width: 100%; }
 .taskmate-modal-actions {
   flex: 0 0 auto;
   flex-wrap: wrap;
@@ -725,7 +809,8 @@
   .taskmate-date-results,
   .taskmate-filter-results { padding: 0 0.65rem 1rem; }
   .taskmate-task { min-height: 56px; }
-  .taskmate-drag { touch-action: none; }
+  .taskmate-list.is-reorder-enabled .taskmate-task-body,
+  .taskmate-step-body { touch-action: manipulation; }
   .taskmate-suggestion-chip { min-height: 44px; }
   .taskmate-label-picker-modal .modal-content { height: min(65dvh, 32rem); }
   .taskmate-label-picker-results {

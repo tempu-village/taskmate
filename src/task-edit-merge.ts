@@ -6,6 +6,7 @@ export const EDITABLE_TASK_FIELDS = [
   "priority",
   "labels",
   "projectId",
+  "steps",
   "notes",
   "sourceNote"
 ] as const satisfies readonly (keyof TaskDraft)[];
@@ -27,7 +28,8 @@ export interface TaskEditComparison {
 }
 
 function cloneValue<Value>(value: Value): Value {
-  return Array.isArray(value) ? [...value] as Value : value;
+  if (Array.isArray(value)) return value.map((item) => typeof item === "object" && item !== null ? { ...item } : item) as Value;
+  return value;
 }
 
 function valuesEqual(left: unknown, right: unknown): boolean {
@@ -47,7 +49,7 @@ function assignEditableField<Field extends EditableTaskField>(task: Task, field:
 }
 
 export function compareTaskEdit(base: Task, draft: TaskDraft, current: Task): TaskEditComparison {
-  const merged: Task = { ...current, labels: [...current.labels] };
+  const merged: Task = { ...current, labels: [...current.labels], steps: cloneValue(current.steps) };
   const conflicts: TaskFieldConflict[] = [];
   let externalChangesPreserved = false;
 
@@ -79,7 +81,7 @@ export function applyTaskConflictChoices(
   comparison: TaskEditComparison,
   choices: Partial<Record<EditableTaskField, TaskConflictChoice>>
 ): Task {
-  const resolved: Task = { ...comparison.merged, labels: [...comparison.merged.labels] };
+  const resolved: Task = { ...comparison.merged, labels: [...comparison.merged.labels], steps: cloneValue(comparison.merged.steps) };
   for (const conflict of comparison.conflicts) {
     const choice = choices[conflict.field] ?? "current";
     assignEditableField(resolved, conflict.field, choice === "draft" ? conflict.draftValue : conflict.currentValue);

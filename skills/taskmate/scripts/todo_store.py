@@ -19,6 +19,8 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 FRONTMATTER_RE = re.compile(r"\A---\r?\n(.*?)\r?\n---(?:\r?\n|\Z)", re.DOTALL)
 IMPORT_KEYS = {"taskmate-import-status", "taskmate-imported-at", "taskmate-imported-hash", "taskmate-task-ids"}
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+STEP_LINE_RE = re.compile(r"^- \[([ xX])\](?: (.*))?$")
+DUE_SUFFIX_RE = re.compile(r"^(.*?)(?:\s+<!-- due: (\d{4}-\d{2}-\d{2}) -->)\s*$")
 
 
 def fail(message: str) -> None:
@@ -99,6 +101,70 @@ def yaml_list(lines: List[str], key: str) -> List[str]:
     return result
 
 
+def is_calendar_date(value: str) -> bool:
+    if not DATE_RE.fullmatch(value): return False
+    try: dt.date.fromisoformat(value)
+    except ValueError: return False
+    return True
+
+
+def split_step_deadline(raw_text: str) -> Tuple[str, Optional[str]]:
+    text, date = raw_text, None
+    while True:
+        due = DUE_SUFFIX_RE.fullmatch(text)
+        if not due or not is_calendar_date(due.group(2)) or not due.group(1).strip(): break
+        if date is None: date = due.group(2)
+        text = due.group(1).rstrip()
+    return text, date
+
+
+def normalized_steps(values: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    steps = []
+    for raw in values:
+        if not isinstance(raw, dict): fail("each step must be an object")
+        text, text_date = split_step_deadline(re.sub(r"\r?\n", " ", str(raw.get("text") or "")).strip())
+        if not text: continue
+        date = raw.get("date") if raw.get("date") is not None else text_date
+        if date is not None and (not isinstance(date, str) or not is_calendar_date(date)): fail("step date must be a calendar-valid YYYY-MM-DD or null")
+        completed = raw.get("completed", False)
+        if not isinstance(completed, bool): fail("step completed must be true or false")
+        steps.append({"text": text, "completed": completed, "date": date})
+    return steps
+
+
+def parse_steps_json(raw: str) -> List[Dict[str, Any]]:
+    try: value = json.loads(raw)
+    except json.JSONDecodeError as error: raise argparse.ArgumentTypeError(f"invalid Steps JSON: {error}") from error
+    if not isinstance(value, list): raise argparse.ArgumentTypeError("Steps JSON must be an array")
+    return normalized_steps(value)
+
+
+def parse_task_body(body: str) -> Tuple[List[Dict[str, Any]], str, str]:
+    lines = body.strip().splitlines()
+    steps_heading = next((i for i, line in enumerate(lines) if line.strip() == "## Steps"), -1)
+    if steps_heading < 0: return [], body.strip(), ""
+    notes_heading = next((i for i, line in enumerate(lines) if i > steps_heading and line.strip() == "## Notes"), -1)
+    section_end = notes_heading if notes_heading >= 0 else next((i for i, line in enumerate(lines) if i > steps_heading and line.startswith("## ")), len(lines))
+    steps, remainder = [], []
+    for line in lines[steps_heading + 1:section_end]:
+        checkbox = STEP_LINE_RE.fullmatch(line)
+        raw_text = (checkbox.group(2) or "").strip() if checkbox else ""
+        if not checkbox or not raw_text: remainder.append(line); continue
+        text, date = split_step_deadline(raw_text)
+        steps.append({"text": text, "completed": checkbox.group(1).lower() == "x", "date": date})
+    before = "\n".join(lines[:steps_heading]).strip()
+    after = "\n".join(lines[notes_heading + 1:]).strip() if notes_heading >= 0 else ""
+    return steps, "\n\n".join(v for v in (before, after) if v), "\n".join(remainder).strip()
+
+
+def encode_task_body(steps: Iterable[Dict[str, Any]], notes: str, remainder: str = "") -> str:
+    normalized, extra, clean_notes = normalized_steps(steps), remainder.strip(), notes.strip()
+    if not normalized and not extra: return clean_notes
+    lines = [f"- [{'x' if step['completed'] else ' '}] {step['text']}" + (f" <!-- due: {step['date']} -->" if step["date"] else "") for step in normalized]
+    section = "\n".join(["## Steps", "", *lines, *(["", extra] if extra else [])]).rstrip()
+    return f"{section}\n\n## Notes\n\n{clean_notes}" if clean_notes else section
+
+
 def parse_task(path: Path, vault: Path) -> Optional[Dict[str, Any]]:
     text = path.read_text(encoding="utf-8")
     lines, body = split_document(text)
@@ -107,7 +173,8 @@ def parse_task(path: Path, vault: Path) -> Optional[Dict[str, Any]]:
         return None
     heading = next((line[2:].strip() for line in body.splitlines() if line.startswith("# ")), "Untitled task")
     body_lines = body.strip().splitlines()
-    notes = "\n".join(line for line in body_lines if not line.startswith("# ")).strip()
+    body_without_title = "\n".join(line for line in body_lines if not line.startswith("# ")).strip()
+    steps, notes, step_remainder = parse_task_body(body_without_title)
     raw_priority = props.get("priority")
     priority = raw_priority if raw_priority in (1, 2, 3) else (1 if props.get("important") is True else None)
     labels = props.get("labels")
@@ -125,6 +192,8 @@ def parse_task(path: Path, vault: Path) -> Optional[Dict[str, Any]]:
         "updated-at": props.get("updated-at") or "",
         "completed-at": props.get("completed-at"),
         "source-note": props.get("source-note"),
+        "steps": steps,
+        "step-section-remainder": step_remainder,
         "notes": notes,
     }
 
@@ -144,8 +213,8 @@ def quote(value: Any) -> str:
 def encode_task(task: Dict[str, Any]) -> str:
     keys = ["id", "completed", "date", "priority", "labels", "project", "rank", "created-at", "updated-at", "completed-at", "source-note"]
     frontmatter = ["---", "type: todo"] + [f"{key}: {quote(task.get(key))}" for key in keys] + ["---"]
-    notes = str(task.get("notes") or "").strip()
-    suffix = f"\n\n{notes}" if notes else ""
+    body = encode_task_body(task.get("steps") or [], str(task.get("notes") or ""), str(task.get("step-section-remainder") or ""))
+    suffix = f"\n\n{body}" if body else ""
     return "\n".join(frontmatter) + f"\n\n# {str(task['title']).strip()}{suffix}\n"
 
 
@@ -259,6 +328,8 @@ def create_task(vault: Path, override: Optional[str], draft: Dict[str, Any]) -> 
         "updated-at": timestamp,
         "completed-at": None,
         "source-note": draft.get("source-note"),
+        "steps": normalized_steps(draft.get("steps") or []),
+        "step-section-remainder": "",
         "notes": draft.get("notes") or "",
     }
     path = available_task_path(folder, title)
@@ -272,7 +343,7 @@ def command_create(args: argparse.Namespace) -> None:
     result = create_task(args.vault, args.task_folder, {
         "title": args.title, "date": args.date, "priority": args.priority,
         "labels": args.label, "project": args.project,
-        "source-note": args.source_note, "notes": args.notes,
+        "source-note": args.source_note, "steps": args.steps_json or [], "notes": args.notes,
     })
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
@@ -291,6 +362,7 @@ def update_task(vault: Path, override: Optional[str], identifier: str, patch: Di
             task[key] = patch[key]
     if "labels" in patch:
         task["labels"] = normalized_labels(patch["labels"] or [])
+    if "steps" in patch: task["steps"] = normalized_steps(patch["steps"] or [])
     if not str(task["title"]).strip():
         fail("title is required")
     validate_date(task["date"])
@@ -318,6 +390,7 @@ def command_update(args: argparse.Namespace) -> None:
         patch["project"] = None if args.project == "none" else args.project
     if args.notes is not None:
         patch["notes"] = args.notes
+    if args.steps_json is not None: patch["steps"] = args.steps_json
     print(json.dumps(update_task(args.vault, args.task_folder, args.id, patch), ensure_ascii=False, indent=2))
 
 
@@ -467,6 +540,7 @@ def parser() -> argparse.ArgumentParser:
     create.add_argument("--project")
     create.add_argument("--notes")
     create.add_argument("--source-note")
+    create.add_argument("--steps-json", type=parse_steps_json)
     create.set_defaults(run=command_create)
 
     update = commands.add_parser("update")
@@ -477,6 +551,7 @@ def parser() -> argparse.ArgumentParser:
     update.add_argument("--label", action="append", default=None, help="replace labels; repeat for multiple labels")
     update.add_argument("--project", help="project ID or none")
     update.add_argument("--notes")
+    update.add_argument("--steps-json", type=parse_steps_json)
     update.set_defaults(run=command_update)
 
     complete = commands.add_parser("complete")

@@ -110,6 +110,19 @@ class TodoStoreTest(unittest.TestCase):
         cleared = self.run_store("update", "--id", created["id"], "--label", "")
         self.assertEqual(cleared["labels"], [])
 
+    def test_steps_round_trip_and_reorder(self):
+        steps = [
+            {"text": "Reserve hotel", "completed": False, "date": "2026-10-01"},
+            {"text": "Check train", "completed": True, "date": None},
+        ]
+        created = self.run_store("create", "--title", "Plan trip", "--notes", "Passport", "--steps-json", json.dumps(steps))
+        reordered = [steps[1], steps[0]]
+        updated = self.run_store("update", "--id", created["id"], "--steps-json", json.dumps(reordered))
+        self.assertEqual(updated["steps"], reordered)
+        markdown = (self.vault / created["path"]).read_text(encoding="utf-8")
+        self.assertLess(markdown.index("Check train"), markdown.index("Reserve hotel"))
+        self.assertIn("<!-- due: 2026-10-01 -->", markdown)
+
 
 if __name__ == "__main__":
     unittest.main()
