@@ -275,7 +275,7 @@ def revised_proposal(proposal: Dict[str, Any], revision: Dict[str, Any], vault: 
         "targetTaskId": revision.get("targetTaskId", proposal["target-task-id"]),
     }
     normalized = normalize_proposal(raw, {proposal["source-note"]: {"hash": proposal["source-hash"]}}, vault, task_override)
-    for stable in ("proposal-id", "proposal-session", "created-at"):
+    for stable in ("proposal-id", "proposal-session", "created-at", "path"):
         normalized[stable] = proposal[stable]
     return normalized
 

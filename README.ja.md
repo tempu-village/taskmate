@@ -3,7 +3,7 @@
 [English](README.md) | 日本語
 
 <!-- translation-status: ai-translated -->
-<!-- translation-source-sha256: cb92f032b3fcf5cf402ef78d9c46c5e2ea93c47133a8d9fd515d25842b69aac7 -->
+<!-- translation-source-sha256: 09e66bf807a66517b006b3ad5156d2a0ce8090fcc4592dd8a6e43580c9161958 -->
 
 > 翻訳状態：`ai-translated`
 >
@@ -41,6 +41,8 @@ TaskMateには、任意で使用できるポータブルなAgent Skillも含ま�
 - エージェントが行動を作成・統合・除外する前の段階的な提案確認
 
 ## クイックスタート
+
+初回の練習は[最初のTaskMateタスク](docs/user/getting-started.md)、目的別の操作は[利用者向けガイド](docs/user/README.md)を参照してください。
 
 1. TaskMateをインストールして有効にします。
 2. コマンドパレットを開き、**TaskMate: タスク一覧を開く**を実行します。
@@ -209,17 +211,7 @@ Skillは`TaskMate/Proposals/Active`へ提案を書き込み、この段階では
 
 ## トラブルシューティング
 
-タスクは同期されるのにAndroidでTaskMateが表示されない場合は、次をすべて確認してください。
-
-- 両方の端末で`Installed community plugin list`と`Active community plugin list`が有効になっている。
-- PC側のプラグインフォルダが、Obsidian Syncに接続した同じVault内にある。
-- パスが`.obsidian/plugins/taskmate/`で、`taskmate`フォルダが重複していない。
-- `main.js`、`manifest.json`、`styles.css`が存在する。
-- 両方の端末で**Fully Synced**と表示されている。
-- Androidで**設定 → コミュニティプラグイン → インストール済みプラグイン**を開いた。
-- TaskMateがすでに有効だった場合も含め、同期後に一度無効化してから再び有効化した。
-
-バグを報告する際は、TaskMateのバージョン、Obsidianのバージョン、OS、再現手順、必要に応じて個人情報を除いたタスク例を含めてください。Vault内の非公開情報を公開しないでください。
+復旧方法は[トラブルシューティング](docs/user/troubleshooting.md)を参照してください。バグを報告する際は、TaskMateのバージョン、Obsidianのバージョン、OS、再現手順、必要に応じて個人情報を除いたタスク例を含めてください。Vault内の非公開情報を公開しないでください。
 
 ## 翻訳ワークフロー
 
@@ -243,13 +235,14 @@ npm run build
 python3 -m unittest discover -s skills/taskmate/tests -v
 python3 scripts/validate_skills.py
 npm run validate:localization
+python3 scripts/validate_docs.py
 npm run validate:release
 git diff --check
 ```
 
 生成された`main.js`はビルド成果物です。直接編集しないでください。
 
-保守担当者は、バージョン情報を同期して更新し、正確なバージョンタグを作成し、生成されたGitHub Releaseを確認するため、二言語の[リリース手順](docs/releasing.md)に従ってください。
+保守担当者は、バージョン情報を同期して更新し、正確なバージョンタグを作成し、生成されたGitHub Releaseを確認するため、二言語の[リリース手順](docs/operations/releasing.md)に従ってください。文書全体の入口は[文書一覧](docs/index.md)です。
 
 ## ライセンス
 

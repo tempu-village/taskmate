@@ -35,6 +35,8 @@ TaskMate also includes an optional portable Agent Skill. The Skill turns explici
 
 ## Quick start
 
+For a guided first exercise, see [Your first TaskMate task](docs/user/getting-started.md). Goal-specific instructions are in [user guides](docs/user/README.md).
+
 1. Install and enable TaskMate.
 2. Open the command palette and run **TaskMate: Open task list**.
 3. Select **+ Add**, enter a title, and save the task.
@@ -202,17 +204,7 @@ Review these claims against the release build before public release. Back up the
 
 ## Troubleshooting
 
-If tasks synchronize but TaskMate does not appear on Android, confirm all of the following:
-
-- Both devices enable `Installed community plugin list` and `Active community plugin list`.
-- The desktop plugin folder is inside the same vault connected to Obsidian Sync.
-- The path is `.obsidian/plugins/taskmate/`, without a duplicated `taskmate` folder.
-- `main.js`, `manifest.json`, and `styles.css` are present.
-- Both devices report **Fully Synced**.
-- **Settings → Community plugins → Installed plugins** was opened on Android.
-- TaskMate was disabled and then enabled again after synchronization, even if it was already enabled.
-
-When reporting a bug, include the TaskMate version, Obsidian version, operating system, reproduction steps, and a sanitized example task when relevant. Do not publish private vault content.
+See [Troubleshooting](docs/user/troubleshooting.md) for recovery guidance. When reporting a bug, include the TaskMate version, Obsidian version, operating system, reproduction steps, and a sanitized example task when relevant. Do not publish private vault content.
 
 ## Translation workflow
 
@@ -236,13 +228,14 @@ npm run build
 python3 -m unittest discover -s skills/taskmate/tests -v
 python3 scripts/validate_skills.py
 npm run validate:localization
+python3 scripts/validate_docs.py
 npm run validate:release
 git diff --check
 ```
 
 The generated `main.js` is a build artifact. Do not edit it by hand.
 
-Maintainers should follow the bilingual [release procedure](docs/releasing.md) to update synchronized version metadata, create an exact version tag, and verify the generated GitHub Release.
+Maintainers should follow the bilingual [release procedure](docs/operations/releasing.md) to update synchronized version metadata, create an exact version tag, and verify the generated GitHub Release. See the [documentation index](docs/index.md) for the complete document map.
 
 ## License
 

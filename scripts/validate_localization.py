@@ -11,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "README.md"
 TRANSLATION = ROOT / "README.ja.md"
-PRODUCT_SPEC = ROOT / "docs" / "product-spec.md"
+PRODUCT_SPEC = ROOT / "docs" / "engineering" / "specifications" / "overview.md"
 PRODUCT_SPEC_DIVIDER = "\n---\n\n# TaskMate 製品仕様\n"
 
 
@@ -92,13 +92,13 @@ def main() -> None:
 
     product_spec = normalized_bytes(PRODUCT_SPEC).decode()
     if product_spec.count(PRODUCT_SPEC_DIVIDER) != 1:
-        fail("product-spec.md must contain exactly one English/Japanese divider")
+        fail("engineering/specifications/overview.md must contain exactly one English/Japanese divider")
     english_spec, japanese_body = product_spec.split(PRODUCT_SPEC_DIVIDER)
     japanese_spec = "# TaskMate 製品仕様\n" + japanese_body
     if japanese_spec.count("<!-- translation-status: ai-translated -->") != 1:
-        fail("product-spec.md Japanese section must have exactly one ai-translated marker")
+        fail("engineering/specifications/overview.md Japanese section must have exactly one ai-translated marker")
     if "英語版が正本です" not in japanese_spec:
-        fail("product-spec.md must show its AI translation status to readers")
+        fail("engineering/specifications/overview.md must show its AI translation status to readers")
     english_structure = content_structure(english_spec)
     japanese_structure = content_structure(japanese_spec)
     if english_structure[0] != japanese_structure[0]:
@@ -108,7 +108,7 @@ def main() -> None:
     if english_structure[2] != japanese_structure[2]:
         fail("product specification fenced code blocks do not correspond")
     check_local_links(PRODUCT_SPEC, product_spec)
-    print("OK docs/product-spec.md localization")
+    print("OK docs/engineering/specifications/overview.md localization")
 
 
 if __name__ == "__main__":

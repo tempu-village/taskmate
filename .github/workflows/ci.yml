@@ -26,4 +26,5 @@ jobs:
       - run: python3 -m unittest discover -s skills/taskmate/tests -v
       - run: python3 scripts/validate_skills.py
       - run: npm run validate:localization
+      - run: python3 scripts/validate_docs.py
       - run: npm run validate:release

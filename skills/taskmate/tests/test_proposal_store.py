@@ -83,6 +83,71 @@ class ProposalStoreTest(unittest.TestCase):
         plan = self.write_json("plan.json", self.plan())
         return self.run_store("stage", "--plan", str(plan))
 
+    def run_tasks(self, *arguments):
+        result = subprocess.run(
+            [sys.executable, str(SCRIPT.with_name("todo_store.py")),
+             "--vault", str(self.vault), *arguments],
+            check=True, capture_output=True, text=True,
+        )
+        return json.loads(result.stdout)
+
+    def test_multiple_notes_can_be_reviewed_in_parts_and_retried_without_duplicates(self):
+        second_source = "Notes/個人/To Do.md"
+        original = "---\nowner: 私\n---\n# To Do\n\nSend the estimate.\n"
+        self.write_note(second_source, original)
+        excluded_source = self.write_note(
+            "Notes/private.md", "---\ntaskmate-source: false\n---\nPrivate action.\n"
+        )
+        excluded_text = excluded_source.read_text(encoding="utf-8")
+        sources = self.run_tasks("sources")
+        self.assertEqual({s["path"] for s in sources}, {"Notes/source.md", second_source})
+        plan = self.plan()
+        plan["sources"].append(second_source)
+        plan["candidates"].append({"sourceNote": second_source, "statement": "Send the estimate."})
+        plan["proposals"].append({
+            "operation": "create", "title": "見積書を送る", "sourceNote": second_source,
+            "coverage": ["Send the estimate."],
+        })
+        staged = self.run_store("stage", "--plan", str(self.write_json("multi.json", plan)))
+        self.assertEqual(self.run_tasks("list"), [])
+        self.assertEqual((self.vault / second_source).read_text(encoding="utf-8"), original)
+
+        first_decisions = self.write_json("first.json", {"decisions": [
+            {"proposalId": staged["proposals"][0]["proposalId"], "decision": "approved"},
+        ]})
+        first = self.run_store("promote", "--session", staged["sessionId"], "--decisions", str(first_decisions))
+        self.assertFalse(first["archived"])
+        self.assertTrue(all(s["state"] == "pending" for s in self.run_tasks("sources")))
+        self.assertEqual(len(self.run_tasks("list")), 1)
+
+        remaining = self.write_json("remaining.json", {"decisions": [
+            {"proposalId": staged["proposals"][1]["proposalId"], "decision": "excluded", "reason": "行動不要"},
+            {"proposalId": staged["proposals"][2]["proposalId"], "decision": "revised",
+             "revision": {"notes": "個人の見積書。仕事用とは別。"}},
+        ]})
+        completed = self.run_store("promote", "--session", staged["sessionId"], "--decisions", str(remaining))
+        self.assertTrue(completed["archived"])
+        tasks = self.run_tasks("list")
+        self.assertEqual(len(tasks), 2)
+        self.assertEqual({Path(t["path"]).name for t in tasks}, {"見積書を送る.md", "見積書を送る (2).md"})
+        by_source = {t["source-note"]: t for t in tasks}
+        self.assertEqual(by_source[second_source]["notes"], "個人の見積書。仕事用とは別。")
+        for source in self.run_tasks("sources"):
+            self.assertEqual(source["state"], "processed")
+            self.assertEqual(source["taskIds"], [by_source[source["path"]]["id"]])
+        self.assertIn("owner: 私", (self.vault / second_source).read_text(encoding="utf-8"))
+        self.assertTrue((self.vault / second_source).read_text(encoding="utf-8").endswith("# To Do\n\nSend the estimate.\n"))
+        self.assertEqual(excluded_source.read_text(encoding="utf-8"), excluded_text)
+        inspected = self.run_store("inspect", "--session", staged["sessionId"])
+        self.assertEqual(inspected["status"], "archived")
+        self.assertEqual({p["decision"] for p in inspected["proposals"]}, {"approved", "revised", "excluded"})
+        self.assertFalse((self.vault / staged["path"]).exists())
+        for proposal in inspected["proposals"]:
+            self.assertTrue((self.vault / proposal["path"]).is_file())
+        self.run_store("promote", "--session", staged["sessionId"], "--decisions", str(remaining))
+        self.assertEqual(self.run_tasks("list"), tasks)
+        self.assertTrue(self.run_tasks("validate")["valid"])
+
     def test_stage_keeps_proposals_out_of_the_canonical_task_folder(self):
         staged = self.stage()
         inspected = self.run_store("inspect", "--session", staged["sessionId"])
@@ -96,6 +161,43 @@ class ProposalStoreTest(unittest.TestCase):
         self.assertIn("decision: pending", proposal_text)
         self.assertIn("未判断", proposal_text)
         self.assertNotIn("taskmate-import-status", (self.vault / "Notes/source.md").read_text(encoding="utf-8"))
+
+    def test_coverage_from_one_note_cannot_cover_the_same_statement_in_another(self):
+        self.write_note("Notes/second.md", "Send the estimate.\n")
+        plan = self.plan()
+        plan["sources"].append("Notes/second.md")
+        plan["candidates"].append({"sourceNote": "Notes/second.md", "statement": "Send the estimate."})
+        result = self.run_store("stage", "--plan", str(self.write_json("multi.json", plan)), check=False)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("candidate is not covered by any proposal: Notes/second.md", result.stderr)
+        self.assertFalse((self.vault / "TaskMate/Proposals").exists())
+        self.assertEqual(self.run_tasks("list"), [])
+
+    def test_changed_second_note_blocks_all_tasks_in_a_multi_note_session(self):
+        second = self.write_note("Notes/second.md", "Buy milk.\n")
+        plan = self.plan()
+        plan["sources"].append("Notes/second.md")
+        plan["candidates"].append({"sourceNote": "Notes/second.md", "statement": "Buy milk."})
+        plan["proposals"].append({
+            "operation": "create", "title": "牛乳を買う", "sourceNote": "Notes/second.md",
+            "coverage": ["Buy milk."],
+        })
+        staged = self.run_store("stage", "--plan", str(self.write_json("multi.json", plan)))
+        second.write_text("Buy milk.\nBuy bread too.\n", encoding="utf-8")
+        decisions = self.write_json("decisions.json", {"decisions": [
+            {"proposalId": staged["proposals"][0]["proposalId"], "decision": "approved"},
+            {"proposalId": staged["proposals"][2]["proposalId"], "decision": "approved"},
+        ]})
+        result = self.run_store("promote", "--session", staged["sessionId"], "--decisions", str(decisions), check=False)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("source changed since staging: Notes/second.md", result.stderr)
+        self.assertEqual(self.run_tasks("list"), [])
+        inspected = self.run_store("inspect", "--session", staged["sessionId"])
+        self.assertEqual(inspected["status"], "needs-review")
+        self.assertTrue(all(p["decision"] == "pending" for p in inspected["proposals"]))
+        self.assertTrue(all(s["state"] == "pending" for s in self.run_tasks("sources")))
 
     def test_promote_creates_only_approved_tasks_and_marks_every_decision(self):
         staged = self.stage()
