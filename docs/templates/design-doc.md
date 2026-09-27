@@ -17,4 +17,4 @@ Link tests and manual checks to the product acceptance criteria; record remainin
 
 ## Decisions
 
-Link accepted ADRs for durable trade-offs. Keep unresolved alternatives in a proposal. Remove unused headings; do not describe every function.
+Link accepted ADRs for durable trade-offs. Keep unresolved alternatives in an RFC. Remove unused headings; do not describe every function.
