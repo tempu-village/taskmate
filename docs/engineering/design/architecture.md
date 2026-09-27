@@ -14,11 +14,15 @@ The [Agent Skill](../../../skills/taskmate/SKILL.md) runs separately in an agent
 
 ## Change boundaries
 
-Use browser/public Obsidian APIs in plugin runtime; Node/Python belong to build and external tooling. Preserve renderer teardown on rerender/close. Update both Markdown writers when changing a format, using [data ownership](data-model.md). Consult [source-import design](features/source-import.md) or [conflict design](features/edit-conflicts.md) when changing those flows.
+Use browser/public Obsidian APIs in plugin runtime; Node/Python belong to build and external tooling. Preserve renderer teardown on rerender/close. Update both Markdown writers when changing a format, using [data ownership](data-model.md). Consult [source import](../features/source-import.md) or [edit conflicts](../features/edit-conflicts.md) when changing those flows.
 
 ## Evidence
 
 [Model tests](../../../test/task-list-model.test.ts), [renderer tests](../../../test/task-list-renderer.test.ts) and [mobile layout tests](../../../test/mobile-layout.test.ts) cover selected boundaries. Device verification remains separate.
+
+## Related RFCs
+
+- [Establish a minimal presentation seam for TaskMate views](../rfcs/establish-minimal-view-presentation-seam.md) — implemented historical rationale for the model/renderer boundary.
 
 ## 日本語参考
 

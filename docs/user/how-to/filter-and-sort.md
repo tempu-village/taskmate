@@ -8,7 +8,7 @@ Prerequisite: several Tasks with different dates, priorities or Labels.
 4. Choose Manual, Date, Priority or Created in the list's sorting controls. Activate the selected automatic sort again to reverse direction. In Scheduled, the Overdue/Today/Later sections keep their order.
 5. To change manual order, choose Manual and drag a Task's content area; touch requires a brief hold. Automatic sorts disable dragging.
 
-For a missing Task, check the selected Date view, active filters and completion state. Search can match title, notes, Step text and Labels. Contract and limits: [navigation/filtering/sorting](../../engineering/specifications/filtering-and-sorting.md).
+For a missing Task, check the selected Date view, active filters and completion state. Search can match title, notes, Step text and Labels. Contract and limits: [navigation/filtering/sorting](../../engineering/features/filtering-and-sorting.md).
 
 ## 日本語参考
 
@@ -24,4 +24,4 @@ For a missing Task, check the selected Date view, active filters and completion 
 4. 並べ替えで手動・日付・優先度・作成日を選びます。同じ自動並べ替えをもう一度押すと方向が反転します。予定の期限切れ・今日・明日以降の区分順は固定です。
 5. 手動順を変えるには手動を選び、本文をドラッグします。タッチは短い長押し、自動順ではドラッグできません。
 
-見つからない場合は日付ビュー、フィルター、完了状態を確認します。検索は件名・メモ・Step本文・ラベルが対象です。[製品仕様](../../engineering/specifications/filtering-and-sorting.md)を参照してください。
+見つからない場合は日付ビュー、フィルター、完了状態を確認します。検索は件名・メモ・Step本文・ラベルが対象です。[製品仕様](../../engineering/features/filtering-and-sorting.md)を参照してください。

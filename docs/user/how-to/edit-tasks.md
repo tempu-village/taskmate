@@ -16,7 +16,7 @@ From a result list, open the view/task-actions menu and choose **Select tasks**.
 
 ## Delete one Task
 
-Open its editor, use **Delete** in the footer and confirm only if the Task should be removed. TaskMate uses Obsidian's trash behavior. For details, see [Task editing](../../engineering/specifications/task-editing.md), [Steps](../../engineering/specifications/task-steps.md) and [Labels](../../engineering/specifications/labels.md).
+Open its editor, use **Delete** in the footer and confirm only if the Task should be removed. TaskMate uses Obsidian's trash behavior. For details, see [Task editing](../../engineering/features/task-editing.md), [Steps](../../engineering/features/task-steps.md) and [Labels](../../engineering/features/labels.md).
 
 ## 日本語参考
 
@@ -40,4 +40,4 @@ Open its editor, use **Delete** in the footer and confirm only if the Task shoul
 
 ### 1件削除する
 
-編集画面の下部にある削除を選び、対象を確認して確定します。Obsidianのゴミ箱動作を利用します。詳しい保証は[編集](../../engineering/specifications/task-editing.md)、[Steps](../../engineering/specifications/task-steps.md)、[Labels](../../engineering/specifications/labels.md)を参照してください。
+編集画面の下部にある削除を選び、対象を確認して確定します。Obsidianのゴミ箱動作を利用します。詳しい保証は[編集](../../engineering/features/task-editing.md)、[Steps](../../engineering/features/task-steps.md)、[Labels](../../engineering/features/labels.md)を参照してください。

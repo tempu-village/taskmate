@@ -1,10 +1,11 @@
-# RFC: <title>
-
-```yaml
+---
 status: proposed # proposed | accepted | implemented | rejected | superseded
 tracking-issue: <GitHub issue number or null>
-current-authority: <path to the current Specification or Design, or null>
-```
+current-authority: <path to the current Feature, Specification or cross-cutting Design, or null>
+related-features: []
+---
+
+# RFC: <title>
 
 ## Summary
 
@@ -28,7 +29,7 @@ Describe the meaningful alternatives and why they were accepted or rejected. Kee
 
 ## Proposed design
 
-Describe the intended boundaries, behavior and important trade-offs. Link to the current Specification, Design and ADRs instead of copying their content.
+Describe intended behavior, internal design, migration, test plan and important trade-offs. Link to current Features, Specifications, cross-cutting Design and ADRs instead of copying their content.
 
 ## Open questions
 
@@ -41,6 +42,7 @@ State the decision and update the metadata when the RFC is accepted, implemented
 ## Links
 
 - Tracking Issue:
+- Current feature:
 - Current specification:
 - Current design:
 - ADRs:

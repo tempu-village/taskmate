@@ -64,6 +64,10 @@ Do not submit to the Obsidian Community directory merely because the workflow su
 
 Do not replace assets on an existing published version. Fix the cause, increment the patch version, rerun verification, and publish a new tag. If a tag was pushed but no Release was created, inspect the failed workflow before deciding whether the unused tag can be safely removed or whether a new version is required.
 
+## Related RFCs
+
+- [RFC 0003: Establish a reproducible GitHub Release pipeline](../engineering/rfcs/0003-establish-reproducible-github-releases.md) — implemented history; this operations document remains current authority.
+
 ---
 
 # TaskMateをリリースする

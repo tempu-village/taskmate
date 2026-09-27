@@ -4,7 +4,7 @@ Thank you for improving TaskMate. Changes should keep the Obsidian plugin mobile
 
 ## Start here
 
-Read [the documentation index](docs/index.md), then the records relevant to the change. The [documentation architecture](docs/DOCUMENTATION_ARCHITECTURE.md) explains which document owns product behavior, user guidance, internal design, decisions, proposals, and operations.
+Read [the documentation index](docs/index.md), then the records relevant to the change. The [documentation architecture](docs/DOCUMENTATION_ARCHITECTURE.md) explains which Feature, Specification, Design, ADR, RFC, user guide or operations document owns each concern.
 
 For a behavior change, begin with the applicable product feature specification or Issue. For a hard-to-reverse design choice, write or update an ADR before implementation. For task Markdown changes, update the plugin, the portable Skill schema, and their tests together.
 

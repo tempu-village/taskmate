@@ -1,23 +1,12 @@
-# Product specifications
+# Technical specifications
 
-[Overview](overview.md) owns purpose and scope. This index owns navigation/status summaries; each feature file owns its guarantees. For implementation mechanics use [design](../design/README.md).
+Specifications are strict, normative technical contracts that implementations must satisfy. They define data formats, APIs, schemas, limits, state transitions, compatibility rules and security constraints with verifiable `MUST`, `MUST NOT`, formats and transition conditions.
 
-| Specification | Approval | Implementation |
-| --- | --- | --- |
-| [Task editing](task-editing.md) | Accepted (existing contract) | Implemented; see evidence |
-| [Task Steps](task-steps.md) | Accepted (existing contract) | Implemented; see evidence |
-| [Projects](projects.md) | Accepted (existing contract) | Implemented; see evidence |
-| [Labels](labels.md) | Accepted (existing contract) | Implemented; see evidence |
-| [Navigation, filtering and sorting](filtering-and-sorting.md) | Accepted (existing contract) | Implemented; see evidence |
-| [Mobile layout](mobile-layout.md) | Accepted (existing contract) | Implemented; see evidence |
-| [Localization](localization.md) | Accepted (existing contract) | Implemented; see evidence |
-| [Source-note import](source-import.md) | Accepted (existing contract) | Implemented; see evidence |
-| [Edit conflicts](edit-conflicts.md) | Accepted (existing contract) | Implemented with known Step equality gap |
-| [Storage and privacy](storage-and-privacy.md) | Accepted (existing contract) | Implemented; see evidence |
-| [Agent Vault setup](agent-vault-setup.md) | Proposed | Not implemented |
-| [Source note index](source-note-index.md) | Proposed | Not implemented |
+Do not place feature introductions, background narratives or implementation history here. Feature-specific What and How belong in [features](../features/README.md). A Feature links to a shared Specification instead of duplicating the contract. Update the Specification in the same change whenever implementation changes its contract.
 
-Add a specification using [the template](../../templates/feature-spec.md) and [the lifecycle rules](../../DOCUMENTATION_ARCHITECTURE.md). Keep one feature file until splitting it into a same-named folder improves navigation. [Verification](../design/testing.md) distinguishes test evidence from manual checks and known gaps.
+| Specification | Scope |
+| --- | --- |
+| [Task file format](task-file-format.md) | Markdown storage, identity, properties, Steps and compatibility |
 
 ## 日本語参考
 
@@ -25,6 +14,4 @@ Add a specification using [the template](../../templates/feature-spec.md) and [t
 
 > 翻訳状態：`ai-translated`。英語版が正本です。
 
-[概要](overview.md)は目的と範囲、この一覧は状態と案内、各機能ファイルは保証を所有します。実装方法は[内部設計](../design/README.md)へ進みます。表のAcceptedは既存契約から継承した決定、Implementedは現行branchの実装を示し、全検証完了を意味しません。Vault登録とSource索引はProposed・未実装です。編集競合はStep等価判定に不足があります。
-
-追加時は[template](../../templates/feature-spec.md)と[保守ルール](../../DOCUMENTATION_ARCHITECTURE.md)を使い、長くなった機能だけ同名フォルダーへ分割します。[検証表](../design/testing.md)で根拠と不足を確認します。
+Specificationは、実装が満たす厳密で規範的な技術契約です。データ形式、API、schema、上限値、状態遷移、互換性、security制約を、検証可能なMUST、MUST NOT、形式、遷移条件として記録します。機能紹介、背景、実装履歴、機能固有のWhatとHowは[Feature](../features/README.md)へ置き、契約を複製せずリンクします。実装と契約は同じ変更で更新します。

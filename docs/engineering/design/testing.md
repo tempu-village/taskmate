@@ -24,33 +24,37 @@ git diff --check
 
 | Contract | Automated evidence | Additional manual evidence |
 | --- | --- | --- |
-| [EDIT-01/02/03](../specifications/task-editing.md) | title, renderer, bulk action, scroll tests | Create/cancel/delete and long-title editing on desktop/Android |
-| [STEP-01/02](../specifications/task-steps.md) | domain round trip and task-steps tests | Nested Step editor save/cancel and touch reorder |
-| [PROJECT-01/02](../specifications/projects.md) | domain Project format tests only | Rename/delete Project and check Task membership |
-| [LABEL-01/02/03](../specifications/labels.md) | picker, chip input, label management/summary tests | Japanese IME and mobile picker cancellation |
-| [LIST-01/02/03](../specifications/filtering-and-sorting.md) | domain, filter-state and list-model tests | Navigation retains filters; changing sort retains global rank |
-| [MOBILE-01/02](../specifications/mobile-layout.md) | static layout and keyboard calculation tests | Real keyboard and touch checks; DOM tests do not emulate WebView |
-| [I18N-01/02](../specifications/localization.md) | dictionary/fallback tests | Command/ribbon reload and narrow translated controls |
-| [CONFLICT-01/02/03/04](../specifications/edit-conflicts.md) | merge and repository tests, except Step value equality | Two-device synchronization; see known gap below |
-| [IMPORT-01/02/03/04](../specifications/source-import.md) | Python proposal/store tests | Actual agent's coverage inventory versus all source statements |
-| [STORE-01/02](../specifications/storage-and-privacy.md) | settings/repository inspection | Uninstall retention and folder-setting change |
+| [EDIT-01/02/03](../features/task-editing.md) | title, renderer, bulk action, scroll tests | Create/cancel/delete and long-title editing on desktop/Android |
+| [STEP-01/02](../features/task-steps.md) | domain round trip and task-steps tests | Nested Step editor save/cancel and touch reorder |
+| [PROJECT-01/02](../features/projects.md) | domain Project format tests only | Rename/delete Project and check Task membership |
+| [LABEL-01/02/03](../features/labels.md) | picker, chip input, label management/summary tests | Japanese IME and mobile picker cancellation |
+| [LIST-01/02/03](../features/filtering-and-sorting.md) | domain, filter-state and list-model tests | Navigation retains filters; changing sort retains global rank |
+| [MOBILE-01/02](../features/mobile-layout.md) | static layout and keyboard calculation tests | Real keyboard and touch checks; DOM tests do not emulate WebView |
+| [I18N-01/02](../features/localization.md) | dictionary/fallback tests | Command/ribbon reload and narrow translated controls |
+| [CONFLICT-01/02/03/04](../features/edit-conflicts.md) | merge and repository tests, except Step value equality | Two-device synchronization; see known gap below |
+| [IMPORT-01/02/03/04](../features/source-import.md) | Python proposal/store tests | Actual agent's coverage inventory versus all source statements |
+| [STORE-01/02](../features/storage-and-privacy.md) | settings/repository inspection | Uninstall retention and folder-setting change |
 
 Use stable acceptance IDs in specs and link meaningful tests here or in the spec. An evidence link does not imply every condition is automated. Keep untested expectations visible. Source-index and Vault-setup acceptance scenarios are targets, not passing current tests.
 
 ## Known gaps
 
 - **Step value equality / CONFLICT-04:** a read-only probe during this documentation review passed independently cloned but identical non-empty Steps into `compareTaskEdit`; it returned a `steps` conflict. The helper compares objects by identity. Intended equal-value semantics remain accepted. Correct the implementation and add a focused regression test in a separate runtime change; existing scalar/Label tests do not cover it.
-- **Source read scope:** current discovery reads unrelated non-managed Markdown while checking opt-in. [Source index](../specifications/source-note-index.md) proposes the tighter read boundary; it is not shipped.
+- **Source read scope:** current discovery reads unrelated non-managed Markdown while checking opt-in. [Source index](../features/source-note-index.md) proposes the tighter read boundary; it is not shipped.
 - **Device verification:** this documentation change inspects source and runs automated checks, but does not execute fresh desktop/Android UI sessions. Existing repository documentation records Android experience; iOS remains unverified.
 - **Crash recovery:** multi-file proposal promotion has no atomic transaction. Retry after an unrecorded Task creation needs reconciliation; no crash-exactly-once guarantee is claimed.
 
 ## Reconciliation record
 
-During the documentation split, the generic claim that lists show the complete title was corrected using [ADR 0023](adr/0023-bound-task-list-titles-by-character-count.md), renderer code and renderer tests: lists show the 100-grapheme prefix; the editor shows the complete title. Search documentation now includes Step text, matching the domain implementation and test. Date views are incomplete-only by default, with explicit include-completed support. These corrections change documentation, not product behavior.
+During the documentation split, the generic claim that lists show the complete title was corrected using [ADR 0023](../adr/0023-bound-task-list-titles-by-character-count.md), renderer code and renderer tests: lists show the 100-grapheme prefix; the editor shows the complete title. Search documentation now includes Step text, matching the domain implementation and test. Date views are incomplete-only by default, with explicit include-completed support. These corrections change documentation, not product behavior.
 
 ## Manual scenario
 
 In a disposable Vault, follow [getting started](../../user/getting-started.md), then [source import](../../user/how-to/import-source-notes.md). Include two notes with independent actions and one informational statement. Verify zero Tasks after staging, one Task after partial approval, retained pending proposals, explicit exclusion, final archival, provenance and repeat-run counts. Keep sanitized results with the PR and distinguish observed behavior from expected behavior.
+
+## Related RFCs
+
+- [Document the reproducible development environment](../rfcs/document-reproducible-development-environment.md) — proposed; the current verification guide is authoritative only for the checks it already documents.
 
 ## 日本語参考
 
