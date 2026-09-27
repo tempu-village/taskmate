@@ -2,14 +2,14 @@
 
 TaskMate contains an Obsidian plugin and its companion portable Agent Skill.
 
-Read [docs/DOCUMENTATION_ARCHITECTURE.md](docs/DOCUMENTATION_ARCHITECTURE.md) before changing product behavior, documentation structure, or a cross-cutting rule. It maps the product specifications, user guides, internal designs, proposals, and operations material without duplicating them here.
+Read [docs/DOCUMENTATION_ARCHITECTURE.md](docs/DOCUMENTATION_ARCHITECTURE.md) before changing product behavior, documentation structure, or a cross-cutting rule. It maps the product specifications, user guides, internal designs, RFCs, and operations material without duplicating them here.
 
 For every task, read the smallest relevant record first:
 
 - Product behavior or a feature contract (read its approval, implementation and evidence): [docs/engineering/specifications/](docs/engineering/specifications/).
 - User-facing wording or workflow: [docs/user/](docs/user/).
 - Architecture, security, test strategy, or hard-to-reverse trade-off: [docs/engineering/design/](docs/engineering/design/), then [ADR](docs/engineering/design/adr/).
-- Planned large change: [docs/proposals/](docs/proposals/) and its Issue.
+- Planned large change: [docs/rfcs/](docs/rfcs/) and its tracking Issue.
 - Release or recovery work: [docs/operations/](docs/operations/).
 
 Keep the Obsidian plugin mobile-compatible by using public Obsidian and browser APIs. Keep task Markdown compatible with [the task schema](skills/taskmate/references/task-schema.md). Preserve one global manual rank; automatic sorting is display-only. Treat source folders and `taskmate-source` as a strict allowlist, and complete a coverage review before any candidate is excluded.

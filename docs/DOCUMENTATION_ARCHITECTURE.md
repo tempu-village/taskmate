@@ -16,9 +16,9 @@ TaskMate uses Pattern B with a two-level, three-area model: the common product c
 | `docs/engineering/design/features/` | Feature-specific internal mechanics and failure boundaries |
 | `docs/engineering/design/adr/` | Hard-to-reverse decisions, alternatives and consequences |
 | `docs/user/` | First-use tutorials, goal-specific How-to and recovery |
-| `docs/proposals/` | Substantial proposed changes and their historical context |
+| `docs/rfcs/` | Design reviews and decision history for substantial changes; not current product authority |
 | `docs/operations/` | Release and repeatable operational recovery |
-| `docs/templates/` | Lightweight authoring shapes for specifications and designs |
+| `docs/templates/` | Lightweight authoring shapes for specifications, designs and RFCs |
 | `CONTEXT.md` | Stable domain vocabulary |
 | `AGENTS.md` | AI reading routes, hard constraints and verification entry |
 | `CONTRIBUTING.md` | Contribution and review workflow |
@@ -36,7 +36,7 @@ For a future recurring-task feature, `engineering/specifications/recurring-tasks
 
 ## Granularity and growth
 
-A small wording/style/internal refactor normally needs only the existing record and tests. A behavior change needs a focused specification or an update to one. Complex concurrent, security-sensitive or migration work also needs a design document; a hard-to-reverse choice needs an ADR. Large alternatives/discussion belong in a proposal. An Issue owns scope and progress, not a second permanent specification.
+A small wording/style/internal refactor normally needs only the existing record and tests. A behavior change needs a focused specification or an update to one. Complex concurrent, security-sensitive or migration work also needs a design document; a hard-to-reverse choice needs an ADR. Large alternatives and design discussion belong in an RFC. An Issue owns the change entry point, scope, priority, discussion, progress and PR links; it must not be duplicated in the RFC.
 
 Start a feature as one stable Markdown file, using the [feature template](templates/feature-spec.md). Write purpose, guarantees, relevant normal/empty/error/cancel/retry behavior, acceptance and evidence. Add data/privacy/release considerations when they affect the feature. Describe observable behavior and durable constraints; leave line-by-line processing to code.
 
@@ -51,7 +51,7 @@ Every feature specification records two independent fields:
 
 Carried-forward existing contracts can retain acceptance with their original ADR/spec evidence. A migration must not invent approval for proposed behavior. Keep proposed changes to an existing feature in a clearly marked pending-change section linked to its Issue/proposal; preserve the current guarantee until the implementation change lands. A new accepted but unimplemented feature may have its own specification with that state visible. Track partial implementation per acceptance criterion when needed. Record a release only when verified; merging and releasing differ.
 
-On completion, update implementation state, evidence, affected user/design/operations docs and proposal links in the same PR. Proposals retain discussion history; annotate implemented/superseded/pending status rather than treating historical acceptance checklists as current rules. ADR decisions retain their accepted rationale; a later ADR supersedes an earlier one with links and status metadata.
+On completion, update implementation state, evidence, affected user/design/operations docs and RFC links in the same PR. RFCs retain design-review and decision history; annotate proposed/accepted/implemented/rejected/superseded status rather than treating historical checklists as current rules. ADR decisions retain their accepted rationale; a later ADR supersedes an earlier one with links and status metadata.
 
 ## Evidence and disagreement
 
@@ -85,7 +85,7 @@ Pattern Bの共通製品契約・利用者向け説明・内部設計という2�
 
 ### 粒度と分割
 
-小変更は既存文書を更新し、機能変更には仕様、複雑な競合・security・移行には設計、戻しにくい判断にはADRを用意します。大きな検討はProposal、進捗はIssueです。機能仕様は単体Markdownから始め、目的、保証、必要な正常・空・失敗・取消し・再試行、受け入れ条件と検証を書きます。行単位の処理説明はコードへ委ねます。
+小変更は既存文書を更新し、機能変更には仕様、複雑な競合・security・移行には設計、戻しにくい判断にはADRを用意します。大きな検討はRFC、変更の入口・範囲・進捗はIssueです。RFCとIssueで要件やチェックリストを二重管理しません。機能仕様は単体Markdownから始め、目的、保証、必要な正常・空・失敗・取消し・再試行、受け入れ条件と検証を書きます。行単位の処理説明はコードへ委ねます。
 
 長く読みにくくなったら`feature.md`を同名フォルダーに分割し、READMEと関連Markdownを一箇所にまとめます。正本と受け入れIDを保ち、全参照とanchorを更新します。空カテゴリや日付別コピーは作りません。仕様・設計のtemplateを用意し、全機能に内部設計を強制しません。
 
