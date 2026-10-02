@@ -263,9 +263,19 @@ function cloneValue(value) {
   if (Array.isArray(value)) return value.map((item) => typeof item === "object" && item !== null ? { ...item } : item);
   return value;
 }
+function isPlainObject(value) {
+  if (typeof value !== "object" || value === null) return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
 function valuesEqual(left, right) {
   if (Array.isArray(left) && Array.isArray(right)) {
     return left.length === right.length && left.every((value, index2) => valuesEqual(value, right[index2]));
+  }
+  if (isPlainObject(left) && isPlainObject(right)) {
+    const leftKeys = Object.keys(left);
+    const rightKeys = Object.keys(right);
+    return leftKeys.length === rightKeys.length && leftKeys.every((key) => Object.hasOwn(right, key) && valuesEqual(left[key], right[key]));
   }
   return left === right;
 }
