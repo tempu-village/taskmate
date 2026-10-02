@@ -7,7 +7,7 @@
 | Learn first use or complete a task | [User guides](user/README.md) |
 | Implement or maintain | [Engineering](engineering/README.md), [design](engineering/design/README.md), [verification](engineering/design/testing.md) |
 | Understand a durable decision | [ADR](engineering/adr/README.md) |
-| Review planned work or history | [RFCs](engineering/rfcs/README.md) |
+| Review a substantial-change proposal or implementation-decision history | [RFCs](engineering/rfcs/README.md) |
 | Release or recover | [Operations](operations/README.md) |
 | Find a strict technical contract | [Specifications](engineering/specifications/README.md) |
 | Write or maintain docs | [Policy](DOCUMENTATION_ARCHITECTURE.md), [Feature template](templates/feature-spec.md), [design template](templates/design-doc.md), [RFC template](templates/rfc.md) |
