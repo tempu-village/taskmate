@@ -38,7 +38,7 @@ Markdown in this repository is the source of truth. Keep one permanent home for 
 
 English is canonical where a document provides Japanese reference text. Update both in the same change and retain the translation-status convention. Do not add a new documentation category until it contains its first real document.
 
-Use the [specification template](docs/templates/feature-spec.md) for product guarantees and the [design template](docs/templates/design-doc.md) for internal mechanics. Keep approval separate from implementation. Link acceptance criteria to [verification evidence and gaps](docs/engineering/design/testing.md); a passing suite does not resolve a conflict with an accepted product decision.
+Use the [Feature template](docs/templates/feature-spec.md) for current product guarantees and the [design template](docs/templates/design-doc.md) for cross-cutting internal mechanics. Use the [RFC template](docs/templates/rfc.md) for a substantial change's proposal and decision history. Keep approval separate from implementation. When an RFC-backed product change lands, update the Feature from code, tests and review, add reciprocal links, and mark the RFC implemented; do not copy proposal history into the Feature. Link acceptance criteria to [verification evidence and gaps](docs/engineering/design/testing.md); a passing suite does not resolve a conflict with an accepted product decision.
 
 ## Security and privacy
 

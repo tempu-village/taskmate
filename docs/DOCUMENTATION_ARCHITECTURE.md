@@ -4,7 +4,7 @@ Status: Active repository policy. [Features](engineering/features/README.md) own
 
 ## Model and ownership
 
-TaskMate uses a feature-centered engineering model. Feature documents are the shared current authority for user-visible behavior and feature-specific internals. Specifications hold strict reusable contracts, Design holds cross-cutting structure, RFCs hold unsettled proposals and history, and ADRs preserve accepted durable rationale.
+TaskMate uses a feature-centered engineering model. Feature documents are the shared current authority for user-visible behavior and feature-specific internals. Specifications hold strict reusable contracts, Design holds cross-cutting structure, RFCs preserve substantial-change proposals and implementation-decision history, and ADRs preserve accepted durable rationale.
 
 | Location | Owns |
 | --- | --- |
@@ -16,7 +16,7 @@ TaskMate uses a feature-centered engineering model. Feature documents are the sh
 | `docs/engineering/design/` | Cross-cutting architecture, data ownership, security and verification |
 | `docs/engineering/adr/` | Hard-to-reverse decisions, alternatives and consequences |
 | `docs/user/` | First-use tutorials, goal-specific How-to and recovery |
-| `docs/engineering/rfcs/` | Design reviews and decision history for substantial changes; not current product authority |
+| `docs/engineering/rfcs/` | Proposals and decision history from substantial-change review through implementation; not current product authority |
 | `docs/operations/` | Release and repeatable operational recovery |
 | `docs/templates/` | Lightweight authoring shapes for Features, designs and RFCs |
 | `CONTEXT.md` | Stable domain vocabulary |
@@ -36,9 +36,9 @@ For a future recurring-task feature, `engineering/features/recurring-tasks.md` w
 
 ## Granularity and growth
 
-A small wording/style/internal refactor normally needs only the existing record and tests. A behavior or feature-specific processing change updates its Feature. A strict shared contract change also updates its Specification; a cross-cutting architecture change updates Design; a hard-to-reverse choice needs an ADR. Large alternatives and unsettled design discussion belong in an RFC. An Issue owns the change entry point, scope, priority, discussion, progress and PR links; it must not be duplicated in the RFC.
+A small wording/style/internal refactor normally needs only the existing record and tests. A behavior or feature-specific processing change updates its Feature. A strict shared contract change also updates its Specification; a cross-cutting architecture change updates Design; a hard-to-reverse choice needs an ADR. A substantial change's problem, design decisions, alternatives, constraints, migration and acceptance conditions belong in an RFC. An Issue owns the change entry point, scope, priority, discussion, progress and PR links; it must not be duplicated in the RFC.
 
-Start a feature as one stable Markdown file, using the [feature template](templates/feature-spec.md). Write purpose, guarantees, relevant normal/empty/error/cancel/retry behavior, acceptance and evidence. Add data/privacy/release considerations when they affect the feature. Describe observable behavior and durable constraints; leave line-by-line processing to code.
+Start a feature as one stable Markdown file, using the [feature template](templates/feature-spec.md). Write it as a standalone current reference for future implementers and maintainers and for users who need exact behavior. Cover purpose, available behavior, guarantees, constraints, persisted representation, relationships to other features, relevant normal/empty/error/cancel/retry behavior, acceptance and evidence. Add data/privacy/release considerations when they affect the feature. Describe observable behavior and durable constraints; leave line-by-line processing to code. There is no line limit; length follows feature complexity.
 
 When a file becomes difficult to read or has independently changing sections, replace `feature.md` with `feature/README.md` and related Markdown files in that single feature folder. The README owns the map; each rule still has one home. Preserve acceptance IDs, update inbound links/anchors, and use Git history instead of dated copies. Create directories only with real content. Use the [design template](templates/design-doc.md) only for cross-cutting internal boundaries.
 
@@ -51,7 +51,7 @@ Every Feature records two independent fields:
 
 Carried-forward existing contracts can retain acceptance with their original ADR or evidence. A migration must not invent approval for proposed behavior. Keep proposed changes to an existing Feature in a clearly marked pending-change section linked to its Issue and RFC; preserve the current guarantee until the implementation change lands. Track partial implementation per acceptance criterion when needed. Record a release only when verified; merging and releasing differ.
 
-On completion, update implementation state, evidence, affected user/design/operations docs and RFC links in the same PR. RFCs retain design-review and decision history with `proposed`, `accepted`, `implemented`, `rejected` or `superseded` metadata. Each RFC links to current authority, and each related Feature links back to its RFC history. Historical checklists are not current rules. ADR decisions retain their accepted rationale; a later ADR supersedes an earlier one with links and status metadata.
+On completion, update implementation state, evidence, affected user/design/operations docs and RFC links in the same PR. RFCs retain design-review and decision history with `draft`, `accepted`, `implemented`, `rejected` or `superseded` metadata. `accepted` means agreement on direction, not proof of implementation or release and not a guarantee that the final design is identical. Track material implementation departures in an RFC amendment, follow-up RFC or linked implementation PR. For every implemented product RFC, confirm current behavior in implementation, tests and review; create or update the Feature without copying RFC-only background, alternatives, hypotheses or migration history; add reciprocal links and the implementation PR/release when known; then mark the RFC `implemented`. Keep implemented RFCs substantially unchanged as history. Pure Operations or cross-cutting Design RFCs link to that maintained authority instead of inventing a Feature. Historical checklists are not current rules. ADR decisions retain their accepted rationale; a later ADR supersedes an earlier one with links and status metadata.
 
 ## Evidence and disagreement
 
@@ -77,7 +77,7 @@ Keep this feature-centered model in this repository while code and docs change t
 
 ### モデルと配置
 
-Feature中心の構成を採用します。Featureは利用者から見たWhatと機能固有のHow、Specificationは厳密な共通契約、Designは横断設計、RFCは未確定案と履歴、ADRは採用済みの重要な理由を所有します。配置と責任は上の表を正本にします。
+Feature中心の構成を採用します。Featureは利用者から見たWhatと機能固有のHow、Specificationは厳密な共通契約、Designは横断設計、RFCは大きな変更の提案から実装判断までの履歴、ADRは採用済みの重要な理由を所有します。配置と責任は上の表を正本にします。
 
 ### 恒久的な置き場所
 
@@ -85,13 +85,13 @@ Feature中心の構成を採用します。Featureは利用者から見たWhat�
 
 ### 粒度と分割
 
-小変更は既存文書を更新し、機能の挙動や固有処理はFeature、厳密な共通契約はSpecification、横断構造はDesign、戻しにくい判断はADRを更新します。大きな検討はRFC、変更の入口・範囲・進捗はIssueです。RFCとIssueで要件やチェックリストを二重管理しません。Featureは目的、保証、処理、失敗、受入条件と検証を書き、コードの逐語説明は避けます。
+小変更は既存文書を更新し、機能の挙動や固有処理はFeature、厳密な共通契約はSpecification、横断構造はDesign、戻しにくい判断はADRを更新します。大きな変更の問題、設計判断、代替案、制約、移行、受け入れ条件はRFC、変更の入口・範囲・進捗はIssueです。RFCとIssueで要件やチェックリストを二重管理しません。Featureは将来の実装者・保守者と正確な挙動を知りたい利用者が単独で理解できる現行リファレンスとし、利用可能な機能、保証、制約、保存形式、他機能との関係、処理、失敗、受入条件と検証を書きます。行数上限は設けず、機能の複雑さに応じた長さにします。
 
 長く読みにくくなったら`feature.md`を同名フォルダーに分割し、READMEと関連Markdownを一箇所にまとめます。正本と受け入れIDを保ち、全参照とanchorを更新します。空カテゴリや日付別コピーは作りません。内容のない見出しは強制しません。
 
 ### 状態と更新
 
-承認状態（Proposed / Accepted / Rejected / Superseded）と実装状態（Not implemented / Partial / Implemented）を別々に記録します。承認は製品判断、実装はbranch/releaseの現状です。既存Featureは根拠とともに状態を継承し、未承認の提案を自動承認しません。既存機能への未実装変更は予定節に分けて現行保証を残します。完了時は同じPRで実装状態、検証、操作説明、Feature、Specification、運用、RFCリンクを更新します。ADRの採用理由は保持し、新判断で置換します。
+Featureの承認状態（Proposed / Accepted / Rejected / Superseded）と実装状態（Not implemented / Partial / Implemented）を別々に記録します。RFCは`draft` / `accepted` / `implemented` / `rejected` / `superseded`を使い、`accepted`は方針への合意であって、実装・リリース・最終設計との完全一致を保証しません。実装中の重要な差分はRFC追記、後続RFC、または実装PRで追跡可能にします。実装後はコード・テスト・レビューで確定した現行動作をFeatureへ反映し、RFC固有の背景、代替案、仮説、移行経緯は転記せず相互リンクします。実装PRと確認済みリリースを必要に応じて追加してRFCを`implemented`にし、RFC自体は判断履歴として大きく書き換えません。運用または横断設計だけのRFCは、不要なFeatureを作らずOperationsまたはDesignを正本にします。
 
 ### 検証と不一致
 
