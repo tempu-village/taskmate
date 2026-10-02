@@ -19,7 +19,7 @@ Select Tasks replaces the main navigation with an explicit selection mode. The s
 
 Selection-only renders preserve the active Task list's vertical scroll position when entering selection mode, selecting or deselecting Tasks, selecting all, and leaving selection mode. Navigation to another screen does not inherit that position.
 
-A single selected Task opens the normal editor. Multiple selected Tasks can change date, Project, Priority, and Labels together. Bulk editing distinguishes keeping a current value from clearing it; Labels are added or removed rather than implicitly replacing every existing Label. Bulk deletion moves the selected Task files to the Obsidian trash after confirmation and reports partial failures.
+A single selected Task opens the normal editor. Multiple selected Tasks can change date, Project, Priority, and Labels together. Bulk Date uses the same shortcuts and custom date field as the Task editor; Project and Priority use the same compact selectors with an additional `No change` option. A chosen Date, Project, or Priority replaces that property for every selected Task, even when their starting values differ. Bulk Labels use the same chip editor and indexed picker as the Task editor. The initial chips are the union of Labels on the selected Tasks. A Label present on only some selected Tasks displays its assigned count and remains unchanged unless the user explicitly removes it; removal removes it from every selected Task that has it, while a newly added Label is added to every selected Task. Bulk deletion moves the selected Task files to the Obsidian trash after confirmation and reports partial failures.
 
 Task-list titles use a rectangular, non-pill title action and naturally wrap to variable height. The list displays at most the first 100 user-perceived characters and appends `…` only when the complete title exceeds that boundary. This deterministic presentation does not measure rendered height or offer an inline title-disclosure control. The complete title remains unchanged in Markdown, search data, actions, and accessible names; selecting the displayed title opens the Task editor, where the existing auto-growing multi-line field shows the complete title. Metadata remains in normal document flow below the title and never overlaps it.
 
@@ -28,6 +28,7 @@ Task-list titles use a rectangular, non-pill title action and naturally wrap to 
 - EDIT-01: A title longer than 100 graphemes is abbreviated only in the list; editing and storage retain it.
 - EDIT-02: Bulk selection is limited to the visible set captured on entry; selection-only rendering retains scroll.
 - EDIT-03: Cancelling the editor leaves stored Task data unchanged; deletion requires confirmation.
+- EDIT-04: Bulk editing keeps partially assigned Labels unchanged by default and shows their assigned count; explicit removal removes the Label from every selected Task that has it.
 
 Automated evidence: [task-title.test.ts](../../../test/task-title.test.ts), [task-list-renderer.test.ts](../../../test/task-list-renderer.test.ts), [bulk-task-actions.test.ts](../../../test/bulk-task-actions.test.ts), [scroll-position.test.ts](../../../test/scroll-position.test.ts). These tests cover selected behavior, not every UI scenario. Device checks and remaining gaps: [verification](../design/testing.md). Storage syntax: [Task schema](../../../skills/taskmate/references/task-schema.md).
 
@@ -40,6 +41,10 @@ Automated evidence: [task-title.test.ts](../../../test/task-title.test.ts), [tas
 - [RFC 0031: Bound Task-list title display](../rfcs/0031-fix-title-disclosure-and-two-line-clipping.md) — implemented.
 - [Move task deletion into the editor footer](../rfcs/move-task-deletion-to-editor-footer.md) — implemented.
 - [Improve sorting controls and task editor sizing](../rfcs/improve-sorting-and-task-editor-sizing.md) — historical editor-sizing rationale; current sorting authority is maintained separately.
+
+## Related ADRs
+
+- [ADR 0027: Keep bulk Label editing chip-based with partial-assignment state](../adr/0027-keep-bulk-label-editing-chip-based-with-partial-assignment-state.md).
 
 ## 日本語参考
 
@@ -61,7 +66,7 @@ Automated evidence: [task-title.test.ts](../../../test/task-title.test.ts), [tas
 
 「タスクを選択」は、メインナビゲーションを明示的な選択モードへ置き換えます。選択可能な集合は選択開始時に表示されていたタスクへ固定し、「すべて選択」はその集合だけを対象にします。
 
-選択が1件なら通常の編集画面を開きます。複数件では、日付、プロジェクト、優先度、ラベルをまとめて変更できます。一括編集では、現在値を維持することと値を消すことを区別し、既存ラベルすべてを暗黙に置換せず、追加または削除します。一括削除は、確認後に選択したタスクファイルをObsidianのゴミ箱へ移動し、部分的な失敗を報告します。
+選択が1件なら通常の編集画面を開きます。複数件では、日付、プロジェクト、優先度、ラベルをまとめて変更できます。一括編集の日付は通常編集と同じ候補と任意の日付欄を使い、プロジェクトと優先度は同じコンパクトな選択欄へ「変更しない」を追加します。日付、プロジェクト、優先度を選ぶと、開始時の値が異なっていても選択中の全タスクへ同じ値を設定します。ラベルは通常編集と同じチップ入力とインデックス付きピッカーを使います。初期チップは選択したタスクに付くラベルの和です。一部のタスクだけにあるラベルには件数を表示し、明示的に外すまで変更しません。外すと保持している選択中の全タスクから削除し、新しく追加したラベルは全タスクへ追加します。一括削除は、確認後に選択したタスクファイルをObsidianのゴミ箱へ移動し、部分的な失敗を報告します。
 
 タスク一覧のタイトルは、矩形で楕円形ではないタイトル操作の中で、文字数に応じて自然に折り返し、高さを変えます。一覧には見た目上の先頭100文字までを表示し、完全なタイトルがその境界を超える場合だけ末尾へ`…`を付けます。この表示では描画高さを測定せず、一覧内のタイトル展開操作も設けません。Markdown、検索用データ、操作、アクセシブル名には省略しない完全なタイトルを維持します。一覧のタイトルを選ぶと編集画面を開き、既存の自動拡張する複数行欄で全文を表示します。メタ情報はタイトルの下の通常フローに置き、重ねません。
 
@@ -72,3 +77,4 @@ Automated evidence: [task-title.test.ts](../../../test/task-title.test.ts), [tas
 - EDIT-01: 100書記素を超えるタイトルは一覧だけを省略し、編集と保存では全文を保持する。
 - EDIT-02: 一括選択は開始時の表示対象に限り、選択だけの再描画ではスクロールを保つ。
 - EDIT-03: キャンセルでは保存済みデータを変更せず、削除には確認を必要とする。
+- EDIT-04: 一部のタスクだけに付くラベルは、初期状態では変更せず件数を示す。明示的に外すと、そのラベルを持つ選択中の全タスクから削除する。

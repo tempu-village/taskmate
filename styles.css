@@ -531,6 +531,8 @@
   max-height: var(--taskmate-modal-available-height, calc(100dvh - 2rem));
   translate: 0 var(--taskmate-modal-shift, 0px);
 }
+.taskmate-bulk-date-presets { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.taskmate-bulk-label-partial { border: 1px dashed var(--text-muted); }
 .taskmate-step-modal {
   display: flex;
   flex-direction: column;

@@ -683,8 +683,8 @@ export class TodoListView extends ItemView {
       return;
     }
     if (selected.length < 2) return;
-    const projects = await this.plugin.projects.list();
-    new BulkTaskModal(this.app, selected.length, projects, this.plugin.i18n(), async (changes) => {
+    const [projects, allTasks] = await Promise.all([this.plugin.projects.list(), this.plugin.repository.list()]);
+    new BulkTaskModal(this.app, selected, projects, this.taskModalLabelOptions(allTasks), this.contentEl, this.plugin.i18n(), async (changes) => {
       await this.applyBulkChanges(selected, changes);
     }).open();
   }

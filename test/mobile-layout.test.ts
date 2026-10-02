@@ -14,6 +14,10 @@ const taskModalSource = readFileSync(
   fileURLToPath(new URL("../src/task-modal.ts", import.meta.url)),
   "utf8"
 );
+const bulkTaskModalSource = readFileSync(
+  fileURLToPath(new URL("../src/bulk-task-modal.ts", import.meta.url)),
+  "utf8"
+);
 const stepModalSource = readFileSync(
   fileURLToPath(new URL("../src/step-modal.ts", import.meta.url)),
   "utf8"
@@ -227,6 +231,16 @@ describe("mobile layout", () => {
     const presets = declarations(".taskmate-date-presets");
     expect(presets).toMatch(/display\s*:\s*grid\s*;/);
     expect(presets).toMatch(/grid-template-columns\s*:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)\s*;/);
+  });
+
+  it("uses the task editor's chip fields and keyboard layout for bulk editing", () => {
+    expect(bulkTaskModalSource).toContain('"taskmate-task-fields"');
+    expect(bulkTaskModalSource).toContain("new MobileKeyboardScroller(fields");
+    expect(bulkTaskModalSource).toContain("taskDateSuggestions()");
+    expect(bulkTaskModalSource).toContain("new LabelPickerModal(this.app");
+    expect(bulkTaskModalSource).toContain('"taskmate-bulk-label-partial"');
+    expect(bulkTaskModalSource).not.toContain('"bulk.removeLabels"');
+    expect(exactDeclarations(".taskmate-bulk-date-presets")).toMatch(/grid-template-columns\s*:\s*repeat\(5,/);
   });
 
   it("uses one-row sort buttons with direction inside the active button", () => {
