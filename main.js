@@ -757,7 +757,7 @@ var TaskMateSettingTab = class extends import_obsidian3.PluginSettingTab {
 var import_obsidian12 = require("obsidian");
 
 // src/bulk-task-modal.ts
-var import_obsidian4 = require("obsidian");
+var import_obsidian5 = require("obsidian");
 
 // src/domain.ts
 function localDateParts(date) {
@@ -857,84 +857,32 @@ function recordRecentLabels(history, savedLabels, limit = 10) {
   return normalizeLabels([...used, ...history]).slice(0, limit);
 }
 
-// src/bulk-task-modal.ts
-var BulkTaskModal = class extends import_obsidian4.Modal {
-  constructor(app, count, projects, i18n, onApply) {
-    super(app);
-    this.count = count;
-    this.projects = projects;
-    this.i18n = i18n;
-    this.onApply = onApply;
-    this.setTitle(i18n.t("bulk.title", { count }));
-  }
-  changes = { addLabels: [], removeLabels: [] };
-  onOpen() {
-    const { t } = this.i18n;
-    const date = new import_obsidian4.Setting(this.contentEl).setName(t("taskModal.date"));
-    let dateInput = null;
-    date.addDropdown((dropdown) => dropdown.addOption("unchanged", t("bulk.unchanged")).addOption("clear", t("date.none")).addOption("set", t("bulk.setValue")).onChange((value) => {
-      if (value === "unchanged") delete this.changes.date;
-      else if (value === "clear") this.changes.date = null;
-      else this.changes.date = dateInput?.value || null;
-      if (dateInput) dateInput.disabled = value !== "set";
-    }));
-    date.addText((text) => {
-      text.inputEl.type = "date";
-      text.inputEl.disabled = true;
-      dateInput = text.inputEl;
-      text.onChange((value) => {
-        if (!text.inputEl.disabled) this.changes.date = value || null;
-      });
-    });
-    new import_obsidian4.Setting(this.contentEl).setName(t("taskModal.project")).addDropdown((dropdown) => {
-      dropdown.addOption("unchanged", t("bulk.unchanged")).addOption("clear", t("taskModal.unassigned"));
-      this.projects.forEach((project) => dropdown.addOption(project.id, project.name));
-      dropdown.onChange((value) => {
-        if (value === "unchanged") delete this.changes.projectId;
-        else this.changes.projectId = value === "clear" ? null : value;
-      });
-    });
-    new import_obsidian4.Setting(this.contentEl).setName(t("taskModal.priority")).addDropdown((dropdown) => dropdown.addOption("unchanged", t("bulk.unchanged")).addOption("clear", t("taskModal.noPriority")).addOption("1", t("filter.priorityValue", { priority: 1 })).addOption("2", t("filter.priorityValue", { priority: 2 })).addOption("3", t("filter.priorityValue", { priority: 3 })).onChange((value) => {
-      if (value === "unchanged") delete this.changes.priority;
-      else this.changes.priority = value === "clear" ? null : Number(value);
-    }));
-    new import_obsidian4.Setting(this.contentEl).setName(t("bulk.addLabels")).addText((text) => text.onChange((value) => {
-      this.changes.addLabels = normalizeLabels(value.split(",")).slice(0, 500);
-    }));
-    new import_obsidian4.Setting(this.contentEl).setName(t("bulk.removeLabels")).addText((text) => text.onChange((value) => {
-      this.changes.removeLabels = normalizeLabels(value.split(",")).slice(0, 500);
-    }));
-    const actions = this.contentEl.createDiv({ cls: "taskmate-modal-actions" });
-    const cancel = actions.createEl("button", { text: t("common.cancel") });
-    cancel.addEventListener("click", () => this.close());
-    const apply = actions.createEl("button", { text: t("bulk.apply", { count: this.count }), cls: "mod-cta" });
-    apply.addEventListener("click", async () => {
-      apply.disabled = true;
-      try {
-        await this.onApply(this.changes);
-        this.close();
-      } finally {
-        apply.disabled = false;
-      }
-    });
-  }
-  onClose() {
-    this.contentEl.empty();
-  }
-};
+// src/label-chip-input.ts
+function updateLabelChipInput(currentLabels, value, commitPending, limit = 500) {
+  const parts = value.split(",");
+  const committed = commitPending ? parts : parts.slice(0, -1);
+  const pending = commitPending ? "" : (parts.at(-1) ?? "").trimStart();
+  return {
+    labels: normalizeLabels([...currentLabels, ...committed]).slice(0, Math.max(0, limit)),
+    pending
+  };
+}
+function shouldCommitLabelOnEnter(key, composing, keyCode = 0) {
+  return key === "Enter" && !composing && keyCode !== 229;
+}
 
-// src/bulk-task-actions.ts
-function buildBulkTaskPatch(task, changes) {
-  const labels = task.labels.filter((label) => !changes.removeLabels.includes(label)).concat(changes.addLabels.filter((label) => !task.labels.includes(label))).slice(0, 500);
-  const patch = { labels };
-  if ("date" in changes) patch.date = changes.date;
-  if ("projectId" in changes) patch.projectId = changes.projectId;
-  if ("priority" in changes) patch.priority = changes.priority;
-  return patch;
+// src/label-summary.ts
+var COMPACT_LABEL_LIMIT = 3;
+function summarizeLabels(labels, limit = COMPACT_LABEL_LIMIT) {
+  const safeLimit = Math.max(0, limit);
+  return {
+    visible: labels.slice(0, safeLimit),
+    hidden: labels.slice(safeLimit)
+  };
 }
-function failedBulkTasks(tasks, results) {
-  return tasks.filter((_, index2) => results[index2]?.status === "rejected");
-}
+
+// src/label-picker-modal.ts
+var import_obsidian4 = require("obsidian");
 
 // src/i18n/en.ts
 var en = {
@@ -1106,8 +1054,14 @@ var en = {
   "bulk.title": "Edit {count} tasks",
   "bulk.unchanged": "No change",
   "bulk.setValue": "Set a date",
-  "bulk.addLabels": "Add labels",
-  "bulk.removeLabels": "Remove labels",
+  "bulk.labelsDescription": "Labels used by any selected task are shown. A label marked Some is only on some selected tasks; use its more-actions button to leave it unchanged, add it to all, or remove it from every selected task.",
+  "bulk.labelPartial": "Some",
+  "bulk.labelActionsAriaLabel": "Actions for {label}",
+  "bulk.partialLabelActionsTitle": "Edit {label}",
+  "bulk.partialLabelActionsDescription": "This Label is on only some selected tasks.",
+  "bulk.addLabelToAll": "Add to all selected tasks",
+  "bulk.removeLabel": "Remove from selected tasks",
+  "bulk.removeLabelAriaLabel": "Remove {label} from selected tasks",
   "bulk.apply": "Apply to {count} tasks",
   "date.today": "Today",
   "date.tomorrow": "Tomorrow",
@@ -1313,8 +1267,14 @@ var ja = {
   "bulk.title": "{count}\u4EF6\u3092\u4E00\u62EC\u7DE8\u96C6",
   "bulk.unchanged": "\u5909\u66F4\u3057\u306A\u3044",
   "bulk.setValue": "\u65E5\u4ED8\u3092\u6307\u5B9A",
-  "bulk.addLabels": "\u8FFD\u52A0\u3059\u308B\u30E9\u30D9\u30EB",
-  "bulk.removeLabels": "\u524A\u9664\u3059\u308B\u30E9\u30D9\u30EB",
+  "bulk.labelsDescription": "\u9078\u629E\u3057\u305F\u30BF\u30B9\u30AF\u306E\u3044\u305A\u308C\u304B\u306B\u4ED8\u3044\u3066\u3044\u308B\u30E9\u30D9\u30EB\u3092\u8868\u793A\u3057\u307E\u3059\u3002\u300C\u4E00\u90E8\u300D\u306E\u30E9\u30D9\u30EB\u306F\u4E00\u90E8\u306E\u30BF\u30B9\u30AF\u3060\u3051\u306B\u4ED8\u3044\u3066\u3044\u307E\u3059\u3002\u2026\u304B\u3089\u3001\u7DAD\u6301\u3001\u5168\u30BF\u30B9\u30AF\u3078\u306E\u8FFD\u52A0\u3001\u307E\u305F\u306F\u9078\u629E\u4E2D\u306E\u3059\u3079\u3066\u306E\u30BF\u30B9\u30AF\u304B\u3089\u306E\u524A\u9664\u3092\u9078\u3079\u307E\u3059\u3002",
+  "bulk.labelPartial": "\u4E00\u90E8",
+  "bulk.labelActionsAriaLabel": "{label}\u306E\u64CD\u4F5C",
+  "bulk.partialLabelActionsTitle": "{label}\u3092\u7DE8\u96C6",
+  "bulk.partialLabelActionsDescription": "\u3053\u306E\u30E9\u30D9\u30EB\u306F\u9078\u629E\u4E2D\u306E\u4E00\u90E8\u306E\u30BF\u30B9\u30AF\u3060\u3051\u306B\u4ED8\u3044\u3066\u3044\u307E\u3059\u3002",
+  "bulk.addLabelToAll": "\u5168\u30BF\u30B9\u30AF\u306B\u8FFD\u52A0",
+  "bulk.removeLabel": "\u9078\u629E\u4E2D\u306E\u30BF\u30B9\u30AF\u304B\u3089\u5916\u3059",
+  "bulk.removeLabelAriaLabel": "\u9078\u629E\u4E2D\u306E\u30BF\u30B9\u30AF\u304B\u3089{label}\u3092\u524A\u9664",
   "bulk.apply": "{count}\u4EF6\u306B\u9069\u7528",
   "date.today": "\u4ECA\u65E5",
   "date.tomorrow": "\u660E\u65E5",
@@ -1385,12 +1345,6 @@ function createI18n(preference, detectedLanguage) {
   return { locale, t };
 }
 
-// src/filter-modal.ts
-var import_obsidian6 = require("obsidian");
-
-// src/label-picker-modal.ts
-var import_obsidian5 = require("obsidian");
-
 // src/label-picker-model.ts
 var FAVORITE_LABEL_LIMIT = 10;
 var RECENT_LABEL_LIMIT = 10;
@@ -1449,7 +1403,7 @@ function toggleFavoriteLabel(favoriteLabels, label, limit = FAVORITE_LABEL_LIMIT
 }
 
 // src/label-picker-modal.ts
-var LabelPickerModal = class extends import_obsidian5.Modal {
+var LabelPickerModal = class extends import_obsidian4.Modal {
   constructor(app, options) {
     super(app);
     this.options = options;
@@ -1607,7 +1561,7 @@ var LabelPickerModal = class extends import_obsidian5.Modal {
   toggleFavorite(label) {
     const result = toggleFavoriteLabel(this.favoriteLabels, label);
     if (result.atLimit) {
-      new import_obsidian5.Notice(this.options.i18n.t("filter.favoriteLimitNotice", { count: FAVORITE_LABEL_LIMIT }));
+      new import_obsidian4.Notice(this.options.i18n.t("filter.favoriteLimitNotice", { count: FAVORITE_LABEL_LIMIT }));
       return;
     }
     if (!result.changed) return;
@@ -1624,7 +1578,484 @@ var LabelPickerModal = class extends import_obsidian5.Modal {
   }
 };
 
+// src/mobile-keyboard-layout.ts
+function finiteNonNegative(value) {
+  return Number.isFinite(value) ? Math.max(0, value) : 0;
+}
+function calculateKeyboardLayout(input) {
+  const keyboardClearance = Math.max(
+    0,
+    finiteNonNegative(input.keyboardOcclusion) - finiteNonNegative(input.hostShrink)
+  );
+  const alignmentClearance = finiteNonNegative(input.alignmentShortfall);
+  return {
+    keyboardClearance,
+    alignmentClearance,
+    totalClearance: keyboardClearance + alignmentClearance
+  };
+}
+function clampScrollTop(scrollTop, scrollHeight, clientHeight) {
+  const maximum = Math.max(0, finiteNonNegative(scrollHeight) - finiteNonNegative(clientHeight));
+  return Math.min(Math.max(0, finiteNonNegative(scrollTop)), maximum);
+}
+function retainAlignmentClearance(currentClearance, requiredClearance, keyboardOpen) {
+  if (!keyboardOpen) return 0;
+  return Math.max(finiteNonNegative(currentClearance), finiteNonNegative(requiredClearance));
+}
+function calculateModalFit(region, modal, currentShift, edgeGap = 8) {
+  const availableHeight = Math.max(0, region.height - edgeGap * 2);
+  const naturalTop = modal.top - currentShift;
+  const naturalBottom = modal.bottom - currentShift;
+  const topLimit = region.top + edgeGap;
+  const bottomLimit = region.bottom - edgeGap;
+  let shift = 0;
+  if (naturalBottom > bottomLimit) shift = bottomLimit - naturalBottom;
+  if (naturalTop + shift < topLimit) shift += topLimit - (naturalTop + shift);
+  return { availableHeight, shift };
+}
+var KEYBOARD_THRESHOLD = 48;
+var COMFORTABLE_EDGE = 24;
+function shouldConstrainModal(hasActiveControl, keyboardOcclusion, hostShrink) {
+  if (!hasActiveControl) return false;
+  return keyboardOcclusion >= KEYBOARD_THRESHOLD || hostShrink >= KEYBOARD_THRESHOLD;
+}
+var MobileKeyboardScroller = class {
+  constructor(fields, modal, availableRegion, baselineAvailableHeight) {
+    this.fields = fields;
+    this.modal = modal;
+    this.availableRegion = availableRegion;
+    this.baselineAvailableHeight = baselineAvailableHeight ?? availableRegion.getBoundingClientRect().height;
+    this.baselineViewportBottom = this.viewportBottom();
+  }
+  baselineAvailableHeight;
+  baselineViewportBottom;
+  activeControl = null;
+  resizeObserver = null;
+  scheduledFrame = null;
+  delayedAdjustments = [];
+  closed = false;
+  modalShift = 0;
+  alignmentClearance = 0;
+  currentClearance = 0;
+  connect() {
+    if (!window.matchMedia("(max-width: 700px)").matches) return;
+    this.fields.addEventListener("focusin", this.handleFocusIn);
+    this.fields.addEventListener("focusout", this.handleFocusOut);
+    window.addEventListener("resize", this.scheduleAdjustment);
+    window.visualViewport?.addEventListener("resize", this.scheduleAdjustment);
+    window.visualViewport?.addEventListener("scroll", this.scheduleAdjustment);
+    if (typeof ResizeObserver !== "undefined") {
+      this.resizeObserver = new ResizeObserver(this.scheduleAdjustment);
+      this.resizeObserver.observe(this.fields);
+      this.resizeObserver.observe(this.availableRegion);
+    }
+    this.scheduleAdjustment();
+  }
+  disconnect() {
+    this.closed = true;
+    this.fields.removeEventListener("focusin", this.handleFocusIn);
+    this.fields.removeEventListener("focusout", this.handleFocusOut);
+    window.removeEventListener("resize", this.scheduleAdjustment);
+    window.visualViewport?.removeEventListener("resize", this.scheduleAdjustment);
+    window.visualViewport?.removeEventListener("scroll", this.scheduleAdjustment);
+    this.resizeObserver?.disconnect();
+    if (this.scheduledFrame !== null) window.cancelAnimationFrame(this.scheduledFrame);
+    for (const timer of this.delayedAdjustments) window.clearTimeout(timer);
+    this.fields.style.removeProperty("--taskmate-keyboard-clearance");
+    this.modal.style.removeProperty("--taskmate-modal-available-height");
+    this.modal.style.removeProperty("--taskmate-modal-shift");
+  }
+  handleFocusIn = (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement) || !target.matches("input, textarea, [contenteditable='true']")) return;
+    if (this.activeControl !== target) this.alignmentClearance = 0;
+    this.activeControl = target;
+    this.scheduleAdjustment();
+    for (const delay of [80, 180, 360, 600]) {
+      this.delayedAdjustments.push(window.setTimeout(this.scheduleAdjustment, delay));
+    }
+  };
+  handleFocusOut = () => {
+    window.setTimeout(() => {
+      if (this.closed || this.fields.contains(document.activeElement)) return;
+      this.activeControl = null;
+      this.scheduleAdjustment();
+    }, 0);
+  };
+  scheduleAdjustment = () => {
+    if (this.closed || this.scheduledFrame !== null) return;
+    this.scheduledFrame = window.requestAnimationFrame(() => {
+      this.scheduledFrame = null;
+      this.adjust();
+    });
+  };
+  adjust() {
+    const availableHeight = this.availableRegion.getBoundingClientRect().height;
+    const hostShrink = Math.max(0, this.baselineAvailableHeight - availableHeight);
+    const keyboardOcclusion = Math.max(0, this.baselineViewportBottom - this.viewportBottom());
+    const keyboardLikelyOpen = shouldConstrainModal(
+      this.activeControl !== null,
+      keyboardOcclusion,
+      hostShrink
+    );
+    if (!keyboardLikelyOpen || !this.activeControl) {
+      this.resetModalFit();
+      this.alignmentClearance = 0;
+      this.setClearance(0);
+      this.fields.scrollTop = clampScrollTop(
+        this.fields.scrollTop,
+        this.fields.scrollHeight,
+        this.fields.clientHeight
+      );
+      return;
+    }
+    this.fitModalToAvailableRegion();
+    const keyboardLayout = calculateKeyboardLayout({
+      keyboardOcclusion,
+      hostShrink,
+      alignmentShortfall: 0
+    });
+    window.requestAnimationFrame(() => {
+      if (this.closed || !this.activeControl) return;
+      const fieldsRect = this.fields.getBoundingClientRect();
+      const controlRect = this.activeControl.getBoundingClientRect();
+      const visibleTop = fieldsRect.top + COMFORTABLE_EDGE;
+      const visibleBottom = Math.min(fieldsRect.bottom, this.viewportBottom()) - COMFORTABLE_EDGE;
+      if (visibleBottom <= visibleTop) return;
+      let desiredDelta = 0;
+      if (controlRect.bottom > visibleBottom || controlRect.top < visibleTop) {
+        desiredDelta = (controlRect.top + controlRect.bottom) / 2 - (visibleTop + visibleBottom) / 2;
+      }
+      if (desiredDelta > 0) {
+        const baseScrollHeight = Math.max(0, this.fields.scrollHeight - this.currentClearance);
+        const remainingScroll = Math.max(
+          0,
+          baseScrollHeight + keyboardLayout.keyboardClearance - this.fields.clientHeight - this.fields.scrollTop
+        );
+        const alignmentShortfall = Math.max(0, desiredDelta - remainingScroll);
+        this.alignmentClearance = retainAlignmentClearance(
+          this.alignmentClearance,
+          alignmentShortfall,
+          true
+        );
+      }
+      const layout = calculateKeyboardLayout({
+        keyboardOcclusion,
+        hostShrink,
+        alignmentShortfall: this.alignmentClearance
+      });
+      this.setClearance(layout.totalClearance);
+      if (desiredDelta !== 0) this.fields.scrollBy({ top: desiredDelta, behavior: "auto" });
+    });
+  }
+  setClearance(value) {
+    const next = Math.max(0, value);
+    if (Math.abs(next - this.currentClearance) < 1) return;
+    this.currentClearance = next;
+    this.fields.style.setProperty("--taskmate-keyboard-clearance", `${next}px`);
+  }
+  fitModalToAvailableRegion() {
+    const region = this.availableRegion.getBoundingClientRect();
+    if (region.height <= 0) return;
+    const availableHeight = Math.max(0, region.height - 16);
+    this.modal.style.setProperty("--taskmate-modal-available-height", `${availableHeight}px`);
+    const current = this.modal.getBoundingClientRect();
+    const fit = calculateModalFit(region, current, this.modalShift);
+    this.modalShift = fit.shift;
+    this.modal.style.setProperty("--taskmate-modal-shift", `${fit.shift}px`);
+  }
+  resetModalFit() {
+    if (this.modalShift === 0 && !this.modal.style.getPropertyValue("--taskmate-modal-available-height")) return;
+    this.modalShift = 0;
+    this.modal.style.removeProperty("--taskmate-modal-available-height");
+    this.modal.style.removeProperty("--taskmate-modal-shift");
+  }
+  viewportBottom() {
+    const viewport = window.visualViewport;
+    return viewport ? viewport.offsetTop + viewport.height : window.innerHeight;
+  }
+};
+
+// src/bulk-task-modal.ts
+var DATE_SUGGESTION_KEYS = { today: "date.today", tomorrow: "date.tomorrow", "seven-days": "date.sevenDays", none: "date.none" };
+function decorateField(setting, icon, accessibleName) {
+  setting.settingEl.addClass("taskmate-compact-setting");
+  const marker = document.createElement("span");
+  marker.addClass("taskmate-field-icon");
+  marker.setAttribute("aria-hidden", "true");
+  (0, import_obsidian5.setIcon)(marker, icon);
+  setting.settingEl.prepend(marker);
+  setting.controlEl.setAttribute("aria-label", accessibleName);
+}
+function addEmbeddedLabel(setting, label) {
+  setting.controlEl.addClass("taskmate-embedded-select");
+  setting.controlEl.prepend(setting.controlEl.createSpan({ text: label, cls: "taskmate-embedded-field-label", attr: { "aria-hidden": "true" } }));
+}
+var PartialLabelActionsModal = class extends import_obsidian5.Modal {
+  constructor(app, label, i18n, onAddToAll, onRemove) {
+    super(app);
+    this.i18n = i18n;
+    this.onAddToAll = onAddToAll;
+    this.onRemove = onRemove;
+    this.setTitle(i18n.t("bulk.partialLabelActionsTitle", { label }));
+  }
+  onOpen() {
+    const { t } = this.i18n;
+    this.modalEl.addClass("taskmate-partial-label-actions-modal");
+    this.contentEl.createDiv({ text: t("bulk.partialLabelActionsDescription"), cls: "taskmate-partial-label-actions-description" });
+    const actions = this.contentEl.createDiv({ cls: "taskmate-partial-label-actions" });
+    const addToAll = actions.createEl("button", { text: t("bulk.addLabelToAll"), cls: "mod-cta" });
+    addToAll.addEventListener("click", () => {
+      this.onAddToAll();
+      this.close();
+    });
+    const remove = actions.createEl("button", { text: t("bulk.removeLabel"), cls: "mod-warning" });
+    remove.addEventListener("click", () => {
+      this.onRemove();
+      this.close();
+    });
+    const cancel = actions.createEl("button", { text: t("common.cancel") });
+    cancel.addEventListener("click", () => this.close());
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+};
+var BulkTaskModal = class extends import_obsidian5.Modal {
+  constructor(app, tasks, projects, labelOptions, availableRegion, i18n, onApply) {
+    super(app);
+    this.tasks = tasks;
+    this.projects = projects;
+    this.labelOptions = labelOptions;
+    this.availableRegion = availableRegion;
+    this.i18n = i18n;
+    this.onApply = onApply;
+    this.baselineAvailableHeight = availableRegion.getBoundingClientRect().height;
+    this.initialLabels = normalizeLabels(tasks.flatMap((task) => task.labels)).slice(0, 500);
+    this.setTitle(i18n.t("bulk.title", { count: tasks.length }));
+  }
+  changes = { addLabels: [], removeLabels: [] };
+  keyboardScroller = null;
+  baselineAvailableHeight;
+  initialLabels;
+  onOpen() {
+    const { t } = this.i18n;
+    this.modalEl.addClass("taskmate-task-modal", "taskmate-bulk-task-modal");
+    const fields = this.contentEl.createDiv({ cls: "taskmate-task-fields" });
+    const dateSetting = new import_obsidian5.Setting(fields).setName(t("taskModal.date"));
+    dateSetting.settingEl.addClass("taskmate-date-setting");
+    decorateField(dateSetting, "calendar-days", t("taskModal.date"));
+    const datePresets = dateSetting.controlEl.createDiv({ cls: "taskmate-date-presets taskmate-bulk-date-presets" });
+    const dateButtons = [];
+    let dateInput;
+    const selectDate = (value) => {
+      if (value === void 0) delete this.changes.date;
+      else this.changes.date = value;
+      dateInput.value = typeof value === "string" ? value : "";
+      dateButtons.forEach((button) => {
+        const selected = button.dataset.bulkDate === (value === void 0 ? "unchanged" : value ?? "");
+        button.toggleClass("is-active", selected);
+        button.setAttribute("aria-pressed", String(selected));
+      });
+    };
+    const unchanged = datePresets.createEl("button", { text: t("bulk.unchanged"), cls: "taskmate-suggestion-chip is-active", attr: { type: "button", "aria-pressed": "true" } });
+    unchanged.dataset.bulkDate = "unchanged";
+    unchanged.addEventListener("click", () => selectDate(void 0));
+    dateButtons.push(unchanged);
+    for (const suggestion of taskDateSuggestions()) {
+      const button = datePresets.createEl("button", { cls: "taskmate-suggestion-chip", attr: { type: "button", "aria-pressed": "false" } });
+      button.dataset.bulkDate = suggestion.date ?? "";
+      button.createSpan({ text: t(DATE_SUGGESTION_KEYS[suggestion.id]) });
+      button.addEventListener("click", () => selectDate(suggestion.date));
+      dateButtons.push(button);
+    }
+    dateSetting.addText((text) => {
+      text.inputEl.type = "date";
+      text.inputEl.addClass("taskmate-date-input");
+      text.inputEl.setAttribute("aria-label", t("taskModal.date"));
+      dateInput = text.inputEl;
+      text.onChange((value) => selectDate(value || null));
+    });
+    const projectSetting = new import_obsidian5.Setting(fields).setName(t("taskModal.project"));
+    decorateField(projectSetting, "folder", t("taskModal.project"));
+    addEmbeddedLabel(projectSetting, t("taskModal.project"));
+    projectSetting.addDropdown((dropdown) => {
+      dropdown.addOption("unchanged", t("bulk.unchanged")).addOption("clear", t("taskModal.unassigned"));
+      this.projects.forEach((project) => dropdown.addOption(project.id, project.name));
+      dropdown.onChange((value) => {
+        if (value === "unchanged") delete this.changes.projectId;
+        else this.changes.projectId = value === "clear" ? null : value;
+      });
+    });
+    const prioritySetting = new import_obsidian5.Setting(fields).setName(t("taskModal.priority"));
+    decorateField(prioritySetting, "flag", t("taskModal.priority"));
+    addEmbeddedLabel(prioritySetting, t("taskModal.priority"));
+    prioritySetting.addDropdown((dropdown) => dropdown.addOption("unchanged", t("bulk.unchanged")).addOption("clear", t("taskModal.noPriority")).addOption("1", t("filter.priorityValue", { priority: 1 })).addOption("2", t("filter.priorityValue", { priority: 2 })).addOption("3", t("filter.priorityValue", { priority: 3 })).onChange((value) => {
+      if (value === "unchanged") delete this.changes.priority;
+      else this.changes.priority = value === "clear" ? null : Number(value);
+    }));
+    const labelSetting = new import_obsidian5.Setting(fields).setName(t("taskModal.labels")).setDesc(t("bulk.labelsDescription"));
+    labelSetting.settingEl.addClass("taskmate-label-setting");
+    decorateField(labelSetting, "tags", t("taskModal.labels"));
+    const entryRow = labelSetting.controlEl.createDiv({ cls: "taskmate-label-entry-row" });
+    const editor = entryRow.createDiv({ cls: "taskmate-editor-label-summary taskmate-label-chip-editor" });
+    const input = editor.createEl("input", { type: "text", cls: "taskmate-label-chip-input", placeholder: t("taskModal.labelsPlaceholder"), attr: { "aria-label": t("taskModal.labels"), enterkeyhint: "enter" } });
+    const add = entryRow.createEl("button", { text: t("taskModal.addLabel"), cls: "taskmate-label-add", attr: { type: "button", "aria-label": t("taskModal.addLabelAriaLabel") } });
+    let pending = "";
+    let composing = false;
+    let expanded = false;
+    const labelsNow = () => this.initialLabels.filter((label) => !this.changes.removeLabels.includes(label)).concat(this.changes.addLabels.filter((label) => !this.initialLabels.includes(label)));
+    const include = (label) => {
+      if (this.initialLabels.includes(label)) this.changes.removeLabels = this.changes.removeLabels.filter((item) => item !== label);
+      else if (!this.changes.addLabels.includes(label)) this.changes.addLabels = [...this.changes.addLabels, label].slice(0, 500);
+    };
+    const includeEverywhere = (label) => {
+      this.changes.removeLabels = this.changes.removeLabels.filter((item) => item !== label);
+      if (!this.changes.addLabels.includes(label)) this.changes.addLabels = [...this.changes.addLabels, label].slice(0, 500);
+    };
+    const exclude = (label) => {
+      this.changes.addLabels = this.changes.addLabels.filter((item) => item !== label);
+      if (this.initialLabels.includes(label) && !this.changes.removeLabels.includes(label)) this.changes.removeLabels = [...this.changes.removeLabels, label];
+    };
+    const refresh = () => {
+      editor.querySelectorAll("[data-taskmate-label-chip], .taskmate-label-overflow-toggle").forEach((element) => element.remove());
+      const labels = labelsNow();
+      const summary = summarizeLabels(labels);
+      for (const label of expanded ? labels : summary.visible) {
+        const assigned = this.tasks.filter((task) => task.labels.includes(label)).length;
+        const partial = assigned > 0 && assigned < this.tasks.length && !this.changes.addLabels.includes(label);
+        const chip = document.createElement("span");
+        chip.addClass("taskmate-editor-label-chip");
+        if (partial) chip.addClass("taskmate-bulk-label-partial");
+        chip.dataset.taskmateLabelChip = label;
+        chip.createSpan({ text: label });
+        if (partial) {
+          chip.createSpan({ text: t("bulk.labelPartial"), cls: "taskmate-bulk-label-partial-status" });
+          const more = chip.createEl("button", { cls: "taskmate-label-chip-more", attr: { type: "button", "aria-label": t("bulk.labelActionsAriaLabel", { label }) } });
+          (0, import_obsidian5.setIcon)(more, "ellipsis");
+          more.addEventListener("click", () => new PartialLabelActionsModal(
+            this.app,
+            label,
+            this.i18n,
+            () => {
+              includeEverywhere(label);
+              refresh();
+            },
+            () => {
+              exclude(label);
+              refresh();
+            }
+          ).open());
+        } else {
+          const remove = chip.createEl("button", { cls: "taskmate-label-chip-remove", attr: { type: "button", "aria-label": t("bulk.removeLabelAriaLabel", { label }) } });
+          (0, import_obsidian5.setIcon)(remove, "x");
+          remove.addEventListener("click", () => {
+            exclude(label);
+            if (labelsNow().length <= 3) expanded = false;
+            refresh();
+          });
+        }
+        editor.insertBefore(chip, input);
+      }
+      if (summary.hidden.length > 0) {
+        const toggle = document.createElement("button");
+        toggle.addClass("taskmate-label-overflow-toggle");
+        toggle.type = "button";
+        toggle.textContent = expanded ? t("tasks.hideExtraLabels") : t("tasks.moreLabels", { count: summary.hidden.length });
+        toggle.addEventListener("click", () => {
+          expanded = !expanded;
+          refresh();
+        });
+        editor.insertBefore(toggle, input);
+      }
+      add.disabled = pending.trim().length === 0;
+    };
+    const commitInput = (commitPending, keepFocus) => {
+      const next = updateLabelChipInput(labelsNow(), input.value, commitPending);
+      next.labels.forEach(include);
+      pending = next.pending;
+      input.value = pending;
+      refresh();
+      if (keepFocus) window.requestAnimationFrame(() => input.focus({ preventScroll: true }));
+    };
+    input.addEventListener("compositionstart", () => {
+      composing = true;
+    });
+    input.addEventListener("compositionend", () => {
+      composing = false;
+      commitInput(false, false);
+    });
+    input.addEventListener("input", (event) => {
+      pending = input.value;
+      add.disabled = !pending.trim();
+      if (!composing && !event.isComposing) commitInput(false, false);
+    });
+    input.addEventListener("keydown", (event) => {
+      if (shouldCommitLabelOnEnter(event.key, composing || event.isComposing, event.keyCode)) {
+        event.preventDefault();
+        commitInput(true, true);
+      }
+    });
+    add.addEventListener("pointerdown", (event) => event.preventDefault());
+    add.addEventListener("click", () => commitInput(true, true));
+    const choose = labelSetting.controlEl.createEl("button", { text: t("taskModal.chooseLabels"), cls: "taskmate-editor-label-picker-open", attr: { type: "button", "aria-label": t("taskModal.chooseExistingLabelsAriaLabel") } });
+    choose.addEventListener("click", () => new LabelPickerModal(this.app, {
+      selectedLabels: labelsNow(),
+      allLabels: this.labelOptions.allLabels,
+      recentLabels: this.labelOptions.recentLabels,
+      favoriteLabels: this.labelOptions.favoriteLabels,
+      preserveUnavailableSelectedLabels: true,
+      i18n: this.i18n,
+      onConfirm: async (selected, favorites) => {
+        const next = new Set(selected);
+        labelsNow().forEach((label) => {
+          if (!next.has(label)) exclude(label);
+        });
+        selected.forEach(include);
+        this.labelOptions.favoriteLabels = favorites;
+        await this.labelOptions.onFavoriteLabelsChange(favorites);
+        refresh();
+      }
+    }).open());
+    refresh();
+    const actions = this.contentEl.createDiv({ cls: "taskmate-modal-actions" });
+    const cancel = actions.createEl("button", { text: t("common.cancel") });
+    cancel.addEventListener("click", () => this.close());
+    const apply = actions.createEl("button", { text: t("bulk.apply", { count: this.tasks.length }), cls: "mod-cta" });
+    apply.addEventListener("click", async () => {
+      apply.disabled = true;
+      try {
+        await this.onApply(this.changes);
+        this.close();
+      } finally {
+        apply.disabled = false;
+      }
+    });
+    this.keyboardScroller = new MobileKeyboardScroller(fields, this.modalEl, this.availableRegion, this.baselineAvailableHeight);
+    this.keyboardScroller.connect();
+  }
+  onClose() {
+    this.keyboardScroller?.disconnect();
+    this.keyboardScroller = null;
+    this.contentEl.empty();
+  }
+};
+
+// src/bulk-task-actions.ts
+function buildBulkTaskPatch(task, changes) {
+  const labels = task.labels.filter((label) => !changes.removeLabels.includes(label)).concat(changes.addLabels.filter((label) => !task.labels.includes(label))).slice(0, 500);
+  const patch = { labels };
+  if ("date" in changes) patch.date = changes.date;
+  if ("projectId" in changes) patch.projectId = changes.projectId;
+  if ("priority" in changes) patch.priority = changes.priority;
+  return patch;
+}
+function failedBulkTasks(tasks, results) {
+  return tasks.filter((_, index2) => results[index2]?.status === "rejected");
+}
+
 // src/filter-modal.ts
+var import_obsidian6 = require("obsidian");
 var TaskFilterModal = class extends import_obsidian6.Modal {
   constructor(app, filters, incompleteTaskLabels, allTaskLabels, recentLabels, favoriteLabels, i18n, onFavoritesChange, onApply) {
     super(app);
@@ -4191,16 +4622,6 @@ Sortable.mount(new AutoScrollPlugin());
 Sortable.mount(Remove, Revert);
 var sortable_esm_default = Sortable;
 
-// src/label-summary.ts
-var COMPACT_LABEL_LIMIT = 3;
-function summarizeLabels(labels, limit = COMPACT_LABEL_LIMIT) {
-  const safeLimit = Math.max(0, limit);
-  return {
-    visible: labels.slice(0, safeLimit),
-    hidden: labels.slice(safeLimit)
-  };
-}
-
 // src/task-list-renderer.ts
 var TASK_LIST_TITLE_CHARACTER_LIMIT = 100;
 var taskTitleSegmenter = typeof Intl.Segmenter === "function" ? new Intl.Segmenter(void 0, { granularity: "grapheme" }) : null;
@@ -4355,218 +4776,6 @@ function renderTaskList(container, model, copy, dispatch) {
 // src/task-modal.ts
 var import_obsidian11 = require("obsidian");
 
-// src/label-chip-input.ts
-function updateLabelChipInput(currentLabels, value, commitPending, limit = 500) {
-  const parts = value.split(",");
-  const committed = commitPending ? parts : parts.slice(0, -1);
-  const pending = commitPending ? "" : (parts.at(-1) ?? "").trimStart();
-  return {
-    labels: normalizeLabels([...currentLabels, ...committed]).slice(0, Math.max(0, limit)),
-    pending
-  };
-}
-function shouldCommitLabelOnEnter(key, composing, keyCode = 0) {
-  return key === "Enter" && !composing && keyCode !== 229;
-}
-
-// src/mobile-keyboard-layout.ts
-function finiteNonNegative(value) {
-  return Number.isFinite(value) ? Math.max(0, value) : 0;
-}
-function calculateKeyboardLayout(input) {
-  const keyboardClearance = Math.max(
-    0,
-    finiteNonNegative(input.keyboardOcclusion) - finiteNonNegative(input.hostShrink)
-  );
-  const alignmentClearance = finiteNonNegative(input.alignmentShortfall);
-  return {
-    keyboardClearance,
-    alignmentClearance,
-    totalClearance: keyboardClearance + alignmentClearance
-  };
-}
-function clampScrollTop(scrollTop, scrollHeight, clientHeight) {
-  const maximum = Math.max(0, finiteNonNegative(scrollHeight) - finiteNonNegative(clientHeight));
-  return Math.min(Math.max(0, finiteNonNegative(scrollTop)), maximum);
-}
-function retainAlignmentClearance(currentClearance, requiredClearance, keyboardOpen) {
-  if (!keyboardOpen) return 0;
-  return Math.max(finiteNonNegative(currentClearance), finiteNonNegative(requiredClearance));
-}
-function calculateModalFit(region, modal, currentShift, edgeGap = 8) {
-  const availableHeight = Math.max(0, region.height - edgeGap * 2);
-  const naturalTop = modal.top - currentShift;
-  const naturalBottom = modal.bottom - currentShift;
-  const topLimit = region.top + edgeGap;
-  const bottomLimit = region.bottom - edgeGap;
-  let shift = 0;
-  if (naturalBottom > bottomLimit) shift = bottomLimit - naturalBottom;
-  if (naturalTop + shift < topLimit) shift += topLimit - (naturalTop + shift);
-  return { availableHeight, shift };
-}
-var KEYBOARD_THRESHOLD = 48;
-var COMFORTABLE_EDGE = 24;
-function shouldConstrainModal(hasActiveControl, keyboardOcclusion, hostShrink) {
-  if (!hasActiveControl) return false;
-  return keyboardOcclusion >= KEYBOARD_THRESHOLD || hostShrink >= KEYBOARD_THRESHOLD;
-}
-var MobileKeyboardScroller = class {
-  constructor(fields, modal, availableRegion, baselineAvailableHeight) {
-    this.fields = fields;
-    this.modal = modal;
-    this.availableRegion = availableRegion;
-    this.baselineAvailableHeight = baselineAvailableHeight ?? availableRegion.getBoundingClientRect().height;
-    this.baselineViewportBottom = this.viewportBottom();
-  }
-  baselineAvailableHeight;
-  baselineViewportBottom;
-  activeControl = null;
-  resizeObserver = null;
-  scheduledFrame = null;
-  delayedAdjustments = [];
-  closed = false;
-  modalShift = 0;
-  alignmentClearance = 0;
-  currentClearance = 0;
-  connect() {
-    if (!window.matchMedia("(max-width: 700px)").matches) return;
-    this.fields.addEventListener("focusin", this.handleFocusIn);
-    this.fields.addEventListener("focusout", this.handleFocusOut);
-    window.addEventListener("resize", this.scheduleAdjustment);
-    window.visualViewport?.addEventListener("resize", this.scheduleAdjustment);
-    window.visualViewport?.addEventListener("scroll", this.scheduleAdjustment);
-    if (typeof ResizeObserver !== "undefined") {
-      this.resizeObserver = new ResizeObserver(this.scheduleAdjustment);
-      this.resizeObserver.observe(this.fields);
-      this.resizeObserver.observe(this.availableRegion);
-    }
-    this.scheduleAdjustment();
-  }
-  disconnect() {
-    this.closed = true;
-    this.fields.removeEventListener("focusin", this.handleFocusIn);
-    this.fields.removeEventListener("focusout", this.handleFocusOut);
-    window.removeEventListener("resize", this.scheduleAdjustment);
-    window.visualViewport?.removeEventListener("resize", this.scheduleAdjustment);
-    window.visualViewport?.removeEventListener("scroll", this.scheduleAdjustment);
-    this.resizeObserver?.disconnect();
-    if (this.scheduledFrame !== null) window.cancelAnimationFrame(this.scheduledFrame);
-    for (const timer of this.delayedAdjustments) window.clearTimeout(timer);
-    this.fields.style.removeProperty("--taskmate-keyboard-clearance");
-    this.modal.style.removeProperty("--taskmate-modal-available-height");
-    this.modal.style.removeProperty("--taskmate-modal-shift");
-  }
-  handleFocusIn = (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLElement) || !target.matches("input, textarea, [contenteditable='true']")) return;
-    if (this.activeControl !== target) this.alignmentClearance = 0;
-    this.activeControl = target;
-    this.scheduleAdjustment();
-    for (const delay of [80, 180, 360, 600]) {
-      this.delayedAdjustments.push(window.setTimeout(this.scheduleAdjustment, delay));
-    }
-  };
-  handleFocusOut = () => {
-    window.setTimeout(() => {
-      if (this.closed || this.fields.contains(document.activeElement)) return;
-      this.activeControl = null;
-      this.scheduleAdjustment();
-    }, 0);
-  };
-  scheduleAdjustment = () => {
-    if (this.closed || this.scheduledFrame !== null) return;
-    this.scheduledFrame = window.requestAnimationFrame(() => {
-      this.scheduledFrame = null;
-      this.adjust();
-    });
-  };
-  adjust() {
-    const availableHeight = this.availableRegion.getBoundingClientRect().height;
-    const hostShrink = Math.max(0, this.baselineAvailableHeight - availableHeight);
-    const keyboardOcclusion = Math.max(0, this.baselineViewportBottom - this.viewportBottom());
-    const keyboardLikelyOpen = shouldConstrainModal(
-      this.activeControl !== null,
-      keyboardOcclusion,
-      hostShrink
-    );
-    if (!keyboardLikelyOpen || !this.activeControl) {
-      this.resetModalFit();
-      this.alignmentClearance = 0;
-      this.setClearance(0);
-      this.fields.scrollTop = clampScrollTop(
-        this.fields.scrollTop,
-        this.fields.scrollHeight,
-        this.fields.clientHeight
-      );
-      return;
-    }
-    this.fitModalToAvailableRegion();
-    const keyboardLayout = calculateKeyboardLayout({
-      keyboardOcclusion,
-      hostShrink,
-      alignmentShortfall: 0
-    });
-    window.requestAnimationFrame(() => {
-      if (this.closed || !this.activeControl) return;
-      const fieldsRect = this.fields.getBoundingClientRect();
-      const controlRect = this.activeControl.getBoundingClientRect();
-      const visibleTop = fieldsRect.top + COMFORTABLE_EDGE;
-      const visibleBottom = Math.min(fieldsRect.bottom, this.viewportBottom()) - COMFORTABLE_EDGE;
-      if (visibleBottom <= visibleTop) return;
-      let desiredDelta = 0;
-      if (controlRect.bottom > visibleBottom || controlRect.top < visibleTop) {
-        desiredDelta = (controlRect.top + controlRect.bottom) / 2 - (visibleTop + visibleBottom) / 2;
-      }
-      if (desiredDelta > 0) {
-        const baseScrollHeight = Math.max(0, this.fields.scrollHeight - this.currentClearance);
-        const remainingScroll = Math.max(
-          0,
-          baseScrollHeight + keyboardLayout.keyboardClearance - this.fields.clientHeight - this.fields.scrollTop
-        );
-        const alignmentShortfall = Math.max(0, desiredDelta - remainingScroll);
-        this.alignmentClearance = retainAlignmentClearance(
-          this.alignmentClearance,
-          alignmentShortfall,
-          true
-        );
-      }
-      const layout = calculateKeyboardLayout({
-        keyboardOcclusion,
-        hostShrink,
-        alignmentShortfall: this.alignmentClearance
-      });
-      this.setClearance(layout.totalClearance);
-      if (desiredDelta !== 0) this.fields.scrollBy({ top: desiredDelta, behavior: "auto" });
-    });
-  }
-  setClearance(value) {
-    const next = Math.max(0, value);
-    if (Math.abs(next - this.currentClearance) < 1) return;
-    this.currentClearance = next;
-    this.fields.style.setProperty("--taskmate-keyboard-clearance", `${next}px`);
-  }
-  fitModalToAvailableRegion() {
-    const region = this.availableRegion.getBoundingClientRect();
-    if (region.height <= 0) return;
-    const availableHeight = Math.max(0, region.height - 16);
-    this.modal.style.setProperty("--taskmate-modal-available-height", `${availableHeight}px`);
-    const current = this.modal.getBoundingClientRect();
-    const fit = calculateModalFit(region, current, this.modalShift);
-    this.modalShift = fit.shift;
-    this.modal.style.setProperty("--taskmate-modal-shift", `${fit.shift}px`);
-  }
-  resetModalFit() {
-    if (this.modalShift === 0 && !this.modal.style.getPropertyValue("--taskmate-modal-available-height")) return;
-    this.modalShift = 0;
-    this.modal.style.removeProperty("--taskmate-modal-available-height");
-    this.modal.style.removeProperty("--taskmate-modal-shift");
-  }
-  viewportBottom() {
-    const viewport = window.visualViewport;
-    return viewport ? viewport.offsetTop + viewport.height : window.innerHeight;
-  }
-};
-
 // src/task-title.ts
 function normalizeTaskTitleInput(value) {
   return value.replace(/[ \t]*(?:\r\n?|\n)+[ \t]*/g, " ");
@@ -4662,13 +4871,13 @@ var StepModal = class extends import_obsidian10.Modal {
 };
 
 // src/task-modal.ts
-var DATE_SUGGESTION_KEYS = {
+var DATE_SUGGESTION_KEYS2 = {
   today: "date.today",
   tomorrow: "date.tomorrow",
   "seven-days": "date.sevenDays",
   none: "date.none"
 };
-function decorateField(setting, icon, accessibleName) {
+function decorateField2(setting, icon, accessibleName) {
   setting.settingEl.addClass("taskmate-compact-setting");
   const marker = document.createElement("span");
   marker.addClass("taskmate-field-icon");
@@ -4677,7 +4886,7 @@ function decorateField(setting, icon, accessibleName) {
   setting.settingEl.prepend(marker);
   setting.controlEl.setAttribute("aria-label", accessibleName);
 }
-function addEmbeddedLabel(setting, label) {
+function addEmbeddedLabel2(setting, label) {
   setting.controlEl.addClass("taskmate-embedded-select");
   const labelEl = setting.controlEl.createSpan({
     text: label,
@@ -4719,7 +4928,7 @@ var TaskModal = class extends import_obsidian11.Modal {
     const fields = contentEl.createDiv({ cls: "taskmate-task-fields" });
     const titleSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.title"));
     titleSetting.settingEl.addClass("taskmate-title-setting");
-    decorateField(titleSetting, "circle-check", t("taskModal.title"));
+    decorateField2(titleSetting, "circle-check", t("taskModal.title"));
     titleSetting.addTextArea((text) => {
       const titleInput = text.inputEl;
       titleInput.rows = 3;
@@ -4745,7 +4954,7 @@ var TaskModal = class extends import_obsidian11.Modal {
     });
     const dateSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.date"));
     dateSetting.settingEl.addClass("taskmate-date-setting");
-    decorateField(dateSetting, "calendar-days", t("taskModal.date"));
+    decorateField2(dateSetting, "calendar-days", t("taskModal.date"));
     const datePresets = dateSetting.controlEl.createDiv({ cls: "taskmate-date-presets" });
     const dateButtons = [];
     let dateInput;
@@ -4762,7 +4971,7 @@ var TaskModal = class extends import_obsidian11.Modal {
         attr: { type: "button", "aria-pressed": "false" }
       });
       button.dataset.date = suggestion.date ?? "";
-      button.createSpan({ text: t(DATE_SUGGESTION_KEYS[suggestion.id]) });
+      button.createSpan({ text: t(DATE_SUGGESTION_KEYS2[suggestion.id]) });
       button.addEventListener("click", () => {
         this.draft.date = suggestion.date;
         dateInput.value = suggestion.date ?? "";
@@ -4782,8 +4991,8 @@ var TaskModal = class extends import_obsidian11.Modal {
     });
     refreshDateSelection();
     const projectSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.project"));
-    decorateField(projectSetting, "folder", t("taskModal.project"));
-    addEmbeddedLabel(projectSetting, t("taskModal.project"));
+    decorateField2(projectSetting, "folder", t("taskModal.project"));
+    addEmbeddedLabel2(projectSetting, t("taskModal.project"));
     projectSetting.addDropdown((dropdown) => {
       dropdown.selectEl.setAttribute("aria-label", t("taskModal.project"));
       dropdown.addOption("", t("taskModal.unassigned"));
@@ -4793,8 +5002,8 @@ var TaskModal = class extends import_obsidian11.Modal {
       });
     });
     const prioritySetting = new import_obsidian11.Setting(fields).setName(t("taskModal.priority"));
-    decorateField(prioritySetting, "flag", t("taskModal.priority"));
-    addEmbeddedLabel(prioritySetting, t("taskModal.priority"));
+    decorateField2(prioritySetting, "flag", t("taskModal.priority"));
+    addEmbeddedLabel2(prioritySetting, t("taskModal.priority"));
     prioritySetting.addDropdown((dropdown) => {
       dropdown.selectEl.setAttribute("aria-label", t("taskModal.priority"));
       dropdown.addOption("", t("taskModal.noPriority")).addOption("1", t("filter.priorityValue", { priority: 1 })).addOption("2", t("filter.priorityValue", { priority: 2 })).addOption("3", t("filter.priorityValue", { priority: 3 })).setValue(this.draft.priority ? String(this.draft.priority) : "").onChange((value) => {
@@ -4803,7 +5012,7 @@ var TaskModal = class extends import_obsidian11.Modal {
     });
     const labelSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.labels")).setDesc(t("taskModal.labelsDescription"));
     labelSetting.settingEl.addClass("taskmate-label-setting");
-    decorateField(labelSetting, "tags", t("taskModal.labels"));
+    decorateField2(labelSetting, "tags", t("taskModal.labels"));
     const labelEntryRow = labelSetting.controlEl.createDiv({ cls: "taskmate-label-entry-row" });
     const labelEditor = labelEntryRow.createDiv({
       cls: "taskmate-editor-label-summary taskmate-label-chip-editor"
@@ -4924,7 +5133,7 @@ var TaskModal = class extends import_obsidian11.Modal {
     refreshLabelEditor();
     const stepsSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.steps"));
     stepsSetting.settingEl.addClass("taskmate-steps-setting");
-    decorateField(stepsSetting, "list-checks", t("taskModal.steps"));
+    decorateField2(stepsSetting, "list-checks", t("taskModal.steps"));
     const stepsEditor = stepsSetting.controlEl.createDiv({ cls: "taskmate-steps-editor" });
     const stepsHeader = stepsEditor.createDiv({ cls: "taskmate-steps-header" });
     stepsHeader.createSpan({ text: t("taskModal.steps") });
@@ -4994,7 +5203,7 @@ var TaskModal = class extends import_obsidian11.Modal {
     renderSteps();
     const notesSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.notes"));
     notesSetting.settingEl.addClass("taskmate-notes-setting");
-    decorateField(notesSetting, "notebook-pen", t("taskModal.notes"));
+    decorateField2(notesSetting, "notebook-pen", t("taskModal.notes"));
     notesSetting.addTextArea((area) => {
       area.inputEl.rows = 7;
       area.inputEl.setAttribute("aria-label", t("taskModal.notes"));
@@ -5677,8 +5886,8 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
       return;
     }
     if (selected.length < 2) return;
-    const projects = await this.plugin.projects.list();
-    new BulkTaskModal(this.app, selected.length, projects, this.plugin.i18n(), async (changes) => {
+    const [projects, allTasks] = await Promise.all([this.plugin.projects.list(), this.plugin.repository.list()]);
+    new BulkTaskModal(this.app, selected, projects, this.taskModalLabelOptions(allTasks), this.contentEl, this.plugin.i18n(), async (changes) => {
       await this.applyBulkChanges(selected, changes);
     }).open();
   }
