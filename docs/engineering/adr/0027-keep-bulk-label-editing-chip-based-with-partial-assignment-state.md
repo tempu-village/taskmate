@@ -8,7 +8,7 @@ TaskMate already uses a chip editor with free-form entry and an indexed Label pi
 
 ## Decision
 
-Use the same chip editor and indexed picker as the normal Task editor for bulk Label editing. Show the union of Labels from the selected Tasks. A Label assigned to only a subset is a visually distinct `Some` / `一部` chip, without a numeric count. It means preserve the current per-Task assignment unless the user explicitly chooses one of its actions: `+` assigns the Label to every selected Task, while removing the chip removes it from every selected Task that has it. Reuse the Task editor's mobile keyboard scroller so the active label input remains visible.
+Use the same chip editor and indexed picker as the normal Task editor for bulk Label editing. Show the union of Labels from the selected Tasks. A Label assigned to only a subset is a visually distinct `Some` / `一部` chip, without a numeric count. Its `…` control opens an action sheet with explicit text actions: add the Label to every selected Task, or remove it from every selected Task that has it. This keeps a mixed set of normal and partial Labels visually compact, even when many partial Labels are present. Reuse the Task editor's mobile keyboard scroller so the active label input remains visible.
 
 ## Considered options
 
@@ -19,7 +19,7 @@ Use the same chip editor and indexed picker as the normal Task editor for bulk L
 ## Consequences
 
 - Bulk editing preserves the familiar chip entry flow while making mixed Label state visible and safe by default.
-- Partial-assignment counts are deliberately omitted because the useful decision is whether the Label is on all selected Tasks, not how many currently have it.
+- Partial-assignment counts are deliberately omitted because the useful decision is whether the Label is on all selected Tasks, not how many currently have it; the action sheet avoids repeating long action labels on every partial chip.
 - The picker remains the scalable list-based discovery path for large Label collections.
 - The bulk editor must retain explicit add/remove operations internally rather than storing a replacement Label set.
 
