@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check repository Markdown links and Feature status fields.
+"""Check repository Markdown links, Feature states and RFC references.
 
 Supports the inline Markdown links and ATX headings used by these docs.
 External URLs are not fetched. Acceptance prose and translations still need review.
@@ -13,7 +13,7 @@ from urllib.parse import unquote
 ROOT = Path(__file__).resolve().parent.parent
 RFC_DIR = ROOT / "docs/engineering/rfcs"
 FEATURE_DIR = ROOT / "docs/engineering/features"
-RFC_STATUSES = {"proposed", "accepted", "implemented", "rejected", "superseded"}
+RFC_STATUSES = {"draft", "accepted", "implemented", "rejected", "superseded"}
 
 
 def prose(text: str) -> str:
@@ -75,9 +75,15 @@ def main() -> int:
             if status not in RFC_STATUSES:
                 errors.append(f"{path.relative_to(ROOT)}: invalid or missing RFC status")
             authorities = metadata_paths(fields.get("current-authority", ""))
-            if not authorities:
-                errors.append(f"{path.relative_to(ROOT)}: missing current-authority")
+            if status == "implemented" and not authorities:
+                errors.append(f"{path.relative_to(ROOT)}: implemented RFC missing current-authority")
             related = metadata_paths(fields.get("related-features", ""))
+            for destination in related:
+                resolved = (path.parent / destination).resolve()
+                if resolved.parent != FEATURE_DIR:
+                    errors.append(
+                        f"{path.relative_to(ROOT)}: related-features path is not a Feature {destination}"
+                    )
             for destination in authorities + related:
                 resolved = (path.parent / destination).resolve()
                 if not resolved.exists():
@@ -92,7 +98,7 @@ def main() -> int:
     if errors:
         print("\n".join(errors), file=sys.stderr)
         return 1
-    print(f"OK {len(files)} Markdown files: local links, anchors and Feature states")
+    print(f"OK {len(files)} Markdown files: local links, anchors, Feature states and RFC references")
     return 0
 
 
