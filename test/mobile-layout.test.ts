@@ -239,6 +239,8 @@ describe("mobile layout", () => {
     expect(bulkTaskModalSource).toContain("taskDateSuggestions()");
     expect(bulkTaskModalSource).toContain("new LabelPickerModal(this.app");
     expect(bulkTaskModalSource).toContain('"taskmate-bulk-label-partial"');
+    expect(bulkTaskModalSource).toContain("includeEverywhere(label)");
+    expect(bulkTaskModalSource).toContain('"taskmate-label-chip-add"');
     expect(bulkTaskModalSource).not.toContain('"bulk.removeLabels"');
     expect(exactDeclarations(".taskmate-bulk-date-presets")).toMatch(/grid-template-columns\s*:\s*repeat\(5,/);
   });

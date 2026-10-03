@@ -106,6 +106,10 @@ export class BulkTaskModal extends Modal {
       if (this.initialLabels.includes(label)) this.changes.removeLabels = this.changes.removeLabels.filter((item) => item !== label);
       else if (!this.changes.addLabels.includes(label)) this.changes.addLabels = [...this.changes.addLabels, label].slice(0, 500);
     };
+    const includeEverywhere = (label: string) => {
+      this.changes.removeLabels = this.changes.removeLabels.filter((item) => item !== label);
+      if (!this.changes.addLabels.includes(label)) this.changes.addLabels = [...this.changes.addLabels, label].slice(0, 500);
+    };
     const exclude = (label: string) => {
       this.changes.addLabels = this.changes.addLabels.filter((item) => item !== label);
       if (this.initialLabels.includes(label) && !this.changes.removeLabels.includes(label)) this.changes.removeLabels = [...this.changes.removeLabels, label];
@@ -116,12 +120,18 @@ export class BulkTaskModal extends Modal {
       const summary = summarizeLabels(labels);
       for (const label of expanded ? labels : summary.visible) {
         const assigned = this.tasks.filter((task) => task.labels.includes(label)).length;
-        const partial = assigned > 0 && assigned < this.tasks.length;
+        const partial = assigned > 0 && assigned < this.tasks.length && !this.changes.addLabels.includes(label);
         const chip = document.createElement("span");
         chip.addClass("taskmate-editor-label-chip");
         if (partial) chip.addClass("taskmate-bulk-label-partial");
         chip.dataset.taskmateLabelChip = label;
-        chip.createSpan({ text: partial ? t("bulk.labelPartial", { label, assigned, total: this.tasks.length }) : label });
+        chip.createSpan({ text: label });
+        if (partial) {
+          chip.createSpan({ text: t("bulk.labelPartial"), cls: "taskmate-bulk-label-partial-status" });
+          const addToAll = chip.createEl("button", { cls: "taskmate-label-chip-add", attr: { type: "button", "aria-label": t("bulk.addLabelToAllAriaLabel", { label }) } });
+          setIcon(addToAll, "plus");
+          addToAll.addEventListener("click", () => { includeEverywhere(label); refresh(); });
+        }
         const remove = chip.createEl("button", { cls: "taskmate-label-chip-remove", attr: { type: "button", "aria-label": t("bulk.removeLabelAriaLabel", { label }) } });
         setIcon(remove, "x");
         remove.addEventListener("click", () => { exclude(label); if (labelsNow().length <= 3) expanded = false; refresh(); });

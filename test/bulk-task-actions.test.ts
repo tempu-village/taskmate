@@ -38,6 +38,12 @@ describe("bulk task actions", () => {
     });
   });
 
+  it("adds a partially assigned Label only to selected tasks that do not already have it", () => {
+    const changes = { addLabels: ["partial"], removeLabels: [] };
+    expect(buildBulkTaskPatch(task("with", { labels: ["partial"] }), changes)).toEqual({ labels: ["partial"] });
+    expect(buildBulkTaskPatch(task("without", { labels: [] }), changes)).toEqual({ labels: ["partial"] });
+  });
+
   it("reports no failed tasks after a fully successful bulk action", () => {
     const tasks = [task("one"), task("two")];
     expect(failedBulkTasks(tasks, [
