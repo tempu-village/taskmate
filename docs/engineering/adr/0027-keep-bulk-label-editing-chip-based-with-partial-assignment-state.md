@@ -8,7 +8,7 @@ TaskMate already uses a chip editor with free-form entry and an indexed Label pi
 
 ## Decision
 
-Use the same chip editor and indexed picker as the normal Task editor for bulk Label editing. Show the union of Labels from the selected Tasks. A Label assigned to only a subset is a visually distinct partial-assignment chip with its assigned count. It means preserve the current per-Task assignment unless the user explicitly removes the chip. Removing a chip removes that Label from every selected Task that has it; adding a Label assigns it to every selected Task. Reuse the Task editor's mobile keyboard scroller so the active label input remains visible.
+Use the same chip editor and indexed picker as the normal Task editor for bulk Label editing. Show the union of Labels from the selected Tasks. A Label assigned to only a subset is a visually distinct `Some` / `一部` chip, without a numeric count. It means preserve the current per-Task assignment unless the user explicitly chooses one of its actions: `+` assigns the Label to every selected Task, while removing the chip removes it from every selected Task that has it. Reuse the Task editor's mobile keyboard scroller so the active label input remains visible.
 
 ## Considered options
 
@@ -19,6 +19,7 @@ Use the same chip editor and indexed picker as the normal Task editor for bulk L
 ## Consequences
 
 - Bulk editing preserves the familiar chip entry flow while making mixed Label state visible and safe by default.
+- Partial-assignment counts are deliberately omitted because the useful decision is whether the Label is on all selected Tasks, not how many currently have it.
 - The picker remains the scalable list-based discovery path for large Label collections.
 - The bulk editor must retain explicit add/remove operations internally rather than storing a replacement Label set.
 

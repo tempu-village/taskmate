@@ -1054,8 +1054,9 @@ var en = {
   "bulk.title": "Edit {count} tasks",
   "bulk.unchanged": "No change",
   "bulk.setValue": "Set a date",
-  "bulk.labelsDescription": "Labels used by any selected task are shown. A count means the label is only on some selected tasks; leave it unchanged, or remove it from every selected task.",
-  "bulk.labelPartial": "{label} ({assigned}/{total})",
+  "bulk.labelsDescription": "Labels used by any selected task are shown. A label marked Some is only on some selected tasks; leave it unchanged, add it to all, or remove it from every selected task.",
+  "bulk.labelPartial": "Some",
+  "bulk.addLabelToAllAriaLabel": "Add {label} to all selected tasks",
   "bulk.removeLabelAriaLabel": "Remove {label} from selected tasks",
   "bulk.apply": "Apply to {count} tasks",
   "date.today": "Today",
@@ -1262,8 +1263,9 @@ var ja = {
   "bulk.title": "{count}\u4EF6\u3092\u4E00\u62EC\u7DE8\u96C6",
   "bulk.unchanged": "\u5909\u66F4\u3057\u306A\u3044",
   "bulk.setValue": "\u65E5\u4ED8\u3092\u6307\u5B9A",
-  "bulk.labelsDescription": "\u9078\u629E\u3057\u305F\u30BF\u30B9\u30AF\u306E\u3044\u305A\u308C\u304B\u306B\u4ED8\u3044\u3066\u3044\u308B\u30E9\u30D9\u30EB\u3092\u8868\u793A\u3057\u307E\u3059\u3002\u4EF6\u6570\u4ED8\u304D\u306E\u30E9\u30D9\u30EB\u306F\u4E00\u90E8\u306E\u30BF\u30B9\u30AF\u3060\u3051\u306B\u4ED8\u3044\u3066\u3044\u307E\u3059\u3002\u4F55\u3082\u3057\u306A\u3051\u308C\u3070\u7DAD\u6301\u3055\u308C\u3001\u5916\u3059\u3068\u9078\u629E\u4E2D\u306E\u3059\u3079\u3066\u306E\u30BF\u30B9\u30AF\u304B\u3089\u524A\u9664\u3055\u308C\u307E\u3059\u3002",
-  "bulk.labelPartial": "{label}\uFF08{assigned}/{total}\u4EF6\uFF09",
+  "bulk.labelsDescription": "\u9078\u629E\u3057\u305F\u30BF\u30B9\u30AF\u306E\u3044\u305A\u308C\u304B\u306B\u4ED8\u3044\u3066\u3044\u308B\u30E9\u30D9\u30EB\u3092\u8868\u793A\u3057\u307E\u3059\u3002\u300C\u4E00\u90E8\u300D\u306E\u30E9\u30D9\u30EB\u306F\u4E00\u90E8\u306E\u30BF\u30B9\u30AF\u3060\u3051\u306B\u4ED8\u3044\u3066\u3044\u307E\u3059\u3002\u4F55\u3082\u3057\u306A\u3051\u308C\u3070\u7DAD\u6301\u3055\u308C\u3001\uFF0B\u3067\u5168\u30BF\u30B9\u30AF\u3078\u8FFD\u52A0\u3057\u3001\u5916\u3059\u3068\u9078\u629E\u4E2D\u306E\u3059\u3079\u3066\u306E\u30BF\u30B9\u30AF\u304B\u3089\u524A\u9664\u3055\u308C\u307E\u3059\u3002",
+  "bulk.labelPartial": "\u4E00\u90E8",
+  "bulk.addLabelToAllAriaLabel": "\u9078\u629E\u4E2D\u306E\u3059\u3079\u3066\u306E\u30BF\u30B9\u30AF\u306B{label}\u3092\u8FFD\u52A0",
   "bulk.removeLabelAriaLabel": "\u9078\u629E\u4E2D\u306E\u30BF\u30B9\u30AF\u304B\u3089{label}\u3092\u524A\u9664",
   "bulk.apply": "{count}\u4EF6\u306B\u9069\u7528",
   "date.today": "\u4ECA\u65E5",
@@ -1869,6 +1871,10 @@ var BulkTaskModal = class extends import_obsidian5.Modal {
       if (this.initialLabels.includes(label)) this.changes.removeLabels = this.changes.removeLabels.filter((item) => item !== label);
       else if (!this.changes.addLabels.includes(label)) this.changes.addLabels = [...this.changes.addLabels, label].slice(0, 500);
     };
+    const includeEverywhere = (label) => {
+      this.changes.removeLabels = this.changes.removeLabels.filter((item) => item !== label);
+      if (!this.changes.addLabels.includes(label)) this.changes.addLabels = [...this.changes.addLabels, label].slice(0, 500);
+    };
     const exclude = (label) => {
       this.changes.addLabels = this.changes.addLabels.filter((item) => item !== label);
       if (this.initialLabels.includes(label) && !this.changes.removeLabels.includes(label)) this.changes.removeLabels = [...this.changes.removeLabels, label];
@@ -1879,12 +1885,21 @@ var BulkTaskModal = class extends import_obsidian5.Modal {
       const summary = summarizeLabels(labels);
       for (const label of expanded ? labels : summary.visible) {
         const assigned = this.tasks.filter((task) => task.labels.includes(label)).length;
-        const partial = assigned > 0 && assigned < this.tasks.length;
+        const partial = assigned > 0 && assigned < this.tasks.length && !this.changes.addLabels.includes(label);
         const chip = document.createElement("span");
         chip.addClass("taskmate-editor-label-chip");
         if (partial) chip.addClass("taskmate-bulk-label-partial");
         chip.dataset.taskmateLabelChip = label;
-        chip.createSpan({ text: partial ? t("bulk.labelPartial", { label, assigned, total: this.tasks.length }) : label });
+        chip.createSpan({ text: label });
+        if (partial) {
+          chip.createSpan({ text: t("bulk.labelPartial"), cls: "taskmate-bulk-label-partial-status" });
+          const addToAll = chip.createEl("button", { cls: "taskmate-label-chip-add", attr: { type: "button", "aria-label": t("bulk.addLabelToAllAriaLabel", { label }) } });
+          (0, import_obsidian5.setIcon)(addToAll, "plus");
+          addToAll.addEventListener("click", () => {
+            includeEverywhere(label);
+            refresh();
+          });
+        }
         const remove = chip.createEl("button", { cls: "taskmate-label-chip-remove", attr: { type: "button", "aria-label": t("bulk.removeLabelAriaLabel", { label }) } });
         (0, import_obsidian5.setIcon)(remove, "x");
         remove.addEventListener("click", () => {

@@ -533,6 +533,18 @@
 }
 .taskmate-bulk-date-presets { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .taskmate-bulk-label-partial { border: 1px dashed var(--text-muted); }
+.taskmate-bulk-label-partial-status {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.taskmate-label-chip-add {
+  min-width: 30px;
+  min-height: 30px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
 .taskmate-step-modal {
   display: flex;
   flex-direction: column;
