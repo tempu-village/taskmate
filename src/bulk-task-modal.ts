@@ -26,6 +26,34 @@ function addEmbeddedLabel(setting: Setting, label: string): void {
   setting.controlEl.prepend(setting.controlEl.createSpan({ text: label, cls: "taskmate-embedded-field-label", attr: { "aria-hidden": "true" } }));
 }
 
+class PartialLabelActionsModal extends Modal {
+  constructor(
+    app: App,
+    label: string,
+    private readonly i18n: I18n,
+    private readonly onAddToAll: () => void,
+    private readonly onRemove: () => void
+  ) {
+    super(app);
+    this.setTitle(i18n.t("bulk.partialLabelActionsTitle", { label }));
+  }
+
+  onOpen(): void {
+    const { t } = this.i18n;
+    this.modalEl.addClass("taskmate-partial-label-actions-modal");
+    this.contentEl.createDiv({ text: t("bulk.partialLabelActionsDescription"), cls: "taskmate-partial-label-actions-description" });
+    const actions = this.contentEl.createDiv({ cls: "taskmate-partial-label-actions" });
+    const addToAll = actions.createEl("button", { text: t("bulk.addLabelToAll"), cls: "mod-cta" });
+    addToAll.addEventListener("click", () => { this.onAddToAll(); this.close(); });
+    const remove = actions.createEl("button", { text: t("bulk.removeLabel"), cls: "mod-warning" });
+    remove.addEventListener("click", () => { this.onRemove(); this.close(); });
+    const cancel = actions.createEl("button", { text: t("common.cancel") });
+    cancel.addEventListener("click", () => this.close());
+  }
+
+  onClose(): void { this.contentEl.empty(); }
+}
+
 export class BulkTaskModal extends Modal {
   private changes: BulkTaskChanges = { addLabels: [], removeLabels: [] };
   private keyboardScroller: MobileKeyboardScroller | null = null;
@@ -128,13 +156,20 @@ export class BulkTaskModal extends Modal {
         chip.createSpan({ text: label });
         if (partial) {
           chip.createSpan({ text: t("bulk.labelPartial"), cls: "taskmate-bulk-label-partial-status" });
-          const addToAll = chip.createEl("button", { cls: "taskmate-label-chip-add", attr: { type: "button", "aria-label": t("bulk.addLabelToAllAriaLabel", { label }) } });
-          setIcon(addToAll, "plus");
-          addToAll.addEventListener("click", () => { includeEverywhere(label); refresh(); });
+          const more = chip.createEl("button", { cls: "taskmate-label-chip-more", attr: { type: "button", "aria-label": t("bulk.labelActionsAriaLabel", { label }) } });
+          setIcon(more, "ellipsis");
+          more.addEventListener("click", () => new PartialLabelActionsModal(
+            this.app,
+            label,
+            this.i18n,
+            () => { includeEverywhere(label); refresh(); },
+            () => { exclude(label); refresh(); }
+          ).open());
+        } else {
+          const remove = chip.createEl("button", { cls: "taskmate-label-chip-remove", attr: { type: "button", "aria-label": t("bulk.removeLabelAriaLabel", { label }) } });
+          setIcon(remove, "x");
+          remove.addEventListener("click", () => { exclude(label); if (labelsNow().length <= 3) expanded = false; refresh(); });
         }
-        const remove = chip.createEl("button", { cls: "taskmate-label-chip-remove", attr: { type: "button", "aria-label": t("bulk.removeLabelAriaLabel", { label }) } });
-        setIcon(remove, "x");
-        remove.addEventListener("click", () => { exclude(label); if (labelsNow().length <= 3) expanded = false; refresh(); });
         editor.insertBefore(chip, input);
       }
       if (summary.hidden.length > 0) {

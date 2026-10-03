@@ -1054,9 +1054,13 @@ var en = {
   "bulk.title": "Edit {count} tasks",
   "bulk.unchanged": "No change",
   "bulk.setValue": "Set a date",
-  "bulk.labelsDescription": "Labels used by any selected task are shown. A label marked Some is only on some selected tasks; leave it unchanged, add it to all, or remove it from every selected task.",
+  "bulk.labelsDescription": "Labels used by any selected task are shown. A label marked Some is only on some selected tasks; use its more-actions button to leave it unchanged, add it to all, or remove it from every selected task.",
   "bulk.labelPartial": "Some",
-  "bulk.addLabelToAllAriaLabel": "Add {label} to all selected tasks",
+  "bulk.labelActionsAriaLabel": "Actions for {label}",
+  "bulk.partialLabelActionsTitle": "Edit {label}",
+  "bulk.partialLabelActionsDescription": "This Label is on only some selected tasks.",
+  "bulk.addLabelToAll": "Add to all selected tasks",
+  "bulk.removeLabel": "Remove from selected tasks",
   "bulk.removeLabelAriaLabel": "Remove {label} from selected tasks",
   "bulk.apply": "Apply to {count} tasks",
   "date.today": "Today",
@@ -1263,9 +1267,13 @@ var ja = {
   "bulk.title": "{count}\u4EF6\u3092\u4E00\u62EC\u7DE8\u96C6",
   "bulk.unchanged": "\u5909\u66F4\u3057\u306A\u3044",
   "bulk.setValue": "\u65E5\u4ED8\u3092\u6307\u5B9A",
-  "bulk.labelsDescription": "\u9078\u629E\u3057\u305F\u30BF\u30B9\u30AF\u306E\u3044\u305A\u308C\u304B\u306B\u4ED8\u3044\u3066\u3044\u308B\u30E9\u30D9\u30EB\u3092\u8868\u793A\u3057\u307E\u3059\u3002\u300C\u4E00\u90E8\u300D\u306E\u30E9\u30D9\u30EB\u306F\u4E00\u90E8\u306E\u30BF\u30B9\u30AF\u3060\u3051\u306B\u4ED8\u3044\u3066\u3044\u307E\u3059\u3002\u4F55\u3082\u3057\u306A\u3051\u308C\u3070\u7DAD\u6301\u3055\u308C\u3001\uFF0B\u3067\u5168\u30BF\u30B9\u30AF\u3078\u8FFD\u52A0\u3057\u3001\u5916\u3059\u3068\u9078\u629E\u4E2D\u306E\u3059\u3079\u3066\u306E\u30BF\u30B9\u30AF\u304B\u3089\u524A\u9664\u3055\u308C\u307E\u3059\u3002",
+  "bulk.labelsDescription": "\u9078\u629E\u3057\u305F\u30BF\u30B9\u30AF\u306E\u3044\u305A\u308C\u304B\u306B\u4ED8\u3044\u3066\u3044\u308B\u30E9\u30D9\u30EB\u3092\u8868\u793A\u3057\u307E\u3059\u3002\u300C\u4E00\u90E8\u300D\u306E\u30E9\u30D9\u30EB\u306F\u4E00\u90E8\u306E\u30BF\u30B9\u30AF\u3060\u3051\u306B\u4ED8\u3044\u3066\u3044\u307E\u3059\u3002\u2026\u304B\u3089\u3001\u7DAD\u6301\u3001\u5168\u30BF\u30B9\u30AF\u3078\u306E\u8FFD\u52A0\u3001\u307E\u305F\u306F\u9078\u629E\u4E2D\u306E\u3059\u3079\u3066\u306E\u30BF\u30B9\u30AF\u304B\u3089\u306E\u524A\u9664\u3092\u9078\u3079\u307E\u3059\u3002",
   "bulk.labelPartial": "\u4E00\u90E8",
-  "bulk.addLabelToAllAriaLabel": "\u9078\u629E\u4E2D\u306E\u3059\u3079\u3066\u306E\u30BF\u30B9\u30AF\u306B{label}\u3092\u8FFD\u52A0",
+  "bulk.labelActionsAriaLabel": "{label}\u306E\u64CD\u4F5C",
+  "bulk.partialLabelActionsTitle": "{label}\u3092\u7DE8\u96C6",
+  "bulk.partialLabelActionsDescription": "\u3053\u306E\u30E9\u30D9\u30EB\u306F\u9078\u629E\u4E2D\u306E\u4E00\u90E8\u306E\u30BF\u30B9\u30AF\u3060\u3051\u306B\u4ED8\u3044\u3066\u3044\u307E\u3059\u3002",
+  "bulk.addLabelToAll": "\u5168\u30BF\u30B9\u30AF\u306B\u8FFD\u52A0",
+  "bulk.removeLabel": "\u9078\u629E\u4E2D\u306E\u30BF\u30B9\u30AF\u304B\u3089\u5916\u3059",
   "bulk.removeLabelAriaLabel": "\u9078\u629E\u4E2D\u306E\u30BF\u30B9\u30AF\u304B\u3089{label}\u3092\u524A\u9664",
   "bulk.apply": "{count}\u4EF6\u306B\u9069\u7528",
   "date.today": "\u4ECA\u65E5",
@@ -1783,6 +1791,36 @@ function addEmbeddedLabel(setting, label) {
   setting.controlEl.addClass("taskmate-embedded-select");
   setting.controlEl.prepend(setting.controlEl.createSpan({ text: label, cls: "taskmate-embedded-field-label", attr: { "aria-hidden": "true" } }));
 }
+var PartialLabelActionsModal = class extends import_obsidian5.Modal {
+  constructor(app, label, i18n, onAddToAll, onRemove) {
+    super(app);
+    this.i18n = i18n;
+    this.onAddToAll = onAddToAll;
+    this.onRemove = onRemove;
+    this.setTitle(i18n.t("bulk.partialLabelActionsTitle", { label }));
+  }
+  onOpen() {
+    const { t } = this.i18n;
+    this.modalEl.addClass("taskmate-partial-label-actions-modal");
+    this.contentEl.createDiv({ text: t("bulk.partialLabelActionsDescription"), cls: "taskmate-partial-label-actions-description" });
+    const actions = this.contentEl.createDiv({ cls: "taskmate-partial-label-actions" });
+    const addToAll = actions.createEl("button", { text: t("bulk.addLabelToAll"), cls: "mod-cta" });
+    addToAll.addEventListener("click", () => {
+      this.onAddToAll();
+      this.close();
+    });
+    const remove = actions.createEl("button", { text: t("bulk.removeLabel"), cls: "mod-warning" });
+    remove.addEventListener("click", () => {
+      this.onRemove();
+      this.close();
+    });
+    const cancel = actions.createEl("button", { text: t("common.cancel") });
+    cancel.addEventListener("click", () => this.close());
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+};
 var BulkTaskModal = class extends import_obsidian5.Modal {
   constructor(app, tasks, projects, labelOptions, availableRegion, i18n, onApply) {
     super(app);
@@ -1893,20 +1931,30 @@ var BulkTaskModal = class extends import_obsidian5.Modal {
         chip.createSpan({ text: label });
         if (partial) {
           chip.createSpan({ text: t("bulk.labelPartial"), cls: "taskmate-bulk-label-partial-status" });
-          const addToAll = chip.createEl("button", { cls: "taskmate-label-chip-add", attr: { type: "button", "aria-label": t("bulk.addLabelToAllAriaLabel", { label }) } });
-          (0, import_obsidian5.setIcon)(addToAll, "plus");
-          addToAll.addEventListener("click", () => {
-            includeEverywhere(label);
+          const more = chip.createEl("button", { cls: "taskmate-label-chip-more", attr: { type: "button", "aria-label": t("bulk.labelActionsAriaLabel", { label }) } });
+          (0, import_obsidian5.setIcon)(more, "ellipsis");
+          more.addEventListener("click", () => new PartialLabelActionsModal(
+            this.app,
+            label,
+            this.i18n,
+            () => {
+              includeEverywhere(label);
+              refresh();
+            },
+            () => {
+              exclude(label);
+              refresh();
+            }
+          ).open());
+        } else {
+          const remove = chip.createEl("button", { cls: "taskmate-label-chip-remove", attr: { type: "button", "aria-label": t("bulk.removeLabelAriaLabel", { label }) } });
+          (0, import_obsidian5.setIcon)(remove, "x");
+          remove.addEventListener("click", () => {
+            exclude(label);
+            if (labelsNow().length <= 3) expanded = false;
             refresh();
           });
         }
-        const remove = chip.createEl("button", { cls: "taskmate-label-chip-remove", attr: { type: "button", "aria-label": t("bulk.removeLabelAriaLabel", { label }) } });
-        (0, import_obsidian5.setIcon)(remove, "x");
-        remove.addEventListener("click", () => {
-          exclude(label);
-          if (labelsNow().length <= 3) expanded = false;
-          refresh();
-        });
         editor.insertBefore(chip, input);
       }
       if (summary.hidden.length > 0) {
