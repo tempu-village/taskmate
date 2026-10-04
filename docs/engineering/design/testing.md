@@ -31,7 +31,7 @@ git diff --check
 | [LIST-01/02/03](../features/filtering-and-sorting.md) | domain, filter-state and list-model tests | Navigation retains filters; changing sort retains global rank |
 | [MOBILE-01/02](../features/mobile-layout.md) | static layout and keyboard calculation tests | Real keyboard and touch checks; DOM tests do not emulate WebView |
 | [I18N-01/02](../features/localization.md) | dictionary/fallback tests | Command/ribbon reload and narrow translated controls |
-| [CONFLICT-01/02/03/04](../features/edit-conflicts.md) | merge and repository tests, except Step value equality | Two-device synchronization; see known gap below |
+| [CONFLICT-01/02/03/04](../features/edit-conflicts.md) | merge and repository tests, including Step value equality | Two-device synchronization |
 | [IMPORT-01/02/03/04](../features/source-import.md) | Python proposal/store tests | Actual agent's coverage inventory versus all source statements |
 | [STORE-01/02](../features/storage-and-privacy.md) | settings/repository inspection | Uninstall retention and folder-setting change |
 
@@ -39,7 +39,6 @@ Use stable acceptance IDs in specs and link meaningful tests here or in the spec
 
 ## Known gaps
 
-- **Step value equality / CONFLICT-04:** a read-only probe during this documentation review passed independently cloned but identical non-empty Steps into `compareTaskEdit`; it returned a `steps` conflict. The helper compares objects by identity. Intended equal-value semantics remain accepted. Correct the implementation and add a focused regression test in a separate runtime change; existing scalar/Label tests do not cover it.
 - **Source read scope:** current discovery reads unrelated non-managed Markdown while checking opt-in. [Source index](../features/source-note-index.md) proposes the tighter read boundary; it is not shipped.
 - **Device verification:** this documentation change inspects source and runs automated checks, but does not execute fresh desktop/Android UI sessions. Existing repository documentation records Android experience; iOS remains unverified.
 - **Crash recovery:** multi-file proposal promotion has no atomic transaction. Retry after an unrecorded Task creation needs reconciliation; no crash-exactly-once guarantee is claimed.
@@ -66,7 +65,7 @@ In a disposable Vault, follow [getting started](../../user/getting-started.md), 
 
 受け入れIDとテスト・手動確認の対応は表を正本にします。Project削除、実キーボード、同期など、自動テストだけでは確認できない範囲を明記します。
 
-既知の不足：同内容のStepsを別オブジェクトとして渡すとsteps競合を返すことを読み取り専用probeで確認しました。CONFLICT-04を弱めず、別の実装修正で回帰テストを追加します。Source探索の対象外読み取り、複数ファイル反映のクラッシュ復旧、今回未実施の実機確認も区別します。iOSは未検証です。
+既知の不足：Source探索の対象外読み取り、複数ファイル反映のクラッシュ復旧、今回未実施の実機確認を区別します。iOSは未検証です。CONFLICT-04は、Stepを追加して保存した後の未変更再保存を対象とするrepository回帰テストで確認します。
 
 今回の文書整合では、ADR 0023と実装・テストに従い一覧の100書記素上限を統一し、検索のStep本文対象、完了済み表示の選択を補いました。コードの挙動は変更していません。
 
