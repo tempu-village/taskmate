@@ -10,7 +10,7 @@ From the repository root after installing dependencies with `npm ci`:
 npm run typecheck
 npm test
 npm run build
-python3 -m unittest discover -s skills/taskmate/tests -v
+python3 -m unittest discover -s skills/taskpilot/tests -v
 python3 scripts/validate_skills.py
 npm run validate:localization
 python3 scripts/validate_docs.py
@@ -18,7 +18,7 @@ npm run validate:release
 git diff --check
 ```
 
-[package.json](../../../package.json) owns scripts and dependencies; [CI](../../../.github/workflows/ci.yml) selects Node 22 and Python 3.11. These are CI choices, not a newly declared minimum runtime policy. Builds produce `main.js`; never edit it manually. For manual installation into a disposable Vault, follow [README](../../../README.md#install-from-a-local-build); install the portable Skill separately as described there. UI automation is optional evidence, not a plugin dependency.
+[package.json](../../../package.json) owns scripts and dependencies; [CI](../../../.github/workflows/ci.yml) selects Node 22 and Python 3.11. These are CI choices, not a newly declared minimum runtime policy. Builds produce `main.js`; never edit it manually. For manual installation into a disposable Vault, follow [README](../../../README.md#install-from-a-local-build); install Task Pilot separately as described there. UI automation is optional evidence, not a plugin dependency.
 
 ## Acceptance map
 

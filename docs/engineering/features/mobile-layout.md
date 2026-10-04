@@ -20,7 +20,7 @@ On a narrow mobile screen, the editor keeps Obsidian's normal size and position 
 - MOBILE-01: Persistent controls remain reachable while results scroll.
 - MOBILE-02: Focusing a lower field above a software keyboard does not cause oscillating clearance or reset scroll.
 
-Automated evidence: [mobile-layout.test.ts](../../../test/mobile-layout.test.ts), [mobile-keyboard-layout.test.ts](../../../test/mobile-keyboard-layout.test.ts). These tests cover selected behavior, not every UI scenario. Device checks and remaining gaps: [verification](../design/testing.md). Storage syntax: [Task schema](../../../skills/taskmate/references/task-schema.md).
+Automated evidence: [mobile-layout.test.ts](../../../test/mobile-layout.test.ts), [mobile-keyboard-layout.test.ts](../../../test/mobile-keyboard-layout.test.ts). These tests cover selected behavior, not every UI scenario. Device checks and remaining gaps: [verification](../design/testing.md). Storage syntax: [Task Pilot schema](../../../skills/taskpilot/references/task-schema.md).
 
 ## Related RFCs
 

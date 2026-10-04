@@ -24,7 +24,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
-      - run: python3 -m unittest discover -s skills/taskmate/tests -v
+      - run: python3 -m unittest discover -s skills/taskpilot/tests -v
       - run: python3 scripts/validate_skills.py
       - run: npm run validate:localization
       - run: npm run validate:release -- --tag "$GITHUB_REF_NAME"

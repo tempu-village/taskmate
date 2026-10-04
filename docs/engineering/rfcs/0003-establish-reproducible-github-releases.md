@@ -54,7 +54,7 @@ The release workflow must rebuild `main.js` from the tagged source and validate 
 - Run `npm run typecheck`.
 - Run `npm test`.
 - Run `npm run build`.
-- Run `python3 -m unittest discover -s skills/taskmate/tests -v`.
+- Run `python3 -m unittest discover -s skills/taskpilot/tests -v`.
 - Run `python3 scripts/validate_skills.py`.
 - Run `npm run validate:localization`.
 - Run `npm run validate:release`.
@@ -128,7 +128,7 @@ Obsidianは、manifestのバージョンと完全に一致するGitHub Release�
 - `npm run typecheck`を実行する。
 - `npm test`を実行する。
 - `npm run build`を実行する。
-- `python3 -m unittest discover -s skills/taskmate/tests -v`を実行する。
+- `python3 -m unittest discover -s skills/taskpilot/tests -v`を実行する。
 - `python3 scripts/validate_skills.py`を実行する。
 - `npm run validate:localization`を実行する。
 - `npm run validate:release`を実行する。

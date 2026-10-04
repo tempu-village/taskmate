@@ -52,7 +52,7 @@ Manual order is one global sequence shared across Smart views and other Task lis
 - LIST-02: Automatic sorting leaves manual ranks unchanged; Scheduled section order stays fixed.
 - LIST-03: Search includes Step text and returns full-title matches beyond the displayed prefix.
 
-Automated evidence: [domain.test.ts](../../../test/domain.test.ts), [task-filter-state.test.ts](../../../test/task-filter-state.test.ts), [task-list-model.test.ts](../../../test/task-list-model.test.ts). These tests cover selected behavior, not every UI scenario. Device checks and remaining gaps: [verification](../design/testing.md). Storage syntax: [Task schema](../../../skills/taskmate/references/task-schema.md).
+Automated evidence: [domain.test.ts](../../../test/domain.test.ts), [task-filter-state.test.ts](../../../test/task-filter-state.test.ts), [task-list-model.test.ts](../../../test/task-list-model.test.ts). These tests cover selected behavior, not every UI scenario. Device checks and remaining gaps: [verification](../design/testing.md). Storage syntax: [Task Pilot schema](../../../skills/taskpilot/references/task-schema.md).
 
 ## Related RFCs
 

@@ -1,6 +1,6 @@
 # Review source notes and create Tasks
 
-Prerequisites: TaskMate in a test Vault, the companion [Skill installed in your agent client](../../../README.md#install-and-use-the-agent-skill), and that client authorized for the Vault. The plugin alone does not run AI. Current use requires identifying the Vault or opening it as the agent workspace; automatic registration is [proposed](../../engineering/features/agent-vault-setup.md).
+Prerequisites: TaskMate in a test Vault, [Task Pilot installed in your agent client](../../../README.md#install-and-use-task-pilot), and that client authorized for the Vault. The plugin alone does not run AI. Current use requires identifying the Vault or opening it as the agent workspace; automatic registration is [proposed](../../engineering/features/agent-vault-setup.md).
 
 ## Select and request a review
 
@@ -25,7 +25,7 @@ For a multi-note practice scenario, put two independent actions in separate note
 
 > 翻訳状態：`ai-translated`。英語版が正本です。
 
-前提はテストVaultのTaskMate、Agentクライアントへの[Skill導入](../../../README.md#install-and-use-the-agent-skill)、Vaultへのアクセス権限です。プラグイン単体ではAIを実行しません。現在はVaultを指定するかAgentの作業場所として開きます。自動登録は[提案中](../../engineering/features/agent-vault-setup.md)です。
+前提はテストVaultのTaskMate、Agentクライアントへの[Task Pilot導入](../../../README.md#install-and-use-task-pilot)、Vaultへのアクセス権限です。プラグイン単体ではAIを実行しません。現在はVaultを指定するかAgentの作業場所として開きます。自動登録は[提案中](../../engineering/features/agent-vault-setup.md)です。
 
 ### 対象を選びレビューする
 

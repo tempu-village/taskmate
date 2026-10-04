@@ -3,7 +3,7 @@
 [English](README.md) | 日本語
 
 <!-- translation-status: ai-translated -->
-<!-- translation-source-sha256: 09e66bf807a66517b006b3ad5156d2a0ce8090fcc4592dd8a6e43580c9161958 -->
+<!-- translation-source-sha256: a6655bf1bf72c69e9fb86cc9e74b33ca34d4d667887c275afac7017e5c3f66b4 -->
 
 > 翻訳状態：`ai-translated`
 >
@@ -11,7 +11,7 @@
 
 TaskMateは、Obsidian向けのシンプルなローカルファーストのタスク管理ツールです。すべてのタスクとプロジェクトをVault内の読みやすいMarkdownとして保ちながら、Todoistのように目的を絞ったインターフェースを提供します。
 
-TaskMateには、任意で使用できるポータブルなAgent Skillも含まれます。Skillは、明示的に選択したノートから確認可能な提案を作成し、採用する内容をユーザーが判断した後にだけタスクを作成または更新します。
+TaskMateには、任意で使用できるポータブルなエージェントスキル、Task Pilotも含まれます。Task Pilotは、明示的に選択したノートから確認可能な提案を作成し、採用する内容をユーザーが判断した後にだけタスクを作成または更新します。
 
 ## TaskMateを選ぶ理由
 
@@ -154,7 +154,7 @@ npm run deploy
 
 この同期手順は、PC版Obsidian、Android版Obsidian、公式Obsidian Sync、未公開のTaskMateビルドの組み合わせで確認済みです。iOSはまだ確認していません。
 
-## Agent Skillの対象ノートを選択する
+## Task Pilotの対象ノートを選択する
 
 **TaskMate: 現在のフォルダをAI対象にする**を実行するか、**設定 → TaskMate → AI対象フォルダ**でVaultからの相対パスを1行に1フォルダ入力します。
 
@@ -165,24 +165,24 @@ taskmate-source: true  # include this note anywhere
 taskmate-source: false # exclude this note from an included folder
 ```
 
-処理済みの対象ノートには、出所を示す`taskmate-import-*`プロパティが追加されます。コンテンツハッシュにより、Skill自身が追加したメタデータをユーザーの変更と誤認せず、後から行われた編集を検出できます。
+処理済みの対象ノートには、出所を示す`taskmate-import-*`プロパティが追加されます。コンテンツハッシュにより、Task Pilot自身が追加したメタデータをユーザーの変更と誤認せず、後から行われた編集を検出できます。
 
-## Agent Skillをインストールして使用する
+## Task Pilotをインストールして使用する
 
-プラグインはAgent Skillなしでも動作します。AIによるタスク抽出を使用する場合は、Agent Skills互換クライアントへ`skills/taskmate`をインストールします。ローカル開発中は次のようにします。
+プラグインはTask Pilotなしでも動作します。AIによるタスク抽出を使用する場合は、Agent Skills互換クライアントへ`skills/taskpilot`をインストールします。ローカル開発中は次のようにします。
 
 ```bash
 mkdir -p "$HOME/.agents/skills"
-ln -s "$(pwd)/skills/taskmate" "$HOME/.agents/skills/taskmate"
+ln -s "$(pwd)/skills/taskpilot" "$HOME/.agents/skills/taskpilot"
 ```
 
 Vaultをエージェントのワークスペースとして開き、次のように依頼します。
 
 ```text
-$taskmate Review the selected source notes and propose every Todo candidate.
+$taskpilot Review the selected source notes and propose every Task candidate.
 ```
 
-Skillは`TaskMate/Proposals/Active`へ提案を書き込み、この段階では正式なタスクを作成しません。会話ですべての候補を確認し、承認、修正、除外のいずれかを明示的に判断します。承認または修正した提案はタスクになります。完了した確認は、人が読める目印と機械可読な判断情報を付けて`TaskMate/Proposals/Archive`へ移動し、手動で削除するまで残ります。
+Task Pilotは`TaskMate/Proposals/Active`へ提案を書き込み、この段階では正式なタスクを作成しません。会話ですべての候補を確認し、承認、修正、除外のいずれかを明示的に判断します。承認または修正した提案はタスクになります。完了した確認は、人が読める目印と機械可読な判断情報を付けて`TaskMate/Proposals/Archive`へ移動し、手動で削除するまで残ります。
 
 必要に応じて**設定 → TaskMate → 提案フォルダ**から保存先を変更できます。提案フォルダは承認の境界であり、セキュリティ用サンドボックスではなく、対象ノートの許可範囲を広げません。
 
@@ -195,7 +195,7 @@ Skillは`TaskMate/Proposals/Active`へ提案を書き込み、この段階では
 - プラグインはObsidianのVault APIとファイル管理APIを使い、TaskMateが管理するMarkdownを読み書きします。
 - プラグインには、テレメトリ、ホストされたTaskMateアカウント、実行時AI、翻訳サービス、TaskMate独自の同期サーバーはありません。
 - プラグインはタスク内容を外部の翻訳サービスへ送信しません。
-- 任意のAgent Skillはエージェントクライアントの権限で動作し、Obsidianプラグインとは別のものです。
+- Task Pilotはエージェントクライアントの権限で動作し、Obsidianプラグインとは別のものです。
 - プラグインをアンインストールしても、タスク、プロジェクト、提案のMarkdownはVaultに残ります。
 
 公開リリース前に、これらの記述をリリース用ビルドと照合してください。重要なデータにTaskMateを使用する前にVaultをバックアップし、利用する同期サービスの競合処理を理解してください。
@@ -232,7 +232,7 @@ TaskMateのUIと利用者向け文書では、英語を正式な原本および�
 npm run typecheck
 npm test
 npm run build
-python3 -m unittest discover -s skills/taskmate/tests -v
+python3 -m unittest discover -s skills/taskpilot/tests -v
 python3 scripts/validate_skills.py
 npm run validate:localization
 python3 scripts/validate_docs.py

@@ -16,7 +16,7 @@ TaskMate uses static bundled dictionaries. It does not send vault content to an 
 - I18N-01: Auto uses a supported Obsidian locale or English fallback.
 - I18N-02: Changing language refreshes views/settings; commands and ribbon text refresh on reload.
 
-Automated evidence: [i18n.test.ts](../../../test/i18n.test.ts). These tests cover selected behavior, not every UI scenario. Device checks and remaining gaps: [verification](../design/testing.md). Storage syntax: [Task schema](../../../skills/taskmate/references/task-schema.md).
+Automated evidence: [i18n.test.ts](../../../test/i18n.test.ts). These tests cover selected behavior, not every UI scenario. Device checks and remaining gaps: [verification](../design/testing.md). Storage syntax: [Task Pilot schema](../../../skills/taskpilot/references/task-schema.md).
 
 ## 日本語参考
 

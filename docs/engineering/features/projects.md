@@ -18,7 +18,7 @@ The Projects screen shows up to five recently used Projects and the complete Pro
 - PROJECT-01: Renaming preserves identity and Task membership.
 - PROJECT-02: Deleting a Project leaves its Tasks present and unassigned.
 
-Automated evidence: [domain.test.ts](../../../test/domain.test.ts) checks Project Markdown round trips. PROJECT-01/02 also need manual membership checks; these are not covered by that format test. Device checks and remaining gaps: [verification](../design/testing.md). Storage syntax: [Project schema](../../../skills/taskmate/references/project-schema.md).
+Automated evidence: [domain.test.ts](../../../test/domain.test.ts) checks Project Markdown round trips. PROJECT-01/02 also need manual membership checks; these are not covered by that format test. Device checks and remaining gaps: [verification](../design/testing.md). Storage syntax: [Task Pilot project schema](../../../skills/taskpilot/references/project-schema.md).
 
 ## 日本語参考
 

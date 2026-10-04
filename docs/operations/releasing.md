@@ -22,7 +22,7 @@ Run the same checks used by CI and the release workflow:
 npm run typecheck
 npm test
 npm run build
-python3 -m unittest discover -s skills/taskmate/tests -v
+python3 -m unittest discover -s skills/taskpilot/tests -v
 python3 scripts/validate_skills.py
 npm run validate:localization
 npm run validate:release
@@ -97,7 +97,7 @@ CIとReleaseワークフローで使うものと同じ検査を実行します�
 npm run typecheck
 npm test
 npm run build
-python3 -m unittest discover -s skills/taskmate/tests -v
+python3 -m unittest discover -s skills/taskpilot/tests -v
 python3 scripts/validate_skills.py
 npm run validate:localization
 npm run validate:release

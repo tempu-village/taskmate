@@ -19,7 +19,7 @@ Create one contributor-facing development-environment guide for TaskMate. It mus
 
 ## Background
 
-TaskMate's README explains how to build and manually install the plugin, and its scripts already encode the supported checks. However, the complete development setup, the relationship between the Obsidian plugin and the companion Agent Skill, and the appropriate place for direct-operation tooling are not documented as one onboarding path. Contributors should be able to set up, verify, and test the project without relying on a maintainer's local configuration, credentials, or installed personal plugins.
+TaskMate's README explains how to build and manually install the plugin, and its scripts already encode the supported checks. However, the complete development setup, the relationship between the Obsidian plugin and Task Pilot, and the appropriate place for direct-operation tooling are not documented as one onboarding path. Contributors should be able to set up, verify, and test the project without relying on a maintainer's local configuration, credentials, or installed personal plugins.
 
 ## Requirements
 
@@ -27,7 +27,7 @@ TaskMate's README explains how to build and manually install the plugin, and its
 - State the supported runtime and package-manager prerequisites, including the exact version source when the repository pins one. Do not invent a runtime-version policy where the repository has not defined one.
 - Document the required local workflow for the JavaScript/TypeScript plugin: dependency installation, `npm run typecheck`, `npm test`, `npm run build`, Python behavior tests, and `python3 scripts/validate_skills.py`.
 - Document how to prepare a disposable Obsidian test vault, install the local build into `.obsidian/plugins/taskmate/`, enable the plugin, and perform desktop and Android verification within the public Obsidian and browser API compatibility constraint.
-- Document companion Agent Skill development separately from plugin development, including the local `skills/taskmate` link/install workflow and the source-folder allowlist and proposal-review boundaries that apply during testing.
+- Document Task Pilot development separately from plugin development, including the local `skills/taskpilot` link/install workflow and the source-folder allowlist and proposal-review boundaries that apply during testing.
 - Define direct-operation and UI-automation tooling as optional verification aids. The document must state their intended use, what evidence they should record, and that they must not become a required runtime dependency or require secrets, private vault contents, or personal local configuration.
 - Include a concise tool inventory that distinguishes repository dependencies from host applications and optional tooling. Use repository-managed files such as `package.json`, lockfiles, and scripts as the source of truth for dependency versions and commands.
 - Include troubleshooting for the common local-install and reload failures already described in `README.md`, without copying a second, divergent installation procedure.
@@ -44,7 +44,7 @@ TaskMate's README explains how to build and manually install the plugin, and its
 
 ## Verification
 
-- Review the guide against `package.json`, the lockfile, `scripts/`, `skills/taskmate/`, `README.md`, and `AGENTS.md`.
+- Review the guide against `package.json`, the lockfile, `scripts/`, `skills/taskpilot/`, `README.md`, and `AGENTS.md`.
 - Execute the documented required checks in a clean local dependency installation.
 - Follow the local-build and disposable-vault procedure on desktop Obsidian; perform the documented Android validation when an Android test device is available.
 - Verify the English and Japanese document structures, protected literals, and links with the repository's documentation/localization validation workflow.
@@ -73,7 +73,7 @@ TaskMate の開発環境を、Node.js／JavaScript と Obsidian プラグイン�
 
 > 対応範囲：英語版「Background」の要約
 
-README とスクリプトにはビルドや手動導入の情報がありますが、プラグイン、Agent Skill、直接操作ツールの関係を含めた一貫したオンボーディングはありません。個人の設定、認証情報、個人用プラグインに依存せず、開発・検証できるようにします。
+README とスクリプトにはビルドや手動導入の情報がありますが、プラグイン、Task Pilot、直接操作ツールの関係を含めた一貫したオンボーディングはありません。個人の設定、認証情報、個人用プラグインに依存せず、開発・検証できるようにします。
 
 ## 要件
 
@@ -83,7 +83,7 @@ README とスクリプトにはビルドや手動導入の情報があります�
 - 対応するランタイムとパッケージマネージャーの前提条件を、リポジトリが固定している場合はその正確なバージョン情報源とともに記載する。リポジトリで定義していないランタイムのバージョン方針は作らない。
 - JavaScript/TypeScript プラグインに必要なローカル手順として、依存関係の導入、`npm run typecheck`、`npm test`、`npm run build`、Python の振る舞いテスト、`python3 scripts/validate_skills.py` を記載する。
 - 使い捨ての Obsidian テスト用 Vault の準備、`.obsidian/plugins/taskmate/` へのローカルビルドの導入、プラグインの有効化、公開 Obsidian API とブラウザ API の互換性制約内でのデスクトップ・Android 検証を記載する。
-- コンパニオン Agent Skill の開発をプラグイン開発と分けて記載し、ローカルの `skills/taskmate` のリンク／導入手順と、テスト時にも適用されるソースフォルダーの許可リストおよび提案レビューの境界を含める。
+- Task Pilotの開発をプラグイン開発と分けて記載し、ローカルの `skills/taskpilot` のリンク／導入手順と、テスト時にも適用されるソースフォルダーの許可リストおよび提案レビューの境界を含める。
 - 直接操作・UI 自動操作ツールを任意の検証支援として定義する。意図した用途、記録すべき証拠、必須ランタイム依存にしてはならないこと、秘密情報・非公開 Vault 内容・個人固有のローカル設定を必要としてはならないことを記載する。
 - リポジトリ依存関係、ホストアプリ、任意ツールを区別する簡潔なツール一覧を含める。依存関係のバージョンとコマンドは、`package.json`、ロックファイル、スクリプトなどのリポジトリ管理ファイルを正本として扱う。
 - `README.md` にある一般的なローカル導入・再読み込み失敗の対処を、二つ目の食い違う導入手順を複製せずに記載する。
@@ -104,7 +104,7 @@ README とスクリプトにはビルドや手動導入の情報があります�
 
 > 対応範囲：英語版「Verification」の全項目
 
-- `package.json`、ロックファイル、`scripts/`、`skills/taskmate/`、`README.md`、`AGENTS.md` と照合してガイドをレビューする。
+- `package.json`、ロックファイル、`scripts/`、`skills/taskpilot/`、`README.md`、`AGENTS.md` と照合してガイドをレビューする。
 - クリーンなローカル依存関係導入環境で、記載された必須検査を実行する。
 - デスクトップ Obsidian でローカルビルドと使い捨て Vault の手順に従う。Android のテスト端末が利用できる場合は、記載した Android 検証を実施する。
 - リポジトリのドキュメント／ローカライズ検証手順により、英語・日本語のドキュメント構造、保護されたリテラル、リンクを検証する。

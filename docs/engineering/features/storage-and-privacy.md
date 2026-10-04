@@ -7,7 +7,7 @@ Implementation: Implemented; code review and schema tests, not an independent pr
 
 Tasks, Projects, and proposal sessions are stored in configurable folders under `TaskMate` by default. TaskMate uses Obsidian's vault and file-management APIs and has no telemetry, hosted TaskMate account, runtime AI, translation service, or TaskMate synchronization server. Uninstalling the plugin leaves its Markdown data in the vault.
 
-The optional Agent Skill runs in a separate host with that host's filesystem and model-service permissions. Plugin privacy claims do not describe the agent client's data handling. [Source discovery limitations](source-import.md#current-discovery-limitation) also apply.
+Task Pilot runs in a separate host with that host's filesystem and model-service permissions. Plugin privacy claims do not describe the agent client's data handling. [Source discovery limitations](source-import.md#current-discovery-limitation) also apply.
 
 Changing a managed-folder setting selects another storage location; it does not automatically migrate existing files. Back up and move files deliberately when changing locations.
 
@@ -28,6 +28,6 @@ Review [settings](../../../src/settings.ts), [repositories](../../../src/reposit
 
 承認：既存契約から継承。実装済みですが、独立したプライバシー監査は行っていません。
 
-Agent Skillは実行元クライアントのファイル権限・モデルサービスの条件で動作します。プラグインのプライバシー保証と区別し、[Source探索の制約](source-import.md#current-discovery-limitation)も確認してください。
+Task Pilotは実行元クライアントのファイル権限・モデルサービスの条件で動作します。プラグインのプライバシー保証と区別し、[Source探索の制約](source-import.md#current-discovery-limitation)も確認してください。
 
 管理フォルダーの設定変更は参照先を変えるだけで、自動移行ではありません。STORE-01：削除後もデータを残す、STORE-02：設定変更で移行・削除しない、を使い捨てVaultで手動確認します。

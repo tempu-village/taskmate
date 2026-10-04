@@ -32,7 +32,7 @@ Following [GitHub's content model](https://docs.github.com/en/contributing/style
 3. Write its complete rule there once.
 4. Link to it elsewhere and add only reader-specific explanation.
 
-For a future recurring-task feature, `engineering/features/recurring-tasks.md` would own its behavior, calculation, feature-specific failures and verification; a How-to would explain completing it. A shared recurrence file format or state machine would belong in `engineering/specifications/`. Recurrence is not currently implemented. Portable Skill schemas retain their existing home and repository Specifications link to them. Markdown is canonical; Word/PDF are derived deliverables and external wikis link here.
+For a future recurring-task feature, `engineering/features/recurring-tasks.md` would own its behavior, calculation, feature-specific failures and verification; a How-to would explain completing it. A shared recurrence file format or state machine would belong in `engineering/specifications/`. Recurrence is not currently implemented. Task Pilot schemas retain their existing home and repository Specifications link to them. Markdown is canonical; Word/PDF are derived deliverables and external wikis link here.
 
 ## Granularity and growth
 
@@ -81,7 +81,7 @@ Feature中心の構成を採用します。Featureは利用者から見たWhat�
 
 ### 恒久的な置き場所
 
-[GitHubのContent Model](https://docs.github.com/en/contributing/style-guide-and-content-model/about-the-content-model#reusing-content)に従い、各文書の読者と目的を確認し、情報の正本を一つ選び、詳細を一度だけ書き、他からリンクします。短い共通文は意図的に再利用できます。将来の繰り返しタスクならFeatureが挙動・計算・失敗、How-toが操作、Specificationが共通形式や状態遷移を扱います。現時点で繰り返し機能は未実装です。portable Skillのschemaは移さず参照します。Markdownを正本、Word/PDFを派生成果物にします。
+[GitHubのContent Model](https://docs.github.com/en/contributing/style-guide-and-content-model/about-the-content-model#reusing-content)に従い、各文書の読者と目的を確認し、情報の正本を一つ選び、詳細を一度だけ書き、他からリンクします。短い共通文は意図的に再利用できます。将来の繰り返しタスクならFeatureが挙動・計算・失敗、How-toが操作、Specificationが共通形式や状態遷移を扱います。現時点で繰り返し機能は未実装です。Task Pilotのschemaは移さず参照します。Markdownを正本、Word/PDFを派生成果物にします。
 
 ### 粒度と分割
 

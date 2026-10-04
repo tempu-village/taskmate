@@ -1,6 +1,6 @@
 # Task file format
 
-Status: Current normative contract. The portable [Task schema](../../../skills/taskmate/references/task-schema.md) remains the canonical contract used by an installed Skill; this repository specification records the same implementation-facing requirements without replacing it.
+Status: Current normative contract. Task Pilot's [Task schema](../../../skills/taskpilot/references/task-schema.md) remains the canonical contract used by an installed skill; this repository specification records the same implementation-facing requirements without replacing it.
 
 ## File and identity
 
@@ -32,7 +32,7 @@ The precise treatment of arbitrary Markdown outside the owned title, Steps and N
 
 ## Verification
 
-See [domain round-trip tests](../../../test/domain.test.ts), [repository tests](../../../test/repository-conflicts.test.ts), [Task Step tests](../../../test/task-steps.test.ts) and [portable store tests](../../../skills/taskmate/tests/test_todo_store.py). Conceptual ownership remains in [data model](../design/data-model.md); user-visible editing behavior remains in [Task editing](../features/task-editing.md) and [Task Steps](../features/task-steps.md).
+See [domain round-trip tests](../../../test/domain.test.ts), [repository tests](../../../test/repository-conflicts.test.ts), [Task Step tests](../../../test/task-steps.test.ts) and [Task Pilot store tests](../../../skills/taskpilot/tests/test_todo_store.py). Conceptual ownership remains in [data model](../design/data-model.md); user-visible editing behavior remains in [Task editing](../features/task-editing.md) and [Task Steps](../features/task-steps.md).
 
 ## 日本語参考
 

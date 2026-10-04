@@ -8,7 +8,7 @@ The plugin uses Vault APIs and local dictionaries. The [storage/privacy contract
 
 Source selection is a strict extraction allowlist. It is not an OS sandbox. In particular, current [source discovery](../features/source-import.md#current-discovery-limitation) reads non-managed Markdown before deciding eligibility. Do not claim that scope filtering provides read isolation.
 
-The Python helper's [safe_path](../../../skills/taskmate/scripts/todo_store.py) resolves paths and rejects paths outside the Vault for operations that use it. This does not provide a distributed lock or remove filesystem races. Use a disposable Vault for adversarial path and concurrent-write checks.
+Task Pilot's Python helper [safe_path](../../../skills/taskpilot/scripts/todo_store.py) resolves paths and rejects paths outside the Vault for operations that use it. This does not provide a distributed lock or remove filesystem races. Use a disposable Vault for adversarial path and concurrent-write checks.
 
 ## Writes and recovery
 

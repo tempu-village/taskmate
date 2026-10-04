@@ -4,7 +4,7 @@ English | [日本語](README.ja.md)
 
 TaskMate is a simple, local-first task manager for Obsidian. It provides a focused Todoist-style interface while keeping every task and project in readable Markdown inside your vault.
 
-TaskMate also includes an optional portable Agent Skill. The Skill turns explicitly selected notes into reviewable proposals and creates or updates tasks only after you decide what to accept.
+TaskMate also includes Task Pilot, an optional portable agent skill. Task Pilot turns explicitly selected notes into reviewable proposals and creates or updates tasks only after you decide what to accept.
 
 ## Why TaskMate
 
@@ -147,7 +147,7 @@ The command runs type checking, tests, and a production build before replacing `
 
 This synchronization procedure has been confirmed with desktop Obsidian, Android Obsidian, official Obsidian Sync, and an unpublished TaskMate build. iOS has not yet been tested.
 
-## Select notes for the Agent Skill
+## Select notes for Task Pilot
 
 Run **TaskMate: Include current folder as an AI source**, or add one vault-relative folder per line under **Settings → TaskMate → AI source folders**.
 
@@ -158,24 +158,24 @@ taskmate-source: true  # include this note anywhere
 taskmate-source: false # exclude this note from an included folder
 ```
 
-Processed source notes receive `taskmate-import-*` provenance properties. A content hash lets the Skill detect a later edit without treating its own metadata as a user change.
+Processed source notes receive `taskmate-import-*` provenance properties. A content hash lets Task Pilot detect a later edit without treating its own metadata as a user change.
 
-## Install and use the Agent Skill
+## Install and use Task Pilot
 
-The plugin works without the Agent Skill. To use AI-assisted task extraction, install `skills/taskmate` in an Agent Skills-compatible client. During local development:
+The plugin works without Task Pilot. To use AI-assisted task extraction, install `skills/taskpilot` in an Agent Skills-compatible client. During local development:
 
 ```bash
 mkdir -p "$HOME/.agents/skills"
-ln -s "$(pwd)/skills/taskmate" "$HOME/.agents/skills/taskmate"
+ln -s "$(pwd)/skills/taskpilot" "$HOME/.agents/skills/taskpilot"
 ```
 
 Open the vault as the agent workspace and ask:
 
 ```text
-$taskmate Review the selected source notes and propose every Todo candidate.
+$taskpilot Review the selected source notes and propose every Task candidate.
 ```
 
-The Skill writes proposals under `TaskMate/Proposals/Active` and does not create canonical tasks at this stage. Review every candidate in the conversation and explicitly approve, revise, or exclude it. Approved and revised proposals become tasks. The completed review moves to `TaskMate/Proposals/Archive` with visible and machine-readable decision markers and remains there until you delete it manually.
+Task Pilot writes proposals under `TaskMate/Proposals/Active` and does not create canonical tasks at this stage. Review every candidate in the conversation and explicitly approve, revise, or exclude it. Approved and revised proposals become tasks. The completed review moves to `TaskMate/Proposals/Archive` with visible and machine-readable decision markers and remains there until you delete it manually.
 
 Change the proposal location under **Settings → TaskMate → Proposal folder** when needed. The proposal folder is an approval boundary, not a security sandbox, and does not expand the source-note allowlist.
 
@@ -188,7 +188,7 @@ Change the proposal location under **Settings → TaskMate → Proposal folder**
 - The plugin uses Obsidian's vault and file-management APIs to read and write TaskMate-managed Markdown.
 - The plugin contains no telemetry, hosted TaskMate account, runtime AI, translation service, or TaskMate synchronization server.
 - The plugin does not send task content to an external translation service.
-- The optional Agent Skill runs with the permissions of the agent client and is separate from the Obsidian plugin.
+- Task Pilot runs with the permissions of the agent client and is separate from the Obsidian plugin.
 - Uninstalling the plugin leaves task, project, and proposal Markdown in the vault.
 
 Review these claims against the release build before public release. Back up the vault and understand the synchronization provider's conflict behavior before using TaskMate with important data.
@@ -225,7 +225,7 @@ Do not add a feature specification only to Japanese. Update English first, then 
 npm run typecheck
 npm test
 npm run build
-python3 -m unittest discover -s skills/taskmate/tests -v
+python3 -m unittest discover -s skills/taskpilot/tests -v
 python3 scripts/validate_skills.py
 npm run validate:localization
 python3 scripts/validate_docs.py

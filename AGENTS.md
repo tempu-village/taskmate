@@ -1,6 +1,6 @@
 # TaskMate agent map
 
-TaskMate contains an Obsidian plugin and its companion portable Agent Skill.
+TaskMate contains an Obsidian plugin and its companion portable Task Pilot skill.
 
 Read [docs/DOCUMENTATION_ARCHITECTURE.md](docs/DOCUMENTATION_ARCHITECTURE.md) before changing product behavior, documentation structure, or a cross-cutting rule. It maps the product specifications, user guides, internal designs, RFCs, and operations material without duplicating them here.
 
@@ -13,7 +13,7 @@ For every task, read the smallest relevant record first:
 - Substantial change proposal or implementation-decision history: [docs/engineering/rfcs/](docs/engineering/rfcs/) and its tracking Issue. For implemented product behavior, read the linked current Feature first and use the RFC only for background and design decisions.
 - Release or recovery work: [docs/operations/](docs/operations/).
 
-Keep the Obsidian plugin mobile-compatible by using public Obsidian and browser APIs. Keep task Markdown compatible with [the task schema](skills/taskmate/references/task-schema.md). Preserve one global manual rank; automatic sorting is display-only. Treat source folders and `taskmate-source` as a strict allowlist, and complete a coverage review before any candidate is excluded.
+Keep the Obsidian plugin mobile-compatible by using public Obsidian and browser APIs. Keep task Markdown compatible with [the task schema](skills/taskpilot/references/task-schema.md). Preserve one global manual rank; automatic sorting is display-only. Treat source folders and `taskmate-source` as a strict allowlist, and complete a coverage review before any candidate is excluded.
 
 Record domain terms only in [CONTEXT.md](CONTEXT.md). Record hard-to-reverse trade-offs in [ADRs](docs/engineering/adr/). Before an ADR-worthy UI or navigation decision, establish the user's goal or constraint and record the accepted rationale. Use the `write-taskmate-github-issues` repository skill for Issue work.
 

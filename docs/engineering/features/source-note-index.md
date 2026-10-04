@@ -9,7 +9,7 @@ Tracking: [#39](https://github.com/tempu-village/taskmate/issues/39)
 
 ## Purpose
 
-Routine Agent Skill imports find eligible Source notes without enumerating and opening every Markdown file in a Vault. The index is a regenerable plugin-managed snapshot of the existing allowlist; it is not a second allowlist or a task database.
+Routine Task Pilot imports find eligible Source notes without enumerating and opening every Markdown file in a Vault. The index is a regenerable plugin-managed snapshot of the existing allowlist; it is not a second allowlist or a task database.
 
 ## Index behavior
 
@@ -37,7 +37,7 @@ Missing, unreadable, incompatible, rebuilding, wrong-Vault, or known-stale index
 
 - [Agent Vault setup](agent-vault-setup.md)
 - [Source allowlist ADR](../adr/0004-opt-in-source-notes.md), [proposal staging ADR](../adr/0011-stage-source-imports-before-promotion.md)
-- [TaskMate Skill](../../../skills/taskmate/SKILL.md)
+- [Task Pilot](../../../skills/taskpilot/SKILL.md)
 
 ## 日本語参考訳
 
@@ -45,7 +45,7 @@ Missing, unreadable, incompatible, rebuilding, wrong-Vault, or known-stale index
 
 ### 目的
 
-通常のAgent Skillインポートで、Vault内の全Markdownを列挙・読み込みせずに対象Source noteを見つけます。索引は既存の許可リストからpluginが再構築できるスナップショットであり、別の許可リストやタスクDBではありません。
+通常のTask Pilotインポートで、Vault内の全Markdownを列挙・読み込みせずに対象Source noteを見つけます。索引は既存の許可リストからpluginが再構築できるスナップショットであり、別の許可リストやタスクDBではありません。
 
 ### 索引の動作
 

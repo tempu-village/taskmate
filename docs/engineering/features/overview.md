@@ -4,7 +4,7 @@
 
 ## Purpose
 
-TaskMate is a local-first task manager for Obsidian. It keeps Tasks and Projects readable as Markdown while providing focused desktop and mobile task operations. The optional Agent Skill supports reviewed extraction from source notes.
+TaskMate is a local-first task manager for Obsidian. It keeps Tasks and Projects readable as Markdown while providing focused desktop and mobile task operations. Task Pilot, its optional agent skill, supports reviewed extraction from source notes.
 
 ## Product principles
 
@@ -27,7 +27,7 @@ Accepted contracts describe intended guarantees; code shows observed behavior an
 - TaskMate is not yet listed in the Obsidian Community directory.
 - Calendar, Kanban, recurrence, and reminders are not part of the current product.
 - TaskMate does not provide a synchronization service or remote conflict merging. It prevents silent overwrites of changes that have reached the local vault through guarded three-way comparison in the Task editor.
-- The optional Agent Skill depends on the permissions and capabilities of its host agent client.
+- Task Pilot depends on the permissions and capabilities of its host agent client.
 
 ---
 
@@ -39,7 +39,7 @@ Accepted contracts describe intended guarantees; code shows observed behavior an
 
 ## 目的
 
-TaskMateはObsidian向けのローカルファースト・タスク管理機能です。TaskとProjectを読みやすいMarkdownで保存し、PCとモバイルの操作を提供します。任意のAgent Skillはレビュー付きのメモ抽出を支援します。
+TaskMateはObsidian向けのローカルファースト・タスク管理機能です。TaskとProjectを読みやすいMarkdownで保存し、PCとモバイルの操作を提供します。任意のエージェントスキルであるTask Pilotは、レビュー付きのメモ抽出を支援します。
 
 ## 製品原則
 
@@ -62,4 +62,4 @@ TaskMateはObsidian向けのローカルファースト・タスク管理機能�
 - TaskMateは、まだObsidian Communityディレクトリに掲載されていません。
 - カレンダー、カンバン、繰り返し、リマインダーは、現在の製品に含まれません。
 - TaskMateは同期サービスやリモート競合マージを提供しません。ローカルVaultへ届いた変更については、タスク編集画面の3方向比較で黙った上書きを防ぎます。
-- 任意のAgent Skillは、実行元のエージェントクライアントの権限と能力に依存します。
+- Task Pilotは、実行元のエージェントクライアントの権限と能力に依存します。

@@ -24,11 +24,11 @@ The Python helper currently enumerates Vault Markdown and reads non-managed note
 - IMPORT-03: Exclusions require decisions; changed sources block promotion.
 - IMPORT-04: Final provenance retains IDs from earlier imports and from all approved proposals.
 
-Evidence: [proposal behavior tests](../../../skills/taskmate/tests/test_proposal_store.py), [store behavior tests](../../../skills/taskmate/tests/test_todo_store.py). These deterministic tests do not prove an agent extracted every semantic action; review actual notes against the coverage inventory.
+Evidence: [Task Pilot proposal behavior tests](../../../skills/taskpilot/tests/test_proposal_store.py), [Task Pilot store behavior tests](../../../skills/taskpilot/tests/test_todo_store.py). These deterministic tests do not prove an agent extracted every semantic action; review actual notes against the coverage inventory.
 
 ## Processing flow and internal design
 
-The agent inventories semantic action candidates and writes the review plan. [todo_store.py](../../../skills/taskmate/scripts/todo_store.py) discovers eligible notes and computes provenance hashes. [proposal_store.py](../../../skills/taskmate/scripts/proposal_store.py) validates the manifest, stages review/proposal files, and applies explicit decisions. Exact plan and decision formats live in the portable [proposal workflow](../../../skills/taskmate/references/proposal-workflow.md).
+Task Pilot inventories semantic action candidates and writes the review plan. [todo_store.py](../../../skills/taskpilot/scripts/todo_store.py) discovers eligible notes and computes provenance hashes. [proposal_store.py](../../../skills/taskpilot/scripts/proposal_store.py) validates the manifest, stages review/proposal files, and applies explicit decisions. Exact plan and decision formats live in Task Pilot's [proposal workflow](../../../skills/taskpilot/references/proposal-workflow.md).
 
 Stage validates candidate coverage before writing the session. Snapshots bind the plan to Source content and pending merge targets. Promote rechecks snapshots, processes each submitted decision, and records its resulting Task ID. Remaining pending decisions keep the session Active. After all decisions, provenance combines prior IDs and promoted IDs, then the session moves to Archive.
 

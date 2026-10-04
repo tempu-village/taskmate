@@ -1,13 +1,13 @@
 ---
-name: taskmate
+name: taskpilot
 description: Turn explicitly selected Obsidian notes into complete, reviewable TaskMate tasks and manage the resulting task Markdown. Use when the user wants to extract, add, update, complete, search, or reorganize TaskMate tasks without silently dropping source content.
 license: MIT
 metadata:
   author: Masashi
-  version: "0.5.0"
+  version: "0.6.0"
 ---
 
-# TaskMate
+# Task Pilot
 
 Manage a local-first task store while keeping the user in control of source scope and omissions.
 

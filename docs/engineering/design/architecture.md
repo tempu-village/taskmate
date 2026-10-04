@@ -10,7 +10,7 @@ Status: Current implementation map.
 
 [domain.ts](../../../src/domain.ts) owns Task/Project types and pure filtering, grouping and sorting. [repository.ts](../../../src/repository.ts) and [project-repository.ts](../../../src/project-repository.ts) use public Obsidian APIs; [markdown.ts](../../../src/markdown.ts), [task-body.ts](../../../src/task-body.ts) and [project-markdown.ts](../../../src/project-markdown.ts) handle portable representation.
 
-The [Agent Skill](../../../skills/taskmate/SKILL.md) runs separately in an agent host. Its Python helpers operate on the same Markdown contract; they are not bundled plugin runtime dependencies.
+Task Pilot, the [portable agent skill](../../../skills/taskpilot/SKILL.md), runs separately in an agent host. Its Python helpers operate on the same Markdown contract; they are not bundled plugin runtime dependencies.
 
 ## Change boundaries
 
@@ -32,4 +32,4 @@ Use browser/public Obsidian APIs in plugin runtime; Node/Python belong to build 
 
 現在の構成を記録します。mainは起動、設定、コマンド、Vaultイベントを管理し、viewは画面状態、データ取得、操作と保存を調整します。task-list-modelは表示モデル、task-list-rendererはDOMとSortableの後片付けを担います。domainは型と純粋な絞り込み・並べ替え、repositoryは公開Obsidian APIを使った保存、Markdown関連モジュールは表現を扱います。
 
-Agent SkillとPython helperは別のホストで同じMarkdown契約を操作します。プラグイン実行時へNode/Pythonを持ち込まず、描画の破棄処理を保ち、形式変更時は双方のwriterを更新します。型・モデル・DOMテストと実機検証の範囲は[testing](testing.md)で区別します。
+Task PilotとPython helperは別のホストで同じMarkdown契約を操作します。プラグイン実行時へNode/Pythonを持ち込まず、描画の破棄処理を保ち、形式変更時は双方のwriterを更新します。型・モデル・DOMテストと実機検証の範囲は[testing](testing.md)で区別します。

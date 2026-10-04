@@ -16,7 +16,7 @@ Steps remain ordered inside their parent Task. Completing the parent and complet
 - STEP-01: Save and reload preserve Step text, dates, order and completion.
 - STEP-02: Reordering moves the whole Step; parent completion does not complete Steps.
 
-Automated evidence: [task-steps.test.ts](../../../test/task-steps.test.ts), [domain.test.ts](../../../test/domain.test.ts). These tests cover selected behavior, not every UI scenario. Device checks and remaining gaps: [verification](../design/testing.md). Storage syntax: [Task schema](../../../skills/taskmate/references/task-schema.md).
+Automated evidence: [task-steps.test.ts](../../../test/task-steps.test.ts), [domain.test.ts](../../../test/domain.test.ts). These tests cover selected behavior, not every UI scenario. Device checks and remaining gaps: [verification](../design/testing.md). Storage syntax: [Task Pilot schema](../../../skills/taskpilot/references/task-schema.md).
 
 ## 日本語参考
 

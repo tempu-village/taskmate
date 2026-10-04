@@ -18,6 +18,6 @@ PCとAndroidの両方で、インストール済み・有効なコミュニテ�
 
 Releaseの導入と復旧は[TaskMateをリリースする](../operations/releasing.md)を参照してください。
 
-## Agent Skillがメモを見つけない
+## Task Pilotがメモを見つけない
 
 選択済みのsource folder、または`taskmate-source: true`を明示したノートだけが対象です。`taskmate-source: false`は、選択フォルダー内のノートも除外します。対象範囲を変える前にsource設定を確認してください。
