@@ -1,7 +1,7 @@
 # Edit conflicts
 
 Approval: Accepted — existing contract and [ADR 0022](../adr/0022-prevent-stale-task-overwrites-with-three-way-comparison.md).
-Implementation: Implemented with a known Step comparison gap; see [verification](../design/testing.md#known-gaps).
+Implementation: Implemented on the current branch; verification scope is recorded below.
 
 ## Contract
 
@@ -20,7 +20,7 @@ Conflict review also retains the exact file content shown to the user as a tempo
 - CONFLICT-03: Duplicate IDs block normal processing; a deleted Task is not recreated.
 - CONFLICT-04: Equal compound values should compare equal by value, including Steps.
 
-Evidence: [merge tests](../../../test/task-edit-merge.test.ts), [repository tests](../../../test/repository-conflicts.test.ts). CONFLICT-04 is only partly covered (Labels); object-valued Steps need correction.
+Evidence: [merge tests](../../../test/task-edit-merge.test.ts), [repository tests](../../../test/repository-conflicts.test.ts). The repository regression test covers saving an unchanged Task after a prior Step save.
 
 ## Processing flow and internal design
 
@@ -30,13 +30,13 @@ Conflict review carries the exact displayed file content. Resolving a choice per
 
 ## Failure handling and limitations
 
-Each Labels or Steps collection is one conflict field; no per-element merge is intended. However, the current equality helper recursively compares arrays and uses reference equality for objects. Independently parsed but equal Step objects may be classified as conflicting. Keep CONFLICT-04 as the accepted target; track this implementation gap in [testing](../design/testing.md#known-gaps) rather than weakening the contract.
+Each Labels or Steps collection is one conflict field; no per-element merge is intended. Arrays and plain objects from TaskMate's persisted data compare by value, so independently parsed but equal Steps do not become a conflict.
 
 The guard sees only changes already in the local Vault. It cannot lock another device or replace provider-managed remote conflict resolution.
 
 ## Related RFCs
 
-- [RFC 0005: Prevent stale Task overwrites](../rfcs/0005-prevent-stale-task-overwrites.md) — implemented history; the current Step equality gap remains documented above.
+- [RFC 0005: Prevent stale Task overwrites](../rfcs/0005-prevent-stale-task-overwrites.md) — implemented history.
 
 ## 日本語参考
 
@@ -44,7 +44,7 @@ The guard sees only changes already in the local Vault. It cannot lock another d
 
 > 翻訳状態：`ai-translated`。英語版が正本です。
 
-承認：既存契約とADR 0022で承認済み。実装：競合防止は実装済みですが、Step比較に既知の不足があります。[検証](../design/testing.md#known-gaps)を参照してください。
+承認：既存契約とADR 0022で承認済み。実装：現在のブランチに実装済みで、検証範囲は以下に記録しています。
 
 同期はTaskMateではなく、ユーザーが選んだVault同期サービスが提供します。別の端末で同じタスクを編集する前に、同期完了を待つ必要があります。同じファイルを複数端末で同時またはオフライン編集すると、同期サービス側が扱う競合になる場合があります。TaskMateは同期サービスのリモート競合処理を置き換えません。
 
@@ -54,4 +54,4 @@ TaskMateのタスク編集画面は、開いた時点の内容をメモリ上の
 
 競合確認を表示した時点のファイル内容も一時的な基準として保持します。確認中に別端末、Codex、別プラグインなどが再びファイルを変更した場合、以前の判断をそのまま適用せず、最新内容に対する確認へ更新します。同じ安定タスクIDを持つ複数ファイルは通常タスクとして表示せず、識別競合として通知します。これらはローカルVaultへ届いた内容を安全に保存するための機能であり、Obsidian Sync自身が行う自動マージや競合コピー作成を代替するものではありません。
 
-受け入れ条件は、CONFLICT-01：別項目の変更を保ち、同一項目の競合は判断を待つ、CONFLICT-02：確認中の再変更で判断を無効化する、CONFLICT-03：ID重複を止め、削除済みを再作成しない、CONFLICT-04：Stepsを含む複合値を値で比較する、です。CONFLICT-04のLabelsは検証済みですが、オブジェクトのStepsには修正が必要です。
+受け入れ条件は、CONFLICT-01：別項目の変更を保ち、同一項目の競合は判断を待つ、CONFLICT-02：確認中の再変更で判断を無効化する、CONFLICT-03：ID重複を止め、削除済みを再作成しない、CONFLICT-04：Stepsを含む複合値を値で比較する、です。repository回帰テストは、Stepを追加して保存した後に未変更で再保存するケースを確認します。
