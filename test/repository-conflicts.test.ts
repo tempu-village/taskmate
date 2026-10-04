@@ -113,6 +113,29 @@ describe("TaskRepository conflict guards", () => {
     repository = repositoryWith(vault);
   });
 
+  it("does not report a conflict when saving an unchanged task after a prior step save", async () => {
+    const base = task();
+    vault.put(base.path, encodeTask(base));
+    await repository.scan();
+
+    const firstEdit = await repository.beginEdit(base);
+    expect(firstEdit.status).toBe("ready");
+    if (firstEdit.status !== "ready") return;
+    const firstSave = await repository.saveEditedTask(
+      firstEdit.session,
+      draft(firstEdit.task, { steps: [{ text: "A step", completed: false, date: null }] })
+    );
+    expect(firstSave.status).toBe("saved");
+    if (firstSave.status !== "saved") return;
+
+    const secondEdit = await repository.beginEdit(firstSave.task);
+    expect(secondEdit.status).toBe("ready");
+    if (secondEdit.status !== "ready") return;
+    const result = await repository.saveEditedTask(secondEdit.session, draft(secondEdit.task));
+
+    expect(result.status).toBe("saved");
+  });
+
   it("hides duplicate identities and reports every conflicting path", async () => {
     vault.put("TaskMate/Tasks/One.md", encodeTask(task()));
     vault.put("TaskMate/Tasks/One conflict.md", encodeTask(task({ path: "TaskMate/Tasks/One conflict.md", title: "Other copy" })));
