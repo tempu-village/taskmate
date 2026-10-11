@@ -4,7 +4,7 @@ description: Turn explicitly selected Obsidian notes into complete, reviewable T
 license: MIT
 metadata:
   author: Masashi
-  version: "0.6.0"
+  version: "0.7.0"
 ---
 
 # Task Pilot
@@ -17,8 +17,9 @@ Manage a local-first task store while keeping the user in control of source scop
 - For creating, renaming, or deleting projects, read [references/project-schema.md](references/project-schema.md).
 - For turning existing notes into tasks, read [references/import-workflow.md](references/import-workflow.md) before inspecting source content.
 - For staging and approving import proposals, also read [references/proposal-workflow.md](references/proposal-workflow.md).
+- For backlog review, effort estimation, Context-label suggestions, or capacity planning, read [references/planning-workflow.md](references/planning-workflow.md).
 
-Use `scripts/todo_store.py` for deterministic direct task operations and `scripts/proposal_store.py` for staged imports when Python is available. Otherwise follow the same schemas with the environment's ordinary file tools. Obtain vault and managed-folder paths from user scope or the TaskMate plugin settings; never invent or search outside that scope.
+Use `scripts/todo_store.py` for deterministic direct task operations, `scripts/proposal_store.py` for staged imports, and `scripts/planning_store.py` for review snapshots, proposal validation/application, and capacity packing when Python is available. Otherwise follow the same schemas with the environment's ordinary file tools. Obtain vault and managed-folder paths from user scope or the TaskMate plugin settings; never invent or search outside that scope.
 
 ## Preserve control
 
@@ -26,6 +27,12 @@ Treat selected source folders and `taskmate-source` properties as an allowlist, 
 
 Re-read every file immediately before modifying it. Preserve unrelated frontmatter and prose in source notes. Use recoverable deletion when the environment supports it, and request confirmation immediately before deletion or another destructive bulk change.
 
+Keep backlog review and capacity planning distinct. Planning is read-only. Apply date, Priority, or Context-label changes only through a separately visible review whose affected Tasks and exact changes the user approved. “Do later” removes the date and does not create a Pending or Waiting state. Never use age alone to invent a date or Priority.
+
+Estimate active effort as a visible range with a stated basis. Prefer the user's current estimate, then explicit Task text, then a coarse inference. Ask or mark the Task for breakdown when the boundary is too vague. Use the visible, user-adjustable 20% default buffer and upper estimate bounds for a bounded plan. Compare candidates through must-consider evidence, feasibility, and explained multi-signal judgment rather than a hidden fixed precedence.
+
 ## Completion criteria
 
 Finish an import when every eligible changed source note has a coverage review, every approved task has one valid Markdown file and a source link, every exclusion was explicitly approved, source processing metadata names all created task IDs, and `scripts/todo_store.py validate` reports no duplicate IDs or invalid task files. Preserve existing priority, labels, and project assignments unless the user asks to change them.
+
+Finish a backlog review when every approved change was rechecked and validated, every failed or stale Task is identified, and every unapproved or clarification Task remains unchanged. Finish a capacity plan when its upper-bound total fits the displayed capacity, every estimate and selection has a visible reason, near matches are separate, and no Task Markdown changed merely because the plan was accepted.

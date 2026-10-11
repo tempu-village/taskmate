@@ -33,6 +33,7 @@ git diff --check
 | [I18N-01/02](../features/localization.md) | dictionary/fallback tests | Command/ribbon reload and narrow translated controls |
 | [CONFLICT-01/02/03/04](../features/edit-conflicts.md) | merge and repository tests, including Step value equality | Two-device synchronization |
 | [IMPORT-01/02/03/04](../features/source-import.md) | Python proposal/store tests | Actual agent's coverage inventory versus all source statements |
+| [PLAN-01 through PLAN-16](../features/task-pilot-planning.md) | Python planning/proposal/store tests | Actual agent estimate quality, explanation usefulness and conversation review |
 | [STORE-01/02](../features/storage-and-privacy.md) | settings/repository inspection | Uninstall retention and folder-setting change |
 
 Use stable acceptance IDs in specs and link meaningful tests here or in the spec. An evidence link does not imply every condition is automated. Keep untested expectations visible. Source-index and Vault-setup acceptance scenarios are targets, not passing current tests.
@@ -64,6 +65,8 @@ In a disposable Vault, follow [getting started](../../user/getting-started.md), 
 テスト成功は実行したケースの根拠であり、製品判断の承認や全端末の保証ではありません。上のコマンドで型、TypeScript、Python、build、Skill、翻訳、文書、releaseを検証します。依存はpackage.json、CI環境はNode 22/Python 3.11を参照し、最小対応版と混同しません。使い捨てVaultへの導入はREADMEへリンクし、UI自動操作は任意です。
 
 受け入れIDとテスト・手動確認の対応は表を正本にします。Project削除、実キーボード、同期など、自動テストだけでは確認できない範囲を明記します。
+
+PLAN-01〜16はplanning/proposal/storeのPythonテストで決定的な境界を確認し、実際のAgentによる見積もり品質、説明の有用性、対話レビューは追加の手動確認対象とします。
 
 既知の不足：Source探索の対象外読み取り、複数ファイル反映のクラッシュ復旧、今回未実施の実機確認を区別します。iOSは未検証です。CONFLICT-04は、Stepを追加して保存した後の未変更再保存を対象とするrepository回帰テストで確認します。
 

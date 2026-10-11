@@ -175,7 +175,17 @@ Open the vault as the agent workspace and ask:
 $taskpilot Review the selected source notes and propose every Task candidate.
 ```
 
+For backlog review or a capacity-based plan, ask for the operation and give the available time or Context when known:
+
+```text
+$taskpilot Review my stale Tasks and propose safe date, Priority, and Context-label changes.
+$taskpilot I have two hours. Build a realistic plan without changing my Tasks.
+$taskpilot Find work for a 30-minute phone-only break.
+```
+
 Task Pilot writes proposals under `TaskMate/Proposals/Active` and does not create canonical tasks at this stage. Review every candidate in the conversation and explicitly approve, revise, or exclude it. Approved and revised proposals become tasks. The completed review moves to `TaskMate/Proposals/Archive` with visible and machine-readable decision markers and remains there until you delete it manually.
+
+Backlog changes are also shown before writing. Capacity plans are read-only, use a visible 20% default buffer and upper effort estimates, and never add Task statuses or change Manual order. “Do later” removes the date instead of adding a Pending or Waiting state.
 
 Change the proposal location under **Settings → TaskMate → Proposal folder** when needed. The proposal folder is an approval boundary, not a security sandbox, and does not expand the source-note allowlist.
 

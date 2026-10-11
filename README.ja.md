@@ -3,7 +3,7 @@
 [English](README.md) | 日本語
 
 <!-- translation-status: ai-translated -->
-<!-- translation-source-sha256: a6655bf1bf72c69e9fb86cc9e74b33ca34d4d667887c275afac7017e5c3f66b4 -->
+<!-- translation-source-sha256: f5b3123fa6b6d24bfb12468915d79acbc5360d2145604e097273e081a6aff0f4 -->
 
 > 翻訳状態：`ai-translated`
 >
@@ -182,7 +182,17 @@ Vaultをエージェントのワークスペースとして開き、次のよう
 $taskpilot Review the selected source notes and propose every Task candidate.
 ```
 
+バックログ見直しや時間ベース計画では、操作内容に加え、分かる場合は利用可能時間やContextを指定します。
+
+```text
+$taskpilot Review my stale Tasks and propose safe date, Priority, and Context-label changes.
+$taskpilot I have two hours. Build a realistic plan without changing my Tasks.
+$taskpilot Find work for a 30-minute phone-only break.
+```
+
 Task Pilotは`TaskMate/Proposals/Active`へ提案を書き込み、この段階では正式なタスクを作成しません。会話ですべての候補を確認し、承認、修正、除外のいずれかを明示的に判断します。承認または修正した提案はタスクになります。完了した確認は、人が読める目印と機械可読な判断情報を付けて`TaskMate/Proposals/Archive`へ移動し、手動で削除するまで残ります。
+
+バックログ変更も書き込み前に提示します。時間ベース計画は読み取り専用で、表示される初期20%の余白と所要時間の上限を使い、新しいTask状態やManual orderの変更を行いません。「後で」はPendingやWaitingを追加せず、日付を外します。
 
 必要に応じて**設定 → TaskMate → 提案フォルダ**から保存先を変更できます。提案フォルダは承認の境界であり、セキュリティ用サンドボックスではなく、対象ノートの許可範囲を広げません。
 

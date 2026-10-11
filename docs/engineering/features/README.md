@@ -17,7 +17,7 @@ Do not narrate source code line by line. Put strict contracts shared by multiple
 | [Source-note import](source-import.md) | Accepted | Implemented |
 | [Edit conflicts](edit-conflicts.md) | Accepted | Implemented with a known Step equality gap |
 | [Storage and privacy](storage-and-privacy.md) | Accepted | Implemented |
-| [Task Pilot review and capacity planning](task-pilot-planning.md) | Accepted | Not implemented |
+| [Task Pilot review and capacity planning](task-pilot-planning.md) | Accepted | Implemented on the current branch |
 | [Agent Vault setup](agent-vault-setup.md) | Proposed | Not implemented |
 | [Source note index](source-note-index.md) | Proposed | Not implemented |
 

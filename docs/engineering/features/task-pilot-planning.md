@@ -1,7 +1,7 @@
 # Task Pilot review and capacity planning
 
 Approval: Accepted — product review confirmed on 2026-10-11.
-Implementation: Not implemented — tracked by [Issue #52](https://github.com/tempu-village/taskmate/issues/52).
+Implementation: Implemented on the current branch — tracked by [Issue #52](https://github.com/tempu-village/taskmate/issues/52); not yet identified with a release.
 
 > English is canonical. Japanese is an AI-translated reference.
 
@@ -157,7 +157,7 @@ Adding, removing, renaming, or deleting a Context label follows the existing [La
 
 If some writes in an approved batch fail, Task Pilot identifies which Tasks succeeded and failed and does not claim atomic success or silently retry destructive changes. A retry must recheck current files and avoid duplicating an already applied change.
 
-## Proposed processing flow
+## Processing flow
 
 1. Distinguish a backlog review, a read-only capacity plan, and an explicitly requested Source-note import; resolve the scope of each.
 2. When Source notes are requested, show the selected eligible paths, then complete coverage review and approval.
@@ -182,7 +182,7 @@ In this iteration, backlog-review proposals and capacity plans remain conversati
 
 ## Acceptance and verification
 
-All criteria below are proposed and unimplemented.
+All criteria below are implemented on the current branch. Semantic judgment still requires user review; automated evidence covers the deterministic interfaces and safeguards.
 
 - PLAN-01: A review of many incomplete Tasks reports the population before any write and offers reasoned changes without creating new Task statuses.
 - PLAN-02: Choosing “do later” removes the date after approval, keeps the Task incomplete, and adds no automatic holding label.
@@ -203,7 +203,7 @@ All criteria below are proposed and unimplemented.
 - PLAN-15: Without future-capacity evidence, the review does not assign arbitrary future dates or priorities to clear an old backlog.
 - PLAN-16: Candidate selection follows must-consider, feasibility, and multi-signal comparison stages; a conflict between schedule and Priority is explained or returned to the user instead of resolved by a hidden fixed precedence.
 
-Verification evidence will be linked when implementation tests and manual scenarios exist. Passing tests alone do not establish that implementation is complete.
+Automated evidence: [planning behavior tests](../../../skills/taskpilot/tests/test_planning_store.py), [Source-note proposal tests](../../../skills/taskpilot/tests/test_proposal_store.py), and [Task store tests](../../../skills/taskpilot/tests/test_todo_store.py). The deterministic planning tests cover 50-Task grouping, stale and partial writes, 20% capacity arithmetic, upper-bound packing, Context evidence, read-only plans, estimate clarification, and schedule/Priority conflict disclosure. They cannot prove that an agent's semantic estimates or reasons are good; the visible user review remains required.
 
 ## Out of scope for this iteration
 
@@ -236,7 +236,7 @@ Verification evidence will be linked when implementation tests and manual scenar
 
 > 翻訳状態：`ai-translated`。英語版が正本です。
 
-承認：2026年10月11日の製品レビューで採用済み。実装：未実装。[Issue #52](https://github.com/tempu-village/taskmate/issues/52)で追跡します。
+承認：2026年10月11日の製品レビューで採用済み。実装：現在のブランチへ実装済みで、[Issue #52](https://github.com/tempu-village/taskmate/issues/52)で追跡します。対応リリースはまだ特定していません。
 
 ### 目的と範囲
 
@@ -366,7 +366,7 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 
 一括変更の一部に失敗した場合は、成功・失敗したTaskを区別し、全体成功と報告しません。再試行時は現在のファイルを再確認し、適用済み変更を重複させません。
 
-### 提案する処理の流れ
+### 処理の流れ
 
 1. バックログ見直し、読み取り専用の時間ベース計画、明示依頼されたSource note取り込みを区別し、それぞれの範囲を決める。
 2. Source noteが指定された場合は対象となる適格なパスを示し、coverage reviewと承認を完了する。
@@ -391,7 +391,7 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 
 ### 受け入れ条件
 
-以下はすべて提案中・未実装です。
+以下は現在のブランチへ実装済みです。意味上の判断には引き続き利用者レビューが必要で、自動テストは決定的なInterfaceと安全策を検証します。
 
 - PLAN-01：変更前に大量の未完了Taskの内訳を示し、新しいTask状態を作らずに理由付き変更案を出す。
 - PLAN-02：「後でやる」の承認で日付を外し、未完了のまま保ち、自動保留ラベルを付けない。
@@ -412,7 +412,7 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 - PLAN-15：将来の作業容量を示す根拠がなければ、古いバックログを片付けるためだけの将来日付や優先度を付けない。
 - PLAN-16：候補選択を「最初に必ず考慮・実行可能性・複数情報の比較」の三段階で行い、予定日とPriorityの競合を非表示の固定順位で解決せず、説明または利用者確認へ戻す。
 
-実装テストと手動シナリオができた時点で検証根拠をリンクします。テスト成功だけでは実装完了を証明しません。
+自動根拠は[planning挙動テスト](../../../skills/taskpilot/tests/test_planning_store.py)、[Source-note proposalテスト](../../../skills/taskpilot/tests/test_proposal_store.py)、[Task storeテスト](../../../skills/taskpilot/tests/test_todo_store.py)です。50件のグループ化、変更競合と一部失敗、20%余白、上限による容量判定、Context根拠、読み取り専用計画、見積もり要確認、予定日とPriorityの競合表示を検証します。Agentによる意味上の見積もりや理由の品質は決定的テストだけでは証明できないため、見える利用者レビューを必須とします。
 
 ### 今回のイテレーションの対象外
 
