@@ -3,7 +3,7 @@
 Approval: Proposed — no product approval is inferred from this documentation migration.
 Implementation: Not implemented.
 
-Tracking: Not assigned. User-facing guides are tracked separately by [#40](https://github.com/tempu-village/taskmate/issues/40).
+Tracking: [#50](https://github.com/tempu-village/taskmate/issues/50). User-facing guides are tracked separately by [#40](https://github.com/tempu-village/taskmate/issues/40).
 
 > English is canonical. The Japanese reference below is AI-generated and has not been fully reviewed by a human.
 
@@ -48,7 +48,7 @@ Initial setup may make a sole registered Vault the default. Registering another 
 
 ## 日本語参考訳
 
-**状態：提案・未実装。** 実装Issueは未割り当てです。利用者向けガイドは [#40](https://github.com/tempu-village/taskmate/issues/40) で追跡します。
+**状態：提案・未実装。** 実装Issueは [#50](https://github.com/tempu-village/taskmate/issues/50)、利用者向けガイドは [#40](https://github.com/tempu-village/taskmate/issues/40) で追跡します。
 
 ### 目的
 
