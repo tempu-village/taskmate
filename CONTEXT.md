@@ -60,6 +60,18 @@ _Avoid_: Folder, task container
 A user-defined cross-project classification attached directly to a task.
 _Avoid_: Tag, category
 
+**Context label**:
+A user-editable Label under the `context/` prefix that describes circumstances in which a Task is practical to perform. It is not a Task status or required metadata.
+_Avoid_: Context status, system label
+
+**Capacity plan**:
+A Task Pilot suggestion sized to the user's stated available time and circumstances. It does not define a fixed Task count or rewrite Manual order.
+_Avoid_: Top three, daily status
+
+**Effort estimate**:
+A session-only range of active work time used to build a Capacity plan. It excludes elapsed waiting time and is neither a deadline nor a persisted actual duration.
+_Avoid_: Time record, due time
+
 **Priority**:
 An optional urgency rank from 1 through 3, where 1 is highest.
 _Avoid_: Important flag, severity
