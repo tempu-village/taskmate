@@ -14,10 +14,11 @@ For a new Issue, read [references/label-workflow.md](references/label-workflow.m
 ## Workflow
 
 1. For a new Issue, complete the label-preview and confirmation gate in `references/label-workflow.md` first. Use a provisional English title and one-line intent only; do not write the Issue body before this gate.
-2. Write the English title and canonical body. Resolve contradictions before translating.
+2. Write the English title and canonical body. For an Issue that changes user-observable behavior, include at least one user story after Summary. State a real actor, the actor's goal, and the intended value; keep implementation details in Requirements. For maintenance, refactoring, documentation, or operational work, include a user story only when a real actor and outcome can be stated without inventing a persona; otherwise express the motivation in Summary. Resolve contradictions before translating.
 3. Add the folded Japanese reference section after the complete English body.
 4. Mark the translation coverage beneath every Japanese heading:
    - Summary and Background: `要約`. Preserve the decisions and reasons while shortening exposition.
+   - User story: `全項目`. Preserve every actor, goal, and intended outcome.
    - Requirements, Acceptance criteria, Verification, and Out of scope: `全項目`. Preserve every normative item without adding Japanese-only requirements.
 5. Keep code, commands, paths, IDs, property names, URLs, and internal domain terms unchanged unless the UI itself localizes the term.
 6. Update the Japanese section whenever the English canonical specification changes. Keep the AI-translation notice until a human has actually reviewed the complete Japanese section.
@@ -31,4 +32,4 @@ Label creation, label assignment, label removal, and restoring an archived label
 
 ## Completion criteria
 
-The Issue is complete when the English body is internally consistent, the Japanese coverage labels are accurate, every normative English item appears in the corresponding Japanese `全項目` section, and no requirement exists only in Japanese. A labeling task is complete when the confirmed labels have been applied to the confirmed Issues and the final report identifies every affected Issue and any label created.
+The Issue is complete when every user-observable change has a user story grounded in a real actor and outcome, the English body is internally consistent, the Japanese coverage labels are accurate, every English user story and normative item appears in the corresponding Japanese `全項目` section, and no requirement exists only in Japanese. A labeling task is complete when the confirmed labels have been applied to the confirmed Issues and the final report identifies every affected Issue and any label created.

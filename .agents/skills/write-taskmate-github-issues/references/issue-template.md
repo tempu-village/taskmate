@@ -11,6 +11,12 @@ Use only the sections needed by the Issue. Keep the English section canonical an
 
 Canonical English summary.
 
+## User story
+
+As a <specific user or contributor>,
+I want <goal or capability>,
+so that <user-visible value or outcome>.
+
 ## Background
 
 Canonical English context and rationale.
@@ -44,6 +50,14 @@ Canonical English context and rationale.
 
 英語版の決定内容を保った短い概要。
 
+## ユーザーストーリー
+
+> 対応範囲：英語版「User story」の全項目
+
+<具体的な利用者またはコントリビューター>として、
+<目的または実現したいこと>をしたい。
+それによって、<利用者にとっての価値または結果>を得られる。
+
 ## 背景
 
 > 対応範囲：英語版「Background」の要約
@@ -76,5 +90,7 @@ Canonical English context and rationale.
 
 </details>
 ```
+
+Include `User story` for every Issue that changes user-observable behavior. For maintenance, refactoring, documentation, or operational work, include it only when a real actor and outcome can be stated without inventing a persona. Keep implementation details in `Requirements`, and use multiple user stories only for distinct actors or outcomes.
 
 If an English section is omitted because it is irrelevant, omit its Japanese counterpart. If a Japanese section is condensed beyond full coverage, label it `要約` rather than `全項目`.
