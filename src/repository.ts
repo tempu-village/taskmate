@@ -44,6 +44,17 @@ export type TaskSaveResult =
   | { status: "missing" }
   | { status: "identity-conflict"; conflict: TaskIdentityConflict };
 
+export type ReviewedTaskSource =
+  | { status: "ready"; path: string; content: string }
+  | { status: "missing" }
+  | { status: "identity-conflict"; conflict: TaskIdentityConflict };
+
+export type ReviewedTaskWriteResult =
+  | { status: "saved"; path: string }
+  | { status: "stale" }
+  | { status: "missing" }
+  | { status: "identity-conflict"; conflict: TaskIdentityConflict };
+
 type LocatedTask =
   | { status: "ready"; file: TFile; content: string; task: Task }
   | { status: "missing" }
@@ -249,6 +260,36 @@ export class TaskRepository {
     const located = await this.locateTask(task.id, task.path);
     if (located.status === "identity-conflict") throw new DuplicateTaskIdError(located.conflict);
     if (located.status === "ready") await this.app.vault.trash(located.file, true);
+  }
+
+  async readReviewedTask(taskId: string, preferredPath: string): Promise<ReviewedTaskSource> {
+    const located = await this.locateTask(taskId, preferredPath);
+    if (located.status !== "ready") return located;
+    return { status: "ready", path: located.file.path, content: located.content };
+  }
+
+  async writeReviewedTask(
+    taskId: string,
+    preferredPath: string,
+    expectedContent: string,
+    nextContent: string
+  ): Promise<ReviewedTaskWriteResult> {
+    const located = await this.locateTask(taskId, preferredPath);
+    if (located.status !== "ready") return located;
+    let saved = false;
+    await this.app.vault.process(located.file, (content) => {
+      if (content !== expectedContent) return content;
+      const next = parseTaskMarkdown(located.file.path, nextContent);
+      if (!next || next.id !== taskId) throw new Error(`Invalid reviewed Task content: ${taskId}`);
+      saved = true;
+      return nextContent;
+    });
+    if (!saved) return { status: "stale" };
+    const updated = parseTaskMarkdown(located.file.path, nextContent);
+    if (!updated) throw new Error(`Invalid reviewed Task content: ${taskId}`);
+    const desiredPath = this.availableTaskPath(updated.title, located.file.path);
+    if (desiredPath !== located.file.path) await this.app.fileManager.renameFile(located.file, desiredPath);
+    return { status: "saved", path: desiredPath };
   }
 
   async clearProject(projectId: string): Promise<void> {

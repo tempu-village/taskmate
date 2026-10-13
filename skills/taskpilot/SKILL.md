@@ -19,7 +19,7 @@ Manage a local-first task store while keeping the user in control of source scop
 - For staging and approving import proposals, also read [references/proposal-workflow.md](references/proposal-workflow.md).
 - For backlog review, effort estimation, Context-label suggestions, or capacity planning, read [references/planning-workflow.md](references/planning-workflow.md).
 
-Use `scripts/todo_store.py` for deterministic direct task operations, `scripts/proposal_store.py` for staged imports, and `scripts/planning_store.py` for review snapshots, proposal validation/application, and capacity packing when Python is available. Otherwise follow the same schemas with the environment's ordinary file tools. Obtain vault and managed-folder paths from user scope or the TaskMate plugin settings; never invent or search outside that scope.
+Use `scripts/todo_store.py` for deterministic direct task operations, `scripts/proposal_store.py` for staged imports, and `scripts/planning_store.py` for review snapshots, persisted Task change Proposals, and capacity packing when Python is available. Otherwise follow the same schemas with the environment's ordinary file tools. Obtain vault and managed-folder paths from user scope or the TaskMate plugin settings; never invent or search outside that scope.
 
 ## Preserve control
 
@@ -35,4 +35,4 @@ Estimate active effort as a visible range with a stated basis. Prefer the user's
 
 Finish an import when every eligible changed source note has a coverage review, every approved task has one valid Markdown file and a source link, every exclusion was explicitly approved, source processing metadata names all created task IDs, and `scripts/todo_store.py validate` reports no duplicate IDs or invalid task files. Preserve existing priority, labels, and project assignments unless the user asks to change them.
 
-Finish a backlog review when every approved change was rechecked and validated, every failed or stale Task is identified, and every unapproved or clarification Task remains unchanged. Finish a capacity plan when its upper-bound total fits the displayed capacity, every estimate and selection has a visible reason, near matches are separate, and no Task Markdown changed merely because the plan was accepted.
+Finish a backlog review when a Proposal containing complete before/after Markdown evidence is visible in TaskMate, every approved change was rechecked and validated, every failed or stale Task is identified, and every unapproved or clarification Task remains unchanged. On macOS, use the `propose --open-review` handoff so Task Pilot invokes the TaskMate URI directly through the operating system; if launch fails, report the saved Proposal ID for the pending-review list. Finish a capacity plan when its upper-bound total fits the displayed capacity, every estimate and selection has a visible reason, near matches are separate, and no Task Markdown changed merely because the plan was accepted.

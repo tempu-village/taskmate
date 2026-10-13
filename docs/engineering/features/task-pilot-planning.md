@@ -168,7 +168,7 @@ If some writes in an approved batch fail, Task Pilot identifies which Tasks succ
 7. Recheck current files, apply only approved changes, and validate the saved Markdown.
 8. Build a read-only capacity plan from the current canonical Tasks and display the capacity calculation, reasons, estimates, and inferences.
 
-In this iteration, backlog-review proposals and capacity plans remain conversation output and are not persisted as new Markdown records. If interrupted, they must be regenerated and reviewed again. Source-note imports continue to use their existing persisted Proposal sessions. Any implementation must reuse the canonical Task schema and Source-note proposal safeguards rather than create a second task database.
+Backlog-review mutations use persisted, reviewable [Task change Proposals](task-change-review/README.md) containing typed ChangeSets and complete before/after Markdown evidence. Capacity plans remain conversation output and read-only. Source-note imports continue to use their distinct persisted Proposal sessions. Canonical Task Markdown remains the only Task master data.
 
 ## Failure handling and limitations
 
@@ -229,6 +229,7 @@ Automated evidence: [planning behavior tests](../../../skills/taskpilot/tests/te
 - [Navigation, filtering and sorting](filtering-and-sorting.md)
 - [Task editing](task-editing.md)
 - [Storage and privacy](storage-and-privacy.md)
+- [Task change review](task-change-review/README.md)
 
 ## 日本語参考
 
@@ -377,7 +378,7 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 7. 現在のファイルを再確認し、承認分だけ反映してMarkdownを検証する。
 8. 現在の正式Taskから読み取り専用の時間ベース計画を作り、時間計算、理由、見積もり、推測を表示する。
 
-今回は、バックログ変更案と時間ベース計画を新しいMarkdownレコードとして保存せず、対話内だけに置きます。中断した場合は再生成・再レビューします。Source note取り込みは既存の永続化されたProposal sessionを使い続けます。実装では正式なTask schemaとSource-note提案の安全策を再利用し、第二のTaskデータベースを作りません。
+バックログ変更は、型付きChangeSetと変更前後Markdown全文を含む永続化されたレビュー可能な[Task change Proposal](task-change-review/README.md)を使います。時間ベース計画は引き続き対話内だけの読み取り専用です。Source note取り込みは別の永続Proposal sessionを使い続け、正式なTask MarkdownだけをTaskの正本とします。
 
 ### 失敗時と制限
 
@@ -438,3 +439,4 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 - [Navigation, filtering and sorting](filtering-and-sorting.md)
 - [Task editing](task-editing.md)
 - [Storage and privacy](storage-and-privacy.md)
+- [Task change review](task-change-review/README.md)

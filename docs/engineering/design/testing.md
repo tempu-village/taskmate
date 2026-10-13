@@ -34,6 +34,7 @@ git diff --check
 | [CONFLICT-01/02/03/04](../features/edit-conflicts.md) | merge and repository tests, including Step value equality | Two-device synchronization |
 | [IMPORT-01/02/03/04](../features/source-import.md) | Python proposal/store tests | Actual agent's coverage inventory versus all source statements |
 | [PLAN-01 through PLAN-16](../features/task-pilot-planning.md) | Python planning/proposal/store tests | Actual agent estimate quality, explanation usefulness and conversation review |
+| [REVIEW-01 through REVIEW-13](../features/task-change-review/README.md) | Proposal model/repository/renderer tests and Python planning-store tests | Fresh desktop/mobile review, macOS URI handoff regression, Windows/Linux launch adapters |
 | [STORE-01/02](../features/storage-and-privacy.md) | settings/repository inspection | Uninstall retention and folder-setting change |
 
 Use stable acceptance IDs in specs and link meaningful tests here or in the spec. An evidence link does not imply every condition is automated. Keep untested expectations visible. Source-index and Vault-setup acceptance scenarios are targets, not passing current tests.

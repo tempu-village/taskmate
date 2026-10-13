@@ -22,7 +22,7 @@ __export(main_exports, {
   default: () => TaskMatePlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian14 = require("obsidian");
+var import_obsidian16 = require("obsidian");
 
 // src/repository.ts
 var import_obsidian = require("obsidian");
@@ -498,6 +498,29 @@ var TaskRepository = class {
     if (located.status === "identity-conflict") throw new DuplicateTaskIdError(located.conflict);
     if (located.status === "ready") await this.app.vault.trash(located.file, true);
   }
+  async readReviewedTask(taskId, preferredPath) {
+    const located = await this.locateTask(taskId, preferredPath);
+    if (located.status !== "ready") return located;
+    return { status: "ready", path: located.file.path, content: located.content };
+  }
+  async writeReviewedTask(taskId, preferredPath, expectedContent, nextContent) {
+    const located = await this.locateTask(taskId, preferredPath);
+    if (located.status !== "ready") return located;
+    let saved = false;
+    await this.app.vault.process(located.file, (content) => {
+      if (content !== expectedContent) return content;
+      const next = parseTaskMarkdown(located.file.path, nextContent);
+      if (!next || next.id !== taskId) throw new Error(`Invalid reviewed Task content: ${taskId}`);
+      saved = true;
+      return nextContent;
+    });
+    if (!saved) return { status: "stale" };
+    const updated = parseTaskMarkdown(located.file.path, nextContent);
+    if (!updated) throw new Error(`Invalid reviewed Task content: ${taskId}`);
+    const desiredPath = this.availableTaskPath(updated.title, located.file.path);
+    if (desiredPath !== located.file.path) await this.app.fileManager.renameFile(located.file, desiredPath);
+    return { status: "saved", path: desiredPath };
+  }
   async clearProject(projectId) {
     const tasks = await this.list();
     await Promise.all(tasks.filter((task) => task.projectId === projectId).map((task) => this.update(task, { projectId: null })));
@@ -924,6 +947,25 @@ var en = {
   "common.save": "Save",
   "common.back": "Back",
   "common.clear": "Clear",
+  "command.openReviews": "Open Task change reviews",
+  "review.title": "Review Task changes",
+  "review.pending": "Pending reviews",
+  "review.none": "No pending reviews",
+  "review.summary": "{tasks} Tasks, {changes} changes",
+  "review.apply": "Approve and apply selected changes",
+  "review.applied": "Applied {count} changes",
+  "review.reject": "Reject proposal",
+  "review.rejected": "Proposal rejected",
+  "review.rejectConfirm": "Reject this proposal without changing Tasks?",
+  "review.selectAll": "Select all changes in every Task",
+  "review.selectTask": "Select all changes in this Task",
+  "review.clearAll": "Clear all changes in every Task",
+  "review.clearTask": "Clear all changes in this Task",
+  "review.semantic": "Semantic",
+  "review.markdown": "Markdown",
+  "review.noSelection": "Select at least one change",
+  "review.invalid": "This proposal is missing or invalid",
+  "review.invalidLink": "The TaskMate review link is invalid",
   "search.title": "Search",
   "search.placeholder": "Search tasks, labels, and projects",
   "search.ariaLabel": "Search tasks",
@@ -1137,6 +1179,25 @@ var ja = {
   "common.save": "\u4FDD\u5B58",
   "common.back": "\u623B\u308B",
   "common.clear": "\u6D88\u53BB",
+  "command.openReviews": "Task\u5909\u66F4\u30EC\u30D3\u30E5\u30FC\u3092\u958B\u304F",
+  "review.title": "Task\u5909\u66F4\u3092\u30EC\u30D3\u30E5\u30FC",
+  "review.pending": "\u672A\u30EC\u30D3\u30E5\u30FC",
+  "review.none": "\u672A\u30EC\u30D3\u30E5\u30FC\u306EProposal\u306F\u3042\u308A\u307E\u305B\u3093",
+  "review.summary": "{tasks}\u4EF6\u306ETask\u3001{changes}\u4EF6\u306E\u5909\u66F4",
+  "review.apply": "\u9078\u629E\u3057\u305F\u5909\u66F4\u3092\u627F\u8A8D\u3057\u3066\u9069\u7528",
+  "review.applied": "{count}\u4EF6\u306E\u5909\u66F4\u3092\u9069\u7528\u3057\u307E\u3057\u305F",
+  "review.reject": "Proposal\u3092\u5374\u4E0B",
+  "review.rejected": "Proposal\u3092\u5374\u4E0B\u3057\u307E\u3057\u305F",
+  "review.rejectConfirm": "Task\u3092\u5909\u66F4\u305B\u305A\u3001\u3053\u306EProposal\u3092\u5374\u4E0B\u3057\u307E\u3059\u304B\uFF1F",
+  "review.selectAll": "\u5168Task\u306E\u5909\u66F4\u3092\u3059\u3079\u3066\u9078\u629E",
+  "review.selectTask": "\u3053\u306ETask\u306E\u5909\u66F4\u3092\u3059\u3079\u3066\u9078\u629E",
+  "review.clearAll": "\u5168Task\u306E\u5909\u66F4\u3092\u3059\u3079\u3066\u89E3\u9664",
+  "review.clearTask": "\u3053\u306ETask\u306E\u5909\u66F4\u3092\u3059\u3079\u3066\u89E3\u9664",
+  "review.semantic": "\u610F\u5473\u7684\u5DEE\u5206",
+  "review.markdown": "Markdown\u5DEE\u5206",
+  "review.noSelection": "\u5909\u66F4\u30921\u4EF6\u4EE5\u4E0A\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044",
+  "review.invalid": "Proposal\u304C\u898B\u3064\u304B\u3089\u306A\u3044\u304B\u3001\u5F62\u5F0F\u304C\u6B63\u3057\u304F\u3042\u308A\u307E\u305B\u3093",
+  "review.invalidLink": "TaskMate\u306E\u30EC\u30D3\u30E5\u30FC\u30EA\u30F3\u30AF\u304C\u6B63\u3057\u304F\u3042\u308A\u307E\u305B\u3093",
   "search.title": "\u691C\u7D22",
   "search.placeholder": "\u30BF\u30B9\u30AF\u3001\u30E9\u30D9\u30EB\u3001\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3092\u691C\u7D22",
   "search.ariaLabel": "\u30BF\u30B9\u30AF\u3092\u691C\u7D22",
@@ -1462,11 +1523,11 @@ var LabelPickerModal = class extends import_obsidian4.Modal {
     });
     const tabs = controls.createDiv({ cls: "taskmate-label-picker-tabs", attr: { role: "tablist" } });
     ["suggested", "all"].forEach((tab) => {
-      const button = tabs.createEl("button", {
+      const button2 = tabs.createEl("button", {
         text: t(tab === "suggested" ? "filter.suggestedLabelsTab" : "filter.allLabelsTab"),
         attr: { role: "tab" }
       });
-      button.addEventListener("click", () => {
+      button2.addEventListener("click", () => {
         this.tab = tab;
         this.renderPicker();
       });
@@ -1494,10 +1555,10 @@ var LabelPickerModal = class extends import_obsidian4.Modal {
   renderPicker() {
     const { t } = this.options.i18n;
     const tabs = this.contentEl.querySelectorAll(".taskmate-label-picker-tabs button");
-    tabs.forEach((button, index2) => {
+    tabs.forEach((button2, index2) => {
       const selected = index2 === 0 && this.tab === "suggested" || index2 === 1 && this.tab === "all";
-      button.toggleClass("is-active", selected);
-      button.setAttribute("aria-selected", String(selected));
+      button2.toggleClass("is-active", selected);
+      button2.setAttribute("aria-selected", String(selected));
     });
     if (!this.resultsEl || !this.indexEl) return;
     this.resultsEl.empty();
@@ -1518,12 +1579,12 @@ var LabelPickerModal = class extends import_obsidian4.Modal {
     this.indexEl.setAttribute("aria-label", t("filter.labelIndexAriaLabel"));
     groups.forEach((group) => {
       const active2 = group.id === this.activeGroup;
-      const button = this.indexEl?.createEl("button", {
+      const button2 = this.indexEl?.createEl("button", {
         text: this.groupLabel(group.id),
         cls: active2 ? "is-active" : "",
         attr: { "aria-pressed": String(active2) }
       });
-      button?.addEventListener("click", () => {
+      button2?.addEventListener("click", () => {
         this.activeGroup = group.id;
         this.renderPicker();
       });
@@ -1862,10 +1923,10 @@ var BulkTaskModal = class extends import_obsidian5.Modal {
       if (value === void 0) delete this.changes.date;
       else this.changes.date = value;
       dateInput.value = typeof value === "string" ? value : "";
-      dateButtons.forEach((button) => {
-        const selected = button.dataset.bulkDate === (value === void 0 ? "unchanged" : value ?? "");
-        button.toggleClass("is-active", selected);
-        button.setAttribute("aria-pressed", String(selected));
+      dateButtons.forEach((button2) => {
+        const selected = button2.dataset.bulkDate === (value === void 0 ? "unchanged" : value ?? "");
+        button2.toggleClass("is-active", selected);
+        button2.setAttribute("aria-pressed", String(selected));
       });
     };
     const unchanged = datePresets.createEl("button", { text: t("bulk.unchanged"), cls: "taskmate-suggestion-chip is-active", attr: { type: "button", "aria-pressed": "true" } });
@@ -1873,11 +1934,11 @@ var BulkTaskModal = class extends import_obsidian5.Modal {
     unchanged.addEventListener("click", () => selectDate(void 0));
     dateButtons.push(unchanged);
     for (const suggestion of taskDateSuggestions()) {
-      const button = datePresets.createEl("button", { cls: "taskmate-suggestion-chip", attr: { type: "button", "aria-pressed": "false" } });
-      button.dataset.bulkDate = suggestion.date ?? "";
-      button.createSpan({ text: t(DATE_SUGGESTION_KEYS[suggestion.id]) });
-      button.addEventListener("click", () => selectDate(suggestion.date));
-      dateButtons.push(button);
+      const button2 = datePresets.createEl("button", { cls: "taskmate-suggestion-chip", attr: { type: "button", "aria-pressed": "false" } });
+      button2.dataset.bulkDate = suggestion.date ?? "";
+      button2.createSpan({ text: t(DATE_SUGGESTION_KEYS[suggestion.id]) });
+      button2.addEventListener("click", () => selectDate(suggestion.date));
+      dateButtons.push(button2);
     }
     dateSetting.addText((text) => {
       text.inputEl.type = "date";
@@ -1928,7 +1989,7 @@ var BulkTaskModal = class extends import_obsidian5.Modal {
       if (this.initialLabels.includes(label) && !this.changes.removeLabels.includes(label)) this.changes.removeLabels = [...this.changes.removeLabels, label];
     };
     const refresh = () => {
-      editor.querySelectorAll("[data-taskmate-label-chip], .taskmate-label-overflow-toggle").forEach((element) => element.remove());
+      editor.querySelectorAll("[data-taskmate-label-chip], .taskmate-label-overflow-toggle").forEach((element2) => element2.remove());
       const labels = labelsNow();
       const summary = summarizeLabels(labels);
       for (const label of expanded ? labels : summary.visible) {
@@ -2083,13 +2144,13 @@ var TaskFilterModal = class extends import_obsidian6.Modal {
   onOpen() {
     const { t } = this.i18n;
     const priority = new import_obsidian6.Setting(this.contentEl).setName(t("filter.priority"));
-    [1, 2, 3].forEach((value) => priority.addButton((button) => {
+    [1, 2, 3].forEach((value) => priority.addButton((button2) => {
       const refresh = () => {
         const selected = this.draft.priorities.includes(value);
-        button.buttonEl.toggleClass("is-active", selected);
-        button.buttonEl.toggleClass("mod-cta", selected);
+        button2.buttonEl.toggleClass("is-active", selected);
+        button2.buttonEl.toggleClass("mod-cta", selected);
       };
-      button.setButtonText(`P${value}`).setTooltip(t("filter.priorityValue", { priority: value })).onClick(() => {
+      button2.setButtonText(`P${value}`).setTooltip(t("filter.priorityValue", { priority: value })).onClick(() => {
         this.draft.priorities = this.draft.priorities.includes(value) ? this.draft.priorities.filter((item) => item !== value) : [...this.draft.priorities, value];
         refresh();
       });
@@ -4380,8 +4441,8 @@ Sortable.utils = {
   getChild,
   expando
 };
-Sortable.get = function(element) {
-  return element[expando];
+Sortable.get = function(element2) {
+  return element2[expando];
 };
 Sortable.mount = function() {
   for (var _len = arguments.length, plugins2 = new Array(_len), _key = 0; _key < _len; _key++) {
@@ -4651,12 +4712,12 @@ function taskListTitleText(title, limit = TASK_LIST_TITLE_CHARACTER_LIMIT) {
   return title;
 }
 function appendElement(parent, tag, options = {}) {
-  const element = parent.ownerDocument.createElement(tag);
-  if (options.className) element.className = options.className;
-  if (options.text !== void 0) element.textContent = options.text;
-  Object.entries(options.attributes ?? {}).forEach(([name, value]) => element.setAttribute(name, value));
-  parent.append(element);
-  return element;
+  const element2 = parent.ownerDocument.createElement(tag);
+  if (options.className) element2.className = options.className;
+  if (options.text !== void 0) element2.textContent = options.text;
+  Object.entries(options.attributes ?? {}).forEach(([name, value]) => element2.setAttribute(name, value));
+  parent.append(element2);
+  return element2;
 }
 function renderRow(list, row, selectionMode, copy, signal, dispatch) {
   const task = appendElement(list, "div", {
@@ -4763,7 +4824,7 @@ function renderTaskList(container, model, copy, dispatch) {
     touchStartThreshold: 4,
     onEnd: (event) => {
       if (event.oldIndex === event.newIndex) return;
-      const orderedIds = Array.from(list.querySelectorAll(".taskmate-task")).map((element) => element.dataset.taskId ?? "");
+      const orderedIds = Array.from(list.querySelectorAll(".taskmate-task")).map((element2) => element2.dataset.taskId ?? "");
       const taskId = event.item.dataset.taskId ?? "";
       const newIndex2 = orderedIds.indexOf(taskId);
       if (!taskId || newIndex2 < 0) return;
@@ -4969,25 +5030,25 @@ var TaskModal = class extends import_obsidian11.Modal {
     const dateButtons = [];
     let dateInput;
     const refreshDateSelection = () => {
-      for (const button of dateButtons) {
-        const selected = button.dataset.date === (this.draft.date ?? "");
-        button.toggleClass("is-active", selected);
-        button.setAttribute("aria-pressed", String(selected));
+      for (const button2 of dateButtons) {
+        const selected = button2.dataset.date === (this.draft.date ?? "");
+        button2.toggleClass("is-active", selected);
+        button2.setAttribute("aria-pressed", String(selected));
       }
     };
     for (const suggestion of taskDateSuggestions()) {
-      const button = datePresets.createEl("button", {
+      const button2 = datePresets.createEl("button", {
         cls: "taskmate-suggestion-chip",
         attr: { type: "button", "aria-pressed": "false" }
       });
-      button.dataset.date = suggestion.date ?? "";
-      button.createSpan({ text: t(DATE_SUGGESTION_KEYS2[suggestion.id]) });
-      button.addEventListener("click", () => {
+      button2.dataset.date = suggestion.date ?? "";
+      button2.createSpan({ text: t(DATE_SUGGESTION_KEYS2[suggestion.id]) });
+      button2.addEventListener("click", () => {
         this.draft.date = suggestion.date;
         dateInput.value = suggestion.date ?? "";
         refreshDateSelection();
       });
-      dateButtons.push(button);
+      dateButtons.push(button2);
     }
     dateSetting.addText((text) => {
       text.inputEl.type = "date";
@@ -5048,7 +5109,7 @@ var TaskModal = class extends import_obsidian11.Modal {
     let labelInputComposing = false;
     let labelsExpanded = false;
     const refreshLabelEditor = () => {
-      labelEditor.querySelectorAll("[data-taskmate-label-chip], .taskmate-label-overflow-toggle").forEach((element) => element.remove());
+      labelEditor.querySelectorAll("[data-taskmate-label-chip], .taskmate-label-overflow-toggle").forEach((element2) => element2.remove());
       const summary = summarizeLabels(this.draft.labels);
       const visible = labelsExpanded ? this.draft.labels : summary.visible;
       for (const label of visible) {
@@ -5422,16 +5483,16 @@ var TodoListView = class extends import_obsidian12.ItemView {
     this.renderHeader(controls, "TaskMate", null, () => visibleTasks);
     const tabs = controls.createDiv({ cls: "taskmate-smart-views", attr: { role: "tablist" } });
     Object.keys(SMART_VIEW_KEYS).forEach((view) => {
-      const button = tabs.createEl("button", {
+      const button2 = tabs.createEl("button", {
         cls: view === this.smartView ? "is-active" : "",
         attr: { role: "tab", "aria-selected": String(view === this.smartView) }
       });
-      button.createSpan({ text: t(SMART_VIEW_KEYS[view]) });
-      button.addEventListener("click", () => {
+      button2.createSpan({ text: t(SMART_VIEW_KEYS[view]) });
+      button2.addEventListener("click", () => {
         this.smartView = view;
         this.requestRender();
       });
-      button.disabled = this.selectionMode;
+      button2.disabled = this.selectionMode;
     });
     this.renderSortControl(controls);
     if (this.smartView === "scheduled" && this.sortMode === "date") {
@@ -5498,8 +5559,8 @@ var TodoListView = class extends import_obsidian12.ItemView {
       });
       const words = section.createDiv({ cls: "taskmate-recent-searches" });
       recent.forEach((word) => {
-        const button = words.createEl("button", { text: word });
-        button.addEventListener("click", () => {
+        const button2 = words.createEl("button", { text: word });
+        button2.addEventListener("click", () => {
           this.searchQuery = word;
           this.requestRender();
         });
@@ -5617,7 +5678,7 @@ var TodoListView = class extends import_obsidian12.ItemView {
     Object.keys(SORT_KEYS).forEach((mode) => {
       const selected = mode === this.sortMode;
       const directionLabel = this.sortDirection === "asc" ? t("sort.ascending") : t("sort.descending");
-      const button = options.createEl("button", {
+      const button2 = options.createEl("button", {
         cls: selected ? "is-active" : "",
         attr: {
           type: "button",
@@ -5625,11 +5686,11 @@ var TodoListView = class extends import_obsidian12.ItemView {
           "aria-label": selected && mode !== "manual" ? t("sort.activeOptionAriaLabel", { mode: t(SORT_KEYS[mode]), direction: directionLabel }) : t(SORT_KEYS[mode])
         }
       });
-      button.createSpan({ text: t(SORT_KEYS[mode]) });
+      button2.createSpan({ text: t(SORT_KEYS[mode]) });
       if (selected && mode !== "manual") {
-        button.createSpan({ text: this.sortDirection === "asc" ? "\u2191" : "\u2193", cls: "taskmate-sort-direction", attr: { "aria-hidden": "true" } });
+        button2.createSpan({ text: this.sortDirection === "asc" ? "\u2191" : "\u2193", cls: "taskmate-sort-direction", attr: { "aria-hidden": "true" } });
       }
-      button.addEventListener("click", () => {
+      button2.addEventListener("click", () => {
         if (mode === this.sortMode && mode !== "manual") {
           this.sortDirection = this.sortDirection === "asc" ? "desc" : "asc";
         } else {
@@ -5638,7 +5699,7 @@ var TodoListView = class extends import_obsidian12.ItemView {
         }
         this.requestRender();
       });
-      button.disabled = this.selectionMode;
+      button2.disabled = this.selectionMode;
     });
   }
   renderTaskList(container, source, projects, allowReorder) {
@@ -5725,13 +5786,13 @@ var TodoListView = class extends import_obsidian12.ItemView {
     const { t } = this.plugin.i18n();
     const navigation = root.createDiv({ cls: "taskmate-navigation", attr: { "aria-label": t("nav.ariaLabel") } });
     NAV_ITEMS.forEach((item) => {
-      const button = navigation.createEl("button", {
+      const button2 = navigation.createEl("button", {
         cls: item.screen === this.screen ? "is-active" : "",
         attr: { "aria-current": item.screen === this.screen ? "page" : "false" }
       });
-      button.createSpan({ text: item.icon, cls: "taskmate-nav-icon" });
-      button.createSpan({ text: t(item.labelKey) });
-      button.addEventListener("click", () => {
+      button2.createSpan({ text: item.icon, cls: "taskmate-nav-icon" });
+      button2.createSpan({ text: t(item.labelKey) });
+      button2.addEventListener("click", () => {
         this.screen = item.screen;
         if (item.screen === "projects") this.projectScreen = "index";
         this.requestRender();
@@ -5754,13 +5815,13 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
   renderAdjustMenu(header, selectionScope) {
     const { t } = this.plugin.i18n();
     const count = this.filterState.count();
-    const button = header.createEl("button", {
+    const button2 = header.createEl("button", {
       cls: `taskmate-adjust${count > 0 ? " is-active" : ""}`,
       attr: { "aria-label": count > 0 ? t("adjust.ariaLabelActive", { count }) : t("adjust.ariaLabel") }
     });
-    (0, import_obsidian12.setIcon)(button, "sliders-horizontal");
-    if (count > 0) button.createSpan({ text: String(count), cls: "taskmate-adjust-count" });
-    button.addEventListener("click", (event) => {
+    (0, import_obsidian12.setIcon)(button2, "sliders-horizontal");
+    if (count > 0) button2.createSpan({ text: String(count), cls: "taskmate-adjust-count" });
+    button2.addEventListener("click", (event) => {
       const menu = new import_obsidian12.Menu();
       const scope = selectionScope();
       menu.addItem((item) => item.setTitle(t("selection.start")).setIcon("list-checks").setDisabled(scope.length === 0).onClick(() => {
@@ -5933,13 +5994,13 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
     this.requestRender();
   }
   addBackButton(header, action) {
-    const button = header.createEl("button", {
+    const button2 = header.createEl("button", {
       text: "\u2039",
       cls: "taskmate-back",
       attr: { "aria-label": this.plugin.i18n().t("common.back") }
     });
-    header.prepend(button);
-    button.addEventListener("click", action);
+    header.prepend(button2);
+    button2.addEventListener("click", action);
   }
   async rememberSearch(value) {
     const word = value.trim();
@@ -6086,28 +6147,1372 @@ function detectObsidianLanguage() {
   }
 }
 
+// src/task-change-proposal-repository.ts
+var import_obsidian14 = require("obsidian");
+
+// node_modules/diff/libesm/diff/base.js
+var Diff = class {
+  diff(oldStr, newStr, options = {}) {
+    let callback;
+    if (typeof options === "function") {
+      callback = options;
+      options = {};
+    } else if ("callback" in options) {
+      callback = options.callback;
+    }
+    const oldString = this.castInput(oldStr, options);
+    const newString = this.castInput(newStr, options);
+    const oldTokens = this.removeEmpty(this.tokenize(oldString, options));
+    const newTokens = this.removeEmpty(this.tokenize(newString, options));
+    return this.diffWithOptionsObj(oldTokens, newTokens, options, callback);
+  }
+  diffWithOptionsObj(oldTokens, newTokens, options, callback) {
+    var _a;
+    const done = (value) => {
+      value = this.postProcess(value, options);
+      if (callback) {
+        setTimeout(function() {
+          callback(value);
+        }, 0);
+        return void 0;
+      } else {
+        return value;
+      }
+    };
+    const newLen = newTokens.length, oldLen = oldTokens.length;
+    let editLength = 1;
+    let maxEditLength = newLen + oldLen;
+    if (options.maxEditLength != null) {
+      maxEditLength = Math.min(maxEditLength, options.maxEditLength);
+    }
+    const maxExecutionTime = (_a = options.timeout) !== null && _a !== void 0 ? _a : Infinity;
+    const abortAfterTimestamp = Date.now() + maxExecutionTime;
+    const bestPath = [{ oldPos: -1, lastComponent: void 0 }];
+    let newPos = this.extractCommon(bestPath[0], newTokens, oldTokens, 0, options);
+    if (bestPath[0].oldPos + 1 >= oldLen && newPos + 1 >= newLen) {
+      return done(this.buildValues(bestPath[0].lastComponent, newTokens, oldTokens));
+    }
+    let minDiagonalToConsider = -Infinity, maxDiagonalToConsider = Infinity;
+    const execEditLength = () => {
+      for (let diagonalPath = Math.max(minDiagonalToConsider, -editLength); diagonalPath <= Math.min(maxDiagonalToConsider, editLength); diagonalPath += 2) {
+        let basePath;
+        const removePath = bestPath[diagonalPath - 1], addPath = bestPath[diagonalPath + 1];
+        if (removePath) {
+          bestPath[diagonalPath - 1] = void 0;
+        }
+        let canAdd = false;
+        if (addPath) {
+          const addPathNewPos = addPath.oldPos - diagonalPath;
+          canAdd = addPath && 0 <= addPathNewPos && addPathNewPos < newLen;
+        }
+        const canRemove = removePath && removePath.oldPos + 1 < oldLen;
+        if (!canAdd && !canRemove) {
+          bestPath[diagonalPath] = void 0;
+          continue;
+        }
+        if (!canRemove || canAdd && removePath.oldPos < addPath.oldPos) {
+          basePath = this.addToPath(addPath, true, false, 0, options);
+        } else {
+          basePath = this.addToPath(removePath, false, true, 1, options);
+        }
+        newPos = this.extractCommon(basePath, newTokens, oldTokens, diagonalPath, options);
+        if (basePath.oldPos + 1 >= oldLen && newPos + 1 >= newLen) {
+          return done(this.buildValues(basePath.lastComponent, newTokens, oldTokens)) || true;
+        } else {
+          bestPath[diagonalPath] = basePath;
+          if (basePath.oldPos + 1 >= oldLen) {
+            maxDiagonalToConsider = Math.min(maxDiagonalToConsider, diagonalPath - 1);
+          }
+          if (newPos + 1 >= newLen) {
+            minDiagonalToConsider = Math.max(minDiagonalToConsider, diagonalPath + 1);
+          }
+        }
+      }
+      editLength++;
+    };
+    if (callback) {
+      (function exec() {
+        setTimeout(function() {
+          if (editLength > maxEditLength || Date.now() > abortAfterTimestamp) {
+            return callback(void 0);
+          }
+          if (!execEditLength()) {
+            exec();
+          }
+        }, 0);
+      })();
+    } else {
+      while (editLength <= maxEditLength && Date.now() <= abortAfterTimestamp) {
+        const ret = execEditLength();
+        if (ret) {
+          return ret;
+        }
+      }
+    }
+  }
+  addToPath(path, added, removed, oldPosInc, options) {
+    const last = path.lastComponent;
+    if (last && !options.oneChangePerToken && last.added === added && last.removed === removed) {
+      return {
+        oldPos: path.oldPos + oldPosInc,
+        lastComponent: { count: last.count + 1, added, removed, previousComponent: last.previousComponent }
+      };
+    } else {
+      return {
+        oldPos: path.oldPos + oldPosInc,
+        lastComponent: { count: 1, added, removed, previousComponent: last }
+      };
+    }
+  }
+  extractCommon(basePath, newTokens, oldTokens, diagonalPath, options) {
+    const newLen = newTokens.length, oldLen = oldTokens.length;
+    let oldPos = basePath.oldPos, newPos = oldPos - diagonalPath, commonCount = 0;
+    while (newPos + 1 < newLen && oldPos + 1 < oldLen && this.equals(oldTokens[oldPos + 1], newTokens[newPos + 1], options)) {
+      newPos++;
+      oldPos++;
+      commonCount++;
+      if (options.oneChangePerToken) {
+        basePath.lastComponent = { count: 1, previousComponent: basePath.lastComponent, added: false, removed: false };
+      }
+    }
+    if (commonCount && !options.oneChangePerToken) {
+      basePath.lastComponent = { count: commonCount, previousComponent: basePath.lastComponent, added: false, removed: false };
+    }
+    basePath.oldPos = oldPos;
+    return newPos;
+  }
+  equals(left, right, options) {
+    if (options.comparator) {
+      return options.comparator(left, right);
+    } else {
+      return left === right || !!options.ignoreCase && left.toLowerCase() === right.toLowerCase();
+    }
+  }
+  removeEmpty(array) {
+    const ret = [];
+    for (let i = 0; i < array.length; i++) {
+      if (array[i]) {
+        ret.push(array[i]);
+      }
+    }
+    return ret;
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  castInput(value, options) {
+    return value;
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  tokenize(value, options) {
+    return Array.from(value);
+  }
+  join(chars) {
+    return chars.join("");
+  }
+  postProcess(changeObjects, options) {
+    return changeObjects;
+  }
+  get useLongestToken() {
+    return false;
+  }
+  buildValues(lastComponent, newTokens, oldTokens) {
+    const components = [];
+    let nextComponent;
+    while (lastComponent) {
+      components.push(lastComponent);
+      nextComponent = lastComponent.previousComponent;
+      delete lastComponent.previousComponent;
+      lastComponent = nextComponent;
+    }
+    components.reverse();
+    const componentLen = components.length;
+    let componentPos = 0, newPos = 0, oldPos = 0;
+    for (; componentPos < componentLen; componentPos++) {
+      const component = components[componentPos];
+      if (!component.removed) {
+        if (!component.added && this.useLongestToken) {
+          let value = newTokens.slice(newPos, newPos + component.count);
+          value = value.map(function(value2, i) {
+            const oldValue = oldTokens[oldPos + i];
+            return oldValue.length > value2.length ? oldValue : value2;
+          });
+          component.value = this.join(value);
+        } else {
+          component.value = this.join(newTokens.slice(newPos, newPos + component.count));
+        }
+        newPos += component.count;
+        if (!component.added) {
+          oldPos += component.count;
+        }
+      } else {
+        component.value = this.join(oldTokens.slice(oldPos, oldPos + component.count));
+        oldPos += component.count;
+      }
+    }
+    return components;
+  }
+};
+
+// node_modules/diff/libesm/util/string.js
+function hasOnlyWinLineEndings(string) {
+  return string.includes("\r\n") && !string.startsWith("\n") && !string.match(/[^\r]\n/);
+}
+function hasOnlyUnixLineEndings(string) {
+  return !string.includes("\r\n") && string.includes("\n");
+}
+
+// node_modules/diff/libesm/diff/line.js
+var LineDiff = class extends Diff {
+  constructor() {
+    super(...arguments);
+    this.tokenize = tokenize;
+  }
+  equals(left, right, options) {
+    if (options.ignoreWhitespace) {
+      if (!options.newlineIsToken || !left.includes("\n")) {
+        left = left.trim();
+      }
+      if (!options.newlineIsToken || !right.includes("\n")) {
+        right = right.trim();
+      }
+    } else if (options.ignoreNewlineAtEof && !options.newlineIsToken) {
+      if (left.endsWith("\n")) {
+        left = left.slice(0, -1);
+      }
+      if (right.endsWith("\n")) {
+        right = right.slice(0, -1);
+      }
+    }
+    return super.equals(left, right, options);
+  }
+};
+var lineDiff = new LineDiff();
+function diffLines(oldStr, newStr, options) {
+  return lineDiff.diff(oldStr, newStr, options);
+}
+function tokenize(value, options) {
+  if (options.stripTrailingCr) {
+    value = value.replace(/\r\n/g, "\n");
+  }
+  const retLines = [], linesAndNewlines = value.split(/(\n|\r\n)/);
+  if (!linesAndNewlines[linesAndNewlines.length - 1]) {
+    linesAndNewlines.pop();
+  }
+  for (let i = 0; i < linesAndNewlines.length; i++) {
+    const line = linesAndNewlines[i];
+    if (i % 2 && !options.newlineIsToken) {
+      retLines[retLines.length - 1] += line;
+    } else {
+      retLines.push(line);
+    }
+  }
+  return retLines;
+}
+
+// node_modules/diff/libesm/patch/line-endings.js
+function unixToWin(patch) {
+  if (Array.isArray(patch)) {
+    return patch.map((p) => unixToWin(p));
+  }
+  return Object.assign(Object.assign({}, patch), { hunks: patch.hunks.map((hunk) => Object.assign(Object.assign({}, hunk), { lines: hunk.lines.map((line, i) => {
+    var _a;
+    return line.startsWith("\\") || line.endsWith("\r") || ((_a = hunk.lines[i + 1]) === null || _a === void 0 ? void 0 : _a.startsWith("\\")) ? line : line + "\r";
+  }) })) });
+}
+function winToUnix(patch) {
+  if (Array.isArray(patch)) {
+    return patch.map((p) => winToUnix(p));
+  }
+  return Object.assign(Object.assign({}, patch), { hunks: patch.hunks.map((hunk) => Object.assign(Object.assign({}, hunk), { lines: hunk.lines.map((line) => line.endsWith("\r") ? line.substring(0, line.length - 1) : line) })) });
+}
+function isUnix(patch) {
+  if (!Array.isArray(patch)) {
+    patch = [patch];
+  }
+  return !patch.some((index2) => index2.hunks.some((hunk) => hunk.lines.some((line) => !line.startsWith("\\") && line.endsWith("\r"))));
+}
+function isWin(patch) {
+  if (!Array.isArray(patch)) {
+    patch = [patch];
+  }
+  return patch.some((index2) => index2.hunks.some((hunk) => hunk.lines.some((line) => line.endsWith("\r")))) && patch.every((index2) => index2.hunks.every((hunk) => hunk.lines.every((line, i) => {
+    var _a;
+    return line.startsWith("\\") || line.endsWith("\r") || ((_a = hunk.lines[i + 1]) === null || _a === void 0 ? void 0 : _a.startsWith("\\"));
+  })));
+}
+
+// node_modules/diff/libesm/patch/parse.js
+function parsePatch(uniDiff) {
+  const diffstr = uniDiff.split(/\n/), list = [];
+  let i = 0;
+  function parseIndex() {
+    const index2 = {};
+    list.push(index2);
+    while (i < diffstr.length) {
+      const line = diffstr[i];
+      if (/^(---|\+\+\+|@@)\s/.test(line)) {
+        break;
+      }
+      const headerMatch = /^(?:Index:|diff(?: -r \w+)+)\s+/.exec(line);
+      if (headerMatch) {
+        index2.index = line.substring(headerMatch[0].length).trim();
+      }
+      i++;
+    }
+    parseFileHeader(index2);
+    parseFileHeader(index2);
+    index2.hunks = [];
+    while (i < diffstr.length) {
+      const line = diffstr[i];
+      if (/^(Index:\s|diff\s|---\s|\+\+\+\s|===================================================================)/.test(line)) {
+        break;
+      } else if (/^@@/.test(line)) {
+        index2.hunks.push(parseHunk());
+      } else if (line) {
+        throw new Error("Unknown line " + (i + 1) + " " + JSON.stringify(line));
+      } else {
+        i++;
+      }
+    }
+  }
+  function parseFileHeader(index2) {
+    const fileHeaderMatch = /^(---|\+\+\+)\s+/.exec(diffstr[i]);
+    if (fileHeaderMatch) {
+      const prefix = fileHeaderMatch[1], data = diffstr[i].substring(3).trim().split("	", 2), header = (data[1] || "").trim();
+      let fileName = data[0].replace(/\\\\/g, "\\");
+      if (fileName.startsWith('"') && fileName.endsWith('"')) {
+        fileName = fileName.substr(1, fileName.length - 2);
+      }
+      if (prefix === "---") {
+        index2.oldFileName = fileName;
+        index2.oldHeader = header;
+      } else {
+        index2.newFileName = fileName;
+        index2.newHeader = header;
+      }
+      i++;
+    }
+  }
+  function parseHunk() {
+    var _a;
+    const chunkHeaderIndex = i, chunkHeaderLine = diffstr[i++], chunkHeader = chunkHeaderLine.split(/@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/);
+    const hunk = {
+      oldStart: +chunkHeader[1],
+      oldLines: typeof chunkHeader[2] === "undefined" ? 1 : +chunkHeader[2],
+      newStart: +chunkHeader[3],
+      newLines: typeof chunkHeader[4] === "undefined" ? 1 : +chunkHeader[4],
+      lines: []
+    };
+    if (hunk.oldLines === 0) {
+      hunk.oldStart += 1;
+    }
+    if (hunk.newLines === 0) {
+      hunk.newStart += 1;
+    }
+    let addCount = 0, removeCount = 0;
+    for (; i < diffstr.length && (removeCount < hunk.oldLines || addCount < hunk.newLines || ((_a = diffstr[i]) === null || _a === void 0 ? void 0 : _a.startsWith("\\"))); i++) {
+      const operation = diffstr[i].length == 0 && i != diffstr.length - 1 ? " " : diffstr[i][0];
+      if (operation === "+" || operation === "-" || operation === " " || operation === "\\") {
+        hunk.lines.push(diffstr[i]);
+        if (operation === "+") {
+          addCount++;
+        } else if (operation === "-") {
+          removeCount++;
+        } else if (operation === " ") {
+          addCount++;
+          removeCount++;
+        }
+      } else {
+        throw new Error(`Hunk at line ${chunkHeaderIndex + 1} contained invalid line ${diffstr[i]}`);
+      }
+    }
+    if (!addCount && hunk.newLines === 1) {
+      hunk.newLines = 0;
+    }
+    if (!removeCount && hunk.oldLines === 1) {
+      hunk.oldLines = 0;
+    }
+    if (addCount !== hunk.newLines) {
+      throw new Error("Added line count did not match for hunk at line " + (chunkHeaderIndex + 1));
+    }
+    if (removeCount !== hunk.oldLines) {
+      throw new Error("Removed line count did not match for hunk at line " + (chunkHeaderIndex + 1));
+    }
+    return hunk;
+  }
+  while (i < diffstr.length) {
+    parseIndex();
+  }
+  return list;
+}
+
+// node_modules/diff/libesm/util/distance-iterator.js
+function distance_iterator_default(start, minLine, maxLine) {
+  let wantForward = true, backwardExhausted = false, forwardExhausted = false, localOffset = 1;
+  return function iterator() {
+    if (wantForward && !forwardExhausted) {
+      if (backwardExhausted) {
+        localOffset++;
+      } else {
+        wantForward = false;
+      }
+      if (start + localOffset <= maxLine) {
+        return start + localOffset;
+      }
+      forwardExhausted = true;
+    }
+    if (!backwardExhausted) {
+      if (!forwardExhausted) {
+        wantForward = true;
+      }
+      if (minLine <= start - localOffset) {
+        return start - localOffset++;
+      }
+      backwardExhausted = true;
+      return iterator();
+    }
+    return void 0;
+  };
+}
+
+// node_modules/diff/libesm/patch/apply.js
+function applyPatch(source, patch, options = {}) {
+  let patches;
+  if (typeof patch === "string") {
+    patches = parsePatch(patch);
+  } else if (Array.isArray(patch)) {
+    patches = patch;
+  } else {
+    patches = [patch];
+  }
+  if (patches.length > 1) {
+    throw new Error("applyPatch only works with a single input.");
+  }
+  return applyStructuredPatch(source, patches[0], options);
+}
+function applyStructuredPatch(source, patch, options = {}) {
+  if (options.autoConvertLineEndings || options.autoConvertLineEndings == null) {
+    if (hasOnlyWinLineEndings(source) && isUnix(patch)) {
+      patch = unixToWin(patch);
+    } else if (hasOnlyUnixLineEndings(source) && isWin(patch)) {
+      patch = winToUnix(patch);
+    }
+  }
+  const lines = source.split("\n"), hunks = patch.hunks, compareLine = options.compareLine || ((lineNumber, line, operation, patchContent) => line === patchContent), fuzzFactor = options.fuzzFactor || 0;
+  let minLine = 0;
+  if (fuzzFactor < 0 || !Number.isInteger(fuzzFactor)) {
+    throw new Error("fuzzFactor must be a non-negative integer");
+  }
+  if (!hunks.length) {
+    return source;
+  }
+  let prevLine = "", removeEOFNL = false, addEOFNL = false;
+  for (let i = 0; i < hunks[hunks.length - 1].lines.length; i++) {
+    const line = hunks[hunks.length - 1].lines[i];
+    if (line[0] == "\\") {
+      if (prevLine[0] == "+") {
+        removeEOFNL = true;
+      } else if (prevLine[0] == "-") {
+        addEOFNL = true;
+      }
+    }
+    prevLine = line;
+  }
+  if (removeEOFNL) {
+    if (addEOFNL) {
+      if (!fuzzFactor && lines[lines.length - 1] == "") {
+        return false;
+      }
+    } else if (lines[lines.length - 1] == "") {
+      lines.pop();
+    } else if (!fuzzFactor) {
+      return false;
+    }
+  } else if (addEOFNL) {
+    if (lines[lines.length - 1] != "") {
+      lines.push("");
+    } else if (!fuzzFactor) {
+      return false;
+    }
+  }
+  function applyHunk(hunkLines, toPos, maxErrors, hunkLinesI = 0, lastContextLineMatched = true, patchedLines = [], patchedLinesLength = 0) {
+    let nConsecutiveOldContextLines = 0;
+    let nextContextLineMustMatch = false;
+    for (; hunkLinesI < hunkLines.length; hunkLinesI++) {
+      const hunkLine = hunkLines[hunkLinesI], operation = hunkLine.length > 0 ? hunkLine[0] : " ", content = hunkLine.length > 0 ? hunkLine.substr(1) : hunkLine;
+      if (operation === "-") {
+        if (compareLine(toPos + 1, lines[toPos], operation, content)) {
+          toPos++;
+          nConsecutiveOldContextLines = 0;
+        } else {
+          if (!maxErrors || lines[toPos] == null) {
+            return null;
+          }
+          patchedLines[patchedLinesLength] = lines[toPos];
+          return applyHunk(hunkLines, toPos + 1, maxErrors - 1, hunkLinesI, false, patchedLines, patchedLinesLength + 1);
+        }
+      }
+      if (operation === "+") {
+        if (!lastContextLineMatched) {
+          return null;
+        }
+        patchedLines[patchedLinesLength] = content;
+        patchedLinesLength++;
+        nConsecutiveOldContextLines = 0;
+        nextContextLineMustMatch = true;
+      }
+      if (operation === " ") {
+        nConsecutiveOldContextLines++;
+        patchedLines[patchedLinesLength] = lines[toPos];
+        if (compareLine(toPos + 1, lines[toPos], operation, content)) {
+          patchedLinesLength++;
+          lastContextLineMatched = true;
+          nextContextLineMustMatch = false;
+          toPos++;
+        } else {
+          if (nextContextLineMustMatch || !maxErrors) {
+            return null;
+          }
+          return lines[toPos] && (applyHunk(hunkLines, toPos + 1, maxErrors - 1, hunkLinesI + 1, false, patchedLines, patchedLinesLength + 1) || applyHunk(hunkLines, toPos + 1, maxErrors - 1, hunkLinesI, false, patchedLines, patchedLinesLength + 1)) || applyHunk(hunkLines, toPos, maxErrors - 1, hunkLinesI + 1, false, patchedLines, patchedLinesLength);
+        }
+      }
+    }
+    patchedLinesLength -= nConsecutiveOldContextLines;
+    toPos -= nConsecutiveOldContextLines;
+    patchedLines.length = patchedLinesLength;
+    return {
+      patchedLines,
+      oldLineLastI: toPos - 1
+    };
+  }
+  const resultLines = [];
+  let prevHunkOffset = 0;
+  for (let i = 0; i < hunks.length; i++) {
+    const hunk = hunks[i];
+    let hunkResult;
+    const maxLine = lines.length - hunk.oldLines + fuzzFactor;
+    let toPos;
+    for (let maxErrors = 0; maxErrors <= fuzzFactor; maxErrors++) {
+      toPos = hunk.oldStart + prevHunkOffset - 1;
+      const iterator = distance_iterator_default(toPos, minLine, maxLine);
+      for (; toPos !== void 0; toPos = iterator()) {
+        hunkResult = applyHunk(hunk.lines, toPos, maxErrors);
+        if (hunkResult) {
+          break;
+        }
+      }
+      if (hunkResult) {
+        break;
+      }
+    }
+    if (!hunkResult) {
+      return false;
+    }
+    for (let i2 = minLine; i2 < toPos; i2++) {
+      resultLines.push(lines[i2]);
+    }
+    for (let i2 = 0; i2 < hunkResult.patchedLines.length; i2++) {
+      const line = hunkResult.patchedLines[i2];
+      resultLines.push(line);
+    }
+    minLine = hunkResult.oldLineLastI + 1;
+    prevHunkOffset = toPos + 1 - hunk.oldStart;
+  }
+  for (let i = minLine; i < lines.length; i++) {
+    resultLines.push(lines[i]);
+  }
+  return resultLines.join("\n");
+}
+
+// node_modules/diff/libesm/patch/create.js
+function structuredPatch(oldFileName, newFileName, oldStr, newStr, oldHeader, newHeader, options) {
+  let optionsObj;
+  if (!options) {
+    optionsObj = {};
+  } else if (typeof options === "function") {
+    optionsObj = { callback: options };
+  } else {
+    optionsObj = options;
+  }
+  if (typeof optionsObj.context === "undefined") {
+    optionsObj.context = 4;
+  }
+  const context = optionsObj.context;
+  if (optionsObj.newlineIsToken) {
+    throw new Error("newlineIsToken may not be used with patch-generation functions, only with diffing functions");
+  }
+  if (!optionsObj.callback) {
+    return diffLinesResultToPatch(diffLines(oldStr, newStr, optionsObj));
+  } else {
+    const { callback } = optionsObj;
+    diffLines(oldStr, newStr, Object.assign(Object.assign({}, optionsObj), { callback: (diff) => {
+      const patch = diffLinesResultToPatch(diff);
+      callback(patch);
+    } }));
+  }
+  function diffLinesResultToPatch(diff) {
+    if (!diff) {
+      return;
+    }
+    diff.push({ value: "", lines: [] });
+    function contextLines(lines) {
+      return lines.map(function(entry) {
+        return " " + entry;
+      });
+    }
+    const hunks = [];
+    let oldRangeStart = 0, newRangeStart = 0, curRange = [], oldLine = 1, newLine = 1;
+    for (let i = 0; i < diff.length; i++) {
+      const current = diff[i], lines = current.lines || splitLines(current.value);
+      current.lines = lines;
+      if (current.added || current.removed) {
+        if (!oldRangeStart) {
+          const prev = diff[i - 1];
+          oldRangeStart = oldLine;
+          newRangeStart = newLine;
+          if (prev) {
+            curRange = context > 0 ? contextLines(prev.lines.slice(-context)) : [];
+            oldRangeStart -= curRange.length;
+            newRangeStart -= curRange.length;
+          }
+        }
+        for (const line of lines) {
+          curRange.push((current.added ? "+" : "-") + line);
+        }
+        if (current.added) {
+          newLine += lines.length;
+        } else {
+          oldLine += lines.length;
+        }
+      } else {
+        if (oldRangeStart) {
+          if (lines.length <= context * 2 && i < diff.length - 2) {
+            for (const line of contextLines(lines)) {
+              curRange.push(line);
+            }
+          } else {
+            const contextSize = Math.min(lines.length, context);
+            for (const line of contextLines(lines.slice(0, contextSize))) {
+              curRange.push(line);
+            }
+            const hunk = {
+              oldStart: oldRangeStart,
+              oldLines: oldLine - oldRangeStart + contextSize,
+              newStart: newRangeStart,
+              newLines: newLine - newRangeStart + contextSize,
+              lines: curRange
+            };
+            hunks.push(hunk);
+            oldRangeStart = 0;
+            newRangeStart = 0;
+            curRange = [];
+          }
+        }
+        oldLine += lines.length;
+        newLine += lines.length;
+      }
+    }
+    for (const hunk of hunks) {
+      for (let i = 0; i < hunk.lines.length; i++) {
+        if (hunk.lines[i].endsWith("\n")) {
+          hunk.lines[i] = hunk.lines[i].slice(0, -1);
+        } else {
+          hunk.lines.splice(i + 1, 0, "\\ No newline at end of file");
+          i++;
+        }
+      }
+    }
+    return {
+      oldFileName,
+      newFileName,
+      oldHeader,
+      newHeader,
+      hunks
+    };
+  }
+}
+function splitLines(text) {
+  const hasTrailingNl = text.endsWith("\n");
+  const result = text.split("\n").map((line) => line + "\n");
+  if (hasTrailingNl) {
+    result.pop();
+  } else {
+    result.push(result.pop().slice(0, -1));
+  }
+  return result;
+}
+
+// src/task-change-proposal.ts
+var TASK_CHANGE_PROPOSAL_SCHEMA_VERSION = 1;
+async function sha256(content) {
+  const bytes = new TextEncoder().encode(content);
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, "0")).join("");
+}
+async function buildProposalReview(proposal) {
+  validateProposalShape(proposal);
+  const tasks = [];
+  for (const task of proposal.tasks) {
+    if (await sha256(task.beforeMarkdown) !== task.beforeSha256) {
+      throw new Error(`Proposal ${proposal.id} beforeSha256 does not match ${task.reviewId}`);
+    }
+    validateSemanticEvidence(task);
+    const patch = structuredPatch(task.path, task.path, task.beforeMarkdown, task.afterMarkdown, "before", "after", { context: 3 });
+    if (applyPatch(task.beforeMarkdown, patch) !== task.afterMarkdown) {
+      throw new Error(`Proposal ${proposal.id} exact patch replay failed for ${task.reviewId}`);
+    }
+    tasks.push({
+      ...task,
+      rawHunks: patch.hunks.map((hunk) => ({
+        oldStart: hunk.oldStart,
+        oldLines: hunk.oldLines,
+        newStart: hunk.newStart,
+        newLines: hunk.newLines,
+        lines: [...hunk.lines]
+      }))
+    });
+  }
+  return { proposalId: proposal.id, status: proposal.status, tasks };
+}
+function parseTaskChangeProposal(content) {
+  const value = JSON.parse(content);
+  validateProposalShape(value);
+  return value;
+}
+async function applyProposalDecision(proposal, approvedChangeIds, currentMarkdownByTaskId, options) {
+  await buildProposalReview(proposal);
+  if (proposal.status !== "pending") throw new Error(`Proposal ${proposal.id} is not pending`);
+  const allChanges = proposal.tasks.flatMap((task) => task.changes);
+  const knownIds = new Set(allChanges.map((change) => change.id));
+  const approved = new Set(approvedChangeIds);
+  for (const id of approved) if (!knownIds.has(id)) throw new Error(`Unknown approved change: ${id}`);
+  const rejectedIds = allChanges.map((change) => change.id).filter((id) => !approved.has(id));
+  const writes = [];
+  const failed = [];
+  const followUpTasks = [];
+  let nextFollowUpChange = 1;
+  for (const proposalTask of proposal.tasks) {
+    const approvedForTask = proposalTask.changes.filter((change) => approved.has(change.id));
+    const rejectedForTask = proposalTask.changes.filter((change) => !approved.has(change.id));
+    const current = currentMarkdownByTaskId.get(proposalTask.taskId);
+    if (current === void 0 || await sha256(current) !== proposalTask.beforeSha256 || current !== proposalTask.beforeMarkdown) {
+      if (approvedForTask.length > 0) {
+        failed.push({
+          taskId: proposalTask.taskId,
+          changeIds: approvedForTask.map((change) => change.id),
+          error: current === void 0 ? "Task is missing" : "Task changed after review"
+        });
+      }
+      continue;
+    }
+    const beforeTask = parseRequiredTask(proposalTask.path, proposalTask.beforeMarkdown, proposalTask.taskId);
+    const afterTask = parseRequiredTask(proposalTask.path, proposalTask.afterMarkdown, proposalTask.taskId);
+    const appliedTask = applyFields(beforeTask, afterTask, approvedForTask.map((change) => change.field));
+    const appliedMarkdown = approvedForTask.length > 0 ? encodeTaskPreservingProperties(appliedTask, proposalTask.beforeMarkdown) : proposalTask.beforeMarkdown;
+    if (approvedForTask.length > 0) {
+      writes.push({
+        taskId: proposalTask.taskId,
+        path: proposalTask.path,
+        title: appliedTask.title,
+        markdown: appliedMarkdown,
+        changeIds: approvedForTask.map((change) => change.id)
+      });
+    }
+    if (rejectedForTask.length > 0) {
+      const followUpAfterTask = applyFields(appliedTask, afterTask, rejectedForTask.map((change) => change.field));
+      const followUpAfter = encodeTaskPreservingProperties(followUpAfterTask, appliedMarkdown);
+      followUpTasks.push({
+        ...proposalTask,
+        beforeMarkdown: appliedMarkdown,
+        afterMarkdown: followUpAfter,
+        beforeSha256: await sha256(appliedMarkdown),
+        changes: rejectedForTask.map((change) => ({
+          ...change,
+          id: `C-${String(nextFollowUpChange++).padStart(2, "0")}`,
+          origin: { proposalId: proposal.id, changeId: change.id }
+        }))
+      });
+    }
+  }
+  const succeededIds = writes.flatMap((write) => write.changeIds);
+  const followUp = followUpTasks.length > 0 && failed.length === 0 ? {
+    schemaVersion: TASK_CHANGE_PROPOSAL_SCHEMA_VERSION,
+    id: options.followUpProposalId,
+    status: "pending",
+    createdAt: options.decidedAt,
+    tasks: followUpTasks,
+    originProposalId: proposal.id
+  } : null;
+  const status = failed.length > 0 ? succeededIds.length > 0 ? "partially-applied" : "stale" : rejectedIds.length > 0 ? succeededIds.length > 0 ? "partially-applied" : "rejected" : "applied";
+  const closedProposal = {
+    ...proposal,
+    status,
+    decision: {
+      decidedAt: options.decidedAt,
+      approvedChangeIds: [...approved],
+      rejectedChangeIds: rejectedIds
+    },
+    result: {
+      appliedAt: options.decidedAt,
+      succeededChangeIds: succeededIds,
+      failed,
+      followUpProposalId: followUp?.id ?? null
+    }
+  };
+  return { status, writes, closedProposal, followUp };
+}
+function parseRequiredTask(path, markdown, taskId) {
+  const task = parseTaskMarkdown(path, markdown);
+  if (!task || task.id !== taskId) throw new Error(`Invalid Task evidence for ${taskId}`);
+  return task;
+}
+function applyFields(before, after, fields) {
+  const result = {
+    ...before,
+    labels: [...before.labels],
+    steps: before.steps.map((step) => ({ ...step }))
+  };
+  for (const field of new Set(fields)) {
+    switch (field) {
+      case "title":
+        result.title = after.title;
+        break;
+      case "date":
+        result.date = after.date;
+        break;
+      case "priority":
+        result.priority = after.priority;
+        break;
+      case "labels":
+        result.labels = [...after.labels];
+        break;
+      case "steps":
+        result.steps = after.steps.map((step) => ({ ...step }));
+        break;
+      case "notes":
+        result.notes = after.notes;
+        break;
+    }
+  }
+  if (fields.length > 0) result.updatedAt = after.updatedAt;
+  return result;
+}
+function validateSemanticEvidence(proposalTask) {
+  const before = parseRequiredTask(proposalTask.path, proposalTask.beforeMarkdown, proposalTask.taskId);
+  const after = parseRequiredTask(proposalTask.path, proposalTask.afterMarkdown, proposalTask.taskId);
+  const fields = ["title", "date", "priority", "labels", "steps", "notes"];
+  const represented = /* @__PURE__ */ new Set();
+  for (const change of proposalTask.changes) {
+    if (represented.has(change.field)) throw new Error(`Duplicate semantic field ${change.field} in ${proposalTask.reviewId}`);
+    represented.add(change.field);
+    if (!sameValue(change.before, taskField(before, change.field)) || !sameValue(change.after, taskField(after, change.field))) {
+      throw new Error(`Change ${change.id} values do not match Markdown evidence`);
+    }
+  }
+  for (const field of fields) {
+    const changed = !sameValue(taskField(before, field), taskField(after, field));
+    if (changed && !represented.has(field)) throw new Error(`Proposal has unrepresented semantic field ${field}`);
+    if (!changed && represented.has(field)) throw new Error(`Proposal represents unchanged semantic field ${field}`);
+  }
+  const immutable = ["id", "completed", "projectId", "rank", "createdAt", "completedAt", "sourceNote", "stepSectionRemainder"];
+  for (const field of immutable) {
+    if (!sameValue(before[field], after[field])) throw new Error(`Proposal changes unsupported Task field ${field}`);
+  }
+}
+function taskField(task, field) {
+  switch (field) {
+    case "title":
+      return task.title;
+    case "date":
+      return task.date;
+    case "priority":
+      return task.priority;
+    case "labels":
+      return task.labels;
+    case "steps":
+      return task.steps;
+    case "notes":
+      return task.notes;
+  }
+}
+function sameValue(left, right) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+function validateProposalShape(value) {
+  if (!isRecord(value)) throw new Error("Proposal must be an object");
+  if (value.schemaVersion !== TASK_CHANGE_PROPOSAL_SCHEMA_VERSION) throw new Error("Unsupported Proposal schemaVersion");
+  if (!isIdentifier(value.id, /^proposal-[A-Za-z0-9._-]+$/)) throw new Error("Invalid Proposal id");
+  if (!isStatus(value.status)) throw new Error("Invalid Proposal status");
+  if (typeof value.createdAt !== "string" || !value.createdAt) throw new Error("Invalid Proposal createdAt");
+  if (!Array.isArray(value.tasks) || value.tasks.length === 0) throw new Error("Proposal requires tasks");
+  const taskIds = /* @__PURE__ */ new Set();
+  const reviewIds = /* @__PURE__ */ new Set();
+  const changeIds = /* @__PURE__ */ new Set();
+  for (const task of value.tasks) {
+    if (!isRecord(task)) throw new Error("Invalid Proposal task");
+    if (!isIdentifier(task.reviewId, /^T-[0-9]{2,}$/) || reviewIds.has(task.reviewId)) throw new Error("Invalid or duplicate reviewId");
+    if (typeof task.taskId !== "string" || !task.taskId || taskIds.has(task.taskId)) throw new Error("Invalid or duplicate taskId");
+    if (typeof task.path !== "string" || !task.path || task.path.startsWith("/") || task.path.includes("..")) throw new Error("Invalid Task path");
+    if (typeof task.title !== "string" || typeof task.beforeMarkdown !== "string" || typeof task.afterMarkdown !== "string") throw new Error("Invalid Proposal Markdown evidence");
+    if (typeof task.beforeSha256 !== "string" || !/^[a-f0-9]{64}$/.test(task.beforeSha256)) throw new Error("Invalid beforeSha256");
+    if (!Array.isArray(task.changes) || task.changes.length === 0) throw new Error("Proposal task requires changes");
+    taskIds.add(task.taskId);
+    reviewIds.add(task.reviewId);
+    const taskFields = /* @__PURE__ */ new Set();
+    for (const change of task.changes) {
+      if (!isRecord(change) || !isIdentifier(change.id, /^C-[0-9]{2,}$/) || changeIds.has(change.id)) throw new Error("Invalid or duplicate change id");
+      if (!isChangeField(change.field)) throw new Error("Invalid change field");
+      if (taskFields.has(change.field)) throw new Error("Duplicate change field");
+      if (typeof change.reason !== "string" || !change.reason.trim()) throw new Error("Change reason is required");
+      changeIds.add(change.id);
+      taskFields.add(change.field);
+    }
+  }
+}
+function isRecord(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function isIdentifier(value, pattern) {
+  return typeof value === "string" && pattern.test(value);
+}
+function isStatus(value) {
+  return value === "pending" || value === "applied" || value === "partially-applied" || value === "rejected" || value === "stale";
+}
+function isChangeField(value) {
+  return value === "title" || value === "date" || value === "priority" || value === "labels" || value === "steps" || value === "notes";
+}
+
+// src/task-change-proposal-repository.ts
+var TaskChangeProposalRepository = class {
+  constructor(app, proposalFolder, tasks) {
+    this.app = app;
+    this.proposalFolder = proposalFolder;
+    this.tasks = tasks;
+  }
+  async listPending() {
+    const prefix = `${this.folder()}/`;
+    const files = this.app.vault.getFiles().filter((file) => file.path.startsWith(prefix) && !file.path.startsWith(`${this.historyFolder()}/`) && file.extension === "json");
+    const summaries = [];
+    for (const file of files) {
+      try {
+        const proposal = parseTaskChangeProposal(await this.app.vault.read(file));
+        if (proposal.status !== "pending") continue;
+        summaries.push({
+          id: proposal.id,
+          createdAt: proposal.createdAt,
+          taskCount: proposal.tasks.length,
+          changeCount: proposal.tasks.reduce((count, task) => count + task.changes.length, 0)
+        });
+      } catch (error) {
+        console.error(`TaskMate ignored malformed Proposal ${file.path}`, error);
+      }
+    }
+    return summaries.sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+  }
+  async load(proposalId) {
+    const file = this.proposalFile(proposalId);
+    if (!file) throw new Error(`Proposal not found: ${proposalId}`);
+    return parseTaskChangeProposal(await this.app.vault.read(file));
+  }
+  async review(proposalId) {
+    return buildProposalReview(await this.load(proposalId));
+  }
+  async save(proposal) {
+    parseTaskChangeProposal(JSON.stringify(proposal));
+    await this.ensureFolder(this.folder());
+    const path = (0, import_obsidian14.normalizePath)(`${this.folder()}/${proposal.id}.json`);
+    const content = `${JSON.stringify(proposal, null, 2)}
+`;
+    const existing = this.app.vault.getAbstractFileByPath(path);
+    if (existing instanceof import_obsidian14.TFile) await this.app.vault.modify(existing, content);
+    else await this.app.vault.create(path, content);
+  }
+  async apply(proposalId, approvedChangeIds, now = (/* @__PURE__ */ new Date()).toISOString()) {
+    if (approvedChangeIds.length === 0) throw new Error("Select at least one change or reject the Proposal");
+    const proposal = await this.load(proposalId);
+    const current = /* @__PURE__ */ new Map();
+    for (const item of proposal.tasks) {
+      const source = await this.tasks.readReviewedTask(item.taskId, item.path);
+      if (source.status === "ready") current.set(item.taskId, source.content);
+    }
+    const result = await applyProposalDecision(proposal, approvedChangeIds, current, {
+      decidedAt: now,
+      followUpProposalId: `${proposal.id}-follow-up-${now.replace(/\D/g, "").slice(0, 14)}`
+    });
+    const writeFailures = [];
+    const actuallySucceeded = [];
+    for (const write of result.writes) {
+      const proposalTask = proposal.tasks.find((item) => item.taskId === write.taskId);
+      if (!proposalTask) continue;
+      const saved = await this.tasks.writeReviewedTask(write.taskId, write.path, proposalTask.beforeMarkdown, write.markdown);
+      if (saved.status !== "saved") {
+        writeFailures.push({ taskId: write.taskId, changeIds: write.changeIds, error: saved.status });
+      } else actuallySucceeded.push(...write.changeIds);
+    }
+    let finalResult = result;
+    if (writeFailures.length > 0) {
+      finalResult = {
+        ...result,
+        status: actuallySucceeded.length ? "partially-applied" : "stale",
+        followUp: null,
+        closedProposal: {
+          ...result.closedProposal,
+          status: actuallySucceeded.length ? "partially-applied" : "stale",
+          result: result.closedProposal.result ? {
+            ...result.closedProposal.result,
+            succeededChangeIds: actuallySucceeded,
+            failed: [...result.closedProposal.result.failed, ...writeFailures],
+            followUpProposalId: null
+          } : void 0
+        }
+      };
+    }
+    if (finalResult.followUp) await this.save(finalResult.followUp);
+    await this.archive(finalResult.closedProposal);
+    return finalResult;
+  }
+  async reject(proposalId, now = (/* @__PURE__ */ new Date()).toISOString()) {
+    const proposal = await this.load(proposalId);
+    const changeIds = proposal.tasks.flatMap((task) => task.changes.map((change) => change.id));
+    await this.archive({
+      ...proposal,
+      status: "rejected",
+      decision: { decidedAt: now, approvedChangeIds: [], rejectedChangeIds: changeIds },
+      result: { appliedAt: now, succeededChangeIds: [], failed: [], followUpProposalId: null }
+    });
+  }
+  folder() {
+    return (0, import_obsidian14.normalizePath)(this.proposalFolder().trim() || "TaskMate/Proposals");
+  }
+  historyFolder() {
+    return (0, import_obsidian14.normalizePath)(`${this.folder()}/History`);
+  }
+  proposalFile(proposalId) {
+    if (!/^proposal-[A-Za-z0-9._-]+$/.test(proposalId)) throw new Error("Invalid Proposal id");
+    const file = this.app.vault.getAbstractFileByPath((0, import_obsidian14.normalizePath)(`${this.folder()}/${proposalId}.json`));
+    return file instanceof import_obsidian14.TFile ? file : null;
+  }
+  async archive(proposal) {
+    const source = this.proposalFile(proposal.id);
+    if (!source) throw new Error(`Proposal not found: ${proposal.id}`);
+    await this.app.vault.modify(source, `${JSON.stringify(proposal, null, 2)}
+`);
+    await this.ensureFolder(this.historyFolder());
+    await this.app.fileManager.renameFile(source, (0, import_obsidian14.normalizePath)(`${this.historyFolder()}/${proposal.id}.json`));
+  }
+  async ensureFolder(path) {
+    const segments = (0, import_obsidian14.normalizePath)(path).split("/").filter(Boolean);
+    let current = "";
+    for (const segment of segments) {
+      current = current ? `${current}/${segment}` : segment;
+      if (!this.app.vault.getAbstractFileByPath(current)) await this.app.vault.createFolder(current);
+    }
+  }
+};
+
+// src/task-change-review-view.ts
+var import_obsidian15 = require("obsidian");
+
+// src/task-change-review-renderer.ts
+function renderTaskChangeReview(container, review, state, copy, dispatch) {
+  container.replaceChildren();
+  container.classList.add("taskmate-review");
+  const header = element("header", "taskmate-review-header", container);
+  appendTextElement(header, "h2", copy.title);
+  appendTextElement(header, "span", `${review.tasks.length} Tasks`, "taskmate-review-count");
+  const controls = element("div", "taskmate-review-controls", container);
+  const allIds = review.tasks.flatMap((task) => task.changes.map((change) => change.id));
+  const selectedAllCount = selectedCount(allIds, state.approvedChangeIds);
+  controls.append(bulkButton(copy.selectAll, "taskmate-review-select-all", selectedAllCount === allIds.length, () => dispatch({ type: "set-many-approved", changeIds: allIds, approved: true })));
+  controls.append(bulkButton(copy.clearAll, "taskmate-review-clear-all", selectedAllCount === 0, () => dispatch({ type: "set-many-approved", changeIds: allIds, approved: false })));
+  controls.append(button(copy.semantic, () => dispatch({ type: "set-mode", mode: "semantic" }), state.mode === "semantic"));
+  controls.append(button(copy.markdown, () => dispatch({ type: "set-mode", mode: "raw" }), state.mode === "raw"));
+  const list = element("div", "taskmate-review-files", container);
+  for (const task of review.tasks) {
+    const section = element("section", "taskmate-review-file", list);
+    section.id = `taskmate-review-${task.taskId}`;
+    const fileHeader = element("div", "taskmate-review-file-header", section);
+    appendTextElement(fileHeader, "span", task.reviewId, "taskmate-review-id");
+    appendTextElement(fileHeader, "h3", task.title);
+    appendTextElement(fileHeader, "span", task.path, "taskmate-review-path");
+    const taskIds = task.changes.map((change) => change.id);
+    if (taskIds.length > 1) {
+      const selectedTaskCount = selectedCount(taskIds, state.approvedChangeIds);
+      const taskActions = element("div", "taskmate-review-file-actions", fileHeader);
+      taskActions.append(bulkButton(copy.selectTask, "taskmate-review-select-task", selectedTaskCount === taskIds.length, () => dispatch({ type: "set-many-approved", changeIds: taskIds, approved: true })));
+      taskActions.append(bulkButton(copy.clearTask, "taskmate-review-clear-task", selectedTaskCount === 0, () => dispatch({ type: "set-many-approved", changeIds: taskIds, approved: false })));
+    }
+    if (state.mode === "semantic") {
+      for (const change of task.changes) {
+        const row = element("label", "taskmate-review-change", section);
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = state.approvedChangeIds.has(change.id);
+        checkbox.addEventListener("change", () => dispatch({ type: "set-approved", changeId: change.id, approved: checkbox.checked }));
+        row.append(checkbox);
+        appendTextElement(row, "span", change.id, "taskmate-review-id");
+        const details = element("span", "taskmate-review-change-details", row);
+        appendTextElement(details, "strong", change.field);
+        appendTextElement(details, "span", `${formatValue(change.before)} \u2192 ${formatValue(change.after)}`, "taskmate-review-values");
+        appendTextElement(details, "span", change.reason, "taskmate-review-reason");
+      }
+    } else {
+      const raw = element("pre", "taskmate-review-diff", section);
+      for (const hunk of task.rawHunks) {
+        appendTextElement(raw, "span", `@@ -${hunk.oldStart},${hunk.oldLines} +${hunk.newStart},${hunk.newLines} @@
+`, "taskmate-diff-header");
+        for (const line of hunk.lines) {
+          const className = line.startsWith("+") ? "taskmate-diff-add" : line.startsWith("-") ? "taskmate-diff-delete" : "taskmate-diff-context";
+          appendTextElement(raw, "span", `${line}
+`, className);
+        }
+      }
+    }
+  }
+  const footer = element("footer", "taskmate-review-footer", container);
+  const apply = button(copy.apply, () => dispatch({
+    type: "apply",
+    approvedChangeIds: allIds.filter((id) => state.approvedChangeIds.has(id))
+  }));
+  apply.classList.add("taskmate-review-apply", "mod-cta");
+  apply.disabled = state.approvedChangeIds.size === 0;
+  apply.title = apply.disabled ? copy.noSelection : "";
+  footer.append(apply);
+  const reject = button(copy.reject, () => dispatch({ type: "reject" }));
+  reject.classList.add("taskmate-review-reject", "mod-warning");
+  footer.append(reject);
+}
+function element(tag, className, parent) {
+  const value = document.createElement(tag);
+  value.className = className;
+  parent?.append(value);
+  return value;
+}
+function appendTextElement(parent, tag, text, className) {
+  const value = document.createElement(tag);
+  if (className) value.className = className;
+  value.textContent = text;
+  parent.append(value);
+  return value;
+}
+function button(text, activate, active = false) {
+  const value = document.createElement("button");
+  value.type = "button";
+  value.textContent = text;
+  if (active) value.classList.add("is-active");
+  value.addEventListener("click", activate);
+  return value;
+}
+function bulkButton(text, className, disabled, activate) {
+  const value = button(text, activate);
+  value.classList.add(className);
+  value.disabled = disabled;
+  return value;
+}
+function selectedCount(changeIds, selectedIds) {
+  return changeIds.reduce((count, id) => count + (selectedIds.has(id) ? 1 : 0), 0);
+}
+function formatValue(value) {
+  if (value === null) return "\u2014";
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return String(value);
+  return JSON.stringify(value);
+}
+
+// src/task-change-review-view.ts
+var TASK_CHANGE_REVIEW_VIEW_TYPE = "taskmate-change-review";
+var TaskChangeReviewView = class extends import_obsidian15.ItemView {
+  constructor(leaf, plugin) {
+    super(leaf);
+    this.plugin = plugin;
+  }
+  proposalId = null;
+  targetTaskId = null;
+  targetChangeId = null;
+  review = null;
+  state = { mode: "semantic", approvedChangeIds: /* @__PURE__ */ new Set() };
+  getViewType() {
+    return TASK_CHANGE_REVIEW_VIEW_TYPE;
+  }
+  getDisplayText() {
+    return this.plugin.i18n().t("review.title");
+  }
+  getIcon() {
+    return "file-diff";
+  }
+  async onOpen() {
+    await this.render();
+  }
+  requestRender() {
+    void this.render();
+  }
+  async openProposal(proposalId, taskId, changeId) {
+    this.proposalId = proposalId;
+    this.targetTaskId = taskId ?? null;
+    this.targetChangeId = changeId ?? null;
+    this.state = { mode: "semantic", approvedChangeIds: /* @__PURE__ */ new Set() };
+    await this.render();
+  }
+  async render() {
+    this.contentEl.empty();
+    if (!this.proposalId) {
+      const pending = await this.plugin.proposals.listPending();
+      const root = this.contentEl.createDiv({ cls: "taskmate-review-index" });
+      root.createEl("h2", { text: this.plugin.i18n().t("review.pending") });
+      if (pending.length === 0) root.createDiv({ cls: "taskmate-empty", text: this.plugin.i18n().t("review.none") });
+      for (const proposal of pending) {
+        const open = root.createEl("button", { cls: "taskmate-review-index-item" });
+        open.createSpan({ text: proposal.id });
+        open.createSpan({ text: this.plugin.i18n().t("review.summary", { tasks: proposal.taskCount, changes: proposal.changeCount }) });
+        open.addEventListener("click", () => void this.openProposal(proposal.id));
+      }
+      return;
+    }
+    try {
+      this.review = await this.plugin.proposals.review(this.proposalId);
+      renderTaskChangeReview(this.contentEl, this.review, this.state, this.copy(), (action) => void this.handle(action));
+      window.setTimeout(() => this.revealTarget(), 0);
+    } catch (error) {
+      console.error("TaskMate could not open Proposal", error);
+      this.contentEl.createDiv({ cls: "taskmate-empty", text: this.plugin.i18n().t("review.invalid") });
+    }
+  }
+  async handle(action) {
+    if (action.type === "set-mode") this.state = { ...this.state, mode: action.mode };
+    if (action.type === "set-approved") {
+      const next = new Set(this.state.approvedChangeIds);
+      if (action.approved) next.add(action.changeId);
+      else next.delete(action.changeId);
+      this.state = { ...this.state, approvedChangeIds: next };
+    }
+    if (action.type === "set-many-approved") {
+      const next = new Set(this.state.approvedChangeIds);
+      for (const id of action.changeIds) action.approved ? next.add(id) : next.delete(id);
+      this.state = { ...this.state, approvedChangeIds: next };
+    }
+    if (action.type === "apply" && this.proposalId) {
+      const result = await this.plugin.proposals.apply(this.proposalId, action.approvedChangeIds);
+      new import_obsidian15.Notice(this.plugin.i18n().t("review.applied", { count: result.closedProposal.result?.succeededChangeIds.length ?? 0 }));
+      this.proposalId = result.followUp?.id ?? null;
+      this.state = { mode: "semantic", approvedChangeIds: /* @__PURE__ */ new Set() };
+    }
+    if (action.type === "reject" && this.proposalId) {
+      if (!window.confirm(this.plugin.i18n().t("review.rejectConfirm"))) return;
+      await this.plugin.proposals.reject(this.proposalId);
+      this.proposalId = null;
+      new import_obsidian15.Notice(this.plugin.i18n().t("review.rejected"));
+    }
+    await this.render();
+  }
+  revealTarget() {
+    if (!this.targetTaskId) return;
+    const target = this.contentEl.querySelector(`#taskmate-review-${CSS.escape(this.targetTaskId)}`);
+    target?.scrollIntoView({ block: "start" });
+    if (this.targetChangeId) {
+      for (const label of Array.from(target?.querySelectorAll(".taskmate-review-change") ?? [])) {
+        if (label.textContent?.includes(this.targetChangeId)) label.classList.add("is-target");
+      }
+    }
+    this.targetTaskId = null;
+    this.targetChangeId = null;
+  }
+  copy() {
+    const { t } = this.plugin.i18n();
+    return {
+      title: t("review.title"),
+      apply: t("review.apply"),
+      reject: t("review.reject"),
+      selectAll: t("review.selectAll"),
+      selectTask: t("review.selectTask"),
+      clearAll: t("review.clearAll"),
+      clearTask: t("review.clearTask"),
+      semantic: t("review.semantic"),
+      markdown: t("review.markdown"),
+      noSelection: t("review.noSelection")
+    };
+  }
+};
+var TaskChangeReviewModal = class extends import_obsidian15.Modal {
+  constructor(plugin, proposalId) {
+    super(plugin.app);
+    this.plugin = plugin;
+    this.proposalId = proposalId;
+  }
+  async onOpen() {
+    this.modalEl.addClass("taskmate-review-modal");
+    const review = await this.plugin.proposals.review(this.proposalId);
+    let state = { mode: "semantic", approvedChangeIds: /* @__PURE__ */ new Set() };
+    const rerender = () => renderTaskChangeReview(this.contentEl, review, state, new TaskChangeReviewViewCopy(this.plugin).value, async (action) => {
+      if (action.type === "set-mode") state = { ...state, mode: action.mode };
+      if (action.type === "set-approved") {
+        const next = new Set(state.approvedChangeIds);
+        action.approved ? next.add(action.changeId) : next.delete(action.changeId);
+        state = { ...state, approvedChangeIds: next };
+      }
+      if (action.type === "set-many-approved") {
+        const next = new Set(state.approvedChangeIds);
+        for (const id of action.changeIds) action.approved ? next.add(id) : next.delete(id);
+        state = { ...state, approvedChangeIds: next };
+      }
+      if (action.type === "apply") {
+        await this.plugin.proposals.apply(this.proposalId, action.approvedChangeIds);
+        this.close();
+        return;
+      }
+      if (action.type === "reject") {
+        if (window.confirm(this.plugin.i18n().t("review.rejectConfirm"))) {
+          await this.plugin.proposals.reject(this.proposalId);
+          this.close();
+        }
+        return;
+      }
+      rerender();
+    });
+    rerender();
+  }
+};
+var TaskChangeReviewViewCopy = class {
+  value;
+  constructor(plugin) {
+    const { t } = plugin.i18n();
+    this.value = { title: t("review.title"), apply: t("review.apply"), reject: t("review.reject"), selectAll: t("review.selectAll"), selectTask: t("review.selectTask"), clearAll: t("review.clearAll"), clearTask: t("review.clearTask"), semantic: t("review.semantic"), markdown: t("review.markdown"), noSelection: t("review.noSelection") };
+  }
+};
+
 // src/main.ts
-var TaskMatePlugin = class extends import_obsidian14.Plugin {
+var TaskMatePlugin = class extends import_obsidian16.Plugin {
   settings = DEFAULT_SETTINGS;
   repository;
   projects;
+  proposals;
   refreshTimer = null;
   async onload() {
     await this.loadSettings();
     const { t } = this.i18n();
     this.repository = new TaskRepository(this.app, () => this.settings.taskFolder);
     this.projects = new ProjectRepository(this.app, () => this.settings.projectFolder);
+    this.proposals = new TaskChangeProposalRepository(this.app, () => this.settings.proposalFolder, this.repository);
     try {
       const migrated = await this.repository.migrateLegacyFileNames();
-      if (migrated > 0) new import_obsidian14.Notice(t("notice.migratedTaskNames", { count: migrated }));
+      if (migrated > 0) new import_obsidian16.Notice(t("notice.migratedTaskNames", { count: migrated }));
     } catch (error) {
       console.error("TaskMate could not migrate legacy task filenames", error);
-      new import_obsidian14.Notice(t("notice.migrationFailed"));
+      new import_obsidian16.Notice(t("notice.migrationFailed"));
     }
     this.registerView(TODO_VIEW_TYPE, (leaf) => new TodoListView(leaf, this));
+    this.registerView(TASK_CHANGE_REVIEW_VIEW_TYPE, (leaf) => new TaskChangeReviewView(leaf, this));
     this.addSettingTab(new TaskMateSettingTab(this.app, this));
     this.addRibbonIcon("circle-check-big", t("command.openRibbon"), () => void this.activateView());
     this.addCommand({ id: "open-todo-list", name: t("command.openList"), callback: () => void this.activateView() });
+    this.addCommand({ id: "open-task-change-reviews", name: t("command.openReviews"), callback: () => void this.activateReviewView() });
+    this.registerObsidianProtocolHandler("taskmate-review", async (params) => {
+      const proposalId = params.proposal;
+      if (!proposalId || !/^proposal-[A-Za-z0-9._-]+$/.test(proposalId)) {
+        new import_obsidian16.Notice(this.i18n().t("review.invalidLink"));
+        return;
+      }
+      const taskId = typeof params.task === "string" && /^[A-Za-z0-9._-]+$/.test(params.task) ? params.task : void 0;
+      const changeId = typeof params.change === "string" && /^C-[0-9]{2,}$/.test(params.change) ? params.change : void 0;
+      await this.openProposalReview(proposalId, taskId, changeId);
+    });
     this.addCommand({
       id: "include-current-note-as-ai-source",
       name: t("command.includeNote"),
@@ -6124,23 +7529,29 @@ var TaskMatePlugin = class extends import_obsidian14.Plugin {
       checkCallback: (checking) => this.includeCurrentFolder(checking)
     });
     const scheduleRefresh = (file) => {
-      const taskPrefix = `${(0, import_obsidian14.normalizePath)(this.settings.taskFolder)}/`;
-      const projectPrefix = `${(0, import_obsidian14.normalizePath)(this.settings.projectFolder)}/`;
-      if (!file.path.startsWith(taskPrefix) && !file.path.startsWith(projectPrefix)) return;
+      const taskPrefix = `${(0, import_obsidian16.normalizePath)(this.settings.taskFolder)}/`;
+      const projectPrefix = `${(0, import_obsidian16.normalizePath)(this.settings.projectFolder)}/`;
+      const proposalPrefix = `${(0, import_obsidian16.normalizePath)(this.settings.proposalFolder)}/`;
+      if (!file.path.startsWith(taskPrefix) && !file.path.startsWith(projectPrefix) && !file.path.startsWith(proposalPrefix)) return;
       if (this.refreshTimer !== null) window.clearTimeout(this.refreshTimer);
-      this.refreshTimer = window.setTimeout(() => this.refreshViews(), 100);
+      this.refreshTimer = window.setTimeout(() => {
+        this.refreshViews();
+        for (const leaf of this.app.workspace.getLeavesOfType(TASK_CHANGE_REVIEW_VIEW_TYPE)) {
+          if (leaf.view instanceof TaskChangeReviewView) leaf.view.requestRender();
+        }
+      }, 100);
     };
     this.registerEvent(this.app.vault.on("create", (file) => {
-      if (file instanceof import_obsidian14.TFile) scheduleRefresh(file);
+      if (file instanceof import_obsidian16.TFile) scheduleRefresh(file);
     }));
     this.registerEvent(this.app.vault.on("modify", (file) => {
-      if (file instanceof import_obsidian14.TFile) scheduleRefresh(file);
+      if (file instanceof import_obsidian16.TFile) scheduleRefresh(file);
     }));
     this.registerEvent(this.app.vault.on("delete", (file) => {
-      if (file instanceof import_obsidian14.TFile) scheduleRefresh(file);
+      if (file instanceof import_obsidian16.TFile) scheduleRefresh(file);
     }));
     this.registerEvent(this.app.vault.on("rename", (file) => {
-      if (file instanceof import_obsidian14.TFile) scheduleRefresh(file);
+      if (file instanceof import_obsidian16.TFile) scheduleRefresh(file);
     }));
   }
   onunload() {
@@ -6153,6 +7564,23 @@ var TaskMatePlugin = class extends import_obsidian14.Plugin {
       await leaf.setViewState({ type: TODO_VIEW_TYPE, active: true });
     }
     await this.app.workspace.revealLeaf(leaf);
+  }
+  async activateReviewView() {
+    let leaf = this.app.workspace.getLeavesOfType(TASK_CHANGE_REVIEW_VIEW_TYPE)[0];
+    if (!leaf) {
+      leaf = this.app.workspace.getLeaf(false);
+      await leaf.setViewState({ type: TASK_CHANGE_REVIEW_VIEW_TYPE, active: true });
+    }
+    await this.app.workspace.revealLeaf(leaf);
+    return leaf.view;
+  }
+  async openProposalReview(proposalId, taskId, changeId) {
+    if (import_obsidian16.Platform.isMobile) {
+      new TaskChangeReviewModal(this, proposalId).open();
+      return;
+    }
+    const view = await this.activateReviewView();
+    await view.openProposal(proposalId, taskId, changeId);
   }
   refreshViews() {
     for (const leaf of this.app.workspace.getLeavesOfType(TODO_VIEW_TYPE)) {
@@ -6181,7 +7609,7 @@ var TaskMatePlugin = class extends import_obsidian14.Plugin {
         frontmatter["taskmate-source"] = value;
       }).then(() => {
         const { t } = this.i18n();
-        new import_obsidian14.Notice(value ? t("notice.noteIncluded") : t("notice.noteExcluded"));
+        new import_obsidian16.Notice(value ? t("notice.noteIncluded") : t("notice.noteExcluded"));
       });
     }
     return true;
@@ -6191,9 +7619,9 @@ var TaskMatePlugin = class extends import_obsidian14.Plugin {
     const folder = file?.parent?.path;
     if (!file || !folder || folder === "/") return false;
     if (!checking) {
-      const normalized = (0, import_obsidian14.normalizePath)(folder);
+      const normalized = (0, import_obsidian16.normalizePath)(folder);
       if (!this.settings.sourceFolders.includes(normalized)) this.settings.sourceFolders.push(normalized);
-      void this.saveSettings().then(() => new import_obsidian14.Notice(this.i18n().t("notice.folderIncluded", { folder: normalized })));
+      void this.saveSettings().then(() => new import_obsidian16.Notice(this.i18n().t("notice.folderIncluded", { folder: normalized })));
     }
     return true;
   }

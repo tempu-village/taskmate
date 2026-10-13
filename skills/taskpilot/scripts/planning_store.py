@@ -8,6 +8,10 @@ import datetime as dt
 import hashlib
 import json
 import math
+import platform
+import re
+import subprocess
+import urllib.parse
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -83,7 +87,7 @@ def validated_review(vault: Path, override: Optional[str], plan: Dict[str, Any],
             fail(f"change proposal requires visible changes for Task: {task_id}")
         if disposition != "change" and changes:
             fail(f"{disposition} proposal cannot change Task: {task_id}")
-        unexpected = set(changes) - {"date", "priority", "addLabels", "removeLabels"}
+        unexpected = set(changes) - {"title", "date", "priority", "addLabels", "removeLabels", "steps", "notes"}
         if unexpected:
             fail(f"unsupported review changes for Task {task_id}: {', '.join(sorted(unexpected))}")
         if "date" in changes:
@@ -96,12 +100,19 @@ def validated_review(vault: Path, override: Optional[str], plan: Dict[str, Any],
                 "user-focus", "hard-deadline", "commitment", "dependency", "blocker",
             }:
                 fail(f"priority change requires accepted evidence for Task: {task_id}")
+        if "title" in changes and not str(changes["title"] or "").strip():
+            fail(f"title change requires a non-empty title for Task: {task_id}")
+        if "notes" in changes and not isinstance(changes["notes"], str):
+            fail(f"notes change requires a string for Task: {task_id}")
+        if "steps" in changes:
+            changes["steps"] = todo_store.normalized_steps(changes["steps"] or [])
         for key in ("addLabels", "removeLabels"):
             if key not in changes:
                 continue
             labels = changes[key]
-            if not isinstance(labels, list) or any(not isinstance(label, str) or not label.startswith("context/") for label in labels):
-                fail(f"{key} must contain only context/* labels for Task: {task_id}")
+            allowed = lambda label: isinstance(label, str) and (label.startswith("context/") or (key == "removeLabels" and label == "brk"))
+            if not isinstance(labels, list) or any(not allowed(label) for label in labels):
+                fail(f"{key} must contain only context/* labels, except removable legacy brk, for Task: {task_id}")
         proposal = {
             "proposalId": proposal_identifier(raw),
             "taskId": task_id,
@@ -162,6 +173,62 @@ def command_review(args: argparse.Namespace) -> None:
     print(json.dumps(validated_review(args.vault, args.task_folder, read_json(args.plan)), ensure_ascii=False, indent=2))
 
 
+def command_propose(args: argparse.Namespace) -> None:
+    if not re.fullmatch(r"proposal-[A-Za-z0-9._-]+", args.proposal_id):
+        fail("proposal-id must start with proposal- and contain only safe identifier characters")
+    review = validated_review(args.vault, args.task_folder, read_json(args.plan))
+    timestamp = todo_store.now_iso()
+    tasks, change_number = [], 1
+    for task_number, item in enumerate((value for value in review["proposals"] if value["disposition"] == "change"), start=1):
+        path, task = todo_store.find_task(args.vault, args.task_folder, item["taskId"])
+        before_markdown = path.read_text(encoding="utf-8")
+        after_task = json.loads(json.dumps(task, ensure_ascii=False))
+        changes, typed = [], item["changes"]
+        for field in ("title", "date", "priority", "steps", "notes"):
+            if field not in typed:
+                continue
+            value = typed[field]
+            if field == "date": todo_store.validate_date(value)
+            if field == "priority": todo_store.validate_priority(value)
+            if field == "steps": value = todo_store.normalized_steps(value or [])
+            before_value = after_task[field]
+            after_task[field] = value
+            changes.append({"id": f"C-{change_number:02d}", "field": field, "before": before_value, "after": value, "reason": item["reason"]})
+            change_number += 1
+        if "addLabels" in typed or "removeLabels" in typed:
+            before_labels = list(after_task["labels"])
+            removals = set(typed.get("removeLabels") or [])
+            after_labels = [label for label in before_labels if label not in removals]
+            for label in typed.get("addLabels") or []:
+                if label not in after_labels: after_labels.append(label)
+            after_task["labels"] = after_labels
+            changes.append({"id": f"C-{change_number:02d}", "field": "labels", "before": before_labels, "after": after_labels, "reason": item["reason"]})
+            change_number += 1
+        after_task["updated-at"] = timestamp
+        after_markdown = todo_store.encode_task_preserving_properties(after_task, before_markdown)
+        tasks.append({
+            "reviewId": f"T-{task_number:02d}", "taskId": item["taskId"], "path": task["path"], "title": task["title"],
+            "beforeMarkdown": before_markdown, "afterMarkdown": after_markdown,
+            "beforeSha256": hashlib.sha256(before_markdown.encode("utf-8")).hexdigest(), "changes": changes,
+        })
+    if not tasks:
+        fail("review plan has no change proposals to persist")
+    proposal = {"schemaVersion": 1, "id": args.proposal_id, "status": "pending", "createdAt": timestamp, "tasks": tasks}
+    folder = todo_store.safe_path(args.vault, str(todo_store.plugin_settings(args.vault)["proposalFolder"]))
+    destination = folder / f"{args.proposal_id}.json"
+    if destination.exists():
+        fail(f"Proposal already exists: {args.proposal_id}")
+    todo_store.atomic_write(destination, json.dumps(proposal, ensure_ascii=False, indent=2) + "\n")
+    uri = "obsidian://taskmate-review?" + urllib.parse.urlencode({"vault": args.vault.name, "proposal": args.proposal_id})
+    opened = False
+    if args.open_review:
+        if platform.system() != "Darwin":
+            fail("automatic review opening is currently implemented only for macOS")
+        subprocess.run(["open", uri], check=True)
+        opened = True
+    print(json.dumps({"proposalId": args.proposal_id, "path": destination.relative_to(args.vault).as_posix(), "uri": uri, "opened": opened}, ensure_ascii=False, indent=2))
+
+
 def command_apply(args: argparse.Namespace) -> None:
     review = validated_review(args.vault, args.task_folder, read_json(args.plan), require_current=False)
     decisions = read_json(args.decisions).get("approvedProposalIds")
@@ -185,7 +252,7 @@ def command_apply(args: argparse.Namespace) -> None:
                 raise ValueError("Task changed after review")
             changes = proposal["changes"]
             patch: Dict[str, Any] = {}
-            for key in ("date", "priority"):
+            for key in ("title", "date", "priority", "steps", "notes"):
                 if key in changes:
                     patch[key] = changes[key]
             if "addLabels" in changes or "removeLabels" in changes:
@@ -362,6 +429,12 @@ def parser() -> argparse.ArgumentParser:
     review = commands.add_parser("review")
     review.add_argument("--plan", required=True, type=Path)
     review.set_defaults(run=command_review)
+
+    propose = commands.add_parser("propose")
+    propose.add_argument("--plan", required=True, type=Path)
+    propose.add_argument("--proposal-id", required=True)
+    propose.add_argument("--open-review", action="store_true")
+    propose.set_defaults(run=command_propose)
 
     apply = commands.add_parser("apply")
     apply.add_argument("--plan", required=True, type=Path)

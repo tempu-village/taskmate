@@ -15,6 +15,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "diff": "^8.0.4",
     "sortablejs": "^1.15.6"
   },
   "devDependencies": {

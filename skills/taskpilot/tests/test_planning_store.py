@@ -101,6 +101,32 @@ class PlanningStoreTest(unittest.TestCase):
         )
         self.assertTrue(all(member["title"] in {"First", "Second"} for member in result["groups"][0]["members"]))
 
+    def test_propose_persists_complete_markdown_evidence_without_changing_the_task(self):
+        task = self.create_task("Legacy break", "--date", "2026-10-01", "--label", "brk", "--label", "keep")
+        inspected = {item["id"]: item for item in self.inspect()["tasks"]}
+        plan = self.write_json("review.json", {
+            "proposals": [{
+                "taskId": task["id"],
+                "snapshot": inspected[task["id"]]["snapshot"],
+                "changes": {"date": "2026-10-18", "addLabels": ["context/break"], "removeLabels": ["brk"]},
+                "dateAuthority": "The user selected 2026-10-18",
+                "reason": "Reschedule and normalize the legacy Context label",
+            }]
+        })
+        task_path = self.vault / task["path"]
+        before = task_path.read_text(encoding="utf-8")
+
+        _, result = self.run_json(PLANNING_STORE, "propose", "--plan", str(plan), "--proposal-id", "proposal-test")
+
+        stored = self.vault / "TaskMate" / "Proposals" / "proposal-test.json"
+        proposal = json.loads(stored.read_text(encoding="utf-8"))
+        self.assertEqual(result["proposalId"], "proposal-test")
+        self.assertEqual(proposal["tasks"][0]["beforeMarkdown"], before)
+        self.assertIn('date: "2026-10-18"', proposal["tasks"][0]["afterMarkdown"])
+        self.assertIn('labels: ["keep", "context/break"]', proposal["tasks"][0]["afterMarkdown"])
+        self.assertEqual(task_path.read_text(encoding="utf-8"), before)
+        self.assertEqual([change["id"] for change in proposal["tasks"][0]["changes"]], ["C-01", "C-02"])
+
     def test_apply_updates_approved_task_and_reports_stale_task(self):
         first = self.create_task("First", "--date", "2026-10-01", "--label", "keep")
         second = self.create_task("Second", "--date", "2026-10-02")

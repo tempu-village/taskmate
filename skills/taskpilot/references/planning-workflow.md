@@ -16,7 +16,9 @@ The result contains counts and every incomplete canonical Task with a content sn
 
 ## 2. Prepare a backlog review
 
-For each reviewed Task, choose `change`, `clarify`, or `no-change`. A change may contain only `date`, `priority`, `addLabels`, and `removeLabels`. Label changes in this workflow are limited to `context/*`.
+For each reviewed Task, choose `change`, `clarify`, or `no-change`. A change may contain only `title`, `date`, `priority`, `addLabels`, `removeLabels`, `steps`, and `notes`. Label additions are limited to `context/*`; removal also accepts legacy `brk` when visibly replacing it with `context/break`.
+
+When an inspected Task contains legacy `brk`, include visible `removeLabels: ["brk"]` and `addLabels: ["context/break"]` instructions in that Task's next change Proposal. If `context/break` already exists, propose only removing `brk`. Never rewrite the label during inspection or capacity planning.
 
 Adding or replacing a date requires `dateAuthority`. Changing Priority requires one of `user-focus`, `hard-deadline`, `commitment`, `dependency`, or `blocker` in `priorityEvidence`. Removing an unsupported date needs no invented replacement. Age alone is not Priority evidence.
 
@@ -47,21 +49,17 @@ python3 scripts/planning_store.py --vault <vault> review --plan <review.json>
 
 Show every group and every member in the conversation. A group contains only identical changes with the same reason. Do not treat silence as approval. Clarification and no-change entries never write Task Markdown.
 
-## 3. Apply only explicit decisions
+## 3. Persist and open the Task change Proposal
 
-Build a decision file from proposal IDs returned by `review`:
-
-```json
-{"approvedProposalIds": ["review-..."]}
-```
-
-Run:
+After showing the validated inventory, create a unique safe Proposal ID and persist the exact before/after evidence:
 
 ```bash
-python3 scripts/planning_store.py --vault <vault> apply --plan <review.json> --decisions <decisions.json>
+python3 scripts/planning_store.py --vault <vault> propose --plan <review.json> --proposal-id proposal-<id> --open-review
 ```
 
-The command rechecks each snapshot independently, applies only approved change proposals, preserves unrelated fields and Manual order, and reports succeeded, failed, and skipped IDs. A partial failure exits nonzero after printing its JSON result. Show that result to the user; never describe a partial result as complete success.
+`propose` stores a versioned JSON Proposal under the configured Proposal folder without changing canonical Tasks. It contains the typed ChangeSet, complete before/after Markdown, SHA-256 snapshots, stable `T-xx` and `C-xx` IDs, and reasons. On macOS, `--open-review` invokes the TaskMate-owned `obsidian://taskmate-review` URI directly through the operating system. It does not start a loopback bridge. If automatic opening is unavailable, omit `--open-review`, show the returned Proposal ID and URI, and tell the user to open it from TaskMate's pending-review list.
+
+The user approves or rejects changes inside TaskMate. Opening the URI never applies changes. TaskMate rechecks the captured Markdown, applies only selected `C-xx` changes, moves the closed Proposal to history, and creates a new Proposal with new change IDs plus origin references after partial approval. Do not run the legacy `apply` command for a Proposal reviewed in TaskMate.
 
 ## 4. Estimate active effort
 

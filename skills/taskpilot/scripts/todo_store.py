@@ -218,6 +218,31 @@ def encode_task(task: Dict[str, Any]) -> str:
     return "\n".join(frontmatter) + f"\n\n# {str(task['title']).strip()}{suffix}\n"
 
 
+def encode_task_preserving_properties(task: Dict[str, Any], current_text: str) -> str:
+    lines, _ = split_document(current_text)
+    keys = ["id", "completed", "date", "priority", "labels", "project", "rank", "created-at", "updated-at", "completed-at", "source-note"]
+    render = {"type": "type: todo", **{key: f"{key}: {quote(task.get(key))}" for key in keys}}
+    emitted, output = set(), []
+    for line in lines:
+        match = re.match(r"^([^\s:#][^:]*):", line)
+        if not match:
+            output.append(line)
+            continue
+        key = match.group(1).strip()
+        if key in render:
+            if key not in emitted:
+                output.append(render[key])
+            emitted.add(key)
+        elif key != "important":
+            output.append(line)
+    for key in ["type", *keys]:
+        if key not in emitted:
+            output.append(render[key])
+    body = encode_task_body(task.get("steps") or [], str(task.get("notes") or ""), str(task.get("step-section-remainder") or ""))
+    suffix = f"\n\n{body}" if body else ""
+    return "---\n" + "\n".join(output) + f"\n---\n\n# {str(task['title']).strip()}{suffix}\n"
+
+
 def readable_task_file_stem(title: str) -> str:
     readable = re.sub(r"[\\/:*?\"<>|#^\[\]]", "-", unicodedata.normalize("NFKC", title))
     readable = re.sub(r"\s+", " ", readable)
@@ -368,7 +393,7 @@ def update_task(vault: Path, override: Optional[str], identifier: str, patch: Di
     validate_date(task["date"])
     validate_priority(task["priority"])
     task["updated-at"] = now_iso()
-    atomic_write(path, encode_task(task))
+    atomic_write(path, encode_task_preserving_properties(task, path.read_text(encoding="utf-8")))
     desired = available_task_path(path.parent, str(task["title"]), path)
     if desired != path:
         path.replace(desired)

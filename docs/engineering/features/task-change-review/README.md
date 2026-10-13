@@ -1,0 +1,99 @@
+# Task change review
+
+Approval: Accepted — [RFC 0032](../../rfcs/0032-use-jsdiff-for-task-change-preview.md), tracked by [Issue #52](https://github.com/tempu-village/taskmate/issues/52).
+
+Implementation: Implemented in the current branch. Task Pilot persists version 1 Proposals, TaskMate provides the Review View and approval flow, and macOS uses direct OS invocation of the TaskMate URI. Windows and Linux launch adapters remain unimplemented; pending-review discovery works without them.
+
+## Purpose
+
+Task change review lets a user inspect and approve changes to existing Tasks before TaskMate writes Markdown. It provides one Obsidian review surface, deterministic semantic and raw Markdown diffs, granular approval, and protection against stale source data.
+
+The initial scope covers scheduled date, Priority, Labels, title, Steps, and Notes. Creating, completing, deleting, merging, and splitting Tasks are outside the initial scope.
+
+## User-visible behavior
+
+1. Task Pilot records a Proposal containing a ChangeSet without modifying the canonical Task files.
+2. TaskMate opens the pending Proposal from an Obsidian URI handoff or its pending-review list.
+3. Desktop uses a dedicated ItemView; mobile uses a full-screen modal.
+4. The Review View presents a continuous list of proposed changes with stable Task and change identifiers.
+5. The user can switch between semantic and raw Markdown diffs and approve changes individually.
+6. Opening a Proposal never applies it. TaskMate writes only the explicitly approved changes.
+
+## Target contract
+
+- Canonical Task Markdown is not changed before approval.
+- AI output expresses typed change intent; it is not the source of diff truth.
+- A ChangeSet is the typed set of change instructions.
+- A Proposal stores identifiers, status, complete before/after Markdown, the ChangeSet, rationale, approval decisions, and apply results.
+- The before/after Markdown is immutable review evidence rather than Task master data. TaskMate uses it to regenerate exact diffs and audit the state that was reviewed.
+- Semantic and raw Markdown views are derived from the same original and proposed documents.
+- Applying approved changes replays typed operations rather than copying displayed text.
+- TaskMate rechecks the original snapshot before writing and blocks stale changes.
+- Partial approval produces an explicit result for every proposed change.
+- Unrelated content and manual ordering are preserved.
+- The canonical context label is `context/break`; legacy `brk` input is normalized at the boundary.
+
+## Processing flow
+
+1. Read the original canonical Task and record its hash.
+2. Apply a ChangeSet's typed operations to an in-memory copy to create the proposed Task.
+3. Persist a Proposal containing the ChangeSet and the complete original and proposed Markdown.
+4. Derive semantic and Markdown diffs mechanically from the same stored original and proposed documents.
+5. Present both views for granular approval.
+6. Recheck the original hash and replay only approved operations into the Vault.
+
+[Open the interactive ChangeSet and diff flow](assets/change-set-diff-flow.html).
+
+## Internal design
+
+The design should keep these responsibilities separate:
+
+- Proposal storage, evidence and lifecycle
+- ChangeSet operation validation
+- deterministic operation application
+- semantic diff extraction
+- raw Markdown diff generation through `jsdiff`
+- stale-snapshot validation
+- Review View state and approval controls
+- Obsidian URI handoff and pending-review discovery
+
+The strict persisted format, lifecycle and URI security contract are defined by [Task change Proposal format](../../specifications/task-change-proposal-format.md).
+
+## Failure handling
+
+- Missing or malformed Proposals or ChangeSets remain unapplied and show a recoverable error.
+- A source hash mismatch marks affected changes stale and requires regeneration.
+- An invalid operation blocks only the affected proposal unless atomicity is required by the operation group.
+- URI handoff failure does not lose review data; the pending-review list remains the fallback.
+- No bridge service or localhost listener is required.
+
+## Acceptance criteria
+
+- REVIEW-01: Creating a Proposal does not modify canonical Task Markdown.
+- REVIEW-02: Opening a Proposal does not apply any proposed change.
+- REVIEW-03: Semantic and raw views are derived from the same original and proposed documents.
+- REVIEW-04: Raw Markdown differences are generated mechanically with `jsdiff`.
+- REVIEW-05: Each proposed change has a stable identifier and explicit review state.
+- REVIEW-06: Applying a subset writes only approved operations.
+- REVIEW-07: A source hash mismatch prevents stale writes.
+- REVIEW-08: Unrelated Task content and manual ordering survive approved changes.
+- REVIEW-09: Review data remains discoverable if the automatic Obsidian handoff fails.
+- REVIEW-10: Legacy `brk` input is normalized to `context/break`.
+- REVIEW-11: A Proposal preserves complete before/after Markdown and can regenerate the same raw diff without consulting AI output or the current Task.
+- REVIEW-12: Proposal history is retained until the user removes it.
+- REVIEW-13: A partial approval closes the original Proposal with its result; any follow-up uses new `C-xx` identifiers and retains origin references.
+
+## Related documents
+
+- [Task Pilot review and capacity planning](../task-pilot-planning.md)
+- [RFC 0032: Use jsdiff for Task change preview](../../rfcs/0032-use-jsdiff-for-task-change-preview.md)
+- [Issue #52](https://github.com/tempu-village/taskmate/issues/52)
+- [Task change Proposal format](../../specifications/task-change-proposal-format.md)
+
+## Evidence
+
+- [Proposal evidence and approval tests](../../../../test/task-change-proposal.test.ts)
+- [Proposal repository lifecycle test](../../../../test/task-change-proposal-repository.test.ts)
+- [Review renderer tests](../../../../test/task-change-review-renderer.test.ts)
+- [Task Pilot Proposal test](../../../../skills/taskpilot/tests/test_planning_store.py)
+- The 2026-10-12 macOS spike verified direct URI delivery while Obsidian was open and closed, Vault selection, and Task UUID navigation. Fresh desktop/mobile visual verification remains manual evidence.
