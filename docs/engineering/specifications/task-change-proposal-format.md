@@ -8,6 +8,8 @@ A pending Task change Proposal MUST be UTF-8 JSON at `<proposalFolder>/<proposal
 
 `schemaVersion` MUST be `1`. A Proposal ID MUST match `proposal-[A-Za-z0-9._-]+`. `T-xx` identifies a Task within one Proposal and MUST match `T-[0-9]{2,}`. `C-xx` identifies one independently approvable change and MUST match `C-[0-9]{2,}`. Task and change identifiers MUST be unique inside one Proposal.
 
+`T-xx` and `C-xx` are short review references intended for both UI controls and human discussion. A reference such as `T-07 / C-08`, interpreted within a named Proposal, MUST identify one Task and one independently approvable change without requiring a canonical Task UUID, file path or copied diff text. `C-xx` numbering is Proposal-wide rather than restarting for each Task. Neither identifier is valid as a permanent identity outside that Proposal; follow-up Proposal identity is governed by the origin-reference rules below.
+
 ## Version 1 shape
 
 ```json

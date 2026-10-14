@@ -407,4 +407,18 @@ describe("mobile layout", () => {
     expect(scrollRegion).toContain("--mobile-toolbar-height");
     expect(scrollRegion).toMatch(/scroll-padding-bottom\s*:/);
   });
+
+  it("contains Task review overflow and reserves phone footer clearance", () => {
+    const review = declarations(".taskmate-review");
+    const rawDiff = declarations(".taskmate-review-diff");
+    const files = declarations(".taskmate-review-files");
+    const phoneFooter = declarations(".is-phone .taskmate-review-footer");
+
+    expect(review).toMatch(/overflow-x\s*:\s*hidden\s*;/);
+    expect(rawDiff).toMatch(/overflow-x\s*:\s*scroll\s*;/);
+    expect(rawDiff).toMatch(/overscroll-behavior-inline\s*:\s*contain\s*;/);
+    expect(files).toMatch(/padding-bottom\s*:/);
+    expect(phoneFooter).toContain("--safe-area-inset-bottom");
+    expect(phoneFooter).toContain("--mobile-toolbar-height");
+  });
 });

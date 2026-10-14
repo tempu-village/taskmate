@@ -10,11 +10,16 @@ export interface TaskChangeReviewCopy {
   apply: string;
   reject: string;
   selectAll: string;
+  selectAllShort: string;
   selectTask: string;
   clearAll: string;
+  clearAllShort: string;
   clearTask: string;
   semantic: string;
+  semanticAria: string;
   markdown: string;
+  markdownAria: string;
+  comparisonAria: string;
   noSelection: string;
 }
 
@@ -41,18 +46,24 @@ export function renderTaskChangeReview(
   const controls = element("div", "taskmate-review-controls", container);
   const allIds = review.tasks.flatMap((task) => task.changes.map((change) => change.id));
   const selectedAllCount = selectedCount(allIds, state.approvedChangeIds);
-  controls.append(bulkButton(copy.selectAll, "taskmate-review-select-all", selectedAllCount === allIds.length, () => dispatch({ type: "set-many-approved", changeIds: allIds, approved: true })));
-  controls.append(bulkButton(copy.clearAll, "taskmate-review-clear-all", selectedAllCount === 0, () => dispatch({ type: "set-many-approved", changeIds: allIds, approved: false })));
-  controls.append(button(copy.semantic, () => dispatch({ type: "set-mode", mode: "semantic" }), state.mode === "semantic"));
-  controls.append(button(copy.markdown, () => dispatch({ type: "set-mode", mode: "raw" }), state.mode === "raw"));
+  const selection = element("div", "taskmate-review-selection-actions", controls);
+  selection.append(responsiveBulkButton(copy.selectAll, copy.selectAllShort, "taskmate-review-select-all", selectedAllCount === allIds.length, () => dispatch({ type: "set-many-approved", changeIds: allIds, approved: true })));
+  selection.append(responsiveBulkButton(copy.clearAll, copy.clearAllShort, "taskmate-review-clear-all", selectedAllCount === 0, () => dispatch({ type: "set-many-approved", changeIds: allIds, approved: false })));
+  const displaySwitch = element("div", "taskmate-review-display-switch", controls);
+  displaySwitch.setAttribute("role", "group");
+  displaySwitch.setAttribute("aria-label", copy.comparisonAria);
+  displaySwitch.append(modeButton(copy.semantic, copy.semanticAria, "taskmate-review-mode-semantic", state.mode === "semantic", () => dispatch({ type: "set-mode", mode: "semantic" })));
+  displaySwitch.append(modeButton(copy.markdown, copy.markdownAria, "taskmate-review-mode-raw", state.mode === "raw", () => dispatch({ type: "set-mode", mode: "raw" })));
 
   const list = element("div", "taskmate-review-files", container);
   for (const task of review.tasks) {
     const section = element("section", "taskmate-review-file", list);
     section.id = `taskmate-review-${task.taskId}`;
+    section.dataset.reviewAnchor = task.reviewId;
     const fileHeader = element("div", "taskmate-review-file-header", section);
-    appendTextElement(fileHeader, "span", task.reviewId, "taskmate-review-id");
-    appendTextElement(fileHeader, "h3", task.title);
+    const identity = element("div", "taskmate-review-file-identity", fileHeader);
+    appendTextElement(identity, "span", task.reviewId, "taskmate-review-id");
+    appendTextElement(identity, "h3", task.title);
     appendTextElement(fileHeader, "span", task.path, "taskmate-review-path");
     const taskIds = task.changes.map((change) => change.id);
     if (taskIds.length > 1) {
@@ -65,6 +76,7 @@ export function renderTaskChangeReview(
     if (state.mode === "semantic") {
       for (const change of task.changes) {
         const row = element("label", "taskmate-review-change", section);
+        row.dataset.reviewAnchor = change.id;
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.checked = state.approvedChangeIds.has(change.id);
@@ -130,6 +142,22 @@ function bulkButton(text: string, className: string, disabled: boolean, activate
   const value = button(text, activate);
   value.classList.add(className);
   value.disabled = disabled;
+  return value;
+}
+
+function responsiveBulkButton(longText: string, shortText: string, className: string, disabled: boolean, activate: () => void): HTMLButtonElement {
+  const value = bulkButton("", className, disabled, activate);
+  value.setAttribute("aria-label", longText);
+  appendTextElement(value, "span", longText, "taskmate-review-wide-label");
+  appendTextElement(value, "span", shortText, "taskmate-review-compact-label");
+  return value;
+}
+
+function modeButton(text: string, accessibleName: string, className: string, active: boolean, activate: () => void): HTMLButtonElement {
+  const value = button(text, activate, active);
+  value.classList.add(className);
+  value.setAttribute("aria-label", accessibleName);
+  value.setAttribute("aria-pressed", String(active));
   return value;
 }
 

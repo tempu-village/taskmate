@@ -25,11 +25,16 @@ const copy = {
   apply: "Approve and apply selected changes",
   reject: "Reject",
   selectAll: "Select all changes in every Task",
-  selectTask: "Select all changes in this Task",
+  selectAllShort: "Select all",
+  selectTask: "Select all",
   clearAll: "Clear all changes in every Task",
-  clearTask: "Clear all changes in this Task",
-  semantic: "Semantic",
-  markdown: "Markdown",
+  clearAllShort: "Clear all",
+  clearTask: "Clear all",
+  semantic: "Items",
+  semanticAria: "Item comparison",
+  markdown: "Full text",
+  markdownAria: "Full-text comparison",
+  comparisonAria: "Comparison view",
   noSelection: "Select at least one change"
 };
 
@@ -62,6 +67,9 @@ describe("Task change review renderer", () => {
     expect(single.querySelector(".taskmate-review-file-header button")).toBeNull();
     expect(single.querySelector(".taskmate-review-controls")?.textContent).toContain("Select all changes in every Task");
     expect(single.querySelector(".taskmate-review-controls")?.textContent).toContain("Clear all changes in every Task");
+    expect(single.querySelector(".taskmate-review-display-switch")?.getAttribute("role")).toBe("group");
+    expect(single.querySelector<HTMLButtonElement>(".taskmate-review-mode-semantic")?.getAttribute("aria-label")).toBe("Item comparison");
+    expect(single.querySelector<HTMLButtonElement>(".taskmate-review-mode-semantic")?.getAttribute("aria-pressed")).toBe("true");
 
     const multiple = document.createElement("div");
     const multipleReview: ProposalReview = {
@@ -77,8 +85,8 @@ describe("Task change review renderer", () => {
     renderTaskChangeReview(multiple, multipleReview, { mode: "semantic", approvedChangeIds: new Set() }, copy, vi.fn());
     const taskButtons = multiple.querySelectorAll<HTMLButtonElement>(".taskmate-review-file-header button");
     expect(Array.from(taskButtons, (item) => item.textContent)).toEqual([
-      "Select all changes in this Task",
-      "Clear all changes in this Task"
+      "Select all",
+      "Clear all"
     ]);
     expect(multiple.querySelector(".taskmate-review-file-actions")?.children).toHaveLength(2);
   });
@@ -107,5 +115,13 @@ describe("Task change review renderer", () => {
       expect(container.querySelector<HTMLButtonElement>(".taskmate-review-select-task")?.disabled).toBe(selectDisabled);
       expect(container.querySelector<HTMLButtonElement>(".taskmate-review-clear-task")?.disabled).toBe(clearDisabled);
     }
+  });
+
+  it("renders stable Task and change anchors for position restoration", () => {
+    const container = document.createElement("div");
+    renderTaskChangeReview(container, review, { mode: "semantic", approvedChangeIds: new Set() }, copy, vi.fn());
+
+    expect(container.querySelector("[data-review-anchor='T-01']")).not.toBeNull();
+    expect(container.querySelector("[data-review-anchor='C-01']")).not.toBeNull();
   });
 });

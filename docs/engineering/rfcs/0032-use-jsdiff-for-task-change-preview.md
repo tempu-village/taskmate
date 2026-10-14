@@ -135,6 +135,8 @@ Callers must not need to know Markdown rewrite details, jsdiff types or file-wri
 - `O-01`, `O-02`, ... identify a suggested decision or cleanup order and cannot be confused with Task identifiers.
 - Reordering the review does not change its `T-xx` or `C-xx` assignments.
 
+These short, Proposal-local identifiers are also a human communication interface. A user can refer to a specific Task and change as, for example, `T-07 / C-08` in the review screen or a Codex conversation without copying a Task UUID, file path, field value or diff text. `C-xx` therefore uses one sequence across the Proposal, while the displayed `T-xx` provides immediate Task context. The identifiers are unambiguous only together with their Proposal ID and do not become permanent Task or field identities.
+
 ### Deterministic change evidence
 
 AI may propose typed intent such as `setDate(taskId, "2026-10-12")` or `replaceLabel(taskId, "brk", "context/break")`. It must not author the authoritative old/new values or diff hunks.

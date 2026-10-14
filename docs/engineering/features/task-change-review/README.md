@@ -19,6 +19,18 @@ The initial scope covers scheduled date, Priority, Labels, title, Steps, and Not
 5. The user can switch between semantic and raw Markdown diffs and approve changes individually.
 6. Opening a Proposal never applies it. TaskMate writes only the explicitly approved changes.
 
+The review toolbar separates selection from display. Selection uses persistent select-all and clear-all buttons whose unavailable action remains visible but disabled. Display uses an `Items / Full text` segmented control. Task-level bulk controls appear only when a Task has more than one change. Selection redraws preserve numeric scroll position; switching between Items and Full text restores the nearest stable `T-xx` or `C-xx` anchor.
+
+The review surface contains horizontal overflow at every level except the Full text diff itself. Long titles, paths, reasons and controls wrap within the available width. The sticky footer remains above Task headers and reserves mobile toolbar and safe-area clearance.
+
+## Obsidian Sync on mobile
+
+Task change Proposals are JSON rather than Markdown. To make pending Proposals available on a phone, enable the following Obsidian Sync option on both the computer and the phone:
+
+`Settings → Sync → Selective sync → Sync all other types`
+
+After synchronization finishes, run `Open Task change reviews` in TaskMate and open the pending Proposal. TaskMate intentionally does not repeat this setup guidance in the pending-review screen.
+
 ## Target contract
 
 - Canonical Task Markdown is not changed before approval.
@@ -95,5 +107,6 @@ The strict persisted format, lifecycle and URI security contract are defined by 
 - [Proposal evidence and approval tests](../../../../test/task-change-proposal.test.ts)
 - [Proposal repository lifecycle test](../../../../test/task-change-proposal-repository.test.ts)
 - [Review renderer tests](../../../../test/task-change-review-renderer.test.ts)
+- [Review position-preservation tests](../../../../test/task-change-review-scroll.test.ts)
 - [Task Pilot Proposal test](../../../../skills/taskpilot/tests/test_planning_store.py)
 - The 2026-10-12 macOS spike verified direct URI delivery while Obsidian was open and closed, Vault selection, and Task UUID navigation. Fresh desktop/mobile visual verification remains manual evidence.

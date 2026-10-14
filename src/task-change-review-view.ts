@@ -3,6 +3,7 @@ import type TaskMatePlugin from "./main";
 import { renderTaskChangeReview } from "./task-change-review-renderer";
 import type { TaskChangeReviewAction, TaskChangeReviewState } from "./task-change-review-renderer";
 import type { ProposalReview } from "./task-change-proposal";
+import { captureReviewPosition, restoreReviewPosition } from "./task-change-review-scroll";
 
 export const TASK_CHANGE_REVIEW_VIEW_TYPE = "taskmate-change-review";
 
@@ -23,7 +24,7 @@ export class TaskChangeReviewView extends ItemView {
 
   async onOpen(): Promise<void> { await this.render(); }
 
-  requestRender(): void { void this.render(); }
+  requestRender(): void { void this.render("scroll"); }
 
   async openProposal(proposalId: string, taskId?: string, changeId?: string): Promise<void> {
     this.proposalId = proposalId;
@@ -33,7 +34,8 @@ export class TaskChangeReviewView extends ItemView {
     await this.render();
   }
 
-  private async render(): Promise<void> {
+  private async render(preserve?: "scroll" | "anchor"): Promise<void> {
+    const position = preserve ? captureReviewPosition(this.contentEl, preserve) : null;
     this.contentEl.empty();
     if (!this.proposalId) {
       const pending = await this.plugin.proposals.listPending();
@@ -51,7 +53,8 @@ export class TaskChangeReviewView extends ItemView {
     try {
       this.review = await this.plugin.proposals.review(this.proposalId);
       renderTaskChangeReview(this.contentEl, this.review, this.state, this.copy(), (action) => void this.handle(action));
-      window.setTimeout(() => this.revealTarget(), 0);
+      if (position) restoreReviewPosition(this.contentEl, position);
+      else window.setTimeout(() => this.revealTarget(), 0);
     } catch (error) {
       console.error("TaskMate could not open Proposal", error);
       this.contentEl.createDiv({ cls: "taskmate-empty", text: this.plugin.i18n().t("review.invalid") });
@@ -59,6 +62,8 @@ export class TaskChangeReviewView extends ItemView {
   }
 
   private async handle(action: TaskChangeReviewAction): Promise<void> {
+    let preserve: "scroll" | "anchor" | undefined = action.type === "set-mode" ? "anchor"
+      : action.type === "set-approved" || action.type === "set-many-approved" ? "scroll" : undefined;
     if (action.type === "set-mode") this.state = { ...this.state, mode: action.mode };
     if (action.type === "set-approved") {
       const next = new Set(this.state.approvedChangeIds);
@@ -75,14 +80,16 @@ export class TaskChangeReviewView extends ItemView {
       new Notice(this.plugin.i18n().t("review.applied", { count: result.closedProposal.result?.succeededChangeIds.length ?? 0 }));
       this.proposalId = result.followUp?.id ?? null;
       this.state = { mode: "semantic", approvedChangeIds: new Set() };
+      preserve = undefined;
     }
     if (action.type === "reject" && this.proposalId) {
       if (!window.confirm(this.plugin.i18n().t("review.rejectConfirm"))) return;
       await this.plugin.proposals.reject(this.proposalId);
       this.proposalId = null;
       new Notice(this.plugin.i18n().t("review.rejected"));
+      preserve = undefined;
     }
-    await this.render();
+    await this.render(preserve);
   }
 
   private revealTarget(): void {
@@ -102,8 +109,10 @@ export class TaskChangeReviewView extends ItemView {
     const { t } = this.plugin.i18n();
     return {
       title: t("review.title"), apply: t("review.apply"), reject: t("review.reject"),
-      selectAll: t("review.selectAll"), selectTask: t("review.selectTask"), clearAll: t("review.clearAll"), clearTask: t("review.clearTask"), semantic: t("review.semantic"),
-      markdown: t("review.markdown"), noSelection: t("review.noSelection")
+      selectAll: t("review.selectAll"), selectAllShort: t("review.selectAllShort"), selectTask: t("review.selectTask"),
+      clearAll: t("review.clearAll"), clearAllShort: t("review.clearAllShort"), clearTask: t("review.clearTask"),
+      semantic: t("review.semantic"), semanticAria: t("review.semanticAria"), markdown: t("review.markdown"), markdownAria: t("review.markdownAria"),
+      comparisonAria: t("review.comparisonAria"), noSelection: t("review.noSelection")
     };
   }
 }
@@ -115,7 +124,9 @@ export class TaskChangeReviewModal extends Modal {
     this.modalEl.addClass("taskmate-review-modal");
     const review = await this.plugin.proposals.review(this.proposalId);
     let state: TaskChangeReviewState = { mode: "semantic", approvedChangeIds: new Set() };
-    const rerender = () => renderTaskChangeReview(this.contentEl, review, state, new TaskChangeReviewViewCopy(this.plugin).value, async (action) => {
+    const rerender = (preserve?: "scroll" | "anchor") => {
+      const position = preserve ? captureReviewPosition(this.contentEl, preserve) : null;
+      renderTaskChangeReview(this.contentEl, review, state, new TaskChangeReviewViewCopy(this.plugin).value, async (action) => {
       if (action.type === "set-mode") state = { ...state, mode: action.mode };
       if (action.type === "set-approved") {
         const next = new Set(state.approvedChangeIds); action.approved ? next.add(action.changeId) : next.delete(action.changeId);
@@ -127,8 +138,10 @@ export class TaskChangeReviewModal extends Modal {
       }
       if (action.type === "apply") { await this.plugin.proposals.apply(this.proposalId, action.approvedChangeIds); this.close(); return; }
       if (action.type === "reject") { if (window.confirm(this.plugin.i18n().t("review.rejectConfirm"))) { await this.plugin.proposals.reject(this.proposalId); this.close(); } return; }
-      rerender();
+      rerender(action.type === "set-mode" ? "anchor" : "scroll");
     });
+      if (position) restoreReviewPosition(this.contentEl, position);
+    };
     rerender();
   }
 }
@@ -137,6 +150,12 @@ class TaskChangeReviewViewCopy {
   readonly value;
   constructor(plugin: TaskMatePlugin) {
     const { t } = plugin.i18n();
-    this.value = { title: t("review.title"), apply: t("review.apply"), reject: t("review.reject"), selectAll: t("review.selectAll"), selectTask: t("review.selectTask"), clearAll: t("review.clearAll"), clearTask: t("review.clearTask"), semantic: t("review.semantic"), markdown: t("review.markdown"), noSelection: t("review.noSelection") };
+    this.value = {
+      title: t("review.title"), apply: t("review.apply"), reject: t("review.reject"),
+      selectAll: t("review.selectAll"), selectAllShort: t("review.selectAllShort"), selectTask: t("review.selectTask"),
+      clearAll: t("review.clearAll"), clearAllShort: t("review.clearAllShort"), clearTask: t("review.clearTask"),
+      semantic: t("review.semantic"), semanticAria: t("review.semanticAria"), markdown: t("review.markdown"), markdownAria: t("review.markdownAria"),
+      comparisonAria: t("review.comparisonAria"), noSelection: t("review.noSelection")
+    };
   }
 }

@@ -952,17 +952,22 @@ var en = {
   "review.pending": "Pending reviews",
   "review.none": "No pending reviews",
   "review.summary": "{tasks} Tasks, {changes} changes",
-  "review.apply": "Approve and apply selected changes",
+  "review.apply": "Apply selection",
   "review.applied": "Applied {count} changes",
   "review.reject": "Reject proposal",
   "review.rejected": "Proposal rejected",
   "review.rejectConfirm": "Reject this proposal without changing Tasks?",
   "review.selectAll": "Select all changes in every Task",
-  "review.selectTask": "Select all changes in this Task",
+  "review.selectAllShort": "Select all",
+  "review.selectTask": "Select all",
   "review.clearAll": "Clear all changes in every Task",
-  "review.clearTask": "Clear all changes in this Task",
-  "review.semantic": "Semantic",
-  "review.markdown": "Markdown",
+  "review.clearAllShort": "Clear all",
+  "review.clearTask": "Clear all",
+  "review.semantic": "Items",
+  "review.semanticAria": "Item comparison",
+  "review.markdown": "Full text",
+  "review.markdownAria": "Full-text comparison",
+  "review.comparisonAria": "Comparison view",
   "review.noSelection": "Select at least one change",
   "review.invalid": "This proposal is missing or invalid",
   "review.invalidLink": "The TaskMate review link is invalid",
@@ -1184,17 +1189,22 @@ var ja = {
   "review.pending": "\u672A\u30EC\u30D3\u30E5\u30FC",
   "review.none": "\u672A\u30EC\u30D3\u30E5\u30FC\u306EProposal\u306F\u3042\u308A\u307E\u305B\u3093",
   "review.summary": "{tasks}\u4EF6\u306ETask\u3001{changes}\u4EF6\u306E\u5909\u66F4",
-  "review.apply": "\u9078\u629E\u3057\u305F\u5909\u66F4\u3092\u627F\u8A8D\u3057\u3066\u9069\u7528",
+  "review.apply": "\u9078\u629E\u3092\u9069\u7528",
   "review.applied": "{count}\u4EF6\u306E\u5909\u66F4\u3092\u9069\u7528\u3057\u307E\u3057\u305F",
-  "review.reject": "Proposal\u3092\u5374\u4E0B",
+  "review.reject": "\u63D0\u6848\u3092\u5374\u4E0B",
   "review.rejected": "Proposal\u3092\u5374\u4E0B\u3057\u307E\u3057\u305F",
   "review.rejectConfirm": "Task\u3092\u5909\u66F4\u305B\u305A\u3001\u3053\u306EProposal\u3092\u5374\u4E0B\u3057\u307E\u3059\u304B\uFF1F",
   "review.selectAll": "\u5168Task\u306E\u5909\u66F4\u3092\u3059\u3079\u3066\u9078\u629E",
-  "review.selectTask": "\u3053\u306ETask\u306E\u5909\u66F4\u3092\u3059\u3079\u3066\u9078\u629E",
+  "review.selectAllShort": "\u5168\u9078\u629E",
+  "review.selectTask": "\u5168\u9078\u629E",
   "review.clearAll": "\u5168Task\u306E\u5909\u66F4\u3092\u3059\u3079\u3066\u89E3\u9664",
-  "review.clearTask": "\u3053\u306ETask\u306E\u5909\u66F4\u3092\u3059\u3079\u3066\u89E3\u9664",
-  "review.semantic": "\u610F\u5473\u7684\u5DEE\u5206",
-  "review.markdown": "Markdown\u5DEE\u5206",
+  "review.clearAllShort": "\u5168\u89E3\u9664",
+  "review.clearTask": "\u5168\u89E3\u9664",
+  "review.semantic": "\u9805\u76EE",
+  "review.semanticAria": "\u9805\u76EE\u6BD4\u8F03",
+  "review.markdown": "\u5168\u6587",
+  "review.markdownAria": "\u5168\u6587\u6BD4\u8F03",
+  "review.comparisonAria": "\u6BD4\u8F03\u8868\u793A",
   "review.noSelection": "\u5909\u66F4\u30921\u4EF6\u4EE5\u4E0A\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044",
   "review.invalid": "Proposal\u304C\u898B\u3064\u304B\u3089\u306A\u3044\u304B\u3001\u5F62\u5F0F\u304C\u6B63\u3057\u304F\u3042\u308A\u307E\u305B\u3093",
   "review.invalidLink": "TaskMate\u306E\u30EC\u30D3\u30E5\u30FC\u30EA\u30F3\u30AF\u304C\u6B63\u3057\u304F\u3042\u308A\u307E\u305B\u3093",
@@ -7222,17 +7232,23 @@ function renderTaskChangeReview(container, review, state, copy, dispatch) {
   const controls = element("div", "taskmate-review-controls", container);
   const allIds = review.tasks.flatMap((task) => task.changes.map((change) => change.id));
   const selectedAllCount = selectedCount(allIds, state.approvedChangeIds);
-  controls.append(bulkButton(copy.selectAll, "taskmate-review-select-all", selectedAllCount === allIds.length, () => dispatch({ type: "set-many-approved", changeIds: allIds, approved: true })));
-  controls.append(bulkButton(copy.clearAll, "taskmate-review-clear-all", selectedAllCount === 0, () => dispatch({ type: "set-many-approved", changeIds: allIds, approved: false })));
-  controls.append(button(copy.semantic, () => dispatch({ type: "set-mode", mode: "semantic" }), state.mode === "semantic"));
-  controls.append(button(copy.markdown, () => dispatch({ type: "set-mode", mode: "raw" }), state.mode === "raw"));
+  const selection = element("div", "taskmate-review-selection-actions", controls);
+  selection.append(responsiveBulkButton(copy.selectAll, copy.selectAllShort, "taskmate-review-select-all", selectedAllCount === allIds.length, () => dispatch({ type: "set-many-approved", changeIds: allIds, approved: true })));
+  selection.append(responsiveBulkButton(copy.clearAll, copy.clearAllShort, "taskmate-review-clear-all", selectedAllCount === 0, () => dispatch({ type: "set-many-approved", changeIds: allIds, approved: false })));
+  const displaySwitch = element("div", "taskmate-review-display-switch", controls);
+  displaySwitch.setAttribute("role", "group");
+  displaySwitch.setAttribute("aria-label", copy.comparisonAria);
+  displaySwitch.append(modeButton(copy.semantic, copy.semanticAria, "taskmate-review-mode-semantic", state.mode === "semantic", () => dispatch({ type: "set-mode", mode: "semantic" })));
+  displaySwitch.append(modeButton(copy.markdown, copy.markdownAria, "taskmate-review-mode-raw", state.mode === "raw", () => dispatch({ type: "set-mode", mode: "raw" })));
   const list = element("div", "taskmate-review-files", container);
   for (const task of review.tasks) {
     const section = element("section", "taskmate-review-file", list);
     section.id = `taskmate-review-${task.taskId}`;
+    section.dataset.reviewAnchor = task.reviewId;
     const fileHeader = element("div", "taskmate-review-file-header", section);
-    appendTextElement(fileHeader, "span", task.reviewId, "taskmate-review-id");
-    appendTextElement(fileHeader, "h3", task.title);
+    const identity = element("div", "taskmate-review-file-identity", fileHeader);
+    appendTextElement(identity, "span", task.reviewId, "taskmate-review-id");
+    appendTextElement(identity, "h3", task.title);
     appendTextElement(fileHeader, "span", task.path, "taskmate-review-path");
     const taskIds = task.changes.map((change) => change.id);
     if (taskIds.length > 1) {
@@ -7244,6 +7260,7 @@ function renderTaskChangeReview(container, review, state, copy, dispatch) {
     if (state.mode === "semantic") {
       for (const change of task.changes) {
         const row = element("label", "taskmate-review-change", section);
+        row.dataset.reviewAnchor = change.id;
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.checked = state.approvedChangeIds.has(change.id);
@@ -7308,6 +7325,20 @@ function bulkButton(text, className, disabled, activate) {
   value.disabled = disabled;
   return value;
 }
+function responsiveBulkButton(longText, shortText, className, disabled, activate) {
+  const value = bulkButton("", className, disabled, activate);
+  value.setAttribute("aria-label", longText);
+  appendTextElement(value, "span", longText, "taskmate-review-wide-label");
+  appendTextElement(value, "span", shortText, "taskmate-review-compact-label");
+  return value;
+}
+function modeButton(text, accessibleName, className, active, activate) {
+  const value = button(text, activate, active);
+  value.classList.add(className);
+  value.setAttribute("aria-label", accessibleName);
+  value.setAttribute("aria-pressed", String(active));
+  return value;
+}
 function selectedCount(changeIds, selectedIds) {
   return changeIds.reduce((count, id) => count + (selectedIds.has(id) ? 1 : 0), 0);
 }
@@ -7315,6 +7346,30 @@ function formatValue(value) {
   if (value === null) return "\u2014";
   if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return String(value);
   return JSON.stringify(value);
+}
+
+// src/task-change-review-scroll.ts
+function captureReviewPosition(container, kind) {
+  const scrollTop = Math.max(0, container.scrollTop);
+  if (kind === "scroll") return { kind, scrollTop };
+  const top = container.getBoundingClientRect().top;
+  const anchors = Array.from(container.querySelectorAll("[data-review-anchor]"));
+  const nearest = anchors.reduce((best, item) => {
+    if (!best) return item;
+    return Math.abs(item.getBoundingClientRect().top - top) < Math.abs(best.getBoundingClientRect().top - top) ? item : best;
+  }, null);
+  const anchorId = nearest?.dataset.reviewAnchor;
+  if (!nearest || !anchorId) return { kind: "scroll", scrollTop };
+  return { kind, anchorId, offset: nearest.getBoundingClientRect().top - top, scrollTop };
+}
+function restoreReviewPosition(container, position) {
+  if (!position) return;
+  container.scrollTop = position.scrollTop;
+  if (position.kind !== "anchor") return;
+  const anchor = Array.from(container.querySelectorAll("[data-review-anchor]")).find((item) => item.dataset.reviewAnchor === position.anchorId);
+  if (!anchor) return;
+  const currentOffset = anchor.getBoundingClientRect().top - container.getBoundingClientRect().top;
+  container.scrollTop = Math.max(0, position.scrollTop + currentOffset - position.offset);
 }
 
 // src/task-change-review-view.ts
@@ -7342,7 +7397,7 @@ var TaskChangeReviewView = class extends import_obsidian15.ItemView {
     await this.render();
   }
   requestRender() {
-    void this.render();
+    void this.render("scroll");
   }
   async openProposal(proposalId, taskId, changeId) {
     this.proposalId = proposalId;
@@ -7351,7 +7406,8 @@ var TaskChangeReviewView = class extends import_obsidian15.ItemView {
     this.state = { mode: "semantic", approvedChangeIds: /* @__PURE__ */ new Set() };
     await this.render();
   }
-  async render() {
+  async render(preserve) {
+    const position = preserve ? captureReviewPosition(this.contentEl, preserve) : null;
     this.contentEl.empty();
     if (!this.proposalId) {
       const pending = await this.plugin.proposals.listPending();
@@ -7369,13 +7425,15 @@ var TaskChangeReviewView = class extends import_obsidian15.ItemView {
     try {
       this.review = await this.plugin.proposals.review(this.proposalId);
       renderTaskChangeReview(this.contentEl, this.review, this.state, this.copy(), (action) => void this.handle(action));
-      window.setTimeout(() => this.revealTarget(), 0);
+      if (position) restoreReviewPosition(this.contentEl, position);
+      else window.setTimeout(() => this.revealTarget(), 0);
     } catch (error) {
       console.error("TaskMate could not open Proposal", error);
       this.contentEl.createDiv({ cls: "taskmate-empty", text: this.plugin.i18n().t("review.invalid") });
     }
   }
   async handle(action) {
+    let preserve = action.type === "set-mode" ? "anchor" : action.type === "set-approved" || action.type === "set-many-approved" ? "scroll" : void 0;
     if (action.type === "set-mode") this.state = { ...this.state, mode: action.mode };
     if (action.type === "set-approved") {
       const next = new Set(this.state.approvedChangeIds);
@@ -7393,14 +7451,16 @@ var TaskChangeReviewView = class extends import_obsidian15.ItemView {
       new import_obsidian15.Notice(this.plugin.i18n().t("review.applied", { count: result.closedProposal.result?.succeededChangeIds.length ?? 0 }));
       this.proposalId = result.followUp?.id ?? null;
       this.state = { mode: "semantic", approvedChangeIds: /* @__PURE__ */ new Set() };
+      preserve = void 0;
     }
     if (action.type === "reject" && this.proposalId) {
       if (!window.confirm(this.plugin.i18n().t("review.rejectConfirm"))) return;
       await this.plugin.proposals.reject(this.proposalId);
       this.proposalId = null;
       new import_obsidian15.Notice(this.plugin.i18n().t("review.rejected"));
+      preserve = void 0;
     }
-    await this.render();
+    await this.render(preserve);
   }
   revealTarget() {
     if (!this.targetTaskId) return;
@@ -7421,11 +7481,16 @@ var TaskChangeReviewView = class extends import_obsidian15.ItemView {
       apply: t("review.apply"),
       reject: t("review.reject"),
       selectAll: t("review.selectAll"),
+      selectAllShort: t("review.selectAllShort"),
       selectTask: t("review.selectTask"),
       clearAll: t("review.clearAll"),
+      clearAllShort: t("review.clearAllShort"),
       clearTask: t("review.clearTask"),
       semantic: t("review.semantic"),
+      semanticAria: t("review.semanticAria"),
       markdown: t("review.markdown"),
+      markdownAria: t("review.markdownAria"),
+      comparisonAria: t("review.comparisonAria"),
       noSelection: t("review.noSelection")
     };
   }
@@ -7440,32 +7505,36 @@ var TaskChangeReviewModal = class extends import_obsidian15.Modal {
     this.modalEl.addClass("taskmate-review-modal");
     const review = await this.plugin.proposals.review(this.proposalId);
     let state = { mode: "semantic", approvedChangeIds: /* @__PURE__ */ new Set() };
-    const rerender = () => renderTaskChangeReview(this.contentEl, review, state, new TaskChangeReviewViewCopy(this.plugin).value, async (action) => {
-      if (action.type === "set-mode") state = { ...state, mode: action.mode };
-      if (action.type === "set-approved") {
-        const next = new Set(state.approvedChangeIds);
-        action.approved ? next.add(action.changeId) : next.delete(action.changeId);
-        state = { ...state, approvedChangeIds: next };
-      }
-      if (action.type === "set-many-approved") {
-        const next = new Set(state.approvedChangeIds);
-        for (const id of action.changeIds) action.approved ? next.add(id) : next.delete(id);
-        state = { ...state, approvedChangeIds: next };
-      }
-      if (action.type === "apply") {
-        await this.plugin.proposals.apply(this.proposalId, action.approvedChangeIds);
-        this.close();
-        return;
-      }
-      if (action.type === "reject") {
-        if (window.confirm(this.plugin.i18n().t("review.rejectConfirm"))) {
-          await this.plugin.proposals.reject(this.proposalId);
-          this.close();
+    const rerender = (preserve) => {
+      const position = preserve ? captureReviewPosition(this.contentEl, preserve) : null;
+      renderTaskChangeReview(this.contentEl, review, state, new TaskChangeReviewViewCopy(this.plugin).value, async (action) => {
+        if (action.type === "set-mode") state = { ...state, mode: action.mode };
+        if (action.type === "set-approved") {
+          const next = new Set(state.approvedChangeIds);
+          action.approved ? next.add(action.changeId) : next.delete(action.changeId);
+          state = { ...state, approvedChangeIds: next };
         }
-        return;
-      }
-      rerender();
-    });
+        if (action.type === "set-many-approved") {
+          const next = new Set(state.approvedChangeIds);
+          for (const id of action.changeIds) action.approved ? next.add(id) : next.delete(id);
+          state = { ...state, approvedChangeIds: next };
+        }
+        if (action.type === "apply") {
+          await this.plugin.proposals.apply(this.proposalId, action.approvedChangeIds);
+          this.close();
+          return;
+        }
+        if (action.type === "reject") {
+          if (window.confirm(this.plugin.i18n().t("review.rejectConfirm"))) {
+            await this.plugin.proposals.reject(this.proposalId);
+            this.close();
+          }
+          return;
+        }
+        rerender(action.type === "set-mode" ? "anchor" : "scroll");
+      });
+      if (position) restoreReviewPosition(this.contentEl, position);
+    };
     rerender();
   }
 };
@@ -7473,7 +7542,23 @@ var TaskChangeReviewViewCopy = class {
   value;
   constructor(plugin) {
     const { t } = plugin.i18n();
-    this.value = { title: t("review.title"), apply: t("review.apply"), reject: t("review.reject"), selectAll: t("review.selectAll"), selectTask: t("review.selectTask"), clearAll: t("review.clearAll"), clearTask: t("review.clearTask"), semantic: t("review.semantic"), markdown: t("review.markdown"), noSelection: t("review.noSelection") };
+    this.value = {
+      title: t("review.title"),
+      apply: t("review.apply"),
+      reject: t("review.reject"),
+      selectAll: t("review.selectAll"),
+      selectAllShort: t("review.selectAllShort"),
+      selectTask: t("review.selectTask"),
+      clearAll: t("review.clearAll"),
+      clearAllShort: t("review.clearAllShort"),
+      clearTask: t("review.clearTask"),
+      semantic: t("review.semantic"),
+      semanticAria: t("review.semanticAria"),
+      markdown: t("review.markdown"),
+      markdownAria: t("review.markdownAria"),
+      comparisonAria: t("review.comparisonAria"),
+      noSelection: t("review.noSelection")
+    };
   }
 };
 
