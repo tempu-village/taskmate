@@ -7,6 +7,7 @@ Do not place feature introductions, background narratives or implementation hist
 | Specification | Scope |
 | --- | --- |
 | [Task file format](task-file-format.md) | Markdown storage, identity, properties, Steps and compatibility |
+| [Task change Proposal format](task-change-proposal-format.md) | Proposal JSON schema, identifiers, evidence, lifecycle and URI security |
 
 ## 日本語参考
 

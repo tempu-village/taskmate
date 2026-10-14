@@ -48,6 +48,14 @@ _Avoid_: Draft task, temporary task
 The user's explicit approval, revision, or exclusion of a task proposal, retained with the proposal after review.
 _Avoid_: AI decision, implicit approval
 
+**ChangeSet**:
+An ordered set of typed instructions for changing fields of existing canonical Tasks. It expresses intended mutations but contains neither approval nor authoritative diff hunks.
+_Avoid_: Diff, approval record, Proposal
+
+**Task change Proposal**:
+A persisted, non-canonical review envelope containing a ChangeSet, complete before/after Markdown evidence, review decisions, and apply results. It never replaces canonical Task Markdown. This is distinct from a Source-note Proposal session.
+_Avoid_: ChangeSet, Task database, draft Task
+
 **Manual order**:
 One global user-defined task sequence preserved across every smart view.
 _Avoid_: View order, local order
@@ -59,6 +67,18 @@ _Avoid_: Folder, task container
 **Label**:
 A user-defined cross-project classification attached directly to a task.
 _Avoid_: Tag, category
+
+**Context label**:
+A user-editable Label under the `context/` prefix that describes circumstances in which a Task is practical to perform. It is not a Task status or required metadata.
+_Avoid_: Context status, system label
+
+**Capacity plan**:
+A Task Pilot suggestion sized to the user's stated available time and circumstances. It does not define a fixed Task count or rewrite Manual order.
+_Avoid_: Top three, daily status
+
+**Effort estimate**:
+A session-only range of active work time used to build a Capacity plan. It excludes elapsed waiting time and is neither a deadline nor a persisted actual duration.
+_Avoid_: Time record, due time
 
 **Priority**:
 An optional urgency rank from 1 through 3, where 1 is highest.

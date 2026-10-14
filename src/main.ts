@@ -7,11 +7,14 @@ import { TODO_VIEW_TYPE, TodoListView } from "./view";
 import { createI18n, isLanguagePreference } from "./i18n";
 import type { I18n } from "./i18n";
 import { detectObsidianLanguage } from "./i18n/obsidian-locale";
+import { TaskChangeProposalRepository } from "./task-change-proposal-repository";
+import { openProposalInReviewView, TASK_CHANGE_REVIEW_VIEW_TYPE, TaskChangeReviewView } from "./task-change-review-view";
 
 export default class TaskMatePlugin extends Plugin {
   settings: TaskMateSettings = DEFAULT_SETTINGS;
   repository!: TaskRepository;
   projects!: ProjectRepository;
+  proposals!: TaskChangeProposalRepository;
   private refreshTimer: number | null = null;
 
   async onload(): Promise<void> {
@@ -19,6 +22,7 @@ export default class TaskMatePlugin extends Plugin {
     const { t } = this.i18n();
     this.repository = new TaskRepository(this.app, () => this.settings.taskFolder);
     this.projects = new ProjectRepository(this.app, () => this.settings.projectFolder);
+    this.proposals = new TaskChangeProposalRepository(this.app, () => this.settings.proposalFolder, this.repository);
     try {
       const migrated = await this.repository.migrateLegacyFileNames();
       if (migrated > 0) new Notice(t("notice.migratedTaskNames", { count: migrated }));
@@ -27,10 +31,22 @@ export default class TaskMatePlugin extends Plugin {
       new Notice(t("notice.migrationFailed"));
     }
     this.registerView(TODO_VIEW_TYPE, (leaf) => new TodoListView(leaf, this));
+    this.registerView(TASK_CHANGE_REVIEW_VIEW_TYPE, (leaf) => new TaskChangeReviewView(leaf, this));
     this.addSettingTab(new TaskMateSettingTab(this.app, this));
 
     this.addRibbonIcon("circle-check-big", t("command.openRibbon"), () => void this.activateView());
     this.addCommand({ id: "open-todo-list", name: t("command.openList"), callback: () => void this.activateView() });
+    this.addCommand({ id: "open-task-change-reviews", name: t("command.openReviews"), callback: () => void this.openReviewIndex() });
+    this.registerObsidianProtocolHandler("taskmate-review", async (params) => {
+      const proposalId = params.proposal;
+      if (!proposalId || !/^proposal-[A-Za-z0-9._-]+$/.test(proposalId)) {
+        new Notice(this.i18n().t("review.invalidLink"));
+        return;
+      }
+      const taskId = typeof params.task === "string" && /^[A-Za-z0-9._-]+$/.test(params.task) ? params.task : undefined;
+      const changeId = typeof params.change === "string" && /^C-[0-9]{2,}$/.test(params.change) ? params.change : undefined;
+      await this.openProposalReview(proposalId, taskId, changeId);
+    });
     this.addCommand({
       id: "include-current-note-as-ai-source",
       name: t("command.includeNote"),
@@ -50,9 +66,15 @@ export default class TaskMatePlugin extends Plugin {
     const scheduleRefresh = (file: TFile) => {
       const taskPrefix = `${normalizePath(this.settings.taskFolder)}/`;
       const projectPrefix = `${normalizePath(this.settings.projectFolder)}/`;
-      if (!file.path.startsWith(taskPrefix) && !file.path.startsWith(projectPrefix)) return;
+      const proposalPrefix = `${normalizePath(this.settings.proposalFolder)}/`;
+      if (!file.path.startsWith(taskPrefix) && !file.path.startsWith(projectPrefix) && !file.path.startsWith(proposalPrefix)) return;
       if (this.refreshTimer !== null) window.clearTimeout(this.refreshTimer);
-      this.refreshTimer = window.setTimeout(() => this.refreshViews(), 100);
+      this.refreshTimer = window.setTimeout(() => {
+        this.refreshViews();
+        for (const leaf of this.app.workspace.getLeavesOfType(TASK_CHANGE_REVIEW_VIEW_TYPE)) {
+          if (leaf.view instanceof TaskChangeReviewView) leaf.view.requestRender();
+        }
+      }, 100);
     };
     this.registerEvent(this.app.vault.on("create", (file) => { if (file instanceof TFile) scheduleRefresh(file); }));
     this.registerEvent(this.app.vault.on("modify", (file) => { if (file instanceof TFile) scheduleRefresh(file); }));
@@ -71,6 +93,25 @@ export default class TaskMatePlugin extends Plugin {
       await leaf.setViewState({ type: TODO_VIEW_TYPE, active: true });
     }
     await this.app.workspace.revealLeaf(leaf);
+  }
+
+  async activateReviewView(): Promise<TaskChangeReviewView> {
+    let leaf = this.app.workspace.getLeavesOfType(TASK_CHANGE_REVIEW_VIEW_TYPE)[0];
+    if (!leaf) {
+      leaf = this.app.workspace.getLeaf(false);
+      await leaf.setViewState({ type: TASK_CHANGE_REVIEW_VIEW_TYPE, active: true });
+    }
+    await this.app.workspace.revealLeaf(leaf);
+    return leaf.view as TaskChangeReviewView;
+  }
+
+  async openReviewIndex(): Promise<void> {
+    const view = await this.activateReviewView();
+    await view.openIndex();
+  }
+
+  async openProposalReview(proposalId: string, taskId?: string, changeId?: string): Promise<void> {
+    await openProposalInReviewView(() => this.activateReviewView(), proposalId, taskId, changeId);
   }
 
   refreshViews(): void {

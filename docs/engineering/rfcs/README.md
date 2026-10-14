@@ -17,6 +17,16 @@ RFCs do not duplicate Issue requirements, work tasks, progress checklists or sta
 
 When product behavior is implemented, create or update its [Feature](../features/README.md) from the behavior confirmed by implementation, tests and review, then link both directions and move the RFC to `implemented`. Put shared strict contracts in [Specifications](../specifications/README.md), cross-cutting structure in [Design](../design/README.md), operational behavior in [Operations](../../operations/README.md), and durable rationale in an [ADR](../adr/README.md) when needed. Keep the RFC substantially unchanged as decision-process history after implementation.
 
+## RFC lifecycle
+
+1. **Write the proposal in an RFC.** Record the problem, proposed design, alternatives and comparison, open questions and acceptance conditions. Keep the RFC in `draft` while these points are under review.
+2. **Review and decide.** Resolve the open questions and move the RFC from `draft` to `accepted` once the direction is agreed. `accepted` authorizes implementation; it does not claim that implementation is complete.
+3. **Implement the accepted design.** Keep material departures from the accepted design traceable in an RFC amendment, a follow-up RFC or the implementation pull request. Do not silently rewrite the accepted proposal.
+4. **Update the current authorities from the implemented result.** Describe confirmed user-visible behavior and feature-specific processing in a Feature; strict schemas, state transitions and compatibility contracts in a Specification; cross-cutting current structure in Design; and only hard-to-reverse, consequential decisions in an ADR. Derive these records from code, tests and review, not from the proposal alone.
+5. **Mark the RFC `implemented`.** Add reciprocal links to the current authorities and link the implementation pull request or verified release when available. Preserve the RFC as the history of why the design was chosen.
+
+Do not move an RFC directly from proposal to current authority. For example, RFC 0032 remains the home for its proposal, alternatives and decision history until agreement and implementation; only the confirmed current behavior and contracts are promoted to Feature, Specification or Design afterward.
+
 | RFC | Status | Current authority |
 | --- | --- | --- |
 | [0003 Establish reproducible GitHub releases](0003-establish-reproducible-github-releases.md) | implemented | [Releasing](../../operations/releasing.md) |
@@ -33,6 +43,7 @@ When product behavior is implemented, create or update its [Feature](../features
 | [0028 Long task titles](0028-prevent-long-task-titles-from-scrolling-mobile-lists-horizontally.md) | superseded | [Task editing](../features/task-editing.md) |
 | [0030 Preserve list scroll](0030-preserve-task-list-scroll-position-during-multi-selection.md) | implemented | [Task editing](../features/task-editing.md) |
 | [0031 Title disclosure](0031-fix-title-disclosure-and-two-line-clipping.md) | implemented | [Task editing](../features/task-editing.md) |
+| [0032 Task change preview diff engine](0032-use-jsdiff-for-task-change-preview.md) | implemented | [Task change review](../features/task-change-review/README.md) |
 | [Reproducible development environment](document-reproducible-development-environment.md) | draft | [Testing design](../design/testing.md) |
 | [Minimal view presentation seam](establish-minimal-view-presentation-seam.md) | implemented | [Architecture design](../design/architecture.md) |
 | [Sorting and editor sizing](improve-sorting-and-task-editor-sizing.md) | implemented | [Filtering and sorting](../features/filtering-and-sorting.md) |
@@ -67,3 +78,13 @@ Use [the lightweight RFC template](../../templates/rfc.md). At minimum, include 
 <!-- translation-status: ai-translated -->
 
 RFCは大きな変更の提案から実装判断まで、背景、目的、非目標、提案設計、制約、代替案、移行、受け入れ条件、判断理由を残す履歴です。状態は`draft`、`accepted`、`implemented`、`rejected`、`superseded`です。`accepted`は方針への合意であり、実装・リリース・最終設計との完全一致を保証しません。実装中の重要な差分はRFC追記、後続RFC、または実装PRで追跡可能にします。Issueの作業管理を複製せず、実装後は確定した現行動作をFeatureへ反映して相互リンクし、RFC自体は大きく書き換えず判断履歴として残します。運用・横断設計だけを扱うRFCは、Featureを無理に作らずOperationsまたはDesignを現在の正本にします。
+
+### RFCの進行手順
+
+1. **RFCに提案を書く。** 解決する問題、提案設計、選択肢と比較、未決事項、受け入れ条件を記録し、レビュー中は`draft`にします。
+2. **レビューして決める。** 未決事項について合意し、方針が決まったら`accepted`にします。`accepted`は実装開始の合意であり、実装完了を意味しません。
+3. **合意した設計を実装する。** 実装中の重要な変更はRFCの追記、後続RFC、または実装PRに記録し、合意済みの提案を黙って書き換えません。
+4. **実装結果を現在仕様の正本へ反映する。** コード、テスト、レビューで確認した結果を基に、ユーザーから見た挙動と機能固有の処理はFeature、schema・状態遷移・互換性などの厳密な契約はSpecification、横断的な現在構造はDesignへ反映します。戻しにくい重要判断だけ、必要に応じてADRへ残します。
+5. **RFCを`implemented`にする。** 現在仕様の正本と相互リンクし、利用可能なら実装PRまたは確認済みreleaseもリンクします。RFCは「なぜその設計を選んだか」という判断履歴として残します。
+
+たとえばRFC 0032では、合意と実装までは提案・比較・判断履歴をRFC 0032へ統合します。実装後に確定した現在の挙動と契約だけをFeature、Specification、Designへ反映します。
