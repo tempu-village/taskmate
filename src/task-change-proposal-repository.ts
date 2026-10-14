@@ -8,6 +8,7 @@ import {
 import type {
   ProposalDecisionResult,
   ProposalReview,
+  ProposalTask,
   TaskChangeProposal
 } from "./task-change-proposal";
 
@@ -100,9 +101,10 @@ export class TaskChangeProposalRepository {
       const source = await this.tasks.readReviewedTask(item.taskId, item.path);
       if (source.status === "ready") current.set(item.taskId, source.content);
     }
+    const followUpProposalId = `${proposal.id}-follow-up-${now.replace(/\D/g, "").slice(0, 14)}`;
     const result = await applyProposalDecision(proposal, approvedChangeIds, current, {
       decidedAt: now,
-      followUpProposalId: `${proposal.id}-follow-up-${now.replace(/\D/g, "").slice(0, 14)}`
+      followUpProposalId
     });
 
     const writeFailures: Array<{ taskId: string; changeIds: string[]; error: string }> = [];
@@ -120,8 +122,21 @@ export class TaskChangeProposalRepository {
     if (writeFailures.length > 0) {
       const failedTaskIds = new Set(writeFailures.map((failure) => failure.taskId));
       const retainedFollowUpTasks = result.followUp?.tasks.filter((task) => !failedTaskIds.has(task.taskId)) ?? [];
-      const retainedFollowUp = result.followUp && retainedFollowUpTasks.length > 0
-        ? { ...result.followUp, tasks: retainedFollowUpTasks }
+      const regeneratedTasks = (await Promise.all(
+        writeFailures.map((failure) => this.regenerateWriteFailure(proposal, failure.taskId, now, followUpProposalId))
+      )).filter((task): task is ProposalTask => task !== null);
+      const followUpTasks = reindexChanges([...retainedFollowUpTasks, ...regeneratedTasks]);
+      const retainedFollowUp = followUpTasks.length > 0
+        ? {
+            ...(result.followUp ?? {
+              schemaVersion: proposal.schemaVersion,
+              id: followUpProposalId,
+              status: "pending" as const,
+              createdAt: now,
+              originProposalId: proposal.id
+            }),
+            tasks: followUpTasks
+          }
         : null;
       finalResult = {
         ...result,
@@ -153,6 +168,25 @@ export class TaskChangeProposalRepository {
       decision: { decidedAt: now, approvedChangeIds: [], rejectedChangeIds: changeIds },
       result: { appliedAt: now, succeededChangeIds: [], failed: [], followUpProposalId: null }
     });
+  }
+
+  private async regenerateWriteFailure(
+    proposal: TaskChangeProposal,
+    taskId: string,
+    now: string,
+    followUpProposalId: string
+  ): Promise<ProposalTask | null> {
+    const proposalTask = proposal.tasks.find((task) => task.taskId === taskId);
+    if (!proposalTask) return null;
+    const source = await this.tasks.readReviewedTask(proposalTask.taskId, proposalTask.path);
+    if (source.status !== "ready") return null;
+    const regenerated = await applyProposalDecision(
+      { ...proposal, tasks: [proposalTask] },
+      proposalTask.changes.map((change) => change.id),
+      new Map([[proposalTask.taskId, source.content]]),
+      { decidedAt: now, followUpProposalId }
+    );
+    return regenerated.followUp?.tasks[0] ?? null;
   }
 
   private folder(): string {
@@ -191,6 +225,14 @@ export class TaskChangeProposalRepository {
       if (!this.app.vault.getAbstractFileByPath(current)) await this.app.vault.createFolder(current);
     }
   }
+}
+
+function reindexChanges(tasks: ProposalTask[]): ProposalTask[] {
+  let index = 1;
+  return tasks.map((task) => ({
+    ...task,
+    changes: task.changes.map((change) => ({ ...change, id: `C-${String(index++).padStart(2, "0")}` }))
+  }));
 }
 
 function summarize(proposal: TaskChangeProposal): ProposalSummary {

@@ -121,17 +121,32 @@ describe("TaskChangeProposalRepository", () => {
     const sources = new Map([[first.id, firstBefore], [second.id, secondBefore]]);
     const tasks = {
       readReviewedTask: async (taskId: string) => ({ status: "ready" as const, path: taskId === first.id ? first.path : second.path, content: sources.get(taskId)! }),
-      writeReviewedTask: async (taskId: string) => taskId === second.id
-        ? { status: "stale" as const }
-        : { status: "saved" as const, path: first.path }
+      writeReviewedTask: async (taskId: string) => {
+        if (taskId === second.id) {
+          sources.set(second.id, encodeTask({ ...second, notes: "Changed during write", updatedAt: "2026-10-12T01:00:00.000Z" }));
+          return { status: "stale" as const };
+        }
+        return { status: "saved" as const, path: first.path };
+      }
     } as unknown as TaskRepository;
     const proposals = new TaskChangeProposalRepository(app, () => "TaskMate/Proposals", tasks);
 
     const result = await proposals.apply("proposal-001", ["C-01", "C-03"], "2026-10-12T01:00:00.000Z");
 
     expect(result.status).toBe("partially-applied");
-    expect(result.followUp?.tasks).toHaveLength(1);
-    expect(result.followUp?.tasks[0]).toEqual(expect.objectContaining({ taskId: first.id }));
+    expect(result.followUp?.tasks).toHaveLength(2);
+    expect(result.followUp?.tasks).toEqual(expect.arrayContaining([
+      expect.objectContaining({ taskId: first.id }),
+      expect.objectContaining({
+        taskId: second.id,
+        beforeMarkdown: sources.get(second.id),
+        changes: [expect.objectContaining({
+          id: "C-02",
+          field: "priority",
+          origin: { proposalId: "proposal-001", changeId: "C-03" }
+        })]
+      })
+    ]));
     expect(result.closedProposal.result?.failed).toContainEqual(expect.objectContaining({ taskId: second.id }));
     expect(vault.files.has(`TaskMate/Proposals/${result.followUp?.id}.json`)).toBe(true);
   });

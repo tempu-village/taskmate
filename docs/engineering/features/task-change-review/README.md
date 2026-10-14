@@ -23,6 +23,8 @@ The initial scope covers scheduled date, Priority, Labels, title, Steps, and Not
 
 Affected Tasks appear directly as always-expanded sections; there is no separate Task index or collapse interaction. A section header shows the Task title but omits the stored file path and change counts. Compact section gaps and header padding prioritize the change content vertically. The review toolbar separates selection from display. Selection uses persistent select-all and clear-all buttons whose unavailable action remains visible but disabled. Display uses an `Items / Full text` segmented control. Task-level bulk controls appear only when a Task has more than one change. Selection redraws preserve numeric scroll position; switching between Items and Full text restores the nearest stable Task UUID or `C-xx` anchor.
 
+Full text is a unified diff of the Proposal's recorded before/after Markdown: `-` lines are removed, `+` lines are added, and unprefixed lines are unchanged context around a change. It does not compare the live Task while the review is open. The serializer updates `updated-at` when it creates proposed Markdown and can normalize Markdown formatting, so Full text can include those generated differences in addition to the visible ChangeSet fields.
+
 The review surface contains horizontal overflow at every level except the Full text diff itself. Long titles, reasons and controls wrap within the available width. The sticky footer remains above Task headers and reserves mobile toolbar and safe-area clearance.
 Proposal identifiers in pending and history lists wrap within the available width. Proposal name, status, success/failure counts and Task/change counts each occupy separate rows so long names cannot overlap metadata or create page-level horizontal scrolling, including when a name wraps to three or more lines on phones.
 
@@ -78,6 +80,7 @@ The strict persisted format, lifecycle and URI security contract are defined by 
 
 - Missing or malformed Proposals or ChangeSets remain unapplied and show a recoverable error.
 - A source hash mismatch blocks the old write, marks all affected changes stale, and regenerates still-relevant changes against the current Task in the follow-up Proposal.
+- Manual order is stored in each Task's `rank` frontmatter. The approved-change writer preserves it, but a Manual-order change after Proposal creation changes the complete Markdown snapshot and therefore causes stale rather than risking an overwrite; the follow-up Proposal uses the newer order as its baseline.
 - If every selected change is stale, the completion notice explains that zero changes were applied and that a new review Proposal was created.
 - A stale or failed Task does not discard follow-up changes belonging to another successfully validated Task.
 - An invalid operation blocks only the affected proposal unless atomicity is required by the operation group.

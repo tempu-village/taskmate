@@ -43,7 +43,7 @@ Do not move an RFC directly from proposal to current authority. For example, RFC
 | [0028 Long task titles](0028-prevent-long-task-titles-from-scrolling-mobile-lists-horizontally.md) | superseded | [Task editing](../features/task-editing.md) |
 | [0030 Preserve list scroll](0030-preserve-task-list-scroll-position-during-multi-selection.md) | implemented | [Task editing](../features/task-editing.md) |
 | [0031 Title disclosure](0031-fix-title-disclosure-and-two-line-clipping.md) | implemented | [Task editing](../features/task-editing.md) |
-| [0032 Task change preview diff engine](0032-use-jsdiff-for-task-change-preview.md) | accepted | Proposed; no current authority |
+| [0032 Task change preview diff engine](0032-use-jsdiff-for-task-change-preview.md) | implemented | [Task change review](../features/task-change-review/README.md) |
 | [Reproducible development environment](document-reproducible-development-environment.md) | draft | [Testing design](../design/testing.md) |
 | [Minimal view presentation seam](establish-minimal-view-presentation-seam.md) | implemented | [Architecture design](../design/architecture.md) |
 | [Sorting and editor sizing](improve-sorting-and-task-editor-sizing.md) | implemented | [Filtering and sorting](../features/filtering-and-sorting.md) |
