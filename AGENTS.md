@@ -15,7 +15,7 @@ For every task, read the smallest relevant record first:
 
 Keep the Obsidian plugin mobile-compatible by using public Obsidian and browser APIs. Keep task Markdown compatible with [the task schema](skills/taskpilot/references/task-schema.md). Preserve one global manual rank; automatic sorting is display-only. Treat source folders and `taskmate-source` as a strict allowlist, and complete a coverage review before any candidate is excluded.
 
-Record domain terms only in [CONTEXT.md](CONTEXT.md). Record hard-to-reverse trade-offs in [ADRs](docs/engineering/adr/). Before an ADR-worthy UI or navigation decision, establish the user's goal or constraint and record the accepted rationale. Use the `write-taskmate-github-issues` repository skill for Issue work.
+Record domain terms only in [CONTEXT.md](CONTEXT.md). Record hard-to-reverse trade-offs in [ADRs](docs/engineering/adr/). Before an ADR-worthy UI or navigation decision, establish the user's goal or constraint and record the accepted rationale. Use the shared `write-github-issues` skill for Issue work.
 
 When implementing an RFC that changes product behavior, confirm the landed behavior from code, tests and review; create or update the applicable Feature; add reciprocal RFC/Feature links and the implementation PR or verified release when available; then mark the RFC `implemented`. Keep proposal-only discussion and alternatives in the RFC, and do not rewrite implemented RFC history into a current specification.
 
