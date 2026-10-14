@@ -14,7 +14,7 @@ The initial scope covers scheduled date, Priority, Labels, title, Steps, and Not
 
 1. Task Pilot records a Proposal containing a ChangeSet without modifying the canonical Task files.
 2. TaskMate opens the pending Proposal from an Obsidian URI handoff or its pending-review list.
-3. Desktop uses a dedicated ItemView; mobile uses a full-screen modal.
+3. Desktop and mobile use the same dedicated ItemView so URI handoff and pending-review selection share one tested rendering path.
 4. The Review View presents a compact continuous list of proposed changes with stable change identifiers.
 5. The user can switch between semantic and raw Markdown diffs and approve changes individually.
 6. Opening a Proposal never applies it. TaskMate writes only the explicitly approved changes.

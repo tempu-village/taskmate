@@ -6,9 +6,42 @@ vi.mock("obsidian", () => ({
   Notice: class {}
 }));
 
-import { TaskChangeReviewView } from "../src/task-change-review-view";
+import { openProposalInReviewView, TaskChangeReviewView } from "../src/task-change-review-view";
 
 describe("Task change review view", () => {
+  it("routes URI navigation through the working review view", async () => {
+    const openProposal = vi.fn().mockResolvedValue(undefined);
+    const activate = vi.fn().mockResolvedValue({ openProposal });
+
+    await openProposalInReviewView(activate, "proposal-new", "task-new", "C-02");
+
+    expect(activate).toHaveBeenCalledOnce();
+    expect(openProposal).toHaveBeenCalledWith("proposal-new", "task-new", "C-02");
+  });
+
+  it("opens a URI-targeted Proposal in the same review view", async () => {
+    const view = Object.create(TaskChangeReviewView.prototype) as TaskChangeReviewView;
+    const render = vi.fn().mockResolvedValue(undefined);
+    Object.assign(view, {
+      proposalId: null,
+      targetTaskId: null,
+      targetChangeId: null,
+      review: null,
+      state: { mode: "raw", approvedChangeIds: new Set(["C-99"]) },
+      render
+    });
+
+    await view.openProposal("proposal-new", "task-new", "C-02");
+
+    expect(render).toHaveBeenCalledOnce();
+    expect(view).toEqual(expect.objectContaining({
+      proposalId: "proposal-new",
+      targetTaskId: "task-new",
+      targetChangeId: "C-02",
+      state: { mode: "semantic", approvedChangeIds: new Set() }
+    }));
+  });
+
   it("returns an existing review view to a freshly rendered pending index", async () => {
     const view = Object.create(TaskChangeReviewView.prototype) as TaskChangeReviewView;
     const render = vi.fn().mockResolvedValue(undefined);

@@ -1,4 +1,4 @@
-import { Notice, Platform, Plugin, TFile, normalizePath } from "obsidian";
+import { Notice, Plugin, TFile, normalizePath } from "obsidian";
 import { TaskRepository } from "./repository";
 import { ProjectRepository } from "./project-repository";
 import { DEFAULT_SETTINGS, TaskMateSettingTab } from "./settings";
@@ -8,7 +8,7 @@ import { createI18n, isLanguagePreference } from "./i18n";
 import type { I18n } from "./i18n";
 import { detectObsidianLanguage } from "./i18n/obsidian-locale";
 import { TaskChangeProposalRepository } from "./task-change-proposal-repository";
-import { TASK_CHANGE_REVIEW_VIEW_TYPE, TaskChangeReviewModal, TaskChangeReviewView } from "./task-change-review-view";
+import { openProposalInReviewView, TASK_CHANGE_REVIEW_VIEW_TYPE, TaskChangeReviewView } from "./task-change-review-view";
 
 export default class TaskMatePlugin extends Plugin {
   settings: TaskMateSettings = DEFAULT_SETTINGS;
@@ -111,12 +111,7 @@ export default class TaskMatePlugin extends Plugin {
   }
 
   async openProposalReview(proposalId: string, taskId?: string, changeId?: string): Promise<void> {
-    if (Platform.isMobile) {
-      new TaskChangeReviewModal(this, proposalId).open();
-      return;
-    }
-    const view = await this.activateReviewView();
-    await view.openProposal(proposalId, taskId, changeId);
+    await openProposalInReviewView(() => this.activateReviewView(), proposalId, taskId, changeId);
   }
 
   refreshViews(): void {

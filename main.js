@@ -7421,6 +7421,10 @@ function restoreReviewPosition(container, position) {
 
 // src/task-change-review-view.ts
 var TASK_CHANGE_REVIEW_VIEW_TYPE = "taskmate-change-review";
+async function openProposalInReviewView(activate, proposalId, taskId, changeId) {
+  const view = await activate();
+  await view.openProposal(proposalId, taskId, changeId);
+}
 var TaskChangeReviewView = class extends import_obsidian15.ItemView {
   constructor(leaf, plugin) {
     super(leaf);
@@ -7517,40 +7521,6 @@ var TaskChangeReviewView = class extends import_obsidian15.ItemView {
     }
     this.targetTaskId = null;
     this.targetChangeId = null;
-  }
-};
-var TaskChangeReviewModal = class extends import_obsidian15.Modal {
-  constructor(plugin, proposalId) {
-    super(plugin.app);
-    this.plugin = plugin;
-    this.proposalId = proposalId;
-  }
-  async onOpen() {
-    this.modalEl.addClass("taskmate-review-modal");
-    const review = await this.plugin.proposals.review(this.proposalId);
-    let state = createTaskChangeReviewState();
-    const rerender = (preserve) => {
-      const position = preserve ? captureReviewPosition(this.contentEl, preserve) : null;
-      renderTaskChangeReview(this.contentEl, review, state, reviewCopy(this.plugin), (action) => void handle(action));
-      if (position) restoreReviewPosition(this.contentEl, position);
-    };
-    const handle = async (action) => {
-      state = reduceTaskChangeReviewState(state, action);
-      if (action.type === "apply") {
-        await this.plugin.proposals.apply(this.proposalId, action.approvedChangeIds);
-        this.close();
-        return;
-      }
-      if (action.type === "reject") {
-        if (window.confirm(this.plugin.i18n().t("review.rejectConfirm"))) {
-          await this.plugin.proposals.reject(this.proposalId);
-          this.close();
-        }
-        return;
-      }
-      rerender(action.type === "set-mode" ? "anchor" : "scroll");
-    };
-    rerender();
   }
 };
 function reviewCopy(plugin) {
@@ -7676,12 +7646,7 @@ var TaskMatePlugin = class extends import_obsidian16.Plugin {
     await view.openIndex();
   }
   async openProposalReview(proposalId, taskId, changeId) {
-    if (import_obsidian16.Platform.isMobile) {
-      new TaskChangeReviewModal(this, proposalId).open();
-      return;
-    }
-    const view = await this.activateReviewView();
-    await view.openProposal(proposalId, taskId, changeId);
+    await openProposalInReviewView(() => this.activateReviewView(), proposalId, taskId, changeId);
   }
   refreshViews() {
     for (const leaf of this.app.workspace.getLeavesOfType(TODO_VIEW_TYPE)) {

@@ -1,4 +1,4 @@
-import { ItemView, Modal, Notice, WorkspaceLeaf } from "obsidian";
+import { ItemView, Notice, WorkspaceLeaf } from "obsidian";
 import type TaskMatePlugin from "./main";
 import { createTaskChangeReviewState, reduceTaskChangeReviewState, renderTaskChangeReview } from "./task-change-review-renderer";
 import type { TaskChangeReviewAction, TaskChangeReviewCopy, TaskChangeReviewState } from "./task-change-review-renderer";
@@ -6,6 +6,16 @@ import type { ProposalReview } from "./task-change-proposal";
 import { captureReviewPosition, restoreReviewPosition } from "./task-change-review-scroll";
 
 export const TASK_CHANGE_REVIEW_VIEW_TYPE = "taskmate-change-review";
+
+export async function openProposalInReviewView(
+  activate: () => Promise<Pick<TaskChangeReviewView, "openProposal">>,
+  proposalId: string,
+  taskId?: string,
+  changeId?: string
+): Promise<void> {
+  const view = await activate();
+  await view.openProposal(proposalId, taskId, changeId);
+}
 
 export class TaskChangeReviewView extends ItemView {
   private proposalId: string | null = null;
@@ -104,28 +114,6 @@ export class TaskChangeReviewView extends ItemView {
     this.targetChangeId = null;
   }
 
-}
-
-export class TaskChangeReviewModal extends Modal {
-  constructor(private readonly plugin: TaskMatePlugin, private readonly proposalId: string) { super(plugin.app); }
-
-  async onOpen(): Promise<void> {
-    this.modalEl.addClass("taskmate-review-modal");
-    const review = await this.plugin.proposals.review(this.proposalId);
-    let state: TaskChangeReviewState = createTaskChangeReviewState();
-    const rerender = (preserve?: "scroll" | "anchor") => {
-      const position = preserve ? captureReviewPosition(this.contentEl, preserve) : null;
-      renderTaskChangeReview(this.contentEl, review, state, reviewCopy(this.plugin), (action) => void handle(action));
-      if (position) restoreReviewPosition(this.contentEl, position);
-    };
-    const handle = async (action: TaskChangeReviewAction) => {
-      state = reduceTaskChangeReviewState(state, action);
-      if (action.type === "apply") { await this.plugin.proposals.apply(this.proposalId, action.approvedChangeIds); this.close(); return; }
-      if (action.type === "reject") { if (window.confirm(this.plugin.i18n().t("review.rejectConfirm"))) { await this.plugin.proposals.reject(this.proposalId); this.close(); } return; }
-      rerender(action.type === "set-mode" ? "anchor" : "scroll");
-    };
-    rerender();
-  }
 }
 
 function reviewCopy(plugin: TaskMatePlugin): TaskChangeReviewCopy {
