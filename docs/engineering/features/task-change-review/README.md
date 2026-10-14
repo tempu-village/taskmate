@@ -74,7 +74,7 @@ The strict persisted format, lifecycle and URI security contract are defined by 
 ## Failure handling
 
 - Missing or malformed Proposals or ChangeSets remain unapplied and show a recoverable error.
-- A source hash mismatch marks affected changes stale and requires regeneration.
+- A source hash mismatch blocks the old write, marks all affected changes stale, and regenerates still-relevant changes against the current Task in the follow-up Proposal.
 - A stale or failed Task does not discard follow-up changes belonging to another successfully validated Task.
 - An invalid operation blocks only the affected proposal unless atomicity is required by the operation group.
 - URI handoff failure does not lose review data; the pending-review list remains the fallback.
@@ -96,7 +96,7 @@ The strict persisted format, lifecycle and URI security contract are defined by 
 - REVIEW-12: Proposal history is retained until the user removes it.
 - REVIEW-13: A partial approval closes the original Proposal with its result; any follow-up uses new `C-xx` identifiers and retains origin references.
 - REVIEW-14: Every affected Task remains visible in one compact continuous list whose headers omit index navigation, collapse controls, paths and counts.
-- REVIEW-15: A stale or failed Task does not suppress a successfully validated Task's unapplied changes from the follow-up Proposal.
+- REVIEW-15: A stale Task reappears in the follow-up Proposal with its current Markdown as the new baseline; it also does not suppress another Task's unapplied changes.
 - REVIEW-16: macOS, Windows, and Linux launch the review URI without shell interpolation; launch failure preserves pending-review discovery.
 
 ## Related documents

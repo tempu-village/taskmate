@@ -166,6 +166,51 @@ describe("Task change Proposal review", () => {
     expect(result.closedProposal.result?.failed[0]).toEqual(expect.objectContaining({ taskId: "task-uuid" }));
   });
 
+  it("regenerates an unselected stale Task in the follow-up Proposal", async () => {
+    const before = encodeTask(task());
+    const current = encodeTask(task({ notes: "External edit", updatedAt: "2026-10-12T00:30:00.000Z" }));
+    const proposal: TaskChangeProposal = {
+      schemaVersion: 1,
+      id: "proposal-001",
+      status: "pending",
+      createdAt: "2026-10-12T00:00:00.000Z",
+      tasks: [{
+        taskId: "task-uuid",
+        path: "TaskMate/Tasks/Example.md",
+        title: "Example",
+        beforeMarkdown: before,
+        afterMarkdown: encodeTask(task({ priority: 1, updatedAt: "2026-10-12T01:00:00.000Z" })),
+        beforeSha256: await sha256(before),
+        changes: [{ id: "C-01", field: "priority", before: null, after: 1, reason: "Prioritize" }]
+      }]
+    };
+
+    const result = await applyProposalDecision(
+      proposal,
+      [],
+      new Map([["task-uuid", current]]),
+      { decidedAt: "2026-10-12T02:00:00.000Z", followUpProposalId: "proposal-002" }
+    );
+
+    expect(result.writes).toEqual([]);
+    expect(result.followUp?.tasks).toHaveLength(1);
+    expect(result.followUp?.tasks[0]).toEqual(expect.objectContaining({
+      taskId: "task-uuid",
+      beforeMarkdown: current,
+      beforeSha256: await sha256(current)
+    }));
+    expect(result.followUp?.tasks[0].changes).toEqual([
+      expect.objectContaining({
+        id: "C-01",
+        field: "priority",
+        before: null,
+        after: 1,
+        origin: { proposalId: "proposal-001", changeId: "C-01" }
+      })
+    ]);
+    expect(result.followUp?.tasks[0].afterMarkdown).toContain("External edit");
+  });
+
   it("keeps a valid Task's unapplied changes when another Task is stale", async () => {
     const first = task({ id: "task-first", path: "TaskMate/Tasks/First.md", title: "First" });
     const second = task({ id: "task-second", path: "TaskMate/Tasks/Second.md", title: "Second" });
@@ -209,10 +254,14 @@ describe("Task change Proposal review", () => {
     );
 
     expect(result.status).toBe("partially-applied");
-    expect(result.followUp?.tasks).toHaveLength(1);
+    expect(result.followUp?.tasks).toHaveLength(2);
     expect(result.followUp?.tasks[0]).toEqual(expect.objectContaining({ taskId: first.id }));
     expect(result.followUp?.tasks[0].changes).toEqual([
       expect.objectContaining({ field: "notes", origin: { proposalId: "proposal-001", changeId: "C-02" } })
+    ]);
+    expect(result.followUp?.tasks[1]).toEqual(expect.objectContaining({ taskId: second.id }));
+    expect(result.followUp?.tasks[1].changes).toEqual([
+      expect.objectContaining({ field: "priority", origin: { proposalId: "proposal-001", changeId: "C-03" } })
     ]);
     expect(result.closedProposal.result?.failed).toEqual([
       expect.objectContaining({ taskId: second.id, changeIds: ["C-03"] })

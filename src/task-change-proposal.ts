@@ -145,12 +145,40 @@ export async function applyProposalDecision(
     const approvedForTask = proposalTask.changes.filter((change) => approved.has(change.id));
     const rejectedForTask = proposalTask.changes.filter((change) => !approved.has(change.id));
     const current = currentMarkdownByTaskId.get(proposalTask.taskId);
-    if (current === undefined || await sha256(current) !== proposalTask.beforeSha256 || current !== proposalTask.beforeMarkdown) {
-      if (approvedForTask.length > 0) {
-        failed.push({
-          taskId: proposalTask.taskId,
-          changeIds: approvedForTask.map((change) => change.id),
-          error: current === undefined ? "Task is missing" : "Task changed after review"
+    if (current === undefined) {
+      failed.push({
+        taskId: proposalTask.taskId,
+        changeIds: proposalTask.changes.map((change) => change.id),
+        error: "Task is missing"
+      });
+      continue;
+    }
+    if (await sha256(current) !== proposalTask.beforeSha256 || current !== proposalTask.beforeMarkdown) {
+      failed.push({
+        taskId: proposalTask.taskId,
+        changeIds: proposalTask.changes.map((change) => change.id),
+        error: "Task changed after review"
+      });
+      const currentTask = parseRequiredTask(proposalTask.path, current, proposalTask.taskId);
+      const desiredTask = parseRequiredTask(proposalTask.path, proposalTask.afterMarkdown, proposalTask.taskId);
+      const remainingChanges = proposalTask.changes.filter((change) =>
+        !sameValue(taskField(currentTask, change.field), taskField(desiredTask, change.field))
+      );
+      if (remainingChanges.length > 0) {
+        const regeneratedAfterTask = applyFields(currentTask, desiredTask, remainingChanges.map((change) => change.field));
+        followUpTasks.push({
+          ...withoutLegacyReviewId(proposalTask),
+          title: currentTask.title,
+          beforeMarkdown: current,
+          afterMarkdown: encodeTaskPreservingProperties(regeneratedAfterTask, current),
+          beforeSha256: await sha256(current),
+          changes: remainingChanges.map((change) => ({
+            ...change,
+            id: `C-${String(nextFollowUpChange++).padStart(2, "0")}`,
+            before: taskField(currentTask, change.field),
+            after: taskField(desiredTask, change.field),
+            origin: { proposalId: proposal.id, changeId: change.id }
+          }))
         });
       }
       continue;
