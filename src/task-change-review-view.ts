@@ -26,6 +26,15 @@ export class TaskChangeReviewView extends ItemView {
 
   requestRender(): void { void this.render("scroll"); }
 
+  async openIndex(): Promise<void> {
+    this.proposalId = null;
+    this.targetTaskId = null;
+    this.targetChangeId = null;
+    this.review = null;
+    this.state = createTaskChangeReviewState();
+    await this.render();
+  }
+
   async openProposal(proposalId: string, taskId?: string, changeId?: string): Promise<void> {
     this.proposalId = proposalId;
     this.targetTaskId = taskId ?? null;

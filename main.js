@@ -2514,7 +2514,7 @@ function buildTaskListModel(input) {
   };
 }
 
-// ../taskmate/node_modules/sortablejs/modular/sortable.esm.js
+// node_modules/sortablejs/modular/sortable.esm.js
 function _defineProperty(e, r, t) {
   return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
     value: t,
@@ -6160,7 +6160,7 @@ function detectObsidianLanguage() {
 // src/task-change-proposal-repository.ts
 var import_obsidian14 = require("obsidian");
 
-// ../taskmate/node_modules/diff/libesm/diff/base.js
+// node_modules/diff/libesm/diff/base.js
 var Diff = class {
   diff(oldStr, newStr, options = {}) {
     let callback;
@@ -6362,7 +6362,7 @@ var Diff = class {
   }
 };
 
-// ../taskmate/node_modules/diff/libesm/util/string.js
+// node_modules/diff/libesm/util/string.js
 function hasOnlyWinLineEndings(string) {
   return string.includes("\r\n") && !string.startsWith("\n") && !string.match(/[^\r]\n/);
 }
@@ -6370,7 +6370,7 @@ function hasOnlyUnixLineEndings(string) {
   return !string.includes("\r\n") && string.includes("\n");
 }
 
-// ../taskmate/node_modules/diff/libesm/diff/line.js
+// node_modules/diff/libesm/diff/line.js
 var LineDiff = class extends Diff {
   constructor() {
     super(...arguments);
@@ -6418,7 +6418,7 @@ function tokenize(value, options) {
   return retLines;
 }
 
-// ../taskmate/node_modules/diff/libesm/patch/line-endings.js
+// node_modules/diff/libesm/patch/line-endings.js
 function unixToWin(patch) {
   if (Array.isArray(patch)) {
     return patch.map((p) => unixToWin(p));
@@ -6450,7 +6450,7 @@ function isWin(patch) {
   })));
 }
 
-// ../taskmate/node_modules/diff/libesm/patch/parse.js
+// node_modules/diff/libesm/patch/parse.js
 function parsePatch(uniDiff) {
   const diffstr = uniDiff.split(/\n/), list = [];
   let i = 0;
@@ -6555,7 +6555,7 @@ function parsePatch(uniDiff) {
   return list;
 }
 
-// ../taskmate/node_modules/diff/libesm/util/distance-iterator.js
+// node_modules/diff/libesm/util/distance-iterator.js
 function distance_iterator_default(start, minLine, maxLine) {
   let wantForward = true, backwardExhausted = false, forwardExhausted = false, localOffset = 1;
   return function iterator() {
@@ -6584,7 +6584,7 @@ function distance_iterator_default(start, minLine, maxLine) {
   };
 }
 
-// ../taskmate/node_modules/diff/libesm/patch/apply.js
+// node_modules/diff/libesm/patch/apply.js
 function applyPatch(source, patch, options = {}) {
   let patches;
   if (typeof patch === "string") {
@@ -6733,7 +6733,7 @@ function applyStructuredPatch(source, patch, options = {}) {
   return resultLines.join("\n");
 }
 
-// ../taskmate/node_modules/diff/libesm/patch/create.js
+// node_modules/diff/libesm/patch/create.js
 function structuredPatch(oldFileName, newFileName, oldStr, newStr, oldHeader, newHeader, options) {
   let optionsObj;
   if (!options) {
@@ -7446,6 +7446,14 @@ var TaskChangeReviewView = class extends import_obsidian15.ItemView {
   requestRender() {
     void this.render("scroll");
   }
+  async openIndex() {
+    this.proposalId = null;
+    this.targetTaskId = null;
+    this.targetChangeId = null;
+    this.review = null;
+    this.state = createTaskChangeReviewState();
+    await this.render();
+  }
   async openProposal(proposalId, taskId, changeId) {
     this.proposalId = proposalId;
     this.targetTaskId = taskId ?? null;
@@ -7591,7 +7599,7 @@ var TaskMatePlugin = class extends import_obsidian16.Plugin {
     this.addSettingTab(new TaskMateSettingTab(this.app, this));
     this.addRibbonIcon("circle-check-big", t("command.openRibbon"), () => void this.activateView());
     this.addCommand({ id: "open-todo-list", name: t("command.openList"), callback: () => void this.activateView() });
-    this.addCommand({ id: "open-task-change-reviews", name: t("command.openReviews"), callback: () => void this.activateReviewView() });
+    this.addCommand({ id: "open-task-change-reviews", name: t("command.openReviews"), callback: () => void this.openReviewIndex() });
     this.registerObsidianProtocolHandler("taskmate-review", async (params) => {
       const proposalId = params.proposal;
       if (!proposalId || !/^proposal-[A-Za-z0-9._-]+$/.test(proposalId)) {
@@ -7662,6 +7670,10 @@ var TaskMatePlugin = class extends import_obsidian16.Plugin {
     }
     await this.app.workspace.revealLeaf(leaf);
     return leaf.view;
+  }
+  async openReviewIndex() {
+    const view = await this.activateReviewView();
+    await view.openIndex();
   }
   async openProposalReview(proposalId, taskId, changeId) {
     if (import_obsidian16.Platform.isMobile) {

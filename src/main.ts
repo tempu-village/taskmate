@@ -36,7 +36,7 @@ export default class TaskMatePlugin extends Plugin {
 
     this.addRibbonIcon("circle-check-big", t("command.openRibbon"), () => void this.activateView());
     this.addCommand({ id: "open-todo-list", name: t("command.openList"), callback: () => void this.activateView() });
-    this.addCommand({ id: "open-task-change-reviews", name: t("command.openReviews"), callback: () => void this.activateReviewView() });
+    this.addCommand({ id: "open-task-change-reviews", name: t("command.openReviews"), callback: () => void this.openReviewIndex() });
     this.registerObsidianProtocolHandler("taskmate-review", async (params) => {
       const proposalId = params.proposal;
       if (!proposalId || !/^proposal-[A-Za-z0-9._-]+$/.test(proposalId)) {
@@ -103,6 +103,11 @@ export default class TaskMatePlugin extends Plugin {
     }
     await this.app.workspace.revealLeaf(leaf);
     return leaf.view as TaskChangeReviewView;
+  }
+
+  async openReviewIndex(): Promise<void> {
+    const view = await this.activateReviewView();
+    await view.openIndex();
   }
 
   async openProposalReview(proposalId: string, taskId?: string, changeId?: string): Promise<void> {
