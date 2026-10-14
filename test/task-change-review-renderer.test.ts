@@ -127,4 +127,14 @@ describe("Task change review renderer", () => {
     expect(container.textContent).not.toContain(review.tasks[0].path);
     expect(container.textContent).not.toContain("1 change");
   });
+
+  it("renders Proposal history as read-only while preserving both diff modes", () => {
+    const container = document.createElement("div");
+    renderTaskChangeReview(container, review, { mode: "semantic", approvedChangeIds: new Set() }, copy, vi.fn(), { readOnly: true });
+
+    expect(container.querySelector(".taskmate-review-selection-actions")).toBeNull();
+    expect(container.querySelector(".taskmate-review-change input")).toBeNull();
+    expect(container.querySelector(".taskmate-review-footer")).toBeNull();
+    expect(container.querySelector(".taskmate-review-display-switch")).not.toBeNull();
+  });
 });

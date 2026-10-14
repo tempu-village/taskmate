@@ -14,8 +14,13 @@ import type {
 export interface ProposalSummary {
   id: string;
   createdAt: string;
+  resultAt?: string;
   taskCount: number;
   changeCount: number;
+  status: TaskChangeProposal["status"];
+  succeededCount: number;
+  failedCount: number;
+  followUpProposalId: string | null;
 }
 
 export class TaskChangeProposalRepository {
@@ -37,17 +42,28 @@ export class TaskChangeProposalRepository {
       try {
         const proposal = parseTaskChangeProposal(await this.app.vault.read(file));
         if (proposal.status !== "pending") continue;
-        summaries.push({
-          id: proposal.id,
-          createdAt: proposal.createdAt,
-          taskCount: proposal.tasks.length,
-          changeCount: proposal.tasks.reduce((count, task) => count + task.changes.length, 0)
-        });
+        summaries.push(summarize(proposal));
       } catch (error) {
         console.error(`TaskMate ignored malformed Proposal ${file.path}`, error);
       }
     }
     return summaries.sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+  }
+
+  async listHistory(): Promise<ProposalSummary[]> {
+    const prefix = `${this.historyFolder()}/`;
+    const files = this.app.vault.getFiles().filter((file) => file.path.startsWith(prefix) && file.extension === "json");
+    const summaries: ProposalSummary[] = [];
+    for (const file of files) {
+      try {
+        const proposal = parseTaskChangeProposal(await this.app.vault.read(file));
+        if (proposal.status === "pending") continue;
+        summaries.push(summarize(proposal));
+      } catch (error) {
+        console.error(`TaskMate ignored malformed Proposal history ${file.path}`, error);
+      }
+    }
+    return summaries.sort((left, right) => (right.resultAt ?? right.createdAt).localeCompare(left.resultAt ?? left.createdAt));
   }
 
   async load(proposalId: string): Promise<TaskChangeProposal> {
@@ -58,6 +74,12 @@ export class TaskChangeProposalRepository {
 
   async review(proposalId: string): Promise<ProposalReview> {
     return buildProposalReview(await this.load(proposalId));
+  }
+
+  async reviewHistory(proposalId: string): Promise<ProposalReview> {
+    const file = this.historyProposalFile(proposalId);
+    if (!file) throw new Error(`Proposal history not found: ${proposalId}`);
+    return buildProposalReview(parseTaskChangeProposal(await this.app.vault.read(file)));
   }
 
   async save(proposal: TaskChangeProposal): Promise<void> {
@@ -147,6 +169,12 @@ export class TaskChangeProposalRepository {
     return file instanceof TFile ? file : null;
   }
 
+  private historyProposalFile(proposalId: string): TFile | null {
+    if (!/^proposal-[A-Za-z0-9._-]+$/.test(proposalId)) throw new Error("Invalid Proposal id");
+    const file = this.app.vault.getAbstractFileByPath(normalizePath(`${this.historyFolder()}/${proposalId}.json`));
+    return file instanceof TFile ? file : null;
+  }
+
   private async archive(proposal: TaskChangeProposal): Promise<void> {
     const source = this.proposalFile(proposal.id);
     if (!source) throw new Error(`Proposal not found: ${proposal.id}`);
@@ -163,4 +191,18 @@ export class TaskChangeProposalRepository {
       if (!this.app.vault.getAbstractFileByPath(current)) await this.app.vault.createFolder(current);
     }
   }
+}
+
+function summarize(proposal: TaskChangeProposal): ProposalSummary {
+  return {
+    id: proposal.id,
+    createdAt: proposal.createdAt,
+    resultAt: proposal.result?.appliedAt,
+    taskCount: proposal.tasks.length,
+    changeCount: proposal.tasks.reduce((count, task) => count + task.changes.length, 0),
+    status: proposal.status,
+    succeededCount: proposal.result?.succeededChangeIds.length ?? 0,
+    failedCount: proposal.result?.failed.reduce((count, failure) => count + failure.changeIds.length, 0) ?? 0,
+    followUpProposalId: proposal.result?.followUpProposalId ?? null
+  };
 }

@@ -54,19 +54,27 @@ export function renderTaskChangeReview(
   review: ProposalReview,
   state: TaskChangeReviewState,
   copy: TaskChangeReviewCopy,
-  dispatch: (action: TaskChangeReviewAction) => void
+  dispatch: (action: TaskChangeReviewAction) => void,
+  options: { readOnly?: boolean; back?: { label: string; onClick: () => void } } = {}
 ): void {
   container.replaceChildren();
   container.classList.add("taskmate-review");
   const header = element("header", "taskmate-review-header", container);
   appendTextElement(header, "h2", copy.title);
+  if (options.back) {
+    const back = button(options.back.label, options.back.onClick);
+    back.classList.add("taskmate-review-back");
+    header.append(back);
+  }
 
   const controls = element("div", "taskmate-review-controls", container);
   const allIds = review.tasks.flatMap((task) => task.changes.map((change) => change.id));
   const selectedAllCount = selectedCount(allIds, state.approvedChangeIds);
-  const selection = element("div", "taskmate-review-selection-actions", controls);
-  selection.append(responsiveBulkButton(copy.selectAll, copy.selectAllShort, "taskmate-review-select-all", selectedAllCount === allIds.length, () => dispatch({ type: "set-many-approved", changeIds: allIds, approved: true })));
-  selection.append(responsiveBulkButton(copy.clearAll, copy.clearAllShort, "taskmate-review-clear-all", selectedAllCount === 0, () => dispatch({ type: "set-many-approved", changeIds: allIds, approved: false })));
+  if (!options.readOnly) {
+    const selection = element("div", "taskmate-review-selection-actions", controls);
+    selection.append(responsiveBulkButton(copy.selectAll, copy.selectAllShort, "taskmate-review-select-all", selectedAllCount === allIds.length, () => dispatch({ type: "set-many-approved", changeIds: allIds, approved: true })));
+    selection.append(responsiveBulkButton(copy.clearAll, copy.clearAllShort, "taskmate-review-clear-all", selectedAllCount === 0, () => dispatch({ type: "set-many-approved", changeIds: allIds, approved: false })));
+  }
   const displaySwitch = element("div", "taskmate-review-display-switch", controls);
   displaySwitch.setAttribute("role", "group");
   displaySwitch.setAttribute("aria-label", copy.comparisonAria);
@@ -82,7 +90,7 @@ export function renderTaskChangeReview(
     const identity = element("div", "taskmate-review-file-identity", fileHeader);
     appendTextElement(identity, "h3", task.title);
     const taskIds = task.changes.map((change) => change.id);
-    if (taskIds.length > 1) {
+    if (!options.readOnly && taskIds.length > 1) {
       const selectedTaskCount = selectedCount(taskIds, state.approvedChangeIds);
       const taskActions = element("div", "taskmate-review-file-actions", fileHeader);
       taskActions.append(bulkButton(copy.selectTask, "taskmate-review-select-task", selectedTaskCount === taskIds.length, () => dispatch({ type: "set-many-approved", changeIds: taskIds, approved: true })));
@@ -91,13 +99,16 @@ export function renderTaskChangeReview(
 
     if (state.mode === "semantic") {
       for (const change of task.changes) {
-        const row = element("label", "taskmate-review-change", section);
+        const row = element(options.readOnly ? "div" : "label", "taskmate-review-change", section);
+        if (options.readOnly) row.classList.add("is-read-only");
         row.dataset.reviewAnchor = change.id;
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.checked = state.approvedChangeIds.has(change.id);
-        checkbox.addEventListener("change", () => dispatch({ type: "set-approved", changeId: change.id, approved: checkbox.checked }));
-        row.append(checkbox);
+        if (!options.readOnly) {
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.checked = state.approvedChangeIds.has(change.id);
+          checkbox.addEventListener("change", () => dispatch({ type: "set-approved", changeId: change.id, approved: checkbox.checked }));
+          row.append(checkbox);
+        }
         appendTextElement(row, "span", change.id, "taskmate-review-id");
         const details = element("span", "taskmate-review-change-details", row);
         appendTextElement(details, "strong", change.field);
@@ -116,18 +127,20 @@ export function renderTaskChangeReview(
     }
   }
 
-  const footer = element("footer", "taskmate-review-footer", container);
-  const apply = button(copy.apply, () => dispatch({
-    type: "apply",
-    approvedChangeIds: allIds.filter((id) => state.approvedChangeIds.has(id))
-  }));
-  apply.classList.add("taskmate-review-apply", "mod-cta");
-  apply.disabled = state.approvedChangeIds.size === 0;
-  apply.title = apply.disabled ? copy.noSelection : "";
-  footer.append(apply);
-  const reject = button(copy.reject, () => dispatch({ type: "reject" }));
-  reject.classList.add("taskmate-review-reject", "mod-warning");
-  footer.append(reject);
+  if (!options.readOnly) {
+    const footer = element("footer", "taskmate-review-footer", container);
+    const apply = button(copy.apply, () => dispatch({
+      type: "apply",
+      approvedChangeIds: allIds.filter((id) => state.approvedChangeIds.has(id))
+    }));
+    apply.classList.add("taskmate-review-apply", "mod-cta");
+    apply.disabled = state.approvedChangeIds.size === 0;
+    apply.title = apply.disabled ? copy.noSelection : "";
+    footer.append(apply);
+    const reject = button(copy.reject, () => dispatch({ type: "reject" }));
+    reject.classList.add("taskmate-review-reject", "mod-warning");
+    footer.append(reject);
+  }
 }
 
 function element<Tag extends keyof HTMLElementTagNameMap>(tag: Tag, className: string, parent?: HTMLElement): HTMLElementTagNameMap[Tag] {

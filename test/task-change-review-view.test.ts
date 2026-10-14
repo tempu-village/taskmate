@@ -6,9 +6,14 @@ vi.mock("obsidian", () => ({
   Notice: class {}
 }));
 
-import { openProposalInReviewView, TaskChangeReviewView } from "../src/task-change-review-view";
+import { applyNoticeKind, openProposalInReviewView, TaskChangeReviewView } from "../src/task-change-review-view";
 
 describe("Task change review view", () => {
+  it("distinguishes stale regeneration from an ordinary zero-count notice", () => {
+    expect(applyNoticeKind({ succeeded: 0, failed: 2, hasFollowUp: true })).toBe("stale-regenerated");
+    expect(applyNoticeKind({ succeeded: 2, failed: 0, hasFollowUp: false })).toBe("applied");
+  });
+
   it("routes URI navigation through the working review view", async () => {
     const openProposal = vi.fn().mockResolvedValue(undefined);
     const activate = vi.fn().mockResolvedValue({ openProposal });

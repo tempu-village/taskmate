@@ -18,6 +18,7 @@ The initial scope covers scheduled date, Priority, Labels, title, Steps, and Not
 4. The Review View presents a compact continuous list of proposed changes with stable change identifiers.
 5. The user can switch between semantic and raw Markdown diffs and approve changes individually.
 6. Opening a Proposal never applies it. TaskMate writes only the explicitly approved changes.
+7. The Review View provides pending and history tabs. History entries show status and success/failure counts and open the original diff as read-only evidence.
 
 Affected Tasks appear directly as always-expanded sections; there is no separate Task index or collapse interaction. A section header shows the Task title but omits the stored file path and change counts. Compact section gaps and header padding prioritize the change content vertically. The review toolbar separates selection from display. Selection uses persistent select-all and clear-all buttons whose unavailable action remains visible but disabled. Display uses an `Items / Full text` segmented control. Task-level bulk controls appear only when a Task has more than one change. Selection redraws preserve numeric scroll position; switching between Items and Full text restores the nearest stable Task UUID or `C-xx` anchor.
 
@@ -75,6 +76,7 @@ The strict persisted format, lifecycle and URI security contract are defined by 
 
 - Missing or malformed Proposals or ChangeSets remain unapplied and show a recoverable error.
 - A source hash mismatch blocks the old write, marks all affected changes stale, and regenerates still-relevant changes against the current Task in the follow-up Proposal.
+- If every selected change is stale, the completion notice explains that zero changes were applied and that a new review Proposal was created.
 - A stale or failed Task does not discard follow-up changes belonging to another successfully validated Task.
 - An invalid operation blocks only the affected proposal unless atomicity is required by the operation group.
 - URI handoff failure does not lose review data; the pending-review list remains the fallback.
@@ -98,6 +100,7 @@ The strict persisted format, lifecycle and URI security contract are defined by 
 - REVIEW-14: Every affected Task remains visible in one compact continuous list whose headers omit index navigation, collapse controls, paths and counts.
 - REVIEW-15: A stale Task reappears in the follow-up Proposal with its current Markdown as the new baseline; it also does not suppress another Task's unapplied changes.
 - REVIEW-16: macOS, Windows, and Linux launch the review URI without shell interpolation; launch failure preserves pending-review discovery.
+- REVIEW-17: Review history is discoverable inside TaskMate without opening JSON files or Finder and is displayed read-only with its recorded result.
 
 ## Related documents
 

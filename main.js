@@ -950,10 +950,19 @@ var en = {
   "command.openReviews": "Open Task change reviews",
   "review.title": "Review Task changes",
   "review.pending": "Pending reviews",
+  "review.history": "History",
   "review.none": "No pending reviews",
+  "review.historyNone": "No review history",
   "review.summary": "{tasks} Tasks, {changes} changes",
+  "review.historyResult": "{status} \xB7 {succeeded} applied \xB7 {failed} failed",
+  "review.status.applied": "Applied",
+  "review.status.partially-applied": "Partially applied",
+  "review.status.rejected": "Rejected",
+  "review.status.stale": "Stale",
+  "review.status.pending": "Pending",
   "review.apply": "Apply selection",
   "review.applied": "Applied {count} changes",
+  "review.staleRegenerated": "Applied 0 changes because {failed} changes became stale. Created a new review proposal.",
   "review.reject": "Reject proposal",
   "review.rejected": "Proposal rejected",
   "review.rejectConfirm": "Reject this proposal without changing Tasks?",
@@ -1187,10 +1196,19 @@ var ja = {
   "command.openReviews": "Task\u5909\u66F4\u30EC\u30D3\u30E5\u30FC\u3092\u958B\u304F",
   "review.title": "Task\u5909\u66F4\u3092\u30EC\u30D3\u30E5\u30FC",
   "review.pending": "\u672A\u30EC\u30D3\u30E5\u30FC",
+  "review.history": "\u5C65\u6B74",
   "review.none": "\u672A\u30EC\u30D3\u30E5\u30FC\u306EProposal\u306F\u3042\u308A\u307E\u305B\u3093",
+  "review.historyNone": "\u30EC\u30D3\u30E5\u30FC\u5C65\u6B74\u306F\u3042\u308A\u307E\u305B\u3093",
   "review.summary": "{tasks}\u4EF6\u306ETask\u3001{changes}\u4EF6\u306E\u5909\u66F4",
+  "review.historyResult": "{status}\u30FB\u6210\u529F{succeeded}\u4EF6\u30FB\u5931\u6557{failed}\u4EF6",
+  "review.status.applied": "\u9069\u7528\u6E08\u307F",
+  "review.status.partially-applied": "\u4E00\u90E8\u9069\u7528",
+  "review.status.rejected": "\u5374\u4E0B",
+  "review.status.stale": "stale",
+  "review.status.pending": "\u672A\u30EC\u30D3\u30E5\u30FC",
   "review.apply": "\u9078\u629E\u3092\u9069\u7528",
   "review.applied": "{count}\u4EF6\u306E\u5909\u66F4\u3092\u9069\u7528\u3057\u307E\u3057\u305F",
+  "review.staleRegenerated": "{failed}\u4EF6\u304Cstale\u306B\u306A\u3063\u305F\u305F\u30810\u4EF6\u9069\u7528\u3057\u3001\u518D\u78BA\u8A8D\u7528Proposal\u3092\u4F5C\u6210\u3057\u307E\u3057\u305F",
   "review.reject": "\u63D0\u6848\u3092\u5374\u4E0B",
   "review.rejected": "Proposal\u3092\u5374\u4E0B\u3057\u307E\u3057\u305F",
   "review.rejectConfirm": "Task\u3092\u5909\u66F4\u305B\u305A\u3001\u3053\u306EProposal\u3092\u5374\u4E0B\u3057\u307E\u3059\u304B\uFF1F",
@@ -7136,17 +7154,27 @@ var TaskChangeProposalRepository = class {
       try {
         const proposal = parseTaskChangeProposal(await this.app.vault.read(file));
         if (proposal.status !== "pending") continue;
-        summaries.push({
-          id: proposal.id,
-          createdAt: proposal.createdAt,
-          taskCount: proposal.tasks.length,
-          changeCount: proposal.tasks.reduce((count, task) => count + task.changes.length, 0)
-        });
+        summaries.push(summarize(proposal));
       } catch (error) {
         console.error(`TaskMate ignored malformed Proposal ${file.path}`, error);
       }
     }
     return summaries.sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+  }
+  async listHistory() {
+    const prefix = `${this.historyFolder()}/`;
+    const files = this.app.vault.getFiles().filter((file) => file.path.startsWith(prefix) && file.extension === "json");
+    const summaries = [];
+    for (const file of files) {
+      try {
+        const proposal = parseTaskChangeProposal(await this.app.vault.read(file));
+        if (proposal.status === "pending") continue;
+        summaries.push(summarize(proposal));
+      } catch (error) {
+        console.error(`TaskMate ignored malformed Proposal history ${file.path}`, error);
+      }
+    }
+    return summaries.sort((left, right) => (right.resultAt ?? right.createdAt).localeCompare(left.resultAt ?? left.createdAt));
   }
   async load(proposalId) {
     const file = this.proposalFile(proposalId);
@@ -7155,6 +7183,11 @@ var TaskChangeProposalRepository = class {
   }
   async review(proposalId) {
     return buildProposalReview(await this.load(proposalId));
+  }
+  async reviewHistory(proposalId) {
+    const file = this.historyProposalFile(proposalId);
+    if (!file) throw new Error(`Proposal history not found: ${proposalId}`);
+    return buildProposalReview(parseTaskChangeProposal(await this.app.vault.read(file)));
   }
   async save(proposal) {
     parseTaskChangeProposal(JSON.stringify(proposal));
@@ -7234,6 +7267,11 @@ var TaskChangeProposalRepository = class {
     const file = this.app.vault.getAbstractFileByPath((0, import_obsidian14.normalizePath)(`${this.folder()}/${proposalId}.json`));
     return file instanceof import_obsidian14.TFile ? file : null;
   }
+  historyProposalFile(proposalId) {
+    if (!/^proposal-[A-Za-z0-9._-]+$/.test(proposalId)) throw new Error("Invalid Proposal id");
+    const file = this.app.vault.getAbstractFileByPath((0, import_obsidian14.normalizePath)(`${this.historyFolder()}/${proposalId}.json`));
+    return file instanceof import_obsidian14.TFile ? file : null;
+  }
   async archive(proposal) {
     const source = this.proposalFile(proposal.id);
     if (!source) throw new Error(`Proposal not found: ${proposal.id}`);
@@ -7251,6 +7289,19 @@ var TaskChangeProposalRepository = class {
     }
   }
 };
+function summarize(proposal) {
+  return {
+    id: proposal.id,
+    createdAt: proposal.createdAt,
+    resultAt: proposal.result?.appliedAt,
+    taskCount: proposal.tasks.length,
+    changeCount: proposal.tasks.reduce((count, task) => count + task.changes.length, 0),
+    status: proposal.status,
+    succeededCount: proposal.result?.succeededChangeIds.length ?? 0,
+    failedCount: proposal.result?.failed.reduce((count, failure) => count + failure.changeIds.length, 0) ?? 0,
+    followUpProposalId: proposal.result?.followUpProposalId ?? null
+  };
+}
 
 // src/task-change-review-view.ts
 var import_obsidian15 = require("obsidian");
@@ -7273,17 +7324,24 @@ function reduceTaskChangeReviewState(state, action) {
   }
   return state;
 }
-function renderTaskChangeReview(container, review, state, copy, dispatch) {
+function renderTaskChangeReview(container, review, state, copy, dispatch, options = {}) {
   container.replaceChildren();
   container.classList.add("taskmate-review");
   const header = element("header", "taskmate-review-header", container);
   appendTextElement(header, "h2", copy.title);
+  if (options.back) {
+    const back = button(options.back.label, options.back.onClick);
+    back.classList.add("taskmate-review-back");
+    header.append(back);
+  }
   const controls = element("div", "taskmate-review-controls", container);
   const allIds = review.tasks.flatMap((task) => task.changes.map((change) => change.id));
   const selectedAllCount = selectedCount(allIds, state.approvedChangeIds);
-  const selection = element("div", "taskmate-review-selection-actions", controls);
-  selection.append(responsiveBulkButton(copy.selectAll, copy.selectAllShort, "taskmate-review-select-all", selectedAllCount === allIds.length, () => dispatch({ type: "set-many-approved", changeIds: allIds, approved: true })));
-  selection.append(responsiveBulkButton(copy.clearAll, copy.clearAllShort, "taskmate-review-clear-all", selectedAllCount === 0, () => dispatch({ type: "set-many-approved", changeIds: allIds, approved: false })));
+  if (!options.readOnly) {
+    const selection = element("div", "taskmate-review-selection-actions", controls);
+    selection.append(responsiveBulkButton(copy.selectAll, copy.selectAllShort, "taskmate-review-select-all", selectedAllCount === allIds.length, () => dispatch({ type: "set-many-approved", changeIds: allIds, approved: true })));
+    selection.append(responsiveBulkButton(copy.clearAll, copy.clearAllShort, "taskmate-review-clear-all", selectedAllCount === 0, () => dispatch({ type: "set-many-approved", changeIds: allIds, approved: false })));
+  }
   const displaySwitch = element("div", "taskmate-review-display-switch", controls);
   displaySwitch.setAttribute("role", "group");
   displaySwitch.setAttribute("aria-label", copy.comparisonAria);
@@ -7298,7 +7356,7 @@ function renderTaskChangeReview(container, review, state, copy, dispatch) {
     const identity = element("div", "taskmate-review-file-identity", fileHeader);
     appendTextElement(identity, "h3", task.title);
     const taskIds = task.changes.map((change) => change.id);
-    if (taskIds.length > 1) {
+    if (!options.readOnly && taskIds.length > 1) {
       const selectedTaskCount = selectedCount(taskIds, state.approvedChangeIds);
       const taskActions = element("div", "taskmate-review-file-actions", fileHeader);
       taskActions.append(bulkButton(copy.selectTask, "taskmate-review-select-task", selectedTaskCount === taskIds.length, () => dispatch({ type: "set-many-approved", changeIds: taskIds, approved: true })));
@@ -7306,13 +7364,16 @@ function renderTaskChangeReview(container, review, state, copy, dispatch) {
     }
     if (state.mode === "semantic") {
       for (const change of task.changes) {
-        const row = element("label", "taskmate-review-change", section);
+        const row = element(options.readOnly ? "div" : "label", "taskmate-review-change", section);
+        if (options.readOnly) row.classList.add("is-read-only");
         row.dataset.reviewAnchor = change.id;
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.checked = state.approvedChangeIds.has(change.id);
-        checkbox.addEventListener("change", () => dispatch({ type: "set-approved", changeId: change.id, approved: checkbox.checked }));
-        row.append(checkbox);
+        if (!options.readOnly) {
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.checked = state.approvedChangeIds.has(change.id);
+          checkbox.addEventListener("change", () => dispatch({ type: "set-approved", changeId: change.id, approved: checkbox.checked }));
+          row.append(checkbox);
+        }
         appendTextElement(row, "span", change.id, "taskmate-review-id");
         const details = element("span", "taskmate-review-change-details", row);
         appendTextElement(details, "strong", change.field);
@@ -7332,18 +7393,20 @@ function renderTaskChangeReview(container, review, state, copy, dispatch) {
       }
     }
   }
-  const footer = element("footer", "taskmate-review-footer", container);
-  const apply = button(copy.apply, () => dispatch({
-    type: "apply",
-    approvedChangeIds: allIds.filter((id) => state.approvedChangeIds.has(id))
-  }));
-  apply.classList.add("taskmate-review-apply", "mod-cta");
-  apply.disabled = state.approvedChangeIds.size === 0;
-  apply.title = apply.disabled ? copy.noSelection : "";
-  footer.append(apply);
-  const reject = button(copy.reject, () => dispatch({ type: "reject" }));
-  reject.classList.add("taskmate-review-reject", "mod-warning");
-  footer.append(reject);
+  if (!options.readOnly) {
+    const footer = element("footer", "taskmate-review-footer", container);
+    const apply = button(copy.apply, () => dispatch({
+      type: "apply",
+      approvedChangeIds: allIds.filter((id) => state.approvedChangeIds.has(id))
+    }));
+    apply.classList.add("taskmate-review-apply", "mod-cta");
+    apply.disabled = state.approvedChangeIds.size === 0;
+    apply.title = apply.disabled ? copy.noSelection : "";
+    footer.append(apply);
+    const reject = button(copy.reject, () => dispatch({ type: "reject" }));
+    reject.classList.add("taskmate-review-reject", "mod-warning");
+    footer.append(reject);
+  }
 }
 function element(tag, className, parent) {
   const value = document.createElement(tag);
@@ -7421,6 +7484,9 @@ function restoreReviewPosition(container, position) {
 
 // src/task-change-review-view.ts
 var TASK_CHANGE_REVIEW_VIEW_TYPE = "taskmate-change-review";
+function applyNoticeKind(outcome) {
+  return outcome.succeeded === 0 && outcome.failed > 0 && outcome.hasFollowUp ? "stale-regenerated" : "applied";
+}
 async function openProposalInReviewView(activate, proposalId, taskId, changeId) {
   const view = await activate();
   await view.openProposal(proposalId, taskId, changeId);
@@ -7434,6 +7500,8 @@ var TaskChangeReviewView = class extends import_obsidian15.ItemView {
   targetTaskId = null;
   targetChangeId = null;
   review = null;
+  indexMode = "pending";
+  proposalSource = "pending";
   state = createTaskChangeReviewState();
   getViewType() {
     return TASK_CHANGE_REVIEW_VIEW_TYPE;
@@ -7455,6 +7523,8 @@ var TaskChangeReviewView = class extends import_obsidian15.ItemView {
     this.targetTaskId = null;
     this.targetChangeId = null;
     this.review = null;
+    this.indexMode = "pending";
+    this.proposalSource = "pending";
     this.state = createTaskChangeReviewState();
     await this.render();
   }
@@ -7462,6 +7532,13 @@ var TaskChangeReviewView = class extends import_obsidian15.ItemView {
     this.proposalId = proposalId;
     this.targetTaskId = taskId ?? null;
     this.targetChangeId = changeId ?? null;
+    this.proposalSource = "pending";
+    this.state = createTaskChangeReviewState();
+    await this.render();
+  }
+  async openHistoryProposal(proposalId) {
+    this.proposalId = proposalId;
+    this.proposalSource = "history";
     this.state = createTaskChangeReviewState();
     await this.render();
   }
@@ -7469,21 +7546,50 @@ var TaskChangeReviewView = class extends import_obsidian15.ItemView {
     const position = preserve ? captureReviewPosition(this.contentEl, preserve) : null;
     this.contentEl.empty();
     if (!this.proposalId) {
-      const pending = await this.plugin.proposals.listPending();
+      const proposals = this.indexMode === "pending" ? await this.plugin.proposals.listPending() : await this.plugin.proposals.listHistory();
       const root = this.contentEl.createDiv({ cls: "taskmate-review-index" });
-      root.createEl("h2", { text: this.plugin.i18n().t("review.pending") });
-      if (pending.length === 0) root.createDiv({ cls: "taskmate-empty", text: this.plugin.i18n().t("review.none") });
-      for (const proposal of pending) {
+      const tabs = root.createDiv({ cls: "taskmate-review-index-tabs" });
+      for (const mode of ["pending", "history"]) {
+        const tab = tabs.createEl("button", {
+          text: this.plugin.i18n().t(mode === "pending" ? "review.pending" : "review.history"),
+          cls: this.indexMode === mode ? "is-active" : ""
+        });
+        tab.addEventListener("click", () => {
+          this.indexMode = mode;
+          void this.render();
+        });
+      }
+      if (proposals.length === 0) root.createDiv({ cls: "taskmate-empty", text: this.plugin.i18n().t(this.indexMode === "pending" ? "review.none" : "review.historyNone") });
+      for (const proposal of proposals) {
         const open = root.createEl("button", { cls: "taskmate-review-index-item" });
-        open.createSpan({ text: proposal.id });
+        const identity = open.createSpan({ cls: "taskmate-review-index-identity" });
+        identity.createSpan({ text: proposal.id });
+        if (this.indexMode === "history") identity.createSpan({
+          cls: "taskmate-review-history-status",
+          text: this.plugin.i18n().t("review.historyResult", {
+            status: this.plugin.i18n().t(`review.status.${proposal.status}`),
+            succeeded: proposal.succeededCount,
+            failed: proposal.failedCount
+          })
+        });
         open.createSpan({ text: this.plugin.i18n().t("review.summary", { tasks: proposal.taskCount, changes: proposal.changeCount }) });
-        open.addEventListener("click", () => void this.openProposal(proposal.id));
+        open.addEventListener("click", () => void (this.indexMode === "pending" ? this.openProposal(proposal.id) : this.openHistoryProposal(proposal.id)));
       }
       return;
     }
     try {
-      this.review = await this.plugin.proposals.review(this.proposalId);
-      renderTaskChangeReview(this.contentEl, this.review, this.state, reviewCopy(this.plugin), (action) => void this.handle(action));
+      this.review = this.proposalSource === "history" ? await this.plugin.proposals.reviewHistory(this.proposalId) : await this.plugin.proposals.review(this.proposalId);
+      renderTaskChangeReview(this.contentEl, this.review, this.state, reviewCopy(this.plugin), (action) => void this.handle(action), {
+        readOnly: this.proposalSource === "history",
+        back: this.proposalSource === "history" ? {
+          label: this.plugin.i18n().t("common.back"),
+          onClick: () => {
+            this.proposalId = null;
+            this.indexMode = "history";
+            void this.render();
+          }
+        } : void 0
+      });
       if (position) restoreReviewPosition(this.contentEl, position);
       else window.setTimeout(() => this.revealTarget(), 0);
     } catch (error) {
@@ -7496,7 +7602,10 @@ var TaskChangeReviewView = class extends import_obsidian15.ItemView {
     this.state = reduceTaskChangeReviewState(this.state, action);
     if (action.type === "apply" && this.proposalId) {
       const result = await this.plugin.proposals.apply(this.proposalId, action.approvedChangeIds);
-      new import_obsidian15.Notice(this.plugin.i18n().t("review.applied", { count: result.closedProposal.result?.succeededChangeIds.length ?? 0 }));
+      const succeeded = result.closedProposal.result?.succeededChangeIds.length ?? 0;
+      const failed = result.closedProposal.result?.failed.reduce((count, failure) => count + failure.changeIds.length, 0) ?? 0;
+      const notice = applyNoticeKind({ succeeded, failed, hasFollowUp: result.followUp !== null });
+      new import_obsidian15.Notice(notice === "stale-regenerated" ? this.plugin.i18n().t("review.staleRegenerated", { failed }) : this.plugin.i18n().t("review.applied", { count: succeeded }));
       this.proposalId = result.followUp?.id ?? null;
       this.state = createTaskChangeReviewState();
       preserve = void 0;

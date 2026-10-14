@@ -73,6 +73,16 @@ describe("TaskChangeProposalRepository", () => {
     expect(parseTaskMarkdown("TaskMate/Tasks/Example.md", vault.files.get("TaskMate/Tasks/Example.md")!.content)).toEqual(expect.objectContaining({ date: "2026-10-18", notes: "Original" }));
     expect(vault.files.has("TaskMate/Proposals/History/proposal-001.json")).toBe(true);
     expect(vault.files.has(`TaskMate/Proposals/${result.followUp?.id}.json`)).toBe(true);
+    expect(await proposals.listHistory()).toEqual([
+      expect.objectContaining({
+        id: "proposal-001",
+        status: "partially-applied",
+        succeededCount: 1,
+        failedCount: 0,
+        followUpProposalId: result.followUp?.id
+      })
+    ]);
+    expect((await proposals.reviewHistory("proposal-001")).proposalId).toBe("proposal-001");
   });
 
   it("retains another Task's follow-up when a later Task write becomes stale", async () => {
