@@ -80,7 +80,7 @@ TaskMate MUST accept only validated identifiers, resolve the Proposal only insid
 
 The Review View MUST expose both pending Proposals and archived Proposal history. History entries MUST show their recorded status plus succeeded and failed change counts, and MUST open the stored before/after evidence read-only. Users MUST NOT need Finder or direct JSON access to inspect review history. When an apply attempt succeeds for zero changes because selected Tasks became stale and a follow-up was generated, the notice MUST state both the stale outcome and follow-up creation rather than reporting only a zero count.
 
-Pending and history detail views MUST provide an explicit back action to the list from which they were opened. Returning MUST discard unapplied selection state. Proposal identifiers MUST wrap rather than enlarge the review page. On phone layouts, list metadata MUST appear below the identifier, and the Proposal list MUST NOT create horizontal page scrolling.
+Pending and history detail views MUST provide an explicit back action to the list from which they were opened. Returning MUST discard unapplied selection state. Proposal identifiers MUST wrap rather than enlarge the review page. Proposal name, status, success/failure counts and Task/change counts MUST occupy separate rows. Names that wrap to three or more lines MUST expand their list item rather than be clipped, and the Proposal list MUST NOT create horizontal page scrolling.
 
 ## Compatibility and verification
 

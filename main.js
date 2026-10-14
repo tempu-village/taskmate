@@ -954,7 +954,7 @@ var en = {
   "review.none": "No pending reviews",
   "review.historyNone": "No review history",
   "review.summary": "{tasks} Tasks, {changes} changes",
-  "review.historyResult": "{status} \xB7 {succeeded} applied \xB7 {failed} failed",
+  "review.historyCounts": "{succeeded} applied \xB7 {failed} failed",
   "review.status.applied": "Applied",
   "review.status.partially-applied": "Partially applied",
   "review.status.rejected": "Rejected",
@@ -1200,7 +1200,7 @@ var ja = {
   "review.none": "\u672A\u30EC\u30D3\u30E5\u30FC\u306EProposal\u306F\u3042\u308A\u307E\u305B\u3093",
   "review.historyNone": "\u30EC\u30D3\u30E5\u30FC\u5C65\u6B74\u306F\u3042\u308A\u307E\u305B\u3093",
   "review.summary": "{tasks}\u4EF6\u306ETask\u3001{changes}\u4EF6\u306E\u5909\u66F4",
-  "review.historyResult": "{status}\u30FB\u6210\u529F{succeeded}\u4EF6\u30FB\u5931\u6557{failed}\u4EF6",
+  "review.historyCounts": "\u6210\u529F{succeeded}\u4EF6\u30FB\u5931\u6557{failed}\u4EF6",
   "review.status.applied": "\u9069\u7528\u6E08\u307F",
   "review.status.partially-applied": "\u4E00\u90E8\u9069\u7528",
   "review.status.rejected": "\u5374\u4E0B",
@@ -7564,14 +7564,19 @@ var TaskChangeReviewView = class extends import_obsidian15.ItemView {
         const open = root.createEl("button", { cls: "taskmate-review-index-item" });
         const identity = open.createSpan({ cls: "taskmate-review-index-identity" });
         identity.createSpan({ text: proposal.id });
-        if (this.indexMode === "history") identity.createSpan({
-          cls: "taskmate-review-history-status",
-          text: this.plugin.i18n().t("review.historyResult", {
-            status: this.plugin.i18n().t(`review.status.${proposal.status}`),
-            succeeded: proposal.succeededCount,
-            failed: proposal.failedCount
-          })
-        });
+        if (this.indexMode === "history") {
+          identity.createSpan({
+            cls: "taskmate-review-history-status",
+            text: this.plugin.i18n().t(`review.status.${proposal.status}`)
+          });
+          identity.createSpan({
+            cls: "taskmate-review-history-counts",
+            text: this.plugin.i18n().t("review.historyCounts", {
+              succeeded: proposal.succeededCount,
+              failed: proposal.failedCount
+            })
+          });
+        }
         open.createSpan({ cls: "taskmate-review-index-summary", text: this.plugin.i18n().t("review.summary", { tasks: proposal.taskCount, changes: proposal.changeCount }) });
         open.addEventListener("click", () => void (this.indexMode === "pending" ? this.openProposal(proposal.id) : this.openHistoryProposal(proposal.id)));
       }

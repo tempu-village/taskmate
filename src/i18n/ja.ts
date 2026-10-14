@@ -38,7 +38,7 @@ export const ja = {
   "review.none": "未レビューのProposalはありません",
   "review.historyNone": "レビュー履歴はありません",
   "review.summary": "{tasks}件のTask、{changes}件の変更",
-  "review.historyResult": "{status}・成功{succeeded}件・失敗{failed}件",
+  "review.historyCounts": "成功{succeeded}件・失敗{failed}件",
   "review.status.applied": "適用済み",
   "review.status.partially-applied": "一部適用",
   "review.status.rejected": "却下",

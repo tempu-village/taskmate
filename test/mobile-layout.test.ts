@@ -420,7 +420,9 @@ describe("mobile layout", () => {
 
     expect(review).toMatch(/overflow-x\s*:\s*hidden\s*;/);
     expect(reviewIndex).toMatch(/overflow-x\s*:\s*hidden\s*;/);
-    expect(indexItem).toMatch(/grid-template-columns\s*:\s*minmax\(0,\s*1fr\)\s+auto\s*;/);
+    expect(indexItem).toMatch(/grid-template-columns\s*:\s*minmax\(0,\s*1fr\)\s*;/);
+    expect(indexItem).toMatch(/height\s*:\s*auto\s*;/);
+    expect(indexItem).not.toMatch(/overflow\s*:\s*hidden\s*;/);
     expect(indexIdentity).toMatch(/overflow-wrap\s*:\s*anywhere\s*;/);
     expect(phoneIndexItem).toMatch(/grid-template-columns\s*:\s*minmax\(0,\s*1fr\)\s*;/);
     expect(rawDiff).toMatch(/overflow-x\s*:\s*scroll\s*;/);

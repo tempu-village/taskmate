@@ -90,14 +90,19 @@ export class TaskChangeReviewView extends ItemView {
         const open = root.createEl("button", { cls: "taskmate-review-index-item" });
         const identity = open.createSpan({ cls: "taskmate-review-index-identity" });
         identity.createSpan({ text: proposal.id });
-        if (this.indexMode === "history") identity.createSpan({
-          cls: "taskmate-review-history-status",
-          text: this.plugin.i18n().t("review.historyResult", {
-            status: this.plugin.i18n().t(`review.status.${proposal.status}`),
-            succeeded: proposal.succeededCount,
-            failed: proposal.failedCount
-          })
-        });
+        if (this.indexMode === "history") {
+          identity.createSpan({
+            cls: "taskmate-review-history-status",
+            text: this.plugin.i18n().t(`review.status.${proposal.status}`)
+          });
+          identity.createSpan({
+            cls: "taskmate-review-history-counts",
+            text: this.plugin.i18n().t("review.historyCounts", {
+              succeeded: proposal.succeededCount,
+              failed: proposal.failedCount
+            })
+          });
+        }
         open.createSpan({ cls: "taskmate-review-index-summary", text: this.plugin.i18n().t("review.summary", { tasks: proposal.taskCount, changes: proposal.changeCount }) });
         open.addEventListener("click", () => void (this.indexMode === "pending" ? this.openProposal(proposal.id) : this.openHistoryProposal(proposal.id)));
       }

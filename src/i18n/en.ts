@@ -34,7 +34,7 @@ export const en = {
   "review.none": "No pending reviews",
   "review.historyNone": "No review history",
   "review.summary": "{tasks} Tasks, {changes} changes",
-  "review.historyResult": "{status} · {succeeded} applied · {failed} failed",
+  "review.historyCounts": "{succeeded} applied · {failed} failed",
   "review.status.applied": "Applied",
   "review.status.partially-applied": "Partially applied",
   "review.status.rejected": "Rejected",
