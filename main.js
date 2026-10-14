@@ -969,8 +969,6 @@ var en = {
   "review.markdownAria": "Full-text comparison",
   "review.comparisonAria": "Comparison view",
   "review.noSelection": "Select at least one change",
-  "review.fileList": "Affected Tasks",
-  "review.changeCount": "Changes: {count}",
   "review.invalid": "This proposal is missing or invalid",
   "review.invalidLink": "The TaskMate review link is invalid",
   "search.title": "Search",
@@ -1208,8 +1206,6 @@ var ja = {
   "review.markdownAria": "\u5168\u6587\u6BD4\u8F03",
   "review.comparisonAria": "\u6BD4\u8F03\u8868\u793A",
   "review.noSelection": "\u5909\u66F4\u30921\u4EF6\u4EE5\u4E0A\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044",
-  "review.fileList": "\u5909\u66F4\u5BFE\u8C61\u306ETask",
-  "review.changeCount": "{count}\u4EF6\u306E\u5909\u66F4",
   "review.invalid": "Proposal\u304C\u898B\u3064\u304B\u3089\u306A\u3044\u304B\u3001\u5F62\u5F0F\u304C\u6B63\u3057\u304F\u3042\u308A\u307E\u305B\u3093",
   "review.invalidLink": "TaskMate\u306E\u30EC\u30D3\u30E5\u30FC\u30EA\u30F3\u30AF\u304C\u6B63\u3057\u304F\u3042\u308A\u307E\u305B\u3093",
   "search.title": "\u691C\u7D22",
@@ -7233,7 +7229,7 @@ var import_obsidian15 = require("obsidian");
 
 // src/task-change-review-renderer.ts
 function createTaskChangeReviewState() {
-  return { mode: "semantic", approvedChangeIds: /* @__PURE__ */ new Set(), collapsedTaskIds: /* @__PURE__ */ new Set() };
+  return { mode: "semantic", approvedChangeIds: /* @__PURE__ */ new Set() };
 }
 function reduceTaskChangeReviewState(state, action) {
   if (action.type === "set-mode") return { ...state, mode: action.mode };
@@ -7247,12 +7243,6 @@ function reduceTaskChangeReviewState(state, action) {
     for (const id of action.changeIds) action.approved ? approvedChangeIds.add(id) : approvedChangeIds.delete(id);
     return { ...state, approvedChangeIds };
   }
-  if (action.type === "set-task-collapsed" || action.type === "navigate-task") {
-    const collapsedTaskIds = new Set(state.collapsedTaskIds);
-    if (action.type === "navigate-task" || !action.collapsed) collapsedTaskIds.delete(action.taskId);
-    else collapsedTaskIds.add(action.taskId);
-    return { ...state, collapsedTaskIds };
-  }
   return state;
 }
 function renderTaskChangeReview(container, review, state, copy, dispatch) {
@@ -7260,7 +7250,6 @@ function renderTaskChangeReview(container, review, state, copy, dispatch) {
   container.classList.add("taskmate-review");
   const header = element("header", "taskmate-review-header", container);
   appendTextElement(header, "h2", copy.title);
-  appendTextElement(header, "span", `${review.tasks.length} Tasks`, "taskmate-review-count");
   const controls = element("div", "taskmate-review-controls", container);
   const allIds = review.tasks.flatMap((task) => task.changes.map((change) => change.id));
   const selectedAllCount = selectedCount(allIds, state.approvedChangeIds);
@@ -7272,38 +7261,18 @@ function renderTaskChangeReview(container, review, state, copy, dispatch) {
   displaySwitch.setAttribute("aria-label", copy.comparisonAria);
   displaySwitch.append(modeButton(copy.semantic, copy.semanticAria, "taskmate-review-mode-semantic", state.mode === "semantic", () => dispatch({ type: "set-mode", mode: "semantic" })));
   displaySwitch.append(modeButton(copy.markdown, copy.markdownAria, "taskmate-review-mode-raw", state.mode === "raw", () => dispatch({ type: "set-mode", mode: "raw" })));
-  const fileList = element("nav", "taskmate-review-file-list", container);
-  fileList.setAttribute("aria-label", copy.fileList);
-  for (const task of review.tasks) {
-    const item = button("", () => dispatch({ type: "navigate-task", taskId: task.taskId }));
-    item.classList.add("taskmate-review-file-list-item");
-    appendTextElement(item, "strong", task.title);
-    appendTextElement(item, "span", task.path, "taskmate-review-path");
-    appendTextElement(item, "span", copy.changeCount.replace("{count}", String(task.changes.length)), "taskmate-review-change-count");
-    fileList.append(item);
-  }
   const list = element("div", "taskmate-review-files", container);
   for (const task of review.tasks) {
-    const section = element("details", "taskmate-review-file", list);
+    const section = element("section", "taskmate-review-file", list);
     section.id = `taskmate-review-${task.taskId}`;
     section.dataset.reviewAnchor = task.taskId;
-    section.open = !state.collapsedTaskIds.has(task.taskId);
-    section.addEventListener("toggle", () => {
-      const collapsed = !section.open;
-      if (collapsed !== state.collapsedTaskIds.has(task.taskId)) {
-        dispatch({ type: "set-task-collapsed", taskId: task.taskId, collapsed });
-      }
-    });
-    const fileHeader = element("summary", "taskmate-review-file-header", section);
+    const fileHeader = element("div", "taskmate-review-file-header", section);
     const identity = element("div", "taskmate-review-file-identity", fileHeader);
     appendTextElement(identity, "h3", task.title);
-    appendTextElement(identity, "span", copy.changeCount.replace("{count}", String(task.changes.length)), "taskmate-review-change-count");
-    appendTextElement(fileHeader, "span", task.path, "taskmate-review-path");
     const taskIds = task.changes.map((change) => change.id);
     if (taskIds.length > 1) {
       const selectedTaskCount = selectedCount(taskIds, state.approvedChangeIds);
       const taskActions = element("div", "taskmate-review-file-actions", fileHeader);
-      taskActions.addEventListener("click", (event) => event.stopPropagation());
       taskActions.append(bulkButton(copy.selectTask, "taskmate-review-select-task", selectedTaskCount === taskIds.length, () => dispatch({ type: "set-many-approved", changeIds: taskIds, approved: true })));
       taskActions.append(bulkButton(copy.clearTask, "taskmate-review-clear-task", selectedTaskCount === 0, () => dispatch({ type: "set-many-approved", changeIds: taskIds, approved: false })));
     }
@@ -7483,14 +7452,8 @@ var TaskChangeReviewView = class extends import_obsidian15.ItemView {
     }
   }
   async handle(action) {
-    let preserve = action.type === "set-mode" ? "anchor" : action.type === "set-approved" || action.type === "set-many-approved" || action.type === "set-task-collapsed" ? "scroll" : void 0;
+    let preserve = action.type === "set-mode" ? "anchor" : action.type === "set-approved" || action.type === "set-many-approved" ? "scroll" : void 0;
     this.state = reduceTaskChangeReviewState(this.state, action);
-    if (action.type === "navigate-task") {
-      this.targetTaskId = action.taskId;
-      this.targetChangeId = null;
-      await this.render();
-      return;
-    }
     if (action.type === "apply" && this.proposalId) {
       const result = await this.plugin.proposals.apply(this.proposalId, action.approvedChangeIds);
       new import_obsidian15.Notice(this.plugin.i18n().t("review.applied", { count: result.closedProposal.result?.succeededChangeIds.length ?? 0 }));
@@ -7549,10 +7512,7 @@ var TaskChangeReviewModal = class extends import_obsidian15.Modal {
         }
         return;
       }
-      rerender(action.type === "set-mode" ? "anchor" : action.type === "navigate-task" ? void 0 : "scroll");
-      if (action.type === "navigate-task") {
-        window.setTimeout(() => this.contentEl.querySelector(`#taskmate-review-${CSS.escape(action.taskId)}`)?.scrollIntoView({ block: "start" }), 0);
-      }
+      rerender(action.type === "set-mode" ? "anchor" : "scroll");
     };
     rerender();
   }
@@ -7574,9 +7534,7 @@ function reviewCopy(plugin) {
     markdown: t("review.markdown"),
     markdownAria: t("review.markdownAria"),
     comparisonAria: t("review.comparisonAria"),
-    noSelection: t("review.noSelection"),
-    fileList: t("review.fileList"),
-    changeCount: t("review.changeCount", { count: "{count}" })
+    noSelection: t("review.noSelection")
   };
 }
 

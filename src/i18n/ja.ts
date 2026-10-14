@@ -53,8 +53,6 @@ export const ja = {
   "review.markdownAria": "全文比較",
   "review.comparisonAria": "比較表示",
   "review.noSelection": "変更を1件以上選択してください",
-  "review.fileList": "変更対象のTask",
-  "review.changeCount": "{count}件の変更",
   "review.invalid": "Proposalが見つからないか、形式が正しくありません",
   "review.invalidLink": "TaskMateのレビューリンクが正しくありません",
   "search.title": "検索",

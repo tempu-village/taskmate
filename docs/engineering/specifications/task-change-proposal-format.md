@@ -8,7 +8,7 @@ A pending Task change Proposal MUST be UTF-8 JSON at `<proposalFolder>/<proposal
 
 `schemaVersion` MUST be `1`. A Proposal ID MUST match `proposal-[A-Za-z0-9._-]+`. The canonical Task UUID identifies each affected Task. `C-xx` identifies one independently approvable change and MUST match `C-[0-9]{2,}`. Task UUIDs and change identifiers MUST be unique inside one Proposal.
 
-`C-xx` is the short review reference used by UI controls and human discussion. Its numbering is Proposal-wide rather than restarting for each Task. A Task receives no additional review-only identifier: the title and path provide visible context, while the canonical Task UUID remains its machine identity. A `C-xx` identifier is not valid outside its Proposal; follow-up Proposal identity is governed by the origin-reference rules below.
+`C-xx` is the short review reference used by UI controls and human discussion. Its numbering is Proposal-wide rather than restarting for each Task. A Task receives no additional review-only identifier: its title provides visible context, while the canonical Task UUID remains its machine identity. The stored path is not displayed in the Review View. A `C-xx` identifier is not valid outside its Proposal; follow-up Proposal identity is governed by the origin-reference rules below.
 
 ## Version 1 shape
 
@@ -48,7 +48,7 @@ The Proposal MUST store complete `beforeMarkdown` and `afterMarkdown` for every 
 
 Opening or rendering a Proposal MUST NOT modify a Task. Before writing an approved change, TaskMate MUST resolve the canonical Task by stable Task ID and require its complete current Markdown to equal the stored `beforeMarkdown` and hash. A mismatch MUST produce `stale` and MUST NOT be bypassed with fuzzy patching.
 
-The Review View MUST show a file list containing every affected Task's title, path, and change count. Activating an entry MUST expand and navigate to its continuously scrollable Task section. Each Task section MUST be independently collapsible without changing its approval state. Desktop and mobile review surfaces MUST use the same state-transition logic and localization mapping so selection, display mode, navigation, and collapse behavior do not diverge.
+The Review View MUST show every affected Task as an always-expanded section in one continuous vertical list. Each section header MUST show only the Task title and any applicable Task-level selection controls. The Review View MUST NOT add a separate Task index, collapse control, file path, per-Task change count, or overall Task count. Section spacing and header padding MUST stay compact so metadata does not displace review content vertically. Desktop and mobile review surfaces MUST use the same state-transition logic and localization mapping so selection and display-mode behavior do not diverge.
 
 Only selected `C-xx` changes may be applied. Applying a subset MUST close the original Proposal with its exact decision and result, then create a new pending Proposal for unapplied changes belonging to every Task whose current snapshot was successfully validated. A missing, stale, or failed Task MUST NOT suppress the follow-up changes of another successfully validated Task. Failed changes remain recorded in the closed Proposal and require regeneration from the affected current Task. Follow-up changes MUST receive new `C-xx` identifiers and MUST retain `{proposalId, changeId}` origin references. An explicit rejection MUST close the Proposal without creating a follow-up.
 

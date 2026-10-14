@@ -61,24 +61,7 @@
   font-weight: var(--font-semibold);
 }
 .taskmate-review-compact-label { display: none; }
-.taskmate-review-file-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
-  gap: 0.5rem;
-  margin: 0.25rem 0 1rem;
-}
-.taskmate-review-file-list-item {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 0.2rem 0.6rem;
-  min-width: 0;
-  padding: 0.6rem;
-  text-align: left;
-}
-.taskmate-review-file-list-item strong { min-width: 0; overflow-wrap: anywhere; }
-.taskmate-review-file-list-item .taskmate-review-path { grid-column: 1 / -1; }
-.taskmate-review-change-count { color: var(--text-muted); font-size: var(--font-smallest); white-space: nowrap; }
-.taskmate-review-files { display: grid; gap: 1rem; min-width: 0; padding-bottom: 5rem; }
+.taskmate-review-files { display: grid; gap: 0.5rem; min-width: 0; padding-bottom: 5rem; }
 .taskmate-review-file { min-width: 0; max-width: 100%; border: 1px solid var(--background-modifier-border); border-radius: 10px; overflow: clip; }
 .taskmate-review-file-header {
   position: sticky;
@@ -86,21 +69,15 @@
   z-index: 1;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.45rem 0.6rem;
-  padding: 0.65rem;
+  gap: 0.35rem;
+  padding: 0.4rem 0.55rem;
   background: var(--background-secondary);
-  cursor: pointer;
-  list-style: none;
 }
-.taskmate-review-file-header::-webkit-details-marker { display: none; }
-.taskmate-review-file-header::before { content: "▸"; grid-column: 1; grid-row: 1 / span 2; align-self: center; color: var(--text-muted); }
-.taskmate-review-file[open] > .taskmate-review-file-header::before { content: "▾"; }
-.taskmate-review-file-identity { grid-column: 2; display: flex; align-items: flex-start; gap: 0.6rem; min-width: 0; }
+.taskmate-review-file-identity { display: flex; align-items: center; min-width: 0; }
 .taskmate-review-file-header h3 { min-width: 0; margin: 0; overflow-wrap: anywhere; }
-.taskmate-review-file-actions { grid-column: 3; grid-row: 1 / span 2; align-self: center; }
+.taskmate-review-file-actions { grid-column: 2; align-self: center; }
 .taskmate-review-id { flex: 0 0 auto; color: var(--text-accent); font-weight: 700; }
-.taskmate-review-path { grid-column: 2; min-width: 0; color: var(--text-muted); font-size: var(--font-smallest); overflow-wrap: anywhere; word-break: break-word; }
-.taskmate-review-change { display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: 0.6rem; min-width: 0; max-width: 100%; padding: 0.7rem; border-top: 1px solid var(--background-modifier-border); }
+.taskmate-review-change { display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: 0.5rem; min-width: 0; max-width: 100%; padding: 0.55rem; border-top: 1px solid var(--background-modifier-border); }
 .taskmate-review-change.is-target { outline: 2px solid var(--interactive-accent); outline-offset: -2px; }
 .taskmate-review-change-details { display: grid; gap: 0.25rem; min-width: 0; }
 .taskmate-review-values { overflow-wrap: anywhere; }
@@ -127,8 +104,8 @@
   .taskmate-review-display-switch button,
   .taskmate-review-file-actions button { min-height: 36px; padding-inline: 0.55rem; }
   .taskmate-review-display-switch button { min-width: 3.2rem; }
-  .taskmate-review-file-header { grid-template-columns: auto minmax(0, 1fr); top: 50px; }
-  .taskmate-review-file-actions { grid-column: 2; grid-row: 3; justify-self: start; flex-wrap: wrap; max-width: 100%; }
+  .taskmate-review-file-header { grid-template-columns: minmax(0, 1fr); top: 50px; }
+  .taskmate-review-file-actions { grid-column: 1; grid-row: 2; justify-self: start; flex-wrap: wrap; max-width: 100%; }
   .taskmate-review-change { grid-template-columns: auto auto minmax(0, 1fr); padding-inline: 0.55rem; }
   .taskmate-review-footer > button { flex: 1 1 auto; }
 }

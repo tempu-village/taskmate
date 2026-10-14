@@ -258,6 +258,8 @@ Implemented in the current branch. The product direction, jsdiff choice, D-01 th
 
 Implementation amendment, 2026-10-14: the user removed the proposed `T-xx` review identifier as redundant. Current Proposals use the canonical Task UUID for machine identity and show the Task title and path for human context; only independently approvable changes receive Proposal-local `C-xx` identifiers. The completed Review View also adds the file list, per-Task change counts and collapsible Task sections described by this RFC. This amendment supersedes the earlier `T-xx` requirements in this historical proposal; the current contract is the linked Specification and Feature.
 
+Presentation amendment, 2026-10-14: after testing the implemented review, the user removed the separate Task index, collapsible sections, displayed file paths and change counts because their vertical cost outweighed their navigation value. The current Review View uses compact, always-expanded Task sections headed only by title and applicable selection controls. This amendment supersedes the presentation portion of the preceding implementation amendment and the RFC's earlier file-list and folding proposal; the linked Specification and Feature remain the current authority.
+
 ## Sources
 
 - [jsdiff README and structured patch documentation](https://github.com/kpdecker/jsdiff/blob/master/README.md)
