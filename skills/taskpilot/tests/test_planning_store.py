@@ -4,11 +4,14 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 TODO_STORE = SCRIPTS / "todo_store.py"
 PLANNING_STORE = SCRIPTS / "planning_store.py"
+sys.path.insert(0, str(SCRIPTS))
+import planning_store  # noqa: E402
 
 
 class PlanningStoreTest(unittest.TestCase):
@@ -126,6 +129,19 @@ class PlanningStoreTest(unittest.TestCase):
         self.assertIn('labels: ["keep", "context/break"]', proposal["tasks"][0]["afterMarkdown"])
         self.assertEqual(task_path.read_text(encoding="utf-8"), before)
         self.assertEqual([change["id"] for change in proposal["tasks"][0]["changes"]], ["C-01", "C-02"])
+        self.assertNotIn("reviewId", proposal["tasks"][0])
+
+    def test_open_review_uri_uses_platform_adapter_without_a_shell(self):
+        uri = "obsidian://taskmate-review?vault=Vault&proposal=proposal-test"
+        with patch.object(planning_store.subprocess, "run") as run:
+            planning_store.open_review_uri(uri, "Darwin")
+            run.assert_called_once_with(["open", uri], check=True)
+        with patch.object(planning_store.subprocess, "run") as run:
+            planning_store.open_review_uri(uri, "Linux")
+            run.assert_called_once_with(["xdg-open", uri], check=True)
+        with patch.object(planning_store.os, "startfile", create=True) as startfile:
+            planning_store.open_review_uri(uri, "Windows")
+            startfile.assert_called_once_with(uri)
 
     def test_apply_updates_approved_task_and_reports_stale_task(self):
         first = self.create_task("First", "--date", "2026-10-01", "--label", "keep")

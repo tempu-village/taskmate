@@ -8,6 +8,7 @@ import datetime as dt
 import hashlib
 import json
 import math
+import os
 import platform
 import re
 import subprocess
@@ -39,6 +40,33 @@ def read_json(path: Path) -> Dict[str, Any]:
     if not isinstance(value, dict):
         fail("JSON root must be an object")
     return value
+
+
+def patched_labels(current: List[str], changes: Dict[str, Any]) -> List[str]:
+    removals = set(changes.get("removeLabels") or [])
+    labels = [label for label in current if label not in removals]
+    for label in changes.get("addLabels") or []:
+        if label not in labels:
+            labels.append(label)
+    return labels
+
+
+def open_review_uri(uri: str, system_name: Optional[str] = None) -> None:
+    system = system_name or platform.system()
+    try:
+        if system == "Darwin":
+            subprocess.run(["open", uri], check=True)
+        elif system == "Windows":
+            startfile = getattr(os, "startfile", None)
+            if startfile is None:
+                raise OSError("Windows URI-opening API is unavailable")
+            startfile(uri)
+        elif system == "Linux":
+            subprocess.run(["xdg-open", uri], check=True)
+        else:
+            fail(f"automatic review opening is unsupported on {system}")
+    except (OSError, subprocess.CalledProcessError) as error:
+        fail(f"could not open the persisted review automatically: {error}")
 
 
 def proposal_identifier(proposal: Dict[str, Any]) -> str:
@@ -179,7 +207,7 @@ def command_propose(args: argparse.Namespace) -> None:
     review = validated_review(args.vault, args.task_folder, read_json(args.plan))
     timestamp = todo_store.now_iso()
     tasks, change_number = [], 1
-    for task_number, item in enumerate((value for value in review["proposals"] if value["disposition"] == "change"), start=1):
+    for item in (value for value in review["proposals"] if value["disposition"] == "change"):
         path, task = todo_store.find_task(args.vault, args.task_folder, item["taskId"])
         before_markdown = path.read_text(encoding="utf-8")
         after_task = json.loads(json.dumps(task, ensure_ascii=False))
@@ -197,17 +225,14 @@ def command_propose(args: argparse.Namespace) -> None:
             change_number += 1
         if "addLabels" in typed or "removeLabels" in typed:
             before_labels = list(after_task["labels"])
-            removals = set(typed.get("removeLabels") or [])
-            after_labels = [label for label in before_labels if label not in removals]
-            for label in typed.get("addLabels") or []:
-                if label not in after_labels: after_labels.append(label)
+            after_labels = patched_labels(before_labels, typed)
             after_task["labels"] = after_labels
             changes.append({"id": f"C-{change_number:02d}", "field": "labels", "before": before_labels, "after": after_labels, "reason": item["reason"]})
             change_number += 1
         after_task["updated-at"] = timestamp
         after_markdown = todo_store.encode_task_preserving_properties(after_task, before_markdown)
         tasks.append({
-            "reviewId": f"T-{task_number:02d}", "taskId": item["taskId"], "path": task["path"], "title": task["title"],
+            "taskId": item["taskId"], "path": task["path"], "title": task["title"],
             "beforeMarkdown": before_markdown, "afterMarkdown": after_markdown,
             "beforeSha256": hashlib.sha256(before_markdown.encode("utf-8")).hexdigest(), "changes": changes,
         })
@@ -222,9 +247,7 @@ def command_propose(args: argparse.Namespace) -> None:
     uri = "obsidian://taskmate-review?" + urllib.parse.urlencode({"vault": args.vault.name, "proposal": args.proposal_id})
     opened = False
     if args.open_review:
-        if platform.system() != "Darwin":
-            fail("automatic review opening is currently implemented only for macOS")
-        subprocess.run(["open", uri], check=True)
+        open_review_uri(uri)
         opened = True
     print(json.dumps({"proposalId": args.proposal_id, "path": destination.relative_to(args.vault).as_posix(), "uri": uri, "opened": opened}, ensure_ascii=False, indent=2))
 
@@ -256,12 +279,7 @@ def command_apply(args: argparse.Namespace) -> None:
                 if key in changes:
                     patch[key] = changes[key]
             if "addLabels" in changes or "removeLabels" in changes:
-                removals = set(changes.get("removeLabels") or [])
-                labels = [label for label in task["labels"] if label not in removals]
-                for label in changes.get("addLabels") or []:
-                    if label not in labels:
-                        labels.append(label)
-                patch["labels"] = labels
+                patch["labels"] = patched_labels(task["labels"], changes)
             updated = todo_store.update_task(args.vault, args.task_folder, task_id, patch)
             _, stored = todo_store.find_task(args.vault, args.task_folder, task_id)
             for key, expected in patch.items():

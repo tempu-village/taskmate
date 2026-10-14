@@ -96,10 +96,15 @@ export class TaskChangeProposalRepository {
 
     let finalResult = result;
     if (writeFailures.length > 0) {
+      const failedTaskIds = new Set(writeFailures.map((failure) => failure.taskId));
+      const retainedFollowUpTasks = result.followUp?.tasks.filter((task) => !failedTaskIds.has(task.taskId)) ?? [];
+      const retainedFollowUp = result.followUp && retainedFollowUpTasks.length > 0
+        ? { ...result.followUp, tasks: retainedFollowUpTasks }
+        : null;
       finalResult = {
         ...result,
         status: actuallySucceeded.length ? "partially-applied" : "stale",
-        followUp: null,
+        followUp: retainedFollowUp,
         closedProposal: {
           ...result.closedProposal,
           status: actuallySucceeded.length ? "partially-applied" : "stale",
@@ -107,7 +112,7 @@ export class TaskChangeProposalRepository {
             ...result.closedProposal.result,
             succeededChangeIds: actuallySucceeded,
             failed: [...result.closedProposal.result.failed, ...writeFailures],
-            followUpProposalId: null
+            followUpProposalId: retainedFollowUp?.id ?? null
           } : undefined
         }
       };

@@ -3,6 +3,7 @@ import type { ProposalReview } from "./task-change-proposal";
 export interface TaskChangeReviewState {
   mode: "semantic" | "raw";
   approvedChangeIds: ReadonlySet<string>;
+  collapsedTaskIds: ReadonlySet<string>;
 }
 
 export interface TaskChangeReviewCopy {
@@ -21,14 +22,43 @@ export interface TaskChangeReviewCopy {
   markdownAria: string;
   comparisonAria: string;
   noSelection: string;
+  fileList: string;
+  changeCount: string;
 }
 
 export type TaskChangeReviewAction =
   | { type: "set-mode"; mode: "semantic" | "raw" }
   | { type: "set-approved"; changeId: string; approved: boolean }
   | { type: "set-many-approved"; changeIds: string[]; approved: boolean }
+  | { type: "set-task-collapsed"; taskId: string; collapsed: boolean }
+  | { type: "navigate-task"; taskId: string }
   | { type: "apply"; approvedChangeIds: string[] }
   | { type: "reject" };
+
+export function createTaskChangeReviewState(): TaskChangeReviewState {
+  return { mode: "semantic", approvedChangeIds: new Set(), collapsedTaskIds: new Set() };
+}
+
+export function reduceTaskChangeReviewState(state: TaskChangeReviewState, action: TaskChangeReviewAction): TaskChangeReviewState {
+  if (action.type === "set-mode") return { ...state, mode: action.mode };
+  if (action.type === "set-approved") {
+    const approvedChangeIds = new Set(state.approvedChangeIds);
+    action.approved ? approvedChangeIds.add(action.changeId) : approvedChangeIds.delete(action.changeId);
+    return { ...state, approvedChangeIds };
+  }
+  if (action.type === "set-many-approved") {
+    const approvedChangeIds = new Set(state.approvedChangeIds);
+    for (const id of action.changeIds) action.approved ? approvedChangeIds.add(id) : approvedChangeIds.delete(id);
+    return { ...state, approvedChangeIds };
+  }
+  if (action.type === "set-task-collapsed" || action.type === "navigate-task") {
+    const collapsedTaskIds = new Set(state.collapsedTaskIds);
+    if (action.type === "navigate-task" || !action.collapsed) collapsedTaskIds.delete(action.taskId);
+    else collapsedTaskIds.add(action.taskId);
+    return { ...state, collapsedTaskIds };
+  }
+  return state;
+}
 
 export function renderTaskChangeReview(
   container: HTMLElement,
@@ -55,20 +85,39 @@ export function renderTaskChangeReview(
   displaySwitch.append(modeButton(copy.semantic, copy.semanticAria, "taskmate-review-mode-semantic", state.mode === "semantic", () => dispatch({ type: "set-mode", mode: "semantic" })));
   displaySwitch.append(modeButton(copy.markdown, copy.markdownAria, "taskmate-review-mode-raw", state.mode === "raw", () => dispatch({ type: "set-mode", mode: "raw" })));
 
+  const fileList = element("nav", "taskmate-review-file-list", container);
+  fileList.setAttribute("aria-label", copy.fileList);
+  for (const task of review.tasks) {
+    const item = button("", () => dispatch({ type: "navigate-task", taskId: task.taskId }));
+    item.classList.add("taskmate-review-file-list-item");
+    appendTextElement(item, "strong", task.title);
+    appendTextElement(item, "span", task.path, "taskmate-review-path");
+    appendTextElement(item, "span", copy.changeCount.replace("{count}", String(task.changes.length)), "taskmate-review-change-count");
+    fileList.append(item);
+  }
+
   const list = element("div", "taskmate-review-files", container);
   for (const task of review.tasks) {
-    const section = element("section", "taskmate-review-file", list);
+    const section = element("details", "taskmate-review-file", list);
     section.id = `taskmate-review-${task.taskId}`;
-    section.dataset.reviewAnchor = task.reviewId;
-    const fileHeader = element("div", "taskmate-review-file-header", section);
+    section.dataset.reviewAnchor = task.taskId;
+    section.open = !state.collapsedTaskIds.has(task.taskId);
+    section.addEventListener("toggle", () => {
+      const collapsed = !section.open;
+      if (collapsed !== state.collapsedTaskIds.has(task.taskId)) {
+        dispatch({ type: "set-task-collapsed", taskId: task.taskId, collapsed });
+      }
+    });
+    const fileHeader = element("summary", "taskmate-review-file-header", section);
     const identity = element("div", "taskmate-review-file-identity", fileHeader);
-    appendTextElement(identity, "span", task.reviewId, "taskmate-review-id");
     appendTextElement(identity, "h3", task.title);
+    appendTextElement(identity, "span", copy.changeCount.replace("{count}", String(task.changes.length)), "taskmate-review-change-count");
     appendTextElement(fileHeader, "span", task.path, "taskmate-review-path");
     const taskIds = task.changes.map((change) => change.id);
     if (taskIds.length > 1) {
       const selectedTaskCount = selectedCount(taskIds, state.approvedChangeIds);
       const taskActions = element("div", "taskmate-review-file-actions", fileHeader);
+      taskActions.addEventListener("click", (event) => event.stopPropagation());
       taskActions.append(bulkButton(copy.selectTask, "taskmate-review-select-task", selectedTaskCount === taskIds.length, () => dispatch({ type: "set-many-approved", changeIds: taskIds, approved: true })));
       taskActions.append(bulkButton(copy.clearTask, "taskmate-review-clear-task", selectedTaskCount === 0, () => dispatch({ type: "set-many-approved", changeIds: taskIds, approved: false })));
     }

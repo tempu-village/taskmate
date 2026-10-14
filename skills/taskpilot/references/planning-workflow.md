@@ -57,7 +57,7 @@ After showing the validated inventory, create a unique safe Proposal ID and pers
 python3 scripts/planning_store.py --vault <vault> propose --plan <review.json> --proposal-id proposal-<id> --open-review
 ```
 
-`propose` stores a versioned JSON Proposal under the configured Proposal folder without changing canonical Tasks. It contains the typed ChangeSet, complete before/after Markdown, SHA-256 snapshots, stable `T-xx` and `C-xx` IDs, and reasons. On macOS, `--open-review` invokes the TaskMate-owned `obsidian://taskmate-review` URI directly through the operating system. It does not start a loopback bridge. If automatic opening is unavailable, omit `--open-review`, show the returned Proposal ID and URI, and tell the user to open it from TaskMate's pending-review list.
+`propose` stores a versioned JSON Proposal under the configured Proposal folder without changing canonical Tasks. It contains the typed ChangeSet, complete before/after Markdown, SHA-256 snapshots, stable `C-xx` IDs, and reasons. On macOS, Windows, and Linux, `--open-review` invokes the TaskMate-owned `obsidian://taskmate-review` URI directly through the operating system. It does not start a loopback bridge. If automatic opening fails, the persisted Proposal remains available from TaskMate's pending-review list.
 
 The user approves or rejects changes inside TaskMate. Opening the URI never applies changes. TaskMate rechecks the captured Markdown, applies only selected `C-xx` changes, moves the closed Proposal to history, and creates a new Proposal with new change IDs plus origin references after partial approval. Do not run the legacy `apply` command for a Proposal reviewed in TaskMate.
 

@@ -254,7 +254,9 @@ This placement follows TaskMate's existing documentation architecture and the ge
 
 ## Decision / status
 
-Implemented in the current branch. The product direction, jsdiff choice, D-01 through D-07 and U-01 through U-05 were approved on 2026-10-12. The implementation includes Proposal persistence, deterministic evidence validation, the Review View, approval/history/follow-up handling, Task Pilot Proposal output and direct macOS OS invocation of the TaskMate URI. Windows and Linux launch adapters are not implemented, and no release is claimed.
+Implemented in the current branch. The product direction, jsdiff choice, D-01 through D-07 and U-01 through U-05 were approved on 2026-10-12. The implementation includes Proposal persistence, deterministic evidence validation, the Review View, approval/history/follow-up handling, Task Pilot Proposal output and direct macOS, Windows, and Linux OS invocation of the TaskMate URI. No release is claimed.
+
+Implementation amendment, 2026-10-14: the user removed the proposed `T-xx` review identifier as redundant. Current Proposals use the canonical Task UUID for machine identity and show the Task title and path for human context; only independently approvable changes receive Proposal-local `C-xx` identifiers. The completed Review View also adds the file list, per-Task change counts and collapsible Task sections described by this RFC. This amendment supersedes the earlier `T-xx` requirements in this historical proposal; the current contract is the linked Specification and Feature.
 
 ## Sources
 
@@ -273,7 +275,7 @@ Implemented in the current branch. The product direction, jsdiff choice, D-01 th
 ## Links
 
 - Tracking Issue: [#52](https://github.com/tempu-village/taskmate/issues/52); its updated scope supersedes the earlier conversation-only proposal rule and narrower mutation scope.
-- Current features: [Task Pilot review and capacity planning](../features/task-pilot-planning.md) and [Task change review](../features/task-change-review/README.md); the proposed behavior is not implemented
+- Current features: [Task Pilot review and capacity planning](../features/task-pilot-planning.md) and [Task change review](../features/task-change-review/README.md)
 - Current specification: [Task change Proposal format](../specifications/task-change-proposal-format.md)
 - Current design: [Architecture](../design/architecture.md)
 - ADRs: None
@@ -295,6 +297,8 @@ jsdiffを推奨する主な理由は、完成済みの画面を提供するか�
 
 文書配置については、現在の提案と比較はこのRFCを正本にします。実装後は`docs/engineering/design/architecture.md`へdiff-engine seamの概要だけを追記し、詳細な比較はRFCへのリンクに留めます。TaskMate全体の技術一覧が必要なら、別途`docs/engineering/design/technology-stack.md`を作り、分類・用途・正本へのリンクを短く整理するのが適切です。依存の正確な名前とversionは`package.json`とlockfileを正本とし、手書き一覧へ複製しません。
 
-Codexの表示内では`obsidian://`リンクをクリックできませんでしたが、Task PilotがOS経由でTaskMate独自URIを直接実行するspikeは成功しました。Obsidianの起動中・終了中の両方、Vault指定、Task UUIDによる対象Task表示を確認しています。URIはReview Viewを開くだけとし、承認や変更適用は行いません。`D-05`は「loopback bridge」から「Task PilotがOS経由でTaskMate独自URIを直接実行」へ変更しました。listener、port、token管理を不要にしつつ、spikeで確認した自動前面表示を維持できるためです。`D-01`〜`D-07`は2026-10-12に採用され、現在branchへ実装済みです。Windows／Linuxの起動adapterとreleaseはまだありません。
+Codexの表示内では`obsidian://`リンクをクリックできませんでしたが、Task PilotがOS経由でTaskMate独自URIを直接実行するspikeは成功しました。Obsidianの起動中・終了中の両方、Vault指定、Task UUIDによる対象Task表示を確認しています。URIはReview Viewを開くだけとし、承認や変更適用は行いません。`D-05`は「loopback bridge」から「Task PilotがOS経由でTaskMate独自URIを直接実行」へ変更しました。listener、port、token管理を不要にしつつ、spikeで確認した自動前面表示を維持できるためです。`D-01`〜`D-07`は2026-10-12に採用され、現在branchへ実装済みです。Windows／Linuxの起動adapterも実装済みですが、各OSでの実機確認とreleaseはまだありません。
+
+2026-10-14の実装修正では、重複する`T-xx`を不要とするユーザー判断により、Taskの機械的識別には正規のTask UUID、画面上の文脈にはタイトルとパスを使用し、承認可能な変更だけに`C-xx`を付ける形へ変更しました。現在の仕様とFeatureが、このRFC内の以前の`T-xx`記述に優先します。
 
 `ChangeSet`は型付きの変更指示です。`Proposal`は、その`ChangeSet`、変更前後のMarkdown全文、承認内容、適用結果を保持するレビュー証跡です。前後MarkdownはTaskの正本ではなく、jsdiffによる正確な差分再生成、指示と生成・適用結果の照合、後日変更されたTaskに対する承認時点の再確認のために保存します。Proposal履歴は自動削除せず、ObsidianはProposal保存後に自動で前面表示します。`brk`の正規化は次回レビューで明示的に提案し、一部承認後の再提案には新しい`C-xx`を付けて元の識別子への参照を残します。

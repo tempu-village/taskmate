@@ -969,6 +969,8 @@ var en = {
   "review.markdownAria": "Full-text comparison",
   "review.comparisonAria": "Comparison view",
   "review.noSelection": "Select at least one change",
+  "review.fileList": "Affected Tasks",
+  "review.changeCount": "Changes: {count}",
   "review.invalid": "This proposal is missing or invalid",
   "review.invalidLink": "The TaskMate review link is invalid",
   "search.title": "Search",
@@ -1206,6 +1208,8 @@ var ja = {
   "review.markdownAria": "\u5168\u6587\u6BD4\u8F03",
   "review.comparisonAria": "\u6BD4\u8F03\u8868\u793A",
   "review.noSelection": "\u5909\u66F4\u30921\u4EF6\u4EE5\u4E0A\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044",
+  "review.fileList": "\u5909\u66F4\u5BFE\u8C61\u306ETask",
+  "review.changeCount": "{count}\u4EF6\u306E\u5909\u66F4",
   "review.invalid": "Proposal\u304C\u898B\u3064\u304B\u3089\u306A\u3044\u304B\u3001\u5F62\u5F0F\u304C\u6B63\u3057\u304F\u3042\u308A\u307E\u305B\u3093",
   "review.invalidLink": "TaskMate\u306E\u30EC\u30D3\u30E5\u30FC\u30EA\u30F3\u30AF\u304C\u6B63\u3057\u304F\u3042\u308A\u307E\u305B\u3093",
   "search.title": "\u691C\u7D22",
@@ -2514,7 +2518,7 @@ function buildTaskListModel(input) {
   };
 }
 
-// node_modules/sortablejs/modular/sortable.esm.js
+// ../taskmate/node_modules/sortablejs/modular/sortable.esm.js
 function _defineProperty(e, r, t) {
   return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
     value: t,
@@ -6160,7 +6164,7 @@ function detectObsidianLanguage() {
 // src/task-change-proposal-repository.ts
 var import_obsidian14 = require("obsidian");
 
-// node_modules/diff/libesm/diff/base.js
+// ../taskmate/node_modules/diff/libesm/diff/base.js
 var Diff = class {
   diff(oldStr, newStr, options = {}) {
     let callback;
@@ -6362,7 +6366,7 @@ var Diff = class {
   }
 };
 
-// node_modules/diff/libesm/util/string.js
+// ../taskmate/node_modules/diff/libesm/util/string.js
 function hasOnlyWinLineEndings(string) {
   return string.includes("\r\n") && !string.startsWith("\n") && !string.match(/[^\r]\n/);
 }
@@ -6370,7 +6374,7 @@ function hasOnlyUnixLineEndings(string) {
   return !string.includes("\r\n") && string.includes("\n");
 }
 
-// node_modules/diff/libesm/diff/line.js
+// ../taskmate/node_modules/diff/libesm/diff/line.js
 var LineDiff = class extends Diff {
   constructor() {
     super(...arguments);
@@ -6418,7 +6422,7 @@ function tokenize(value, options) {
   return retLines;
 }
 
-// node_modules/diff/libesm/patch/line-endings.js
+// ../taskmate/node_modules/diff/libesm/patch/line-endings.js
 function unixToWin(patch) {
   if (Array.isArray(patch)) {
     return patch.map((p) => unixToWin(p));
@@ -6450,7 +6454,7 @@ function isWin(patch) {
   })));
 }
 
-// node_modules/diff/libesm/patch/parse.js
+// ../taskmate/node_modules/diff/libesm/patch/parse.js
 function parsePatch(uniDiff) {
   const diffstr = uniDiff.split(/\n/), list = [];
   let i = 0;
@@ -6555,7 +6559,7 @@ function parsePatch(uniDiff) {
   return list;
 }
 
-// node_modules/diff/libesm/util/distance-iterator.js
+// ../taskmate/node_modules/diff/libesm/util/distance-iterator.js
 function distance_iterator_default(start, minLine, maxLine) {
   let wantForward = true, backwardExhausted = false, forwardExhausted = false, localOffset = 1;
   return function iterator() {
@@ -6584,7 +6588,7 @@ function distance_iterator_default(start, minLine, maxLine) {
   };
 }
 
-// node_modules/diff/libesm/patch/apply.js
+// ../taskmate/node_modules/diff/libesm/patch/apply.js
 function applyPatch(source, patch, options = {}) {
   let patches;
   if (typeof patch === "string") {
@@ -6733,7 +6737,7 @@ function applyStructuredPatch(source, patch, options = {}) {
   return resultLines.join("\n");
 }
 
-// node_modules/diff/libesm/patch/create.js
+// ../taskmate/node_modules/diff/libesm/patch/create.js
 function structuredPatch(oldFileName, newFileName, oldStr, newStr, oldHeader, newHeader, options) {
   let optionsObj;
   if (!options) {
@@ -6863,12 +6867,12 @@ async function buildProposalReview(proposal) {
   const tasks = [];
   for (const task of proposal.tasks) {
     if (await sha256(task.beforeMarkdown) !== task.beforeSha256) {
-      throw new Error(`Proposal ${proposal.id} beforeSha256 does not match ${task.reviewId}`);
+      throw new Error(`Proposal ${proposal.id} beforeSha256 does not match Task ${task.taskId}`);
     }
     validateSemanticEvidence(task);
     const patch = structuredPatch(task.path, task.path, task.beforeMarkdown, task.afterMarkdown, "before", "after", { context: 3 });
     if (applyPatch(task.beforeMarkdown, patch) !== task.afterMarkdown) {
-      throw new Error(`Proposal ${proposal.id} exact patch replay failed for ${task.reviewId}`);
+      throw new Error(`Proposal ${proposal.id} exact patch replay failed for Task ${task.taskId}`);
     }
     tasks.push({
       ...task,
@@ -6931,7 +6935,7 @@ async function applyProposalDecision(proposal, approvedChangeIds, currentMarkdow
       const followUpAfterTask = applyFields(appliedTask, afterTask, rejectedForTask.map((change) => change.field));
       const followUpAfter = encodeTaskPreservingProperties(followUpAfterTask, appliedMarkdown);
       followUpTasks.push({
-        ...proposalTask,
+        ...withoutLegacyReviewId(proposalTask),
         beforeMarkdown: appliedMarkdown,
         afterMarkdown: followUpAfter,
         beforeSha256: await sha256(appliedMarkdown),
@@ -6944,7 +6948,7 @@ async function applyProposalDecision(proposal, approvedChangeIds, currentMarkdow
     }
   }
   const succeededIds = writes.flatMap((write) => write.changeIds);
-  const followUp = followUpTasks.length > 0 && failed.length === 0 ? {
+  const followUp = followUpTasks.length > 0 ? {
     schemaVersion: TASK_CHANGE_PROPOSAL_SCHEMA_VERSION,
     id: options.followUpProposalId,
     status: "pending",
@@ -6969,6 +6973,11 @@ async function applyProposalDecision(proposal, approvedChangeIds, currentMarkdow
     }
   };
   return { status, writes, closedProposal, followUp };
+}
+function withoutLegacyReviewId(task) {
+  const copy = { ...task };
+  delete copy.reviewId;
+  return copy;
 }
 function parseRequiredTask(path, markdown, taskId) {
   const task = parseTaskMarkdown(path, markdown);
@@ -7012,7 +7021,7 @@ function validateSemanticEvidence(proposalTask) {
   const fields = ["title", "date", "priority", "labels", "steps", "notes"];
   const represented = /* @__PURE__ */ new Set();
   for (const change of proposalTask.changes) {
-    if (represented.has(change.field)) throw new Error(`Duplicate semantic field ${change.field} in ${proposalTask.reviewId}`);
+    if (represented.has(change.field)) throw new Error(`Duplicate semantic field ${change.field} in Task ${proposalTask.taskId}`);
     represented.add(change.field);
     if (!sameValue(change.before, taskField(before, change.field)) || !sameValue(change.after, taskField(after, change.field))) {
       throw new Error(`Change ${change.id} values do not match Markdown evidence`);
@@ -7055,18 +7064,15 @@ function validateProposalShape(value) {
   if (typeof value.createdAt !== "string" || !value.createdAt) throw new Error("Invalid Proposal createdAt");
   if (!Array.isArray(value.tasks) || value.tasks.length === 0) throw new Error("Proposal requires tasks");
   const taskIds = /* @__PURE__ */ new Set();
-  const reviewIds = /* @__PURE__ */ new Set();
   const changeIds = /* @__PURE__ */ new Set();
   for (const task of value.tasks) {
     if (!isRecord(task)) throw new Error("Invalid Proposal task");
-    if (!isIdentifier(task.reviewId, /^T-[0-9]{2,}$/) || reviewIds.has(task.reviewId)) throw new Error("Invalid or duplicate reviewId");
     if (typeof task.taskId !== "string" || !task.taskId || taskIds.has(task.taskId)) throw new Error("Invalid or duplicate taskId");
     if (typeof task.path !== "string" || !task.path || task.path.startsWith("/") || task.path.includes("..")) throw new Error("Invalid Task path");
     if (typeof task.title !== "string" || typeof task.beforeMarkdown !== "string" || typeof task.afterMarkdown !== "string") throw new Error("Invalid Proposal Markdown evidence");
     if (typeof task.beforeSha256 !== "string" || !/^[a-f0-9]{64}$/.test(task.beforeSha256)) throw new Error("Invalid beforeSha256");
     if (!Array.isArray(task.changes) || task.changes.length === 0) throw new Error("Proposal task requires changes");
     taskIds.add(task.taskId);
-    reviewIds.add(task.reviewId);
     const taskFields = /* @__PURE__ */ new Set();
     for (const change of task.changes) {
       if (!isRecord(change) || !isIdentifier(change.id, /^C-[0-9]{2,}$/) || changeIds.has(change.id)) throw new Error("Invalid or duplicate change id");
@@ -7160,10 +7166,13 @@ var TaskChangeProposalRepository = class {
     }
     let finalResult = result;
     if (writeFailures.length > 0) {
+      const failedTaskIds = new Set(writeFailures.map((failure) => failure.taskId));
+      const retainedFollowUpTasks = result.followUp?.tasks.filter((task) => !failedTaskIds.has(task.taskId)) ?? [];
+      const retainedFollowUp = result.followUp && retainedFollowUpTasks.length > 0 ? { ...result.followUp, tasks: retainedFollowUpTasks } : null;
       finalResult = {
         ...result,
         status: actuallySucceeded.length ? "partially-applied" : "stale",
-        followUp: null,
+        followUp: retainedFollowUp,
         closedProposal: {
           ...result.closedProposal,
           status: actuallySucceeded.length ? "partially-applied" : "stale",
@@ -7171,7 +7180,7 @@ var TaskChangeProposalRepository = class {
             ...result.closedProposal.result,
             succeededChangeIds: actuallySucceeded,
             failed: [...result.closedProposal.result.failed, ...writeFailures],
-            followUpProposalId: null
+            followUpProposalId: retainedFollowUp?.id ?? null
           } : void 0
         }
       };
@@ -7223,6 +7232,29 @@ var TaskChangeProposalRepository = class {
 var import_obsidian15 = require("obsidian");
 
 // src/task-change-review-renderer.ts
+function createTaskChangeReviewState() {
+  return { mode: "semantic", approvedChangeIds: /* @__PURE__ */ new Set(), collapsedTaskIds: /* @__PURE__ */ new Set() };
+}
+function reduceTaskChangeReviewState(state, action) {
+  if (action.type === "set-mode") return { ...state, mode: action.mode };
+  if (action.type === "set-approved") {
+    const approvedChangeIds = new Set(state.approvedChangeIds);
+    action.approved ? approvedChangeIds.add(action.changeId) : approvedChangeIds.delete(action.changeId);
+    return { ...state, approvedChangeIds };
+  }
+  if (action.type === "set-many-approved") {
+    const approvedChangeIds = new Set(state.approvedChangeIds);
+    for (const id of action.changeIds) action.approved ? approvedChangeIds.add(id) : approvedChangeIds.delete(id);
+    return { ...state, approvedChangeIds };
+  }
+  if (action.type === "set-task-collapsed" || action.type === "navigate-task") {
+    const collapsedTaskIds = new Set(state.collapsedTaskIds);
+    if (action.type === "navigate-task" || !action.collapsed) collapsedTaskIds.delete(action.taskId);
+    else collapsedTaskIds.add(action.taskId);
+    return { ...state, collapsedTaskIds };
+  }
+  return state;
+}
 function renderTaskChangeReview(container, review, state, copy, dispatch) {
   container.replaceChildren();
   container.classList.add("taskmate-review");
@@ -7240,20 +7272,38 @@ function renderTaskChangeReview(container, review, state, copy, dispatch) {
   displaySwitch.setAttribute("aria-label", copy.comparisonAria);
   displaySwitch.append(modeButton(copy.semantic, copy.semanticAria, "taskmate-review-mode-semantic", state.mode === "semantic", () => dispatch({ type: "set-mode", mode: "semantic" })));
   displaySwitch.append(modeButton(copy.markdown, copy.markdownAria, "taskmate-review-mode-raw", state.mode === "raw", () => dispatch({ type: "set-mode", mode: "raw" })));
+  const fileList = element("nav", "taskmate-review-file-list", container);
+  fileList.setAttribute("aria-label", copy.fileList);
+  for (const task of review.tasks) {
+    const item = button("", () => dispatch({ type: "navigate-task", taskId: task.taskId }));
+    item.classList.add("taskmate-review-file-list-item");
+    appendTextElement(item, "strong", task.title);
+    appendTextElement(item, "span", task.path, "taskmate-review-path");
+    appendTextElement(item, "span", copy.changeCount.replace("{count}", String(task.changes.length)), "taskmate-review-change-count");
+    fileList.append(item);
+  }
   const list = element("div", "taskmate-review-files", container);
   for (const task of review.tasks) {
-    const section = element("section", "taskmate-review-file", list);
+    const section = element("details", "taskmate-review-file", list);
     section.id = `taskmate-review-${task.taskId}`;
-    section.dataset.reviewAnchor = task.reviewId;
-    const fileHeader = element("div", "taskmate-review-file-header", section);
+    section.dataset.reviewAnchor = task.taskId;
+    section.open = !state.collapsedTaskIds.has(task.taskId);
+    section.addEventListener("toggle", () => {
+      const collapsed = !section.open;
+      if (collapsed !== state.collapsedTaskIds.has(task.taskId)) {
+        dispatch({ type: "set-task-collapsed", taskId: task.taskId, collapsed });
+      }
+    });
+    const fileHeader = element("summary", "taskmate-review-file-header", section);
     const identity = element("div", "taskmate-review-file-identity", fileHeader);
-    appendTextElement(identity, "span", task.reviewId, "taskmate-review-id");
     appendTextElement(identity, "h3", task.title);
+    appendTextElement(identity, "span", copy.changeCount.replace("{count}", String(task.changes.length)), "taskmate-review-change-count");
     appendTextElement(fileHeader, "span", task.path, "taskmate-review-path");
     const taskIds = task.changes.map((change) => change.id);
     if (taskIds.length > 1) {
       const selectedTaskCount = selectedCount(taskIds, state.approvedChangeIds);
       const taskActions = element("div", "taskmate-review-file-actions", fileHeader);
+      taskActions.addEventListener("click", (event) => event.stopPropagation());
       taskActions.append(bulkButton(copy.selectTask, "taskmate-review-select-task", selectedTaskCount === taskIds.length, () => dispatch({ type: "set-many-approved", changeIds: taskIds, approved: true })));
       taskActions.append(bulkButton(copy.clearTask, "taskmate-review-clear-task", selectedTaskCount === 0, () => dispatch({ type: "set-many-approved", changeIds: taskIds, approved: false })));
     }
@@ -7383,7 +7433,7 @@ var TaskChangeReviewView = class extends import_obsidian15.ItemView {
   targetTaskId = null;
   targetChangeId = null;
   review = null;
-  state = { mode: "semantic", approvedChangeIds: /* @__PURE__ */ new Set() };
+  state = createTaskChangeReviewState();
   getViewType() {
     return TASK_CHANGE_REVIEW_VIEW_TYPE;
   }
@@ -7403,7 +7453,7 @@ var TaskChangeReviewView = class extends import_obsidian15.ItemView {
     this.proposalId = proposalId;
     this.targetTaskId = taskId ?? null;
     this.targetChangeId = changeId ?? null;
-    this.state = { mode: "semantic", approvedChangeIds: /* @__PURE__ */ new Set() };
+    this.state = createTaskChangeReviewState();
     await this.render();
   }
   async render(preserve) {
@@ -7424,7 +7474,7 @@ var TaskChangeReviewView = class extends import_obsidian15.ItemView {
     }
     try {
       this.review = await this.plugin.proposals.review(this.proposalId);
-      renderTaskChangeReview(this.contentEl, this.review, this.state, this.copy(), (action) => void this.handle(action));
+      renderTaskChangeReview(this.contentEl, this.review, this.state, reviewCopy(this.plugin), (action) => void this.handle(action));
       if (position) restoreReviewPosition(this.contentEl, position);
       else window.setTimeout(() => this.revealTarget(), 0);
     } catch (error) {
@@ -7433,24 +7483,19 @@ var TaskChangeReviewView = class extends import_obsidian15.ItemView {
     }
   }
   async handle(action) {
-    let preserve = action.type === "set-mode" ? "anchor" : action.type === "set-approved" || action.type === "set-many-approved" ? "scroll" : void 0;
-    if (action.type === "set-mode") this.state = { ...this.state, mode: action.mode };
-    if (action.type === "set-approved") {
-      const next = new Set(this.state.approvedChangeIds);
-      if (action.approved) next.add(action.changeId);
-      else next.delete(action.changeId);
-      this.state = { ...this.state, approvedChangeIds: next };
-    }
-    if (action.type === "set-many-approved") {
-      const next = new Set(this.state.approvedChangeIds);
-      for (const id of action.changeIds) action.approved ? next.add(id) : next.delete(id);
-      this.state = { ...this.state, approvedChangeIds: next };
+    let preserve = action.type === "set-mode" ? "anchor" : action.type === "set-approved" || action.type === "set-many-approved" || action.type === "set-task-collapsed" ? "scroll" : void 0;
+    this.state = reduceTaskChangeReviewState(this.state, action);
+    if (action.type === "navigate-task") {
+      this.targetTaskId = action.taskId;
+      this.targetChangeId = null;
+      await this.render();
+      return;
     }
     if (action.type === "apply" && this.proposalId) {
       const result = await this.plugin.proposals.apply(this.proposalId, action.approvedChangeIds);
       new import_obsidian15.Notice(this.plugin.i18n().t("review.applied", { count: result.closedProposal.result?.succeededChangeIds.length ?? 0 }));
       this.proposalId = result.followUp?.id ?? null;
-      this.state = { mode: "semantic", approvedChangeIds: /* @__PURE__ */ new Set() };
+      this.state = createTaskChangeReviewState();
       preserve = void 0;
     }
     if (action.type === "reject" && this.proposalId) {
@@ -7474,26 +7519,6 @@ var TaskChangeReviewView = class extends import_obsidian15.ItemView {
     this.targetTaskId = null;
     this.targetChangeId = null;
   }
-  copy() {
-    const { t } = this.plugin.i18n();
-    return {
-      title: t("review.title"),
-      apply: t("review.apply"),
-      reject: t("review.reject"),
-      selectAll: t("review.selectAll"),
-      selectAllShort: t("review.selectAllShort"),
-      selectTask: t("review.selectTask"),
-      clearAll: t("review.clearAll"),
-      clearAllShort: t("review.clearAllShort"),
-      clearTask: t("review.clearTask"),
-      semantic: t("review.semantic"),
-      semanticAria: t("review.semanticAria"),
-      markdown: t("review.markdown"),
-      markdownAria: t("review.markdownAria"),
-      comparisonAria: t("review.comparisonAria"),
-      noSelection: t("review.noSelection")
-    };
-  }
 };
 var TaskChangeReviewModal = class extends import_obsidian15.Modal {
   constructor(plugin, proposalId) {
@@ -7504,63 +7529,56 @@ var TaskChangeReviewModal = class extends import_obsidian15.Modal {
   async onOpen() {
     this.modalEl.addClass("taskmate-review-modal");
     const review = await this.plugin.proposals.review(this.proposalId);
-    let state = { mode: "semantic", approvedChangeIds: /* @__PURE__ */ new Set() };
+    let state = createTaskChangeReviewState();
     const rerender = (preserve) => {
       const position = preserve ? captureReviewPosition(this.contentEl, preserve) : null;
-      renderTaskChangeReview(this.contentEl, review, state, new TaskChangeReviewViewCopy(this.plugin).value, async (action) => {
-        if (action.type === "set-mode") state = { ...state, mode: action.mode };
-        if (action.type === "set-approved") {
-          const next = new Set(state.approvedChangeIds);
-          action.approved ? next.add(action.changeId) : next.delete(action.changeId);
-          state = { ...state, approvedChangeIds: next };
-        }
-        if (action.type === "set-many-approved") {
-          const next = new Set(state.approvedChangeIds);
-          for (const id of action.changeIds) action.approved ? next.add(id) : next.delete(id);
-          state = { ...state, approvedChangeIds: next };
-        }
-        if (action.type === "apply") {
-          await this.plugin.proposals.apply(this.proposalId, action.approvedChangeIds);
-          this.close();
-          return;
-        }
-        if (action.type === "reject") {
-          if (window.confirm(this.plugin.i18n().t("review.rejectConfirm"))) {
-            await this.plugin.proposals.reject(this.proposalId);
-            this.close();
-          }
-          return;
-        }
-        rerender(action.type === "set-mode" ? "anchor" : "scroll");
-      });
+      renderTaskChangeReview(this.contentEl, review, state, reviewCopy(this.plugin), (action) => void handle(action));
       if (position) restoreReviewPosition(this.contentEl, position);
+    };
+    const handle = async (action) => {
+      state = reduceTaskChangeReviewState(state, action);
+      if (action.type === "apply") {
+        await this.plugin.proposals.apply(this.proposalId, action.approvedChangeIds);
+        this.close();
+        return;
+      }
+      if (action.type === "reject") {
+        if (window.confirm(this.plugin.i18n().t("review.rejectConfirm"))) {
+          await this.plugin.proposals.reject(this.proposalId);
+          this.close();
+        }
+        return;
+      }
+      rerender(action.type === "set-mode" ? "anchor" : action.type === "navigate-task" ? void 0 : "scroll");
+      if (action.type === "navigate-task") {
+        window.setTimeout(() => this.contentEl.querySelector(`#taskmate-review-${CSS.escape(action.taskId)}`)?.scrollIntoView({ block: "start" }), 0);
+      }
     };
     rerender();
   }
 };
-var TaskChangeReviewViewCopy = class {
-  value;
-  constructor(plugin) {
-    const { t } = plugin.i18n();
-    this.value = {
-      title: t("review.title"),
-      apply: t("review.apply"),
-      reject: t("review.reject"),
-      selectAll: t("review.selectAll"),
-      selectAllShort: t("review.selectAllShort"),
-      selectTask: t("review.selectTask"),
-      clearAll: t("review.clearAll"),
-      clearAllShort: t("review.clearAllShort"),
-      clearTask: t("review.clearTask"),
-      semantic: t("review.semantic"),
-      semanticAria: t("review.semanticAria"),
-      markdown: t("review.markdown"),
-      markdownAria: t("review.markdownAria"),
-      comparisonAria: t("review.comparisonAria"),
-      noSelection: t("review.noSelection")
-    };
-  }
-};
+function reviewCopy(plugin) {
+  const { t } = plugin.i18n();
+  return {
+    title: t("review.title"),
+    apply: t("review.apply"),
+    reject: t("review.reject"),
+    selectAll: t("review.selectAll"),
+    selectAllShort: t("review.selectAllShort"),
+    selectTask: t("review.selectTask"),
+    clearAll: t("review.clearAll"),
+    clearAllShort: t("review.clearAllShort"),
+    clearTask: t("review.clearTask"),
+    semantic: t("review.semantic"),
+    semanticAria: t("review.semanticAria"),
+    markdown: t("review.markdown"),
+    markdownAria: t("review.markdownAria"),
+    comparisonAria: t("review.comparisonAria"),
+    noSelection: t("review.noSelection"),
+    fileList: t("review.fileList"),
+    changeCount: t("review.changeCount", { count: "{count}" })
+  };
+}
 
 // src/main.ts
 var TaskMatePlugin = class extends import_obsidian16.Plugin {

@@ -2,7 +2,7 @@
 
 Approval: Accepted — [RFC 0032](../../rfcs/0032-use-jsdiff-for-task-change-preview.md), tracked by [Issue #52](https://github.com/tempu-village/taskmate/issues/52).
 
-Implementation: Implemented in the current branch. Task Pilot persists version 1 Proposals, TaskMate provides the Review View and approval flow, and macOS uses direct OS invocation of the TaskMate URI. Windows and Linux launch adapters remain unimplemented; pending-review discovery works without them.
+Implementation: Implemented in the current branch. Task Pilot persists version 1 Proposals, TaskMate provides the Review View and approval flow, and macOS, Windows, and Linux use platform adapters to invoke the TaskMate URI. Pending-review discovery remains the fallback when automatic launch fails.
 
 ## Purpose
 
@@ -15,11 +15,11 @@ The initial scope covers scheduled date, Priority, Labels, title, Steps, and Not
 1. Task Pilot records a Proposal containing a ChangeSet without modifying the canonical Task files.
 2. TaskMate opens the pending Proposal from an Obsidian URI handoff or its pending-review list.
 3. Desktop uses a dedicated ItemView; mobile uses a full-screen modal.
-4. The Review View presents a continuous list of proposed changes with stable Task and change identifiers.
+4. The Review View presents a navigable file list and a continuous list of proposed changes with stable change identifiers.
 5. The user can switch between semantic and raw Markdown diffs and approve changes individually.
 6. Opening a Proposal never applies it. TaskMate writes only the explicitly approved changes.
 
-The review toolbar separates selection from display. Selection uses persistent select-all and clear-all buttons whose unavailable action remains visible but disabled. Display uses an `Items / Full text` segmented control. Task-level bulk controls appear only when a Task has more than one change. Selection redraws preserve numeric scroll position; switching between Items and Full text restores the nearest stable `T-xx` or `C-xx` anchor.
+The file list shows every affected Task's title, path, and change count and navigates to that Task's review section. Task sections can be expanded or collapsed without changing approval state. The review toolbar separates selection from display. Selection uses persistent select-all and clear-all buttons whose unavailable action remains visible but disabled. Display uses an `Items / Full text` segmented control. Task-level bulk controls appear only when a Task has more than one change. Selection redraws preserve numeric scroll position; switching between Items and Full text restores the nearest stable Task UUID or `C-xx` anchor.
 
 The review surface contains horizontal overflow at every level except the Full text diff itself. Long titles, paths, reasons and controls wrap within the available width. The sticky footer remains above Task headers and reserves mobile toolbar and safe-area clearance.
 
@@ -75,6 +75,7 @@ The strict persisted format, lifecycle and URI security contract are defined by 
 
 - Missing or malformed Proposals or ChangeSets remain unapplied and show a recoverable error.
 - A source hash mismatch marks affected changes stale and requires regeneration.
+- A stale or failed Task does not discard follow-up changes belonging to another successfully validated Task.
 - An invalid operation blocks only the affected proposal unless atomicity is required by the operation group.
 - URI handoff failure does not lose review data; the pending-review list remains the fallback.
 - No bridge service or localhost listener is required.
@@ -94,6 +95,9 @@ The strict persisted format, lifecycle and URI security contract are defined by 
 - REVIEW-11: A Proposal preserves complete before/after Markdown and can regenerate the same raw diff without consulting AI output or the current Task.
 - REVIEW-12: Proposal history is retained until the user removes it.
 - REVIEW-13: A partial approval closes the original Proposal with its result; any follow-up uses new `C-xx` identifiers and retains origin references.
+- REVIEW-14: The file list exposes every affected Task with its change count, navigates to its section, and each section can be collapsed independently.
+- REVIEW-15: A stale or failed Task does not suppress a successfully validated Task's unapplied changes from the follow-up Proposal.
+- REVIEW-16: macOS, Windows, and Linux launch the review URI without shell interpolation; launch failure preserves pending-review discovery.
 
 ## Related documents
 

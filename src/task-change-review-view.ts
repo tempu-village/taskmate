@@ -1,7 +1,7 @@
 import { ItemView, Modal, Notice, WorkspaceLeaf } from "obsidian";
 import type TaskMatePlugin from "./main";
-import { renderTaskChangeReview } from "./task-change-review-renderer";
-import type { TaskChangeReviewAction, TaskChangeReviewState } from "./task-change-review-renderer";
+import { createTaskChangeReviewState, reduceTaskChangeReviewState, renderTaskChangeReview } from "./task-change-review-renderer";
+import type { TaskChangeReviewAction, TaskChangeReviewCopy, TaskChangeReviewState } from "./task-change-review-renderer";
 import type { ProposalReview } from "./task-change-proposal";
 import { captureReviewPosition, restoreReviewPosition } from "./task-change-review-scroll";
 
@@ -12,7 +12,7 @@ export class TaskChangeReviewView extends ItemView {
   private targetTaskId: string | null = null;
   private targetChangeId: string | null = null;
   private review: ProposalReview | null = null;
-  private state: TaskChangeReviewState = { mode: "semantic", approvedChangeIds: new Set() };
+  private state: TaskChangeReviewState = createTaskChangeReviewState();
 
   constructor(leaf: WorkspaceLeaf, private readonly plugin: TaskMatePlugin) {
     super(leaf);
@@ -30,7 +30,7 @@ export class TaskChangeReviewView extends ItemView {
     this.proposalId = proposalId;
     this.targetTaskId = taskId ?? null;
     this.targetChangeId = changeId ?? null;
-    this.state = { mode: "semantic", approvedChangeIds: new Set() };
+    this.state = createTaskChangeReviewState();
     await this.render();
   }
 
@@ -52,7 +52,7 @@ export class TaskChangeReviewView extends ItemView {
     }
     try {
       this.review = await this.plugin.proposals.review(this.proposalId);
-      renderTaskChangeReview(this.contentEl, this.review, this.state, this.copy(), (action) => void this.handle(action));
+      renderTaskChangeReview(this.contentEl, this.review, this.state, reviewCopy(this.plugin), (action) => void this.handle(action));
       if (position) restoreReviewPosition(this.contentEl, position);
       else window.setTimeout(() => this.revealTarget(), 0);
     } catch (error) {
@@ -63,23 +63,19 @@ export class TaskChangeReviewView extends ItemView {
 
   private async handle(action: TaskChangeReviewAction): Promise<void> {
     let preserve: "scroll" | "anchor" | undefined = action.type === "set-mode" ? "anchor"
-      : action.type === "set-approved" || action.type === "set-many-approved" ? "scroll" : undefined;
-    if (action.type === "set-mode") this.state = { ...this.state, mode: action.mode };
-    if (action.type === "set-approved") {
-      const next = new Set(this.state.approvedChangeIds);
-      if (action.approved) next.add(action.changeId); else next.delete(action.changeId);
-      this.state = { ...this.state, approvedChangeIds: next };
-    }
-    if (action.type === "set-many-approved") {
-      const next = new Set(this.state.approvedChangeIds);
-      for (const id of action.changeIds) action.approved ? next.add(id) : next.delete(id);
-      this.state = { ...this.state, approvedChangeIds: next };
+      : action.type === "set-approved" || action.type === "set-many-approved" || action.type === "set-task-collapsed" ? "scroll" : undefined;
+    this.state = reduceTaskChangeReviewState(this.state, action);
+    if (action.type === "navigate-task") {
+      this.targetTaskId = action.taskId;
+      this.targetChangeId = null;
+      await this.render();
+      return;
     }
     if (action.type === "apply" && this.proposalId) {
       const result = await this.plugin.proposals.apply(this.proposalId, action.approvedChangeIds);
       new Notice(this.plugin.i18n().t("review.applied", { count: result.closedProposal.result?.succeededChangeIds.length ?? 0 }));
       this.proposalId = result.followUp?.id ?? null;
-      this.state = { mode: "semantic", approvedChangeIds: new Set() };
+      this.state = createTaskChangeReviewState();
       preserve = undefined;
     }
     if (action.type === "reject" && this.proposalId) {
@@ -105,16 +101,6 @@ export class TaskChangeReviewView extends ItemView {
     this.targetChangeId = null;
   }
 
-  private copy() {
-    const { t } = this.plugin.i18n();
-    return {
-      title: t("review.title"), apply: t("review.apply"), reject: t("review.reject"),
-      selectAll: t("review.selectAll"), selectAllShort: t("review.selectAllShort"), selectTask: t("review.selectTask"),
-      clearAll: t("review.clearAll"), clearAllShort: t("review.clearAllShort"), clearTask: t("review.clearTask"),
-      semantic: t("review.semantic"), semanticAria: t("review.semanticAria"), markdown: t("review.markdown"), markdownAria: t("review.markdownAria"),
-      comparisonAria: t("review.comparisonAria"), noSelection: t("review.noSelection")
-    };
-  }
 }
 
 export class TaskChangeReviewModal extends Modal {
@@ -123,39 +109,33 @@ export class TaskChangeReviewModal extends Modal {
   async onOpen(): Promise<void> {
     this.modalEl.addClass("taskmate-review-modal");
     const review = await this.plugin.proposals.review(this.proposalId);
-    let state: TaskChangeReviewState = { mode: "semantic", approvedChangeIds: new Set() };
+    let state: TaskChangeReviewState = createTaskChangeReviewState();
     const rerender = (preserve?: "scroll" | "anchor") => {
       const position = preserve ? captureReviewPosition(this.contentEl, preserve) : null;
-      renderTaskChangeReview(this.contentEl, review, state, new TaskChangeReviewViewCopy(this.plugin).value, async (action) => {
-      if (action.type === "set-mode") state = { ...state, mode: action.mode };
-      if (action.type === "set-approved") {
-        const next = new Set(state.approvedChangeIds); action.approved ? next.add(action.changeId) : next.delete(action.changeId);
-        state = { ...state, approvedChangeIds: next };
-      }
-      if (action.type === "set-many-approved") {
-        const next = new Set(state.approvedChangeIds); for (const id of action.changeIds) action.approved ? next.add(id) : next.delete(id);
-        state = { ...state, approvedChangeIds: next };
-      }
+      renderTaskChangeReview(this.contentEl, review, state, reviewCopy(this.plugin), (action) => void handle(action));
+      if (position) restoreReviewPosition(this.contentEl, position);
+    };
+    const handle = async (action: TaskChangeReviewAction) => {
+      state = reduceTaskChangeReviewState(state, action);
       if (action.type === "apply") { await this.plugin.proposals.apply(this.proposalId, action.approvedChangeIds); this.close(); return; }
       if (action.type === "reject") { if (window.confirm(this.plugin.i18n().t("review.rejectConfirm"))) { await this.plugin.proposals.reject(this.proposalId); this.close(); } return; }
-      rerender(action.type === "set-mode" ? "anchor" : "scroll");
-    });
-      if (position) restoreReviewPosition(this.contentEl, position);
+      rerender(action.type === "set-mode" ? "anchor" : action.type === "navigate-task" ? undefined : "scroll");
+      if (action.type === "navigate-task") {
+        window.setTimeout(() => this.contentEl.querySelector<HTMLElement>(`#taskmate-review-${CSS.escape(action.taskId)}`)?.scrollIntoView({ block: "start" }), 0);
+      }
     };
     rerender();
   }
 }
 
-class TaskChangeReviewViewCopy {
-  readonly value;
-  constructor(plugin: TaskMatePlugin) {
-    const { t } = plugin.i18n();
-    this.value = {
-      title: t("review.title"), apply: t("review.apply"), reject: t("review.reject"),
-      selectAll: t("review.selectAll"), selectAllShort: t("review.selectAllShort"), selectTask: t("review.selectTask"),
-      clearAll: t("review.clearAll"), clearAllShort: t("review.clearAllShort"), clearTask: t("review.clearTask"),
-      semantic: t("review.semantic"), semanticAria: t("review.semanticAria"), markdown: t("review.markdown"), markdownAria: t("review.markdownAria"),
-      comparisonAria: t("review.comparisonAria"), noSelection: t("review.noSelection")
-    };
-  }
+function reviewCopy(plugin: TaskMatePlugin): TaskChangeReviewCopy {
+  const { t } = plugin.i18n();
+  return {
+    title: t("review.title"), apply: t("review.apply"), reject: t("review.reject"),
+    selectAll: t("review.selectAll"), selectAllShort: t("review.selectAllShort"), selectTask: t("review.selectTask"),
+    clearAll: t("review.clearAll"), clearAllShort: t("review.clearAllShort"), clearTask: t("review.clearTask"),
+    semantic: t("review.semantic"), semanticAria: t("review.semanticAria"), markdown: t("review.markdown"), markdownAria: t("review.markdownAria"),
+    comparisonAria: t("review.comparisonAria"), noSelection: t("review.noSelection"),
+    fileList: t("review.fileList"), changeCount: t("review.changeCount", { count: "{count}" })
+  };
 }

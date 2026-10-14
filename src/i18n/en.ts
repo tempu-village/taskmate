@@ -49,6 +49,8 @@ export const en = {
   "review.markdownAria": "Full-text comparison",
   "review.comparisonAria": "Comparison view",
   "review.noSelection": "Select at least one change",
+  "review.fileList": "Affected Tasks",
+  "review.changeCount": "Changes: {count}",
   "review.invalid": "This proposal is missing or invalid",
   "review.invalidLink": "The TaskMate review link is invalid",
   "search.title": "Search",

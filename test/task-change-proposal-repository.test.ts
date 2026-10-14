@@ -52,7 +52,7 @@ describe("TaskChangeProposalRepository", () => {
     vault.put("TaskMate/Tasks/Example.md", before);
     const proposal: TaskChangeProposal = {
       schemaVersion: 1, id: "proposal-001", status: "pending", createdAt: "2026-10-12T00:00:00.000Z",
-      tasks: [{ reviewId: "T-01", taskId: "task-uuid", path: "TaskMate/Tasks/Example.md", title: "Example",
+      tasks: [{ taskId: "task-uuid", path: "TaskMate/Tasks/Example.md", title: "Example",
         beforeMarkdown: before, afterMarkdown: after, beforeSha256: await sha256(before), changes: [
           { id: "C-01", field: "date", before: "2026-10-10", after: "2026-10-18", reason: "Reschedule" },
           { id: "C-02", field: "notes", before: "Original", after: "Changed", reason: "Clarify" }
@@ -72,6 +72,57 @@ describe("TaskChangeProposalRepository", () => {
     expect(result.status).toBe("partially-applied");
     expect(parseTaskMarkdown("TaskMate/Tasks/Example.md", vault.files.get("TaskMate/Tasks/Example.md")!.content)).toEqual(expect.objectContaining({ date: "2026-10-18", notes: "Original" }));
     expect(vault.files.has("TaskMate/Proposals/History/proposal-001.json")).toBe(true);
+    expect(vault.files.has(`TaskMate/Proposals/${result.followUp?.id}.json`)).toBe(true);
+  });
+
+  it("retains another Task's follow-up when a later Task write becomes stale", async () => {
+    const vault = new MemoryVault();
+    vault.folders.add("TaskMate"); vault.folders.add("TaskMate/Proposals");
+    const first = baseTask({ id: "task-first", path: "TaskMate/Tasks/First.md", title: "First" });
+    const second = baseTask({ id: "task-second", path: "TaskMate/Tasks/Second.md", title: "Second" });
+    const firstBefore = encodeTask(first);
+    const secondBefore = encodeTask(second);
+    const proposal: TaskChangeProposal = {
+      schemaVersion: 1, id: "proposal-001", status: "pending", createdAt: "2026-10-12T00:00:00.000Z",
+      tasks: [
+        {
+          taskId: first.id, path: first.path, title: first.title,
+          beforeMarkdown: firstBefore,
+          afterMarkdown: encodeTask({ ...first, date: "2026-10-18", notes: "Later", updatedAt: "2026-10-12T00:00:00.000Z" }),
+          beforeSha256: await sha256(firstBefore),
+          changes: [
+            { id: "C-01", field: "date", before: first.date, after: "2026-10-18", reason: "Reschedule" },
+            { id: "C-02", field: "notes", before: first.notes, after: "Later", reason: "Defer notes" }
+          ]
+        },
+        {
+          taskId: second.id, path: second.path, title: second.title,
+          beforeMarkdown: secondBefore,
+          afterMarkdown: encodeTask({ ...second, priority: 1, updatedAt: "2026-10-12T00:00:00.000Z" }),
+          beforeSha256: await sha256(secondBefore),
+          changes: [{ id: "C-03", field: "priority", before: null, after: 1, reason: "Prioritize" }]
+        }
+      ]
+    };
+    vault.put("TaskMate/Proposals/proposal-001.json", `${JSON.stringify(proposal)}\n`);
+    const app = { vault, fileManager: { renameFile: async (file: TFile, path: string) => {
+      const entry = vault.files.get(file.path)!; vault.files.delete(file.path); file.path = path; vault.files.set(path, entry);
+    } } } as unknown as App;
+    const sources = new Map([[first.id, firstBefore], [second.id, secondBefore]]);
+    const tasks = {
+      readReviewedTask: async (taskId: string) => ({ status: "ready" as const, path: taskId === first.id ? first.path : second.path, content: sources.get(taskId)! }),
+      writeReviewedTask: async (taskId: string) => taskId === second.id
+        ? { status: "stale" as const }
+        : { status: "saved" as const, path: first.path }
+    } as unknown as TaskRepository;
+    const proposals = new TaskChangeProposalRepository(app, () => "TaskMate/Proposals", tasks);
+
+    const result = await proposals.apply("proposal-001", ["C-01", "C-03"], "2026-10-12T01:00:00.000Z");
+
+    expect(result.status).toBe("partially-applied");
+    expect(result.followUp?.tasks).toHaveLength(1);
+    expect(result.followUp?.tasks[0]).toEqual(expect.objectContaining({ taskId: first.id }));
+    expect(result.closedProposal.result?.failed).toContainEqual(expect.objectContaining({ taskId: second.id }));
     expect(vault.files.has(`TaskMate/Proposals/${result.followUp?.id}.json`)).toBe(true);
   });
 });

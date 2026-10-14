@@ -18,7 +18,6 @@ export interface ProposalChange {
 }
 
 export interface ProposalTask {
-  reviewId: string;
   taskId: string;
   path: string;
   title: string;
@@ -96,12 +95,12 @@ export async function buildProposalReview(proposal: TaskChangeProposal): Promise
   const tasks: ProposalTaskReview[] = [];
   for (const task of proposal.tasks) {
     if (await sha256(task.beforeMarkdown) !== task.beforeSha256) {
-      throw new Error(`Proposal ${proposal.id} beforeSha256 does not match ${task.reviewId}`);
+      throw new Error(`Proposal ${proposal.id} beforeSha256 does not match Task ${task.taskId}`);
     }
     validateSemanticEvidence(task);
     const patch = structuredPatch(task.path, task.path, task.beforeMarkdown, task.afterMarkdown, "before", "after", { context: 3 });
     if (applyPatch(task.beforeMarkdown, patch) !== task.afterMarkdown) {
-      throw new Error(`Proposal ${proposal.id} exact patch replay failed for ${task.reviewId}`);
+      throw new Error(`Proposal ${proposal.id} exact patch replay failed for Task ${task.taskId}`);
     }
     tasks.push({
       ...task,
@@ -177,7 +176,7 @@ export async function applyProposalDecision(
       const followUpAfterTask = applyFields(appliedTask, afterTask, rejectedForTask.map((change) => change.field));
       const followUpAfter = encodeTaskPreservingProperties(followUpAfterTask, appliedMarkdown);
       followUpTasks.push({
-        ...proposalTask,
+        ...withoutLegacyReviewId(proposalTask),
         beforeMarkdown: appliedMarkdown,
         afterMarkdown: followUpAfter,
         beforeSha256: await sha256(appliedMarkdown),
@@ -191,7 +190,7 @@ export async function applyProposalDecision(
   }
 
   const succeededIds = writes.flatMap((write) => write.changeIds);
-  const followUp = followUpTasks.length > 0 && failed.length === 0
+  const followUp = followUpTasks.length > 0
     ? {
         schemaVersion: TASK_CHANGE_PROPOSAL_SCHEMA_VERSION,
         id: options.followUpProposalId,
@@ -221,6 +220,12 @@ export async function applyProposalDecision(
     }
   };
   return { status, writes, closedProposal, followUp };
+}
+
+function withoutLegacyReviewId(task: ProposalTask): ProposalTask {
+  const copy = { ...task } as ProposalTask & { reviewId?: unknown };
+  delete copy.reviewId;
+  return copy;
 }
 
 function parseRequiredTask(path: string, markdown: string, taskId: string): Task {
@@ -255,7 +260,7 @@ function validateSemanticEvidence(proposalTask: ProposalTask): void {
   const fields: ChangeField[] = ["title", "date", "priority", "labels", "steps", "notes"];
   const represented = new Set<ChangeField>();
   for (const change of proposalTask.changes) {
-    if (represented.has(change.field)) throw new Error(`Duplicate semantic field ${change.field} in ${proposalTask.reviewId}`);
+    if (represented.has(change.field)) throw new Error(`Duplicate semantic field ${change.field} in Task ${proposalTask.taskId}`);
     represented.add(change.field);
     if (!sameValue(change.before, taskField(before, change.field)) || !sameValue(change.after, taskField(after, change.field))) {
       throw new Error(`Change ${change.id} values do not match Markdown evidence`);
@@ -295,18 +300,15 @@ function validateProposalShape(value: unknown): asserts value is TaskChangePropo
   if (typeof value.createdAt !== "string" || !value.createdAt) throw new Error("Invalid Proposal createdAt");
   if (!Array.isArray(value.tasks) || value.tasks.length === 0) throw new Error("Proposal requires tasks");
   const taskIds = new Set<string>();
-  const reviewIds = new Set<string>();
   const changeIds = new Set<string>();
   for (const task of value.tasks) {
     if (!isRecord(task)) throw new Error("Invalid Proposal task");
-    if (!isIdentifier(task.reviewId, /^T-[0-9]{2,}$/) || reviewIds.has(task.reviewId)) throw new Error("Invalid or duplicate reviewId");
     if (typeof task.taskId !== "string" || !task.taskId || taskIds.has(task.taskId)) throw new Error("Invalid or duplicate taskId");
     if (typeof task.path !== "string" || !task.path || task.path.startsWith("/") || task.path.includes("..")) throw new Error("Invalid Task path");
     if (typeof task.title !== "string" || typeof task.beforeMarkdown !== "string" || typeof task.afterMarkdown !== "string") throw new Error("Invalid Proposal Markdown evidence");
     if (typeof task.beforeSha256 !== "string" || !/^[a-f0-9]{64}$/.test(task.beforeSha256)) throw new Error("Invalid beforeSha256");
     if (!Array.isArray(task.changes) || task.changes.length === 0) throw new Error("Proposal task requires changes");
     taskIds.add(task.taskId);
-    reviewIds.add(task.reviewId);
     const taskFields = new Set<unknown>();
     for (const change of task.changes) {
       if (!isRecord(change) || !isIdentifier(change.id, /^C-[0-9]{2,}$/) || changeIds.has(change.id)) throw new Error("Invalid or duplicate change id");

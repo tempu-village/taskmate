@@ -20,7 +20,7 @@ describe("Task change review position", () => {
     container.scrollTop = 300;
     container.getBoundingClientRect = () => ({ top: 100 } as DOMRect);
     const first = document.createElement("div");
-    first.dataset.reviewAnchor = "T-01";
+    first.dataset.reviewAnchor = "task-uuid";
     first.getBoundingClientRect = () => ({ top: 70 } as DOMRect);
     const nearest = document.createElement("div");
     nearest.dataset.reviewAnchor = "C-02";

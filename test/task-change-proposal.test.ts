@@ -41,7 +41,6 @@ describe("Task change Proposal review", () => {
       status: "pending",
       createdAt: "2026-10-12T00:00:00.000Z",
       tasks: [{
-        reviewId: "T-01",
         taskId: "task-uuid",
         path: "TaskMate/Tasks/Example.md",
         title: "Example",
@@ -71,7 +70,6 @@ describe("Task change Proposal review", () => {
       status: "pending",
       createdAt: "2026-10-12T00:00:00.000Z",
       tasks: [{
-        reviewId: "T-01",
         taskId: "task-uuid",
         path: "TaskMate/Tasks/Example.md",
         title: "Example",
@@ -89,7 +87,7 @@ describe("Task change Proposal review", () => {
     const before = encodeTask(task());
     const proposal: TaskChangeProposal = {
       schemaVersion: 1, id: "proposal-001", status: "pending", createdAt: "2026-10-12T00:00:00.000Z",
-      tasks: [{ reviewId: "T-01", taskId: "task-uuid", path: "TaskMate/Tasks/Example.md", title: "Example",
+      tasks: [{ taskId: "task-uuid", path: "TaskMate/Tasks/Example.md", title: "Example",
         beforeMarkdown: before,
         afterMarkdown: encodeTask(task({ date: null, notes: "Hidden change", updatedAt: "2026-10-12T00:00:00.000Z" })),
         beforeSha256: await sha256(before),
@@ -109,7 +107,6 @@ describe("Task change Proposal review", () => {
       status: "pending",
       createdAt: "2026-10-12T00:00:00.000Z",
       tasks: [{
-        reviewId: "T-01",
         taskId: "task-uuid",
         path: "TaskMate/Tasks/Example.md",
         title: "Example",
@@ -147,7 +144,6 @@ describe("Task change Proposal review", () => {
       status: "pending",
       createdAt: "2026-10-12T00:00:00.000Z",
       tasks: [{
-        reviewId: "T-01",
         taskId: "task-uuid",
         path: "TaskMate/Tasks/Example.md",
         title: "Example",
@@ -170,13 +166,66 @@ describe("Task change Proposal review", () => {
     expect(result.closedProposal.result?.failed[0]).toEqual(expect.objectContaining({ taskId: "task-uuid" }));
   });
 
+  it("keeps a valid Task's unapplied changes when another Task is stale", async () => {
+    const first = task({ id: "task-first", path: "TaskMate/Tasks/First.md", title: "First" });
+    const second = task({ id: "task-second", path: "TaskMate/Tasks/Second.md", title: "Second" });
+    const firstBefore = encodeTask(first);
+    const secondBefore = encodeTask(second);
+    const proposal: TaskChangeProposal = {
+      schemaVersion: 1,
+      id: "proposal-001",
+      status: "pending",
+      createdAt: "2026-10-12T00:00:00.000Z",
+      tasks: [
+        {
+          taskId: first.id,
+          path: first.path,
+          title: first.title,
+          beforeMarkdown: firstBefore,
+          afterMarkdown: encodeTask({ ...first, date: "2026-10-18", notes: "Later", updatedAt: "2026-10-12T00:00:00.000Z" }),
+          beforeSha256: await sha256(firstBefore),
+          changes: [
+            { id: "C-01", field: "date", before: first.date, after: "2026-10-18", reason: "Reschedule" },
+            { id: "C-02", field: "notes", before: first.notes, after: "Later", reason: "Defer notes" }
+          ]
+        },
+        {
+          taskId: second.id,
+          path: second.path,
+          title: second.title,
+          beforeMarkdown: secondBefore,
+          afterMarkdown: encodeTask({ ...second, priority: 1, updatedAt: "2026-10-12T00:00:00.000Z" }),
+          beforeSha256: await sha256(secondBefore),
+          changes: [{ id: "C-03", field: "priority", before: null, after: 1, reason: "Prioritize" }]
+        }
+      ]
+    };
+
+    const result = await applyProposalDecision(
+      proposal,
+      ["C-01", "C-03"],
+      new Map([[first.id, firstBefore], [second.id, `${secondBefore}\nexternal change`]]),
+      { decidedAt: "2026-10-12T01:00:00.000Z", followUpProposalId: "proposal-002" }
+    );
+
+    expect(result.status).toBe("partially-applied");
+    expect(result.followUp?.tasks).toHaveLength(1);
+    expect(result.followUp?.tasks[0]).toEqual(expect.objectContaining({ taskId: first.id }));
+    expect(result.followUp?.tasks[0].changes).toEqual([
+      expect.objectContaining({ field: "notes", origin: { proposalId: "proposal-001", changeId: "C-02" } })
+    ]);
+    expect(result.closedProposal.result?.failed).toEqual([
+      expect.objectContaining({ taskId: second.id, changeIds: ["C-03"] })
+    ]);
+  });
+
   it("builds a synchronous review for 20 small Tasks within the initial guardrail", async () => {
     const tasks = await Promise.all(Array.from({ length: 20 }, async (_, index) => {
       const id = `task-${index}`;
       const path = `TaskMate/Tasks/Task ${index}.md`;
       const before = encodeTask(task({ id, path, title: `Task ${index}` }));
       const after = encodeTask(task({ id, path, title: `Task ${index}`, date: "2026-10-18", updatedAt: "2026-10-12T00:00:00.000Z" }));
-      return { reviewId: `T-${String(index + 1).padStart(2, "0")}`, taskId: id, path, title: `Task ${index}`,
+      return { taskId: id, path, title: `Task ${index}`,
         beforeMarkdown: before, afterMarkdown: after, beforeSha256: await sha256(before),
         changes: [{ id: `C-${String(index + 1).padStart(2, "0")}`, field: "date" as const, before: "2026-10-10", after: "2026-10-18", reason: "Reschedule" }] };
     }));

@@ -22,7 +22,7 @@ Use browser/public Obsidian APIs in plugin runtime; Node/Python belong to build 
 
 [Model tests](../../../test/task-list-model.test.ts), [renderer tests](../../../test/task-list-renderer.test.ts) and [mobile layout tests](../../../test/mobile-layout.test.ts) cover selected boundaries. Device verification remains separate.
 
-[Proposal tests](../../../test/task-change-proposal.test.ts), [Proposal repository tests](../../../test/task-change-proposal-repository.test.ts), and [review renderer tests](../../../test/task-change-review-renderer.test.ts) cover deterministic evidence, partial approval, stale protection, history/follow-up persistence and DOM intent. The macOS direct-URI spike is manual evidence; Windows/Linux launch adapters and fresh mobile visual verification remain gaps.
+[Proposal tests](../../../test/task-change-proposal.test.ts), [Proposal repository tests](../../../test/task-change-proposal-repository.test.ts), and [review renderer tests](../../../test/task-change-review-renderer.test.ts) cover deterministic evidence, partial approval, isolated stale/write failures, history/follow-up persistence and DOM intent. Task Pilot tests cover macOS, Windows, and Linux URI dispatch without invoking a shell. The macOS direct-URI spike is manual evidence; fresh Windows/Linux URI delivery and mobile visual verification remain gaps.
 
 ## Related RFCs
 
