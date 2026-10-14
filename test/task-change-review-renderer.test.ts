@@ -50,6 +50,16 @@ describe("Task change review renderer", () => {
     expect(dispatch).toHaveBeenCalledWith({ type: "apply", approvedChangeIds: ["C-01"] });
   });
 
+  it("shows a back action for an editable pending Proposal", () => {
+    const container = document.createElement("div");
+    const back = vi.fn();
+    renderTaskChangeReview(container, review, { mode: "semantic", approvedChangeIds: new Set() }, copy, vi.fn(), { back: { label: "Back", onClick: back } });
+
+    container.querySelector<HTMLButtonElement>(".taskmate-review-back")?.click();
+    expect(back).toHaveBeenCalledOnce();
+    expect(container.querySelector(".taskmate-review-footer")).not.toBeNull();
+  });
+
   it("switches to raw Markdown hunks derived by the review model", () => {
     const container = document.createElement("div");
     renderTaskChangeReview(container, review, { mode: "raw", approvedChangeIds: new Set() }, copy, vi.fn());
@@ -130,11 +140,14 @@ describe("Task change review renderer", () => {
 
   it("renders Proposal history as read-only while preserving both diff modes", () => {
     const container = document.createElement("div");
-    renderTaskChangeReview(container, review, { mode: "semantic", approvedChangeIds: new Set() }, copy, vi.fn(), { readOnly: true });
+    const back = vi.fn();
+    renderTaskChangeReview(container, review, { mode: "semantic", approvedChangeIds: new Set() }, copy, vi.fn(), { readOnly: true, back: { label: "Back", onClick: back } });
 
     expect(container.querySelector(".taskmate-review-selection-actions")).toBeNull();
     expect(container.querySelector(".taskmate-review-change input")).toBeNull();
     expect(container.querySelector(".taskmate-review-footer")).toBeNull();
     expect(container.querySelector(".taskmate-review-display-switch")).not.toBeNull();
+    container.querySelector<HTMLButtonElement>(".taskmate-review-back")?.click();
+    expect(back).toHaveBeenCalledOnce();
   });
 });

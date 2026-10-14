@@ -55,6 +55,8 @@ describe("Task change review view", () => {
       targetTaskId: "task-old",
       targetChangeId: "C-01",
       review: { proposalId: "proposal-old" },
+      indexMode: "history",
+      proposalSource: "history",
       state: { mode: "raw", approvedChangeIds: new Set(["C-01"]) },
       render
     });
@@ -67,6 +69,8 @@ describe("Task change review view", () => {
       targetTaskId: null,
       targetChangeId: null,
       review: null,
+      indexMode: "pending",
+      proposalSource: "pending",
       state: { mode: "semantic", approvedChangeIds: new Set() }
     }));
   });

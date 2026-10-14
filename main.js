@@ -7518,13 +7518,13 @@ var TaskChangeReviewView = class extends import_obsidian15.ItemView {
   requestRender() {
     void this.render("scroll");
   }
-  async openIndex() {
+  async openIndex(mode = "pending") {
     this.proposalId = null;
     this.targetTaskId = null;
     this.targetChangeId = null;
     this.review = null;
-    this.indexMode = "pending";
-    this.proposalSource = "pending";
+    this.indexMode = mode;
+    this.proposalSource = mode;
     this.state = createTaskChangeReviewState();
     await this.render();
   }
@@ -7572,7 +7572,7 @@ var TaskChangeReviewView = class extends import_obsidian15.ItemView {
             failed: proposal.failedCount
           })
         });
-        open.createSpan({ text: this.plugin.i18n().t("review.summary", { tasks: proposal.taskCount, changes: proposal.changeCount }) });
+        open.createSpan({ cls: "taskmate-review-index-summary", text: this.plugin.i18n().t("review.summary", { tasks: proposal.taskCount, changes: proposal.changeCount }) });
         open.addEventListener("click", () => void (this.indexMode === "pending" ? this.openProposal(proposal.id) : this.openHistoryProposal(proposal.id)));
       }
       return;
@@ -7581,14 +7581,10 @@ var TaskChangeReviewView = class extends import_obsidian15.ItemView {
       this.review = this.proposalSource === "history" ? await this.plugin.proposals.reviewHistory(this.proposalId) : await this.plugin.proposals.review(this.proposalId);
       renderTaskChangeReview(this.contentEl, this.review, this.state, reviewCopy(this.plugin), (action) => void this.handle(action), {
         readOnly: this.proposalSource === "history",
-        back: this.proposalSource === "history" ? {
+        back: {
           label: this.plugin.i18n().t("common.back"),
-          onClick: () => {
-            this.proposalId = null;
-            this.indexMode = "history";
-            void this.render();
-          }
-        } : void 0
+          onClick: () => void this.openIndex(this.proposalSource)
+        }
       });
       if (position) restoreReviewPosition(this.contentEl, position);
       else window.setTimeout(() => this.revealTarget(), 0);

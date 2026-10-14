@@ -410,11 +410,19 @@ describe("mobile layout", () => {
 
   it("contains Task review overflow and reserves phone footer clearance", () => {
     const review = declarations(".taskmate-review");
+    const reviewIndex = declarations(".taskmate-review-index");
+    const indexItem = declarations(".taskmate-review-index-item");
+    const indexIdentity = declarations(".taskmate-review-index-identity");
+    const phoneIndexItem = declarations(".is-phone .taskmate-review-index-item");
     const rawDiff = declarations(".taskmate-review-diff");
     const files = declarations(".taskmate-review-files");
     const phoneFooter = declarations(".is-phone .taskmate-review-footer");
 
     expect(review).toMatch(/overflow-x\s*:\s*hidden\s*;/);
+    expect(reviewIndex).toMatch(/overflow-x\s*:\s*hidden\s*;/);
+    expect(indexItem).toMatch(/grid-template-columns\s*:\s*minmax\(0,\s*1fr\)\s+auto\s*;/);
+    expect(indexIdentity).toMatch(/overflow-wrap\s*:\s*anywhere\s*;/);
+    expect(phoneIndexItem).toMatch(/grid-template-columns\s*:\s*minmax\(0,\s*1fr\)\s*;/);
     expect(rawDiff).toMatch(/overflow-x\s*:\s*scroll\s*;/);
     expect(rawDiff).toMatch(/overscroll-behavior-inline\s*:\s*contain\s*;/);
     expect(files).toMatch(/padding-bottom\s*:/);

@@ -12,6 +12,7 @@
 .taskmate-review-index {
   height: 100%;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 1rem;
 }
 .taskmate-review {
@@ -30,8 +31,9 @@
 .taskmate-review-header h2 { margin-right: auto; }
 .taskmate-review-index-tabs { display: flex; gap: 0.45rem; margin-bottom: 0.7rem; }
 .taskmate-review-index-tabs button.is-active { color: var(--text-on-accent); background: var(--interactive-accent); }
-.taskmate-review-index-identity { display: grid; gap: 0.2rem; min-width: 0; text-align: start; overflow-wrap: anywhere; }
+.taskmate-review-index-identity { display: grid; gap: 0.2rem; min-width: 0; max-width: 100%; text-align: start; overflow-wrap: anywhere; white-space: normal; }
 .taskmate-review-history-status { color: var(--text-muted); font-size: var(--font-ui-smaller); }
+.taskmate-review-index-summary { align-self: start; white-space: normal; text-align: end; }
 .taskmate-review-controls {
   position: sticky;
   top: 0;
@@ -93,7 +95,7 @@
 .taskmate-diff-delete { color: var(--text-error); background: color-mix(in srgb, var(--color-red) 12%, transparent); }
 .taskmate-diff-header { color: var(--text-accent); }
 .taskmate-review-footer { position: sticky; bottom: 0; z-index: 5; justify-content: flex-end; flex-wrap: wrap; padding: 0.7rem 0; background: var(--background-primary); }
-.taskmate-review-index-item { display: flex; justify-content: space-between; width: 100%; margin: 0.4rem 0; padding: 0.7rem; }
+.taskmate-review-index-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.75rem; align-items: start; width: 100%; max-width: 100%; margin: 0.4rem 0; padding: 0.7rem; overflow: hidden; }
 .taskmate-review-modal { width: min(96vw, 1100px); height: 94vh; }
 .taskmate-review-modal .modal-content { height: 100%; overflow: hidden; }
 
@@ -129,6 +131,8 @@
   bottom: calc(var(--mobile-toolbar-height, 0px) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
   padding-bottom: max(0.7rem, var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
 }
+.is-phone .taskmate-review-index-item { grid-template-columns: minmax(0, 1fr); gap: 0.35rem; }
+.is-phone .taskmate-review-index-summary { text-align: start; color: var(--text-muted); }
 
 @media (max-width: 360px) {
   .taskmate-review-footer > button { flex-basis: 100%; }

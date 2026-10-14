@@ -19,10 +19,12 @@ The initial scope covers scheduled date, Priority, Labels, title, Steps, and Not
 5. The user can switch between semantic and raw Markdown diffs and approve changes individually.
 6. Opening a Proposal never applies it. TaskMate writes only the explicitly approved changes.
 7. The Review View provides pending and history tabs. History entries show status and success/failure counts and open the original diff as read-only evidence.
+8. Pending and history details both provide an in-view back action to their originating list; returning discards any unapplied selection state.
 
 Affected Tasks appear directly as always-expanded sections; there is no separate Task index or collapse interaction. A section header shows the Task title but omits the stored file path and change counts. Compact section gaps and header padding prioritize the change content vertically. The review toolbar separates selection from display. Selection uses persistent select-all and clear-all buttons whose unavailable action remains visible but disabled. Display uses an `Items / Full text` segmented control. Task-level bulk controls appear only when a Task has more than one change. Selection redraws preserve numeric scroll position; switching between Items and Full text restores the nearest stable Task UUID or `C-xx` anchor.
 
 The review surface contains horizontal overflow at every level except the Full text diff itself. Long titles, reasons and controls wrap within the available width. The sticky footer remains above Task headers and reserves mobile toolbar and safe-area clearance.
+Proposal identifiers in pending and history lists wrap within the available width. On phones, the Task/change summary occupies a separate row below the identifier so long names cannot overlap metadata or create page-level horizontal scrolling.
 
 ## Obsidian Sync on mobile
 
