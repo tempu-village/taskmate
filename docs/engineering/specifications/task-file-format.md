@@ -2,6 +2,8 @@
 
 Status: Current normative contract. Task Pilot's [Task schema](../../../skills/taskpilot/references/task-schema.md) remains the canonical contract used by an installed skill; this repository specification records the same implementation-facing requirements without replacing it.
 
+This format applies only to canonical Tasks. Properties written on ordinary import sources, including `taskmate-source` and `taskmate-import-*`, belong to [Source note property format](source-note-properties.md) and MUST NOT be interpreted as Task properties.
+
 ## File and identity
 
 - A Task MUST be stored as one Markdown file in the configured Task folder.
@@ -41,3 +43,5 @@ See [domain round-trip tests](../../../test/tasks/domain.test.ts), [repository t
 > 翻訳状態：`ai-translated`。英語版が正本です。
 
 Taskは設定されたフォルダーのMarkdown一ファイルで、`type: todo`と安定した`id`を持ちます。IDはタイトルやファイル名の変更で変えず、旧`--<short-id>`形式も読み取ります。日付、priority、labels、project、rank、timestampは上記形式に従い、未知のfrontmatterを保持します。Stepsは親Task内の順序付き値で、親とは独立して完了できます。形式変更には互換性または移行判断とTypeScript・Python双方の検証が必要です。未確認のMarkdown保持保証は追加しません。
+
+`taskmate-source`や`taskmate-import-*`は通常のソースノート用であり、正式TaskのPropertyではありません。詳しくは[Source note property format](source-note-properties.md)を参照してください。

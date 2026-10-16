@@ -7,6 +7,7 @@ Do not place feature introductions, background narratives or implementation hist
 | Specification | Scope |
 | --- | --- |
 | [Task file format](task-file-format.md) | Markdown storage, identity, properties, Steps and compatibility |
+| [Source note property format](source-note-properties.md) | Source eligibility, import provenance and TaskMate-unowned note properties |
 | [Task change Proposal format](task-change-proposal-format.md) | Proposal JSON schema, identifiers, evidence, lifecycle and URI security |
 
 ## 日本語参考
@@ -16,3 +17,5 @@ Do not place feature introductions, background narratives or implementation hist
 > 翻訳状態：`ai-translated`。英語版が正本です。
 
 Specificationは、実装が満たす厳密で規範的な技術契約です。データ形式、API、schema、上限値、状態遷移、互換性、security制約を、検証可能なMUST、MUST NOT、形式、遷移条件として記録します。機能紹介、背景、実装履歴、機能固有のWhatとHowは[Feature](../features/README.md)へ置き、契約を複製せずリンクします。実装と契約は同じ変更で更新します。
+
+正式TaskのPropertyは[Task file format](task-file-format.md)、通常ノートの対象指定と取り込み履歴は[Source note property format](source-note-properties.md)を参照してください。
