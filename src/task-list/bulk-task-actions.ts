@@ -1,4 +1,7 @@
+import type { ProjectRepository } from "../projects/project-repository";
 import type { Priority, Task } from "../tasks/domain";
+import type { TaskRepository } from "../tasks/repository";
+import { failedTaskWrites } from "../tasks/task-writes";
 
 export interface BulkTaskChanges {
   date?: string | null;
@@ -22,9 +25,20 @@ export function buildBulkTaskPatch(task: Task, changes: BulkTaskChanges): BulkTa
   return patch;
 }
 
-export function failedBulkTasks(
-  tasks: Task[],
-  results: PromiseSettledResult<unknown>[]
-): Task[] {
-  return tasks.filter((_, index) => results[index]?.status === "rejected");
+export interface BulkTaskRepositories {
+  tasks: Pick<TaskRepository, "update">;
+  projects: Pick<ProjectRepository, "list" | "touch">;
+}
+
+export async function applyBulkTaskChanges(
+  repositories: BulkTaskRepositories,
+  tasks: readonly Task[],
+  changes: BulkTaskChanges
+): Promise<Task[]> {
+  const failed = await failedTaskWrites(tasks, (task) => repositories.tasks.update(task, buildBulkTaskPatch(task, changes)));
+  if (typeof changes.projectId === "string") {
+    const project = (await repositories.projects.list()).find((item) => item.id === changes.projectId);
+    if (project) await repositories.projects.touch(project);
+  }
+  return failed;
 }

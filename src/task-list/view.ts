@@ -1,6 +1,6 @@
 import { ItemView, Menu, Notice, setIcon, WorkspaceLeaf } from "obsidian";
 import { BulkTaskModal } from "./bulk-task-modal";
-import { buildBulkTaskPatch, failedBulkTasks } from "./bulk-task-actions";
+import { applyBulkTaskChanges } from "./bulk-task-actions";
 import type { BulkTaskChanges } from "./bulk-task-actions";
 import { filterTasks } from "../tasks/domain";
 import type { Project, SmartView, SortDirection, SortMode, Task } from "../tasks/domain";
@@ -11,12 +11,15 @@ import { TaskFilterModal } from "./filter-modal";
 import { ProjectModal } from "../projects/project-modal";
 import { TaskConflictModal } from "../task-editor/task-conflict-modal";
 import { DuplicateTaskIdError } from "../tasks/repository";
+import { failedTaskWrites } from "../tasks/task-writes";
 import type { TaskSaveConflict, TaskSaveResult } from "../tasks/repository";
 import { recordRecentLabels } from "../labels/label-suggestions";
 import { availableFilterLabels } from "../labels/label-picker-model";
 import { LabelManagerModal } from "../labels/label-manager-modal";
 import type { LabelEditingOptions } from "../labels/label-picker-modal";
 import { buildManagedLabels, removeLabelValue, renameLabelValues } from "../labels/label-management";
+import { removeLabelAcrossTasks, renameLabelAcrossTasks } from "../labels/label-maintenance";
+import type { LabelMaintenanceResult, LabelPreferences } from "../labels/label-maintenance";
 import { buildTaskListModel } from "./task-list-model";
 import type { TaskListModel } from "./task-list-model";
 import { renderTaskList as renderTaskListDom } from "./task-list-renderer";
@@ -613,51 +616,49 @@ export class TodoListView extends ItemView {
   }
 
   private async renameManagedLabel(tasks: Task[], from: string, to: string): Promise<void> {
-    const affected = tasks.filter((task) => task.labels.includes(from));
-    const results = await Promise.allSettled(affected.map((task) =>
-      this.plugin.repository.update(task, { labels: renameLabelValues(task.labels, from, to) })
-    ));
-    if (this.reportLabelWriteFailures(affected, results)) return;
-    this.plugin.settings.recentLabels = renameLabelValues(this.plugin.settings.recentLabels ?? [], from, to);
-    this.plugin.settings.favoriteLabels = renameLabelValues(this.plugin.settings.favoriteLabels ?? [], from, to);
+    const result = await renameLabelAcrossTasks(this.plugin.repository, tasks, this.labelPreferences(), from, to);
+    if (result.kind === "partial-failure") return this.reportLabelWriteFailures(result);
+    this.plugin.settings.recentLabels = result.preferences.recentLabels;
+    this.plugin.settings.favoriteLabels = result.preferences.favoriteLabels;
     const filters = this.filterState.value();
     this.filterState.replace({ ...filters, labels: renameLabelValues(filters.labels, from, to) });
     await this.plugin.saveSettings();
     const { t } = this.plugin.i18n();
-    new Notice(affected.length === 1
-      ? t("labelManager.renamedNoticeOne", { from, to, count: affected.length })
-      : t("labelManager.renamedNotice", { from, to, count: affected.length }));
+    new Notice(result.affected === 1
+      ? t("labelManager.renamedNoticeOne", { from, to, count: result.affected })
+      : t("labelManager.renamedNotice", { from, to, count: result.affected }));
     this.requestRender();
   }
 
   private async deleteManagedLabel(tasks: Task[], label: string): Promise<void> {
-    const affected = tasks.filter((task) => task.labels.includes(label));
-    const results = await Promise.allSettled(affected.map((task) =>
-      this.plugin.repository.update(task, { labels: removeLabelValue(task.labels, label) })
-    ));
-    if (this.reportLabelWriteFailures(affected, results)) return;
-    this.plugin.settings.recentLabels = removeLabelValue(this.plugin.settings.recentLabels ?? [], label);
-    this.plugin.settings.favoriteLabels = removeLabelValue(this.plugin.settings.favoriteLabels ?? [], label);
+    const result = await removeLabelAcrossTasks(this.plugin.repository, tasks, this.labelPreferences(), label);
+    if (result.kind === "partial-failure") return this.reportLabelWriteFailures(result);
+    this.plugin.settings.recentLabels = result.preferences.recentLabels;
+    this.plugin.settings.favoriteLabels = result.preferences.favoriteLabels;
     const filters = this.filterState.value();
     this.filterState.replace({ ...filters, labels: removeLabelValue(filters.labels, label) });
     await this.plugin.saveSettings();
     const { t } = this.plugin.i18n();
-    new Notice(affected.length === 1
-      ? t("labelManager.deletedNoticeOne", { label, count: affected.length })
-      : t("labelManager.deletedNotice", { label, count: affected.length }));
+    new Notice(result.affected === 1
+      ? t("labelManager.deletedNoticeOne", { label, count: result.affected })
+      : t("labelManager.deletedNotice", { label, count: result.affected }));
     this.requestRender();
   }
 
-  private reportLabelWriteFailures(tasks: Task[], results: PromiseSettledResult<unknown>[]): boolean {
-    const failed = failedBulkTasks(tasks, results);
-    if (failed.length === 0) return false;
+  private labelPreferences(): LabelPreferences {
+    return {
+      recentLabels: this.plugin.settings.recentLabels ?? [],
+      favoriteLabels: this.plugin.settings.favoriteLabels ?? []
+    };
+  }
+
+  private reportLabelWriteFailures(result: Extract<LabelMaintenanceResult, { kind: "partial-failure" }>): void {
     new Notice(this.plugin.i18n().t("labelManager.partialFailure", {
-      failed: failed.length,
-      total: tasks.length,
-      paths: failed.map((task) => task.path).join(", ")
+      failed: result.failed.length,
+      total: result.affected,
+      paths: result.failed.map((task) => task.path).join(", ")
     }), 0);
     this.requestRender();
-    return true;
   }
 
   private clearActiveFilters(): void {
@@ -680,32 +681,25 @@ export class TodoListView extends ItemView {
   }
 
   private async applyBulkChanges(tasks: Task[], changes: BulkTaskChanges): Promise<void> {
-    const results = await Promise.allSettled(tasks.map((task) =>
-      this.plugin.repository.update(task, buildBulkTaskPatch(task, changes))
-    ));
-    if (typeof changes.projectId === "string") {
-      const project = (await this.plugin.projects.list()).find((item) => item.id === changes.projectId);
-      if (project) await this.plugin.projects.touch(project);
-    }
+    const failed = await applyBulkTaskChanges({ tasks: this.plugin.repository, projects: this.plugin.projects }, tasks, changes);
     await this.rememberLabels(changes.addLabels);
-    this.finishBulkAction(tasks, results, "selection.updatedNotice");
+    this.finishBulkAction(tasks, failed, "selection.updatedNotice");
   }
 
   private async deleteSelectedTasks(tasks: Task[]): Promise<void> {
     const { t } = this.plugin.i18n();
     const selected = this.selection.selectedTasks(tasks);
     if (selected.length === 0 || !window.confirm(t("selection.deleteConfirm", { count: selected.length }))) return;
-    const results = await Promise.allSettled(selected.map((task) => this.plugin.repository.remove(task)));
-    this.finishBulkAction(selected, results, "selection.deletedNotice");
+    const failed = await failedTaskWrites(selected, (task) => this.plugin.repository.remove(task));
+    this.finishBulkAction(selected, failed, "selection.deletedNotice");
   }
 
   private finishBulkAction(
     tasks: Task[],
-    results: PromiseSettledResult<unknown>[],
+    failed: Task[],
     successKey: "selection.updatedNotice" | "selection.deletedNotice"
   ): void {
     const { t } = this.plugin.i18n();
-    const failed = failedBulkTasks(tasks, results);
     if (failed.length === 0) {
       new Notice(t(successKey, { count: tasks.length }));
       this.exitSelectionMode();

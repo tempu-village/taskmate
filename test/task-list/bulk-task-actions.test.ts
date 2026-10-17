@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { buildBulkTaskPatch, failedBulkTasks } from "../../src/task-list/bulk-task-actions";
+import { describe, expect, it, vi } from "vitest";
+import { applyBulkTaskChanges, buildBulkTaskPatch } from "../../src/task-list/bulk-task-actions";
+import type { Project } from "../../src/tasks/domain";
 import type { Task } from "../../src/tasks/domain";
 
 function task(id: string, overrides: Partial<Task> = {}): Task {
@@ -44,20 +45,40 @@ describe("bulk task actions", () => {
     expect(buildBulkTaskPatch(task("without", { labels: [] }), changes)).toEqual({ labels: ["partial"] });
   });
 
-  it("reports no failed tasks after a fully successful bulk action", () => {
-    const tasks = [task("one"), task("two")];
-    expect(failedBulkTasks(tasks, [
-      { status: "fulfilled", value: undefined },
-      { status: "fulfilled", value: undefined }
-    ])).toEqual([]);
+  it("writes each Task's patch and returns the Tasks whose write failed", async () => {
+    const tasks = [task("one"), task("two"), task("three")];
+    const update = vi.fn(async (item: Task, _patch: Partial<Task>) => {
+      if (item.id === "two") throw new Error("write failed");
+      return item;
+    });
+    const projects = { list: vi.fn(async (): Promise<Project[]> => []), touch: vi.fn() };
+
+    const failed = await applyBulkTaskChanges({ tasks: { update }, projects }, tasks, { priority: 2, addLabels: [], removeLabels: [] });
+
+    expect(update).toHaveBeenCalledTimes(3);
+    expect(update.mock.calls[0][1]).toEqual({ priority: 2, labels: ["existing", "remove"] });
+    expect(failed.map((item) => item.id)).toEqual(["two"]);
+    expect(projects.touch).not.toHaveBeenCalled();
   });
 
-  it("retains only failed tasks after a partially successful update or deletion", () => {
-    const tasks = [task("one"), task("two"), task("three")];
-    expect(failedBulkTasks(tasks, [
-      { status: "fulfilled", value: undefined },
-      { status: "rejected", reason: new Error("write failed") },
-      { status: "fulfilled", value: undefined }
-    ]).map((item) => item.id)).toEqual(["two"]);
+  it("touches an assigned Project even when some writes fail", async () => {
+    const project: Project = { path: "TaskMate/Projects/new.md", id: "project-new", name: "New", createdAt: "2026-10-17T00:00:00.000Z", updatedAt: "2026-10-17T00:00:00.000Z", lastUsedAt: null };
+    const update = vi.fn(async () => { throw new Error("write failed"); });
+    const projects = { list: vi.fn(async () => [project]), touch: vi.fn(async () => project) };
+
+    const failed = await applyBulkTaskChanges({ tasks: { update }, projects }, [task("one")], { projectId: "project-new", addLabels: [], removeLabels: [] });
+
+    expect(failed.map((item) => item.id)).toEqual(["one"]);
+    expect(projects.touch).toHaveBeenCalledWith(project);
+  });
+
+  it("does not look up a Project when the change clears or keeps it", async () => {
+    const update = vi.fn(async (item: Task, _patch: Partial<Task>) => item);
+    const projects = { list: vi.fn(async (): Promise<Project[]> => []), touch: vi.fn() };
+
+    await applyBulkTaskChanges({ tasks: { update }, projects }, [task("one")], { projectId: null, addLabels: [], removeLabels: [] });
+    await applyBulkTaskChanges({ tasks: { update }, projects }, [task("one")], { addLabels: [], removeLabels: [] });
+
+    expect(projects.list).not.toHaveBeenCalled();
   });
 });

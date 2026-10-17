@@ -30,7 +30,7 @@ Task-list titles use a rectangular, non-pill title action and naturally wrap to 
 - EDIT-03: Cancelling the editor leaves stored Task data unchanged; deletion requires confirmation.
 - EDIT-04: Bulk editing marks partially assigned Labels without a numeric count and keeps them unchanged by default; their more-actions control provides explicit text actions to add the Label to every selected Task or remove it from every selected Task that has it.
 
-Automated evidence: [task-title.test.ts](../../../test/tasks/task-title.test.ts), [task-list-renderer.test.ts](../../../test/task-list/task-list-renderer.test.ts), [bulk-task-actions.test.ts](../../../test/task-list/bulk-task-actions.test.ts), [task-selection.test.ts](../../../test/task-list/task-selection.test.ts), [scroll-position.test.ts](../../../test/task-list/scroll-position.test.ts). These tests cover selected behavior, not every UI scenario. Device checks and remaining gaps: [verification](../design/testing.md). Storage syntax: [Task Pilot schema](../../../skills/taskpilot/references/task-schema.md).
+Automated evidence: [task-title.test.ts](../../../test/tasks/task-title.test.ts), [task-list-renderer.test.ts](../../../test/task-list/task-list-renderer.test.ts), [bulk-task-actions.test.ts](../../../test/task-list/bulk-task-actions.test.ts), [task-writes.test.ts](../../../test/tasks/task-writes.test.ts), [task-selection.test.ts](../../../test/task-list/task-selection.test.ts), [scroll-position.test.ts](../../../test/task-list/scroll-position.test.ts). These tests cover selected behavior, not every UI scenario. Device checks and remaining gaps: [verification](../design/testing.md). Storage syntax: [Task Pilot schema](../../../skills/taskpilot/references/task-schema.md).
 
 ## Related RFCs
 
