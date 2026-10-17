@@ -96,6 +96,7 @@ For a Module-structure change:
 - [Task change review](../features/task-change-review/README.md) owns current review behavior.
 - [Task change Proposal format](../specifications/task-change-proposal-format.md) owns the persisted schema and lifecycle contract.
 - [RFC 0032](../rfcs/0032-use-jsdiff-for-task-change-preview.md) preserves the implemented diff-engine decision history.
+- [RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md) records the accepted, not-yet-implemented sibling Source candidate Module and thin Review Catalog direction.
 - [ADRs](../adr/README.md) preserve hard-to-reverse accepted trade-offs. Record a Module decision there only when it meets that bar; this policy links to it rather than restating its rationale.
 
 ## 日本語参考
