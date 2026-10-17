@@ -17,6 +17,8 @@ Keep the Obsidian plugin mobile-compatible by using public Obsidian and browser 
 
 Record domain terms only in [CONTEXT.md](CONTEXT.md). Record hard-to-reverse trade-offs in [ADRs](docs/engineering/adr/). Before an ADR-worthy UI or navigation decision, establish the user's goal or constraint and record the accepted rationale. Use the shared `write-github-issues` skill for Issue work.
 
+When changing Module structure, follow [Module boundaries](docs/engineering/design/module-boundaries.md). Keep UI Adapter, Application, Domain and Persistence Adapter dependencies one-way, and introduce an interface only at a seam with justified variation.
+
 When implementing an RFC that changes product behavior, confirm the landed behavior from code, tests and review; create or update the applicable Feature; add reciprocal RFC/Feature links and the implementation PR or verified release when available; then mark the RFC `implemented`. Keep proposal-only discussion and alternatives in the RFC, and do not rewrite implemented RFC history into a current specification.
 
 Before finishing a change, run `npm run typecheck`, `npm test`, `npm run build`, the Python behavior tests, `python3 scripts/validate_skills.py`, `npm run validate:localization`, and `python3 scripts/validate_docs.py`.
