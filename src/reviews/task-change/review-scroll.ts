@@ -1,4 +1,4 @@
-export type ReviewPosition =
+type ReviewPosition =
   | { kind: "scroll"; scrollTop: number }
   | { kind: "anchor"; anchorId: string; offset: number; scrollTop: number };
 

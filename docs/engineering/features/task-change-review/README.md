@@ -116,9 +116,10 @@ The strict persisted format, lifecycle and URI security contract are defined by 
 
 ## Evidence
 
-- [Proposal evidence and approval tests](../../../../test/task-change-proposal.test.ts)
-- [Proposal repository lifecycle test](../../../../test/task-change-proposal-repository.test.ts)
-- [Review renderer tests](../../../../test/task-change-review-renderer.test.ts)
-- [Review position-preservation tests](../../../../test/task-change-review-scroll.test.ts)
+- [Proposal evidence and approval tests](../../../../test/reviews/task-change/proposal.test.ts)
+- [Proposal repository lifecycle test](../../../../test/reviews/task-change/proposal-repository.test.ts)
+- [Review renderer tests](../../../../test/reviews/task-change/review-renderer.test.ts)
+- [Review position-preservation tests](../../../../test/reviews/task-change/review-scroll.test.ts)
+- [Review Module boundary tests](../../../../test/reviews/review-module-boundaries.test.ts)
 - [Task Pilot Proposal test](../../../../skills/taskpilot/tests/test_planning_store.py)
 - The 2026-10-12 macOS spike verified direct URI delivery while Obsidian was open and closed, Vault selection, and Task UUID navigation. Fresh desktop/mobile visual verification remains manual evidence.

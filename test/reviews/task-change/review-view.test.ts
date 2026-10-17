@@ -6,7 +6,7 @@ vi.mock("obsidian", () => ({
   Notice: class {}
 }));
 
-import { applyNoticeKind, openProposalInReviewView, TaskChangeReviewView } from "../src/task-change-review-view";
+import { applyNoticeKind, openProposalInReviewView, TaskChangeReviewView } from "../../../src/reviews/task-change/review-view";
 
 describe("Task change review view", () => {
   it("distinguishes stale regeneration from an ordinary zero-count notice", () => {

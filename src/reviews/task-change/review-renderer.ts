@@ -1,4 +1,4 @@
-import type { ProposalReview } from "./task-change-proposal";
+import type { ProposalReview } from "./proposal";
 
 export interface TaskChangeReviewState {
   mode: "semantic" | "raw";

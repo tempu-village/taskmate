@@ -6175,7 +6175,7 @@ function detectObsidianLanguage() {
   }
 }
 
-// src/task-change-proposal-repository.ts
+// src/reviews/task-change/proposal-repository.ts
 var import_obsidian14 = require("obsidian");
 
 // node_modules/diff/libesm/diff/base.js
@@ -6869,7 +6869,7 @@ function splitLines(text) {
   return result;
 }
 
-// src/task-change-proposal.ts
+// src/reviews/task-change/proposal.ts
 var TASK_CHANGE_PROPOSAL_SCHEMA_VERSION = 1;
 async function sha256(content) {
   const bytes = new TextEncoder().encode(content);
@@ -7139,7 +7139,7 @@ function isChangeField(value) {
   return value === "title" || value === "date" || value === "priority" || value === "labels" || value === "steps" || value === "notes";
 }
 
-// src/task-change-proposal-repository.ts
+// src/reviews/task-change/proposal-repository.ts
 var TaskChangeProposalRepository = class {
   constructor(app, proposalFolder, tasks) {
     this.app = app;
@@ -7337,10 +7337,10 @@ function summarize(proposal) {
   };
 }
 
-// src/task-change-review-view.ts
+// src/reviews/task-change/review-view.ts
 var import_obsidian15 = require("obsidian");
 
-// src/task-change-review-renderer.ts
+// src/reviews/task-change/review-renderer.ts
 function createTaskChangeReviewState() {
   return { mode: "semantic", approvedChangeIds: /* @__PURE__ */ new Set() };
 }
@@ -7492,7 +7492,7 @@ function formatValue(value) {
   return JSON.stringify(value);
 }
 
-// src/task-change-review-scroll.ts
+// src/reviews/task-change/review-scroll.ts
 function captureReviewPosition(container, kind) {
   const scrollTop = Math.max(0, container.scrollTop);
   if (kind === "scroll") return { kind, scrollTop };
@@ -7516,7 +7516,7 @@ function restoreReviewPosition(container, position) {
   container.scrollTop = Math.max(0, position.scrollTop + currentOffset - position.offset);
 }
 
-// src/task-change-review-view.ts
+// src/reviews/task-change/review-view.ts
 var TASK_CHANGE_REVIEW_VIEW_TYPE = "taskmate-change-review";
 function applyNoticeKind(outcome) {
   return outcome.succeeded === 0 && outcome.failed > 0 && outcome.hasFollowUp ? "stale-regenerated" : "applied";

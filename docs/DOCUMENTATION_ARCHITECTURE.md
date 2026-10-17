@@ -13,7 +13,7 @@ TaskMate uses a feature-centered engineering model. Feature documents are the sh
 | `docs/engineering/features/overview.md` | Product purpose, principles, non-goals and supported scope |
 | `docs/engineering/features/` | Current feature What and feature-specific How, including guarantees, processing, failures and verification |
 | `docs/engineering/specifications/` | Strict normative formats, schemas, limits, transitions, compatibility and security contracts |
-| `docs/engineering/design/` | Cross-cutting architecture, data ownership, security and verification |
+| `docs/engineering/design/` | Cross-cutting architecture, Module boundaries, data ownership, security and verification |
 | `docs/engineering/adr/` | Hard-to-reverse decisions, alternatives and consequences |
 | `docs/user/` | First-use tutorials, goal-specific How-to and recovery |
 | `docs/engineering/rfcs/` | Proposals and decision history from substantial-change review through implementation; not current product authority |

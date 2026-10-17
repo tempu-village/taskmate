@@ -1,9 +1,9 @@
 import { ItemView, Notice, WorkspaceLeaf } from "obsidian";
-import type TaskMatePlugin from "./main";
-import { createTaskChangeReviewState, reduceTaskChangeReviewState, renderTaskChangeReview } from "./task-change-review-renderer";
-import type { TaskChangeReviewAction, TaskChangeReviewCopy, TaskChangeReviewState } from "./task-change-review-renderer";
-import type { ProposalReview } from "./task-change-proposal";
-import { captureReviewPosition, restoreReviewPosition } from "./task-change-review-scroll";
+import type TaskMatePlugin from "../../main";
+import { createTaskChangeReviewState, reduceTaskChangeReviewState, renderTaskChangeReview } from "./review-renderer";
+import type { TaskChangeReviewAction, TaskChangeReviewCopy, TaskChangeReviewState } from "./review-renderer";
+import type { ProposalReview } from "./proposal";
+import { captureReviewPosition, restoreReviewPosition } from "./review-scroll";
 
 export const TASK_CHANGE_REVIEW_VIEW_TYPE = "taskmate-change-review";
 

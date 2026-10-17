@@ -1,18 +1,18 @@
 import { App, normalizePath, TFile } from "obsidian";
-import type { TaskRepository } from "./repository";
+import type { TaskRepository } from "../../repository";
 import {
   applyProposalDecision,
   buildProposalReview,
   parseTaskChangeProposal
-} from "./task-change-proposal";
+} from "./proposal";
 import type {
   ProposalDecisionResult,
   ProposalReview,
   ProposalTask,
   TaskChangeProposal
-} from "./task-change-proposal";
+} from "./proposal";
 
-export interface ProposalSummary {
+interface ProposalSummary {
   id: string;
   createdAt: string;
   resultAt?: string;

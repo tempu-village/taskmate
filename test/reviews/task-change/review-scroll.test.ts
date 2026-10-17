@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 
 import { describe, expect, it } from "vitest";
-import { captureReviewPosition, restoreReviewPosition } from "../src/task-change-review-scroll";
+import { captureReviewPosition, restoreReviewPosition } from "../../../src/reviews/task-change/review-scroll";
 
 describe("Task change review position", () => {
   it("restores numeric scrollTop after a selection redraw", () => {
