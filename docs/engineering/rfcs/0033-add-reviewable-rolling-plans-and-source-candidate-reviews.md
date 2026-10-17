@@ -96,6 +96,10 @@ Rejected in favor of the user-selected default. Omitting a range means the compl
 
 Deferred. The current Task change Proposal uses a local TypeScript validator and the plugin has no JSON Schema runtime dependency. The Source candidate Module will follow that pattern for the MVP and test it against the documented schema fixtures.
 
+### Record partial provenance on the Source note
+
+Rejected. Writing `taskmate-import-*` after each applied candidate, with a new partial status, would make a Source note show progress without opening TaskMate. It would also add a status value and redefine `taskmate-imported-hash` for a partly processed note. Progress would be stored twice, in the Proposal JSON and in the note, and the two could disagree. Every applied candidate would rewrite the user's own note, which raises the chance of synchronization conflicts. Pending and partial Source candidate Proposals are already visible in the Review View, so the note does not need to carry progress. A partial status can still be added later if a real need appears; removing one after release would be harder.
+
 ### Split review kinds into physical subfolders
 
 Rejected. Both review kinds use the configured Proposal root and `History` location. A thin catalog classifies envelopes and delegates to sibling Modules; it does not merge their Domain behavior.
@@ -220,6 +224,15 @@ Editing a card increments its revision, returns it to pending, clears prior deci
 
 Formal apply is candidate-by-candidate and saves each success before continuing. Already applied candidates are never replayed. Stale and failed candidates remain pending for renewed review or retry. Create and merge record the promoted canonical Task ID; exclude records an explicit reason and no Task ID.
 
+Source note provenance is written once per Source note, when that note is complete:
+
+- A Source note is complete when every candidate from it is an applied create, an applied merge, or an exclusion. A pending, held, stale or failed candidate keeps the note incomplete. Completion is evaluated per Source note, so one note in a multi-note Proposal can be completed before the others.
+- Until then, the Source note is not modified. In-progress state lives only in the Source candidate Proposal JSON and is visible through the Review View.
+- On completion, TaskMate writes the existing provenance properties unchanged in meaning: `taskmate-import-status: processed`, `taskmate-imported-at`, `taskmate-imported-hash`, and `taskmate-task-ids` containing created Task IDs and merge-target Task IDs, never excluded candidates.
+- `taskmate-imported-hash` is the Source snapshot hash recorded in the Proposal. Immediately before writing, TaskMate checks the current note against that snapshot; if the note changed, it writes no provenance and marks the Source stale for renewed review.
+- Conversation Sources have no note and receive no provenance properties; their provenance stays in the Proposal.
+- Reselecting an incomplete note cannot duplicate applied work, because applied candidates keep their promoted Task IDs in the Proposal.
+
 ### 4. Review Catalog and Module design
 
 The existing Task change Review Module and the new Source candidate Review Module are siblings. Each owns its persisted schema, Domain validation and state transitions, persistence adapter, application behavior, UI state, and renderer.
@@ -280,6 +293,7 @@ The Task change Review View remains the only UI for mutations to already-canonic
 - **RFC33-SOURCE-06:** changed Source or merge-target snapshots block only affected candidates and preserve independent valid work.
 - **RFC33-SOURCE-07:** conversation provenance remains complete without thread/turn IDs through local ID, exact selected snapshot, selection instruction, and hash.
 - **RFC33-SOURCE-08:** the new workflow writes no candidate Markdown or `Review.md`, and it does not modify existing legacy review files.
+- **RFC33-SOURCE-09:** a Source note receives no `taskmate-import-*` change while any of its candidates is pending, held, stale or failed; once all are applied or excluded, provenance is written exactly once with the Proposal's snapshot hash, and a note changed since that snapshot receives no provenance.
 
 ### Review architecture
 
@@ -320,6 +334,7 @@ The product review accepted every item below. IDs remain stable for implementati
 | B-D05 | New code has no legacy Markdown review reader/writer; existing files are retained. |
 | B-D06 | New physical and UI terminology is Proposal root plus Pending/History. |
 | B-D07 | Explicitly bounded Codex conversation content may be a Source; conversations are never auto-collected. |
+| B-D08 | Source-note provenance is written once per Source note after all of its candidates are applied or excluded, using the Proposal's snapshot hash; partial progress stays only in the Proposal. Decided 2026-10-18. |
 | C-D01 | Selecting decisions and formally applying them are separate; partial application is allowed. |
 | C-D02 | Stable Codex command phrases identify review kind, target, and review ID. |
 | C-D03 | One Source review session is one JSON; no per-candidate Markdown or `Review.md`. |
@@ -354,17 +369,15 @@ Implementation is tracked in three independently reviewable value slices:
 
 The final Source candidate JSON contract belongs in a new Specification only after implementation confirms the schema and validator. Implemented user-visible behavior must then replace the pending-change sections in the affected Features, and the RFC moves to `implemented` with PR/release evidence.
 
-The current [Source note property format](../specifications/source-note-properties.md) remains normative for ordinary Source notes. The new workflow keeps its `taskmate-source` eligibility rule. That Specification also defines `taskmate-import-*` provenance as written after every candidate in a staged review has a decision and promotion completes; when the Source candidate workflow replaces the staged review, the same change must update that Specification and the [user guide for importing Source notes](../../user/how-to/import-source-notes.md).
+The current [Source note property format](../specifications/source-note-properties.md) remains normative for ordinary Source notes. The new workflow keeps its `taskmate-source` eligibility rule. Under B-D08 the meaning of its `taskmate-import-*` provenance does not change; only the trigger moves from a completed staged review to a completed Source note in a Source candidate Proposal. The change that replaces the staged review must update that Specification's trigger wording and the [user guide for importing Source notes](../../user/how-to/import-source-notes.md).
 
 ## Open questions
 
-- **Source-note provenance timing (#61):** This RFC does not decide when the Source candidate workflow writes `taskmate-import-*` provenance on a Source note, given candidate-by-candidate apply and retained partial results. It was accepted before the [Source note property format](../specifications/source-note-properties.md) was published. Decide it before #61 completes; it does not block #60.
-
-Implementation pull requests and a release version remain delivery metadata rather than product-design questions.
+None block implementation. The Source-note provenance timing, raised after the Source note property format was published, was decided as B-D08 on 2026-10-18. Implementation pull requests and a release version remain delivery metadata rather than product-design questions.
 
 ## Decision / status
 
-Accepted on 2026-10-17 after product review of A-D01–05, B-D01–07, C-D01–04, F-D01–07, N-D01–10, and T-D01–04. Accepted means the direction is authorized for implementation; none of the proposed behavior is claimed as shipped.
+Accepted on 2026-10-17 after product review of A-D01–05, B-D01–07, C-D01–04, F-D01–07, N-D01–10, and T-D01–04. B-D08 was added on 2026-10-18. Accepted means the direction is authorized for implementation; none of the proposed behavior is claimed as shipped.
 
 ## Links
 
@@ -406,8 +419,10 @@ Task変更ReviewとSource候補Reviewは別のModule・別schema・別状態遷�
 
 通常のSource noteには、現在の[Source note property format](../specifications/source-note-properties.md)が引き続き適用されます。新しい流れでも`taskmate-source`による対象指定は維持します。
 
+Source noteへの取り込み履歴（`taskmate-import-*`）は、そのノートから出た候補がすべて「作成を反映済み」「統合を反映済み」「除外」のどれかになったときに、ノートごとに1回だけ書きます（B-D08）。保留・stale・失敗の候補が残る間はノートを変更せず、途中経過はProposal JSONとReview Viewだけに残します。`taskmate-imported-hash`にはProposalに記録したsnapshotのhashを使い、書く直前にノートが変わっていれば書かずにstaleにします。会話Sourceにはノートがないため、取り込み履歴はProposalにだけ残ります。途中経過をノートにも書く案は、状態の追加、hashの意味の再定義、JSONとノートの二重管理、同期の競合が増えるため採用しません。必要になれば後から追加できますが、一度入れた状態を外すのは困難です。
+
 計画Markdownの機械可読metadataはMVPではCodexだけが読みます。会話Sourceはlocal Source ID、選択範囲snapshot、hashを必須にし、thread/turn IDは取得できる場合だけ補助情報として保存します。
 
 ### 状態
 
-利用者との設計レビューで全決定IDを採用済みです。ただし、このRFCはSource note property formatの公開前に合意したため、候補ごとに正式反映し一部の結果を残す新しい流れで、Source noteへ`taskmate-import-*`の取り込み履歴をいつ書くかは決まっていません。#61の完了前に決めます（#60は妨げません）。新しい流れがstaged reviewを置き換えるときは、同じ変更でそのSpecificationと[Source noteの取り込み手順](../../user/how-to/import-source-notes.md)を更新します。実装、テスト、正式Specification、移行案内、Featureへの実装結果反映は今後の作業です。
+利用者との設計レビューで全決定IDを採用済みです。Source note property formatの公開後に残った取り込み履歴の時期は、2026-10-18にB-D08として決めました。未決の製品判断はありません。新しい流れがstaged reviewを置き換えるときは、同じ変更でそのSpecificationの書く時期の記述と[Source noteの取り込み手順](../../user/how-to/import-source-notes.md)を更新します。実装、テスト、正式Specification、移行案内、Featureへの実装結果反映は今後の作業です。
