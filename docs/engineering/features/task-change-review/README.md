@@ -107,10 +107,17 @@ The strict persisted format, lifecycle and URI security contract are defined by 
 - REVIEW-16: macOS, Windows, and Linux launch the review URI without shell interpolation; launch failure preserves pending-review discovery.
 - REVIEW-17: Review history is discoverable inside TaskMate without opening JSON files or Finder and is displayed read-only with its recorded result.
 
+## Pending changes
+
+[RFC 0033](../../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md), tracked by [Issue #62](https://github.com/tempu-village/taskmate/issues/62), is accepted but not implemented. It keeps this Review View as the only approval surface for changes to already-canonical Tasks that originate from a rolling plan. Plan creation and editing remain non-mutating; Codex must create a normal Task change Proposal before this view can approve anything.
+
+The RFC also adds a sibling Source candidate Review Module and a thin Review Catalog for pending/history discovery. The catalog may classify and route minimal envelopes, but Task change and Source candidate schemas, decisions, stale recovery, application, and UI state remain separate. Current Task change Proposal behavior and version 1 compatibility remain unchanged until an implementation is verified.
+
 ## Related documents
 
 - [Task Pilot review and capacity planning](../task-pilot-planning.md)
 - [RFC 0032: Use jsdiff for Task change preview](../../rfcs/0032-use-jsdiff-for-task-change-preview.md)
+- [RFC 0033: Reviewable rolling plans and Source candidate reviews](../../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md)
 - [Issue #52](https://github.com/tempu-village/taskmate/issues/52)
 - [Task change Proposal format](../../specifications/task-change-proposal-format.md)
 
