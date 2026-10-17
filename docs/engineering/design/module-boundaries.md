@@ -88,7 +88,11 @@ For a Module-structure change:
 4. Confirm Domain files do not import Obsidian, DOM, or Vault Adapters.
 5. Confirm type-only dependencies use `import type`.
 6. Confirm feature-specific review Modules do not import one another and `reviews/shared`, if present, does not import them.
-7. Confirm the [review Module boundary test](../../../test/reviews/review-module-boundaries.test.ts) passes as part of `npm test`. It checks the runtime TypeScript import graph for cycles, forbidden shared-to-feature review dependencies, and Task change Proposal Domain isolation from Obsidian and review Adapters. It does not check exports, `import type` usage, or dependencies between feature-specific review Modules; steps 3, 5 and 6 remain review checks.
+7. Confirm the boundary tests pass as part of `npm test`:
+   - The [Module boundary test](../../../test/module-boundaries.test.ts) checks the runtime TypeScript import graph for cycles, assigns every source file to a known folder, enforces the folder dependency direction recorded in [Architecture](architecture.md), allows `main.ts` references only as `import type` from the listed Adapters, and keeps `src/tasks/` free of Obsidian except its repository.
+   - The [review Module boundary test](../../../test/reviews/review-module-boundaries.test.ts) checks that `reviews/shared`, if present, imports no review kind, that review kinds do not import one another, and that the Task change Proposal Domain is isolated from Obsidian and review Adapters.
+
+   They do not check exports, `import type` usage outside `main.ts` references, or Obsidian, DOM and Vault dependencies of Domain files outside `src/tasks/` and the Task change Proposal Domain; steps 3, 4 and 5 remain review checks. When a new folder or review kind is added, update the folder rules in the Module boundary test together with Architecture.
 
 ## Related records
 
@@ -114,6 +118,6 @@ interfaceまたはportは、呼び出し側、隠す知識、同じ意味を持�
 
 各Review種別はDomain schema、判断、永続化、UI詳細を所有します。`src/reviews/shared/`は、実装済みの複数Reviewが同じ意味で使う契約が現れた場合だけ作ります。`shared`から機能固有Reviewへの依存、Review種別間の依存、異なるProposal schemaの統合は禁止します。現在はTask変更Reviewだけなので`src/reviews/task-change/`へ集約し、`shared`は作りません。
 
-構造変更後はrepository指定の全検証に加え、exportのcaller、Domainの依存、`import type`、Review間の依存方向、import cycleを確認します。Review Module boundary testは`npm test`の一部として、実行時の循環依存、`shared`から機能固有Moduleへの依存、Task変更Proposal DomainからObsidianとReview Adapterへの依存を自動確認します。export、`import type`、機能固有Review同士の依存は自動確認の対象外なので、レビューで確認します。
+構造変更後はrepository指定の全検証に加え、exportのcaller、Domainの依存、`import type`、Review間の依存方向、import cycleを確認します。Module boundary testは`npm test`の一部として、実行時の循環依存、全ソースの既知フォルダーへの所属、Architectureに記録したフォルダー間の依存方向、指定したAdapterから`main.ts`への`import type`だけの参照、`src/tasks/`のrepository以外がObsidianへ依存しないことを自動確認します。Review Module boundary testは、`reviews/shared`からReview種別への依存、Review種別同士の依存、Task変更Proposal DomainからObsidianとReview Adapterへの依存を自動確認します。export、`main.ts`参照以外の`import type`、`src/tasks/`とTask変更Proposal Domain以外のDomainファイルの依存は自動確認の対象外なので、レビューで確認します。新しいフォルダーやReview種別を追加するときは、Module boundary testのフォルダー規則とArchitectureを一緒に更新します。
 
 Architectureはこのポリシーと現在のコードの対応、Featureは現在の挙動、Specificationは永続化契約、RFCは判断履歴、ADRは戻しにくい採用判断を所有します。このポリシーはそれらへリンクし、内容を複製しません。
