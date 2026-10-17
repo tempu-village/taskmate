@@ -20,7 +20,7 @@ Conflict review also retains the exact file content shown to the user as a tempo
 - CONFLICT-03: Duplicate IDs block normal processing; a deleted Task is not recreated.
 - CONFLICT-04: Equal compound values should compare equal by value, including Steps.
 
-Evidence: [merge tests](../../../test/tasks/task-edit-merge.test.ts), [repository tests](../../../test/tasks/repository-conflicts.test.ts). The repository regression test covers saving an unchanged Task after a prior Step save.
+Evidence: [merge tests](../../../test/tasks/task-edit-merge.test.ts), [repository tests](../../../test/tasks/repository-conflicts.test.ts), [editing flow tests](../../../test/task-editor/task-editing-flow.test.ts). The repository regression test covers saving an unchanged Task after a prior Step save.
 
 ## Processing flow and internal design
 
