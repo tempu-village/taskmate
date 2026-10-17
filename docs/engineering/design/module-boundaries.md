@@ -88,7 +88,7 @@ For a Module-structure change:
 4. Confirm Domain files do not import Obsidian, DOM, or Vault Adapters.
 5. Confirm type-only dependencies use `import type`.
 6. Confirm feature-specific review Modules do not import one another and `reviews/shared`, if present, does not import them.
-7. Run the review Module boundary test, which checks the TypeScript import graph for cycles and forbidden shared-to-feature dependencies.
+7. Confirm the [review Module boundary test](../../../test/reviews/review-module-boundaries.test.ts) passes as part of `npm test`. It checks the runtime TypeScript import graph for cycles, forbidden shared-to-feature review dependencies, and Task change Proposal Domain isolation from Obsidian and review Adapters. It does not check exports, `import type` usage, or dependencies between feature-specific review Modules; steps 3, 5 and 6 remain review checks.
 
 ## Related records
 
@@ -96,6 +96,7 @@ For a Module-structure change:
 - [Task change review](../features/task-change-review/README.md) owns current review behavior.
 - [Task change Proposal format](../specifications/task-change-proposal-format.md) owns the persisted schema and lifecycle contract.
 - [RFC 0032](../rfcs/0032-use-jsdiff-for-task-change-preview.md) preserves the implemented diff-engine decision history.
+- [ADRs](../adr/README.md) preserve hard-to-reverse accepted trade-offs. Record a Module decision there only when it meets that bar; this policy links to it rather than restating its rationale.
 
 ## 日本語参考
 
@@ -113,4 +114,6 @@ interfaceまたはportは、呼び出し側、隠す知識、同じ意味を持�
 
 各Review種別はDomain schema、判断、永続化、UI詳細を所有します。`src/reviews/shared/`は、実装済みの複数Reviewが同じ意味で使う契約が現れた場合だけ作ります。`shared`から機能固有Reviewへの依存、Review種別間の依存、異なるProposal schemaの統合は禁止します。現在はTask変更Reviewだけなので`src/reviews/task-change/`へ集約し、`shared`は作りません。
 
-構造変更後はrepository指定の全検証に加え、exportのcaller、Domainの依存、`import type`、Review間の依存方向、import cycleを確認します。Review Module boundary testは循環依存と`shared`から機能固有Moduleへの依存を自動確認します。
+構造変更後はrepository指定の全検証に加え、exportのcaller、Domainの依存、`import type`、Review間の依存方向、import cycleを確認します。Review Module boundary testは`npm test`の一部として、実行時の循環依存、`shared`から機能固有Moduleへの依存、Task変更Proposal DomainからObsidianとReview Adapterへの依存を自動確認します。export、`import type`、機能固有Review同士の依存は自動確認の対象外なので、レビューで確認します。
+
+Architectureはこのポリシーと現在のコードの対応、Featureは現在の挙動、Specificationは永続化契約、RFCは判断履歴、ADRは戻しにくい採用判断を所有します。このポリシーはそれらへリンクし、内容を複製しません。
