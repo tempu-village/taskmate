@@ -1,8 +1,8 @@
 /** @vitest-environment jsdom */
 
 import { describe, expect, it, vi } from "vitest";
-import { renderTaskChangeReview } from "../src/task-change-review-renderer";
-import type { ProposalReview } from "../src/task-change-proposal";
+import { renderTaskChangeReview } from "../../../src/reviews/task-change/review-renderer";
+import type { ProposalReview } from "../../../src/reviews/task-change/proposal";
 
 const review: ProposalReview = {
   proposalId: "proposal-001",

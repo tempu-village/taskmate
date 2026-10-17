@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { App } from "obsidian";
 import { TFile } from "obsidian";
-import type { Task } from "../src/domain";
-import { encodeTask, parseTaskMarkdown } from "../src/markdown";
-import { TaskRepository } from "../src/repository";
-import { TaskChangeProposalRepository } from "../src/task-change-proposal-repository";
-import { sha256 } from "../src/task-change-proposal";
-import type { TaskChangeProposal } from "../src/task-change-proposal";
+import type { Task } from "../../../src/domain";
+import { encodeTask, parseTaskMarkdown } from "../../../src/markdown";
+import { TaskRepository } from "../../../src/repository";
+import { TaskChangeProposalRepository } from "../../../src/reviews/task-change/proposal-repository";
+import { sha256 } from "../../../src/reviews/task-change/proposal";
+import type { TaskChangeProposal } from "../../../src/reviews/task-change/proposal";
 
 class MemoryVault {
   readonly files = new Map<string, { file: TFile; content: string }>();

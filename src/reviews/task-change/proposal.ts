@@ -1,14 +1,14 @@
 import { applyPatch, structuredPatch } from "diff";
-import { encodeTaskPreservingProperties, parseTaskMarkdown } from "./markdown";
-import type { Task } from "./domain";
+import { encodeTaskPreservingProperties, parseTaskMarkdown } from "../../markdown";
+import type { Task } from "../../domain";
 
-export const TASK_CHANGE_PROPOSAL_SCHEMA_VERSION = 1 as const;
+const TASK_CHANGE_PROPOSAL_SCHEMA_VERSION = 1 as const;
 
-export type ProposalStatus = "pending" | "applied" | "partially-applied" | "rejected" | "stale";
-export type ChangeField = "title" | "date" | "priority" | "labels" | "steps" | "notes";
-export type ChangeValue = string | number | boolean | null | string[] | Array<{ text: string; completed: boolean; date: string | null }>;
+type ProposalStatus = "pending" | "applied" | "partially-applied" | "rejected" | "stale";
+type ChangeField = "title" | "date" | "priority" | "labels" | "steps" | "notes";
+type ChangeValue = string | number | boolean | null | string[] | Array<{ text: string; completed: boolean; date: string | null }>;
 
-export interface ProposalChange {
+interface ProposalChange {
   id: string;
   field: ChangeField;
   before: ChangeValue;
@@ -27,13 +27,13 @@ export interface ProposalTask {
   changes: ProposalChange[];
 }
 
-export interface ProposalDecision {
+interface ProposalDecision {
   decidedAt: string;
   approvedChangeIds: string[];
   rejectedChangeIds: string[];
 }
 
-export interface ProposalApplyResult {
+interface ProposalApplyResult {
   appliedAt: string;
   succeededChangeIds: string[];
   failed: Array<{ taskId: string; changeIds: string[]; error: string }>;
@@ -51,7 +51,7 @@ export interface TaskChangeProposal {
   originProposalId?: string;
 }
 
-export interface ReviewHunk {
+interface ReviewHunk {
   oldStart: number;
   oldLines: number;
   newStart: number;
@@ -59,7 +59,7 @@ export interface ReviewHunk {
   lines: string[];
 }
 
-export interface ProposalTaskReview extends ProposalTask {
+interface ProposalTaskReview extends ProposalTask {
   rawHunks: ReviewHunk[];
 }
 
@@ -69,7 +69,7 @@ export interface ProposalReview {
   tasks: ProposalTaskReview[];
 }
 
-export interface ProposalWrite {
+interface ProposalWrite {
   taskId: string;
   path: string;
   title: string;

@@ -7,8 +7,8 @@ import { TODO_VIEW_TYPE, TodoListView } from "./view";
 import { createI18n, isLanguagePreference } from "./i18n";
 import type { I18n } from "./i18n";
 import { detectObsidianLanguage } from "./i18n/obsidian-locale";
-import { TaskChangeProposalRepository } from "./task-change-proposal-repository";
-import { openProposalInReviewView, TASK_CHANGE_REVIEW_VIEW_TYPE, TaskChangeReviewView } from "./task-change-review-view";
+import { TaskChangeProposalRepository } from "./reviews/task-change/proposal-repository";
+import { openProposalInReviewView, TASK_CHANGE_REVIEW_VIEW_TYPE, TaskChangeReviewView } from "./reviews/task-change/review-view";
 
 export default class TaskMatePlugin extends Plugin {
   settings: TaskMateSettings = DEFAULT_SETTINGS;

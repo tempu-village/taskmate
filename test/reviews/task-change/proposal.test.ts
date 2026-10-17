@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import type { Task } from "../src/domain";
-import { encodeTask } from "../src/markdown";
-import { applyProposalDecision, buildProposalReview, sha256 } from "../src/task-change-proposal";
-import type { TaskChangeProposal } from "../src/task-change-proposal";
+import type { Task } from "../../../src/domain";
+import { encodeTask } from "../../../src/markdown";
+import { applyProposalDecision, buildProposalReview, sha256 } from "../../../src/reviews/task-change/proposal";
+import type { TaskChangeProposal } from "../../../src/reviews/task-change/proposal";
 
 function task(overrides: Partial<Task> = {}): Task {
   return {
