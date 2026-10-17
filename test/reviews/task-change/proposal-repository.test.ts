@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { App } from "obsidian";
 import { TFile } from "obsidian";
-import type { Task } from "../../../src/domain";
-import { encodeTask, parseTaskMarkdown } from "../../../src/markdown";
-import { TaskRepository } from "../../../src/repository";
+import type { Task } from "../../../src/tasks/domain";
+import { encodeTask, parseTaskMarkdown } from "../../../src/tasks/markdown";
+import { TaskRepository } from "../../../src/tasks/repository";
 import { TaskChangeProposalRepository } from "../../../src/reviews/task-change/proposal-repository";
 import { sha256 } from "../../../src/reviews/task-change/proposal";
 import type { TaskChangeProposal } from "../../../src/reviews/task-change/proposal";

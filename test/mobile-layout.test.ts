@@ -7,31 +7,31 @@ const stylesheet = readFileSync(
   "utf8"
 );
 const viewSource = readFileSync(
-  fileURLToPath(new URL("../src/view.ts", import.meta.url)),
+  fileURLToPath(new URL("../src/task-list/view.ts", import.meta.url)),
   "utf8"
 );
 const taskModalSource = readFileSync(
-  fileURLToPath(new URL("../src/task-modal.ts", import.meta.url)),
+  fileURLToPath(new URL("../src/task-editor/task-modal.ts", import.meta.url)),
   "utf8"
 );
 const bulkTaskModalSource = readFileSync(
-  fileURLToPath(new URL("../src/bulk-task-modal.ts", import.meta.url)),
+  fileURLToPath(new URL("../src/task-list/bulk-task-modal.ts", import.meta.url)),
   "utf8"
 );
 const stepModalSource = readFileSync(
-  fileURLToPath(new URL("../src/step-modal.ts", import.meta.url)),
+  fileURLToPath(new URL("../src/task-editor/step-modal.ts", import.meta.url)),
   "utf8"
 );
 const keyboardLayoutSource = readFileSync(
-  fileURLToPath(new URL("../src/mobile-keyboard-layout.ts", import.meta.url)),
+  fileURLToPath(new URL("../src/shared/mobile-keyboard-layout.ts", import.meta.url)),
   "utf8"
 );
 const labelPickerModalSource = readFileSync(
-  fileURLToPath(new URL("../src/label-picker-modal.ts", import.meta.url)),
+  fileURLToPath(new URL("../src/labels/label-picker-modal.ts", import.meta.url)),
   "utf8"
 );
 const labelManagerModalSource = readFileSync(
-  fileURLToPath(new URL("../src/label-manager-modal.ts", import.meta.url)),
+  fileURLToPath(new URL("../src/labels/label-manager-modal.ts", import.meta.url)),
   "utf8"
 );
 

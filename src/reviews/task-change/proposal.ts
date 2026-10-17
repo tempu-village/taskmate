@@ -1,6 +1,6 @@
 import { applyPatch, structuredPatch } from "diff";
-import { encodeTaskPreservingProperties, parseTaskMarkdown } from "../../markdown";
-import type { Task } from "../../domain";
+import { encodeTaskPreservingProperties, parseTaskMarkdown } from "../../tasks/markdown";
+import type { Task } from "../../tasks/domain";
 
 const TASK_CHANGE_PROPOSAL_SCHEMA_VERSION = 1 as const;
 

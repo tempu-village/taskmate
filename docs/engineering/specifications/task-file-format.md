@@ -32,7 +32,7 @@ The precise treatment of arbitrary Markdown outside the owned title, Steps and N
 
 ## Verification
 
-See [domain round-trip tests](../../../test/domain.test.ts), [repository tests](../../../test/repository-conflicts.test.ts), [Task Step tests](../../../test/task-steps.test.ts) and [Task Pilot store tests](../../../skills/taskpilot/tests/test_todo_store.py). Conceptual ownership remains in [data model](../design/data-model.md); user-visible editing behavior remains in [Task editing](../features/task-editing.md) and [Task Steps](../features/task-steps.md).
+See [domain round-trip tests](../../../test/tasks/domain.test.ts), [repository tests](../../../test/tasks/repository-conflicts.test.ts), [Task Step tests](../../../test/tasks/task-steps.test.ts) and [Task Pilot store tests](../../../skills/taskpilot/tests/test_todo_store.py). Conceptual ownership remains in [data model](../design/data-model.md); user-visible editing behavior remains in [Task editing](../features/task-editing.md) and [Task Steps](../features/task-steps.md).
 
 ## 日本語参考
 

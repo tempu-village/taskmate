@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import type { Task } from "../../../src/domain";
-import { encodeTask } from "../../../src/markdown";
+import type { Task } from "../../../src/tasks/domain";
+import { encodeTask } from "../../../src/tasks/markdown";
 import { applyProposalDecision, buildProposalReview, sha256 } from "../../../src/reviews/task-change/proposal";
 import type { TaskChangeProposal } from "../../../src/reviews/task-change/proposal";
 
