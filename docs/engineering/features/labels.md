@@ -38,7 +38,7 @@ Task rows and the editor initially show up to three selected Labels. If more exi
 - LABEL-02: Renaming into an existing label merges membership; deletion keeps Tasks.
 - LABEL-03: Favorite/recent suggestions contain no duplicate labels; input survives picker use.
 
-Automated evidence: [label-picker-model.test.ts](../../../test/labels/label-picker-model.test.ts), [label-chip-input.test.ts](../../../test/labels/label-chip-input.test.ts), [label-management.test.ts](../../../test/labels/label-management.test.ts), [label-summary.test.ts](../../../test/labels/label-summary.test.ts). These tests cover selected behavior, not every UI scenario. Device checks and remaining gaps: [verification](../design/testing.md). Storage syntax: [Task Pilot schema](../../../skills/taskpilot/references/task-schema.md).
+Automated evidence: [label-picker-model.test.ts](../../../test/labels/label-picker-model.test.ts), [label-chip-input.test.ts](../../../test/labels/label-chip-input.test.ts), [label-management.test.ts](../../../test/labels/label-management.test.ts), [label-summary.test.ts](../../../test/labels/label-summary.test.ts), [label-suggestions.test.ts](../../../test/labels/label-suggestions.test.ts). These tests cover selected behavior, not every UI scenario. Device checks and remaining gaps: [verification](../design/testing.md). Storage syntax: [Task Pilot schema](../../../skills/taskpilot/references/task-schema.md).
 
 ## Related RFCs
 

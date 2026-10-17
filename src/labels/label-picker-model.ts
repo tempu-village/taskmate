@@ -1,6 +1,6 @@
 import type { SupportedLocale } from "../i18n";
 import { compareDisplayText } from "../i18n";
-import { normalizeLabels } from "../tasks/task-input-suggestions";
+import { normalizeLabels } from "./label-suggestions";
 
 export const FAVORITE_LABEL_LIMIT = 10;
 export const RECENT_LABEL_LIMIT = 10;

@@ -72,7 +72,7 @@ describe("locale resolution", () => {
 
 describe("UI copy boundaries", () => {
   it("keeps Japanese user-facing copy in the Japanese catalog", () => {
-    const files = ["tasks/domain.ts", "labels/label-manager-modal.ts", "labels/label-picker-modal.ts", "main.ts", "projects/project-modal.ts", "settings.ts", "task-editor/step-modal.ts", "tasks/task-input-suggestions.ts", "task-editor/task-modal.ts", "task-list/view.ts"];
+    const files = ["tasks/domain.ts", "labels/label-manager-modal.ts", "labels/label-picker-modal.ts", "main.ts", "projects/project-modal.ts", "settings.ts", "task-editor/step-modal.ts", "tasks/date-suggestions.ts", "labels/label-suggestions.ts", "task-editor/task-modal.ts", "task-list/view.ts"];
     for (const file of files) {
       const source = readFileSync(fileURLToPath(new URL(`../src/${file}`, import.meta.url)), "utf8");
       expect(source, file).not.toMatch(/[ぁ-んァ-ヶ一-龠]/);

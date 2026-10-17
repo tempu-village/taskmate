@@ -1,5 +1,5 @@
 import type { Task } from "../tasks/domain";
-import { normalizeLabels } from "../tasks/task-input-suggestions";
+import { normalizeLabels } from "./label-suggestions";
 
 export interface ManagedLabel {
   label: string;

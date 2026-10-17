@@ -8,7 +8,7 @@ import {
   suggestedLabels,
   toggleFavoriteLabel
 } from "./label-picker-model";
-import { normalizeLabels } from "../tasks/task-input-suggestions";
+import { normalizeLabels } from "./label-suggestions";
 
 type PickerTab = "suggested" | "all";
 
@@ -20,6 +20,13 @@ export interface LabelPickerOptions {
   preserveUnavailableSelectedLabels?: boolean;
   i18n: I18n;
   onConfirm: (selectedLabels: string[], favoriteLabels: string[]) => Promise<void>;
+}
+
+export interface LabelEditingOptions {
+  allLabels: string[];
+  recentLabels: string[];
+  favoriteLabels: string[];
+  onFavoriteLabelsChange: (labels: string[]) => Promise<void>;
 }
 
 export class LabelPickerModal extends Modal {
