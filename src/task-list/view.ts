@@ -9,10 +9,7 @@ import { compareDisplayText } from "../i18n";
 import type TaskMatePlugin from "../main";
 import { TaskFilterModal } from "./filter-modal";
 import { ProjectModal } from "../projects/project-modal";
-import { TaskConflictModal } from "../task-editor/task-conflict-modal";
-import { DuplicateTaskIdError } from "../tasks/repository";
 import { failedTaskWrites } from "../tasks/task-writes";
-import type { TaskSaveConflict, TaskSaveResult } from "../tasks/repository";
 import { recordRecentLabels } from "../labels/label-suggestions";
 import { availableFilterLabels } from "../labels/label-picker-model";
 import { LabelManagerModal } from "../labels/label-manager-modal";
@@ -24,7 +21,7 @@ import { buildTaskListModel } from "./task-list-model";
 import type { TaskListModel } from "./task-list-model";
 import { renderTaskList as renderTaskListDom } from "./task-list-renderer";
 import type { RenderedTaskList, TaskListAction, TaskListCopy } from "./task-list-renderer";
-import { TaskModal } from "../task-editor/task-modal";
+import { TaskEditingFlow } from "../task-editor/task-editing-flow";
 import { TaskFilterState } from "./task-filter-state";
 import { TaskSelection } from "./task-selection";
 import { captureTaskListScrollTop, restoreTaskListScrollTop } from "./scroll-position";
@@ -67,8 +64,20 @@ export class TodoListView extends ItemView {
   private readonly selection = new TaskSelection();
   private generation = 0;
 
+  private readonly editing: TaskEditingFlow;
+
   constructor(leaf: WorkspaceLeaf, private readonly plugin: TaskMatePlugin) {
     super(leaf);
+    this.editing = new TaskEditingFlow({
+      app: this.app,
+      availableRegion: this.contentEl,
+      repository: plugin.repository,
+      projects: plugin.projects,
+      i18n: () => plugin.i18n(),
+      labelOptions: (tasks) => this.labelEditingOptions(tasks),
+      rememberLabels: (labels) => this.rememberLabels(labels),
+      refresh: () => this.requestRender()
+    });
   }
 
   getViewType(): string {
@@ -147,7 +156,7 @@ export class TodoListView extends ItemView {
     if (!this.selection.isActive() && selectionScope) this.renderAdjustMenu(header, selectionScope);
     if (!this.selection.isActive() && addTaskProjectId !== undefined) {
       const add = header.createEl("button", { text: t("common.add"), cls: "mod-cta taskmate-add" });
-      add.addEventListener("click", () => void this.openCreateTask(addTaskProjectId));
+      add.addEventListener("click", () => void this.editing.openCreate(addTaskProjectId));
     }
     return header;
   }
@@ -472,7 +481,7 @@ export class TodoListView extends ItemView {
       return;
     }
     if (action.type === "open") {
-      await this.openEditTask(task);
+      await this.editing.openEdit(task);
       return;
     }
     if (action.type === "toggle-completed") {
@@ -670,7 +679,7 @@ export class TodoListView extends ItemView {
   private async editSelectedTasks(tasks: Task[]): Promise<void> {
     const selected = this.selection.selectedTasks(tasks);
     if (selected.length === 1) {
-      await this.openEditTask(selected[0], () => this.exitSelectionMode());
+      await this.editing.openEdit(selected[0], () => this.exitSelectionMode());
       return;
     }
     if (selected.length < 2) return;
@@ -725,121 +734,6 @@ export class TodoListView extends ItemView {
     if (!word) return;
     this.plugin.settings.recentSearches = [word, ...(this.plugin.settings.recentSearches ?? []).filter((item) => item !== word)].slice(0, 10);
     await this.plugin.saveSettings();
-    this.requestRender();
-  }
-
-  private async openCreateTask(projectId: string | null): Promise<void> {
-    const [projects, tasks] = await Promise.all([
-      this.plugin.projects.list(),
-      this.plugin.repository.list()
-    ]);
-    new TaskModal(this.app, null, projects, this.labelEditingOptions(tasks), projectId, this.contentEl, this.plugin.i18n(), async (draft) => {
-      await this.plugin.repository.create(draft);
-      await this.rememberLabels(draft.labels);
-      if (draft.projectId) {
-        const project = projects.find((item) => item.id === draft.projectId);
-        if (project) await this.plugin.projects.touch(project);
-      }
-      this.requestRender();
-      return true;
-    }).open();
-  }
-
-  private async openEditTask(task: Task, afterAction?: () => void): Promise<void> {
-    const [projects, tasks] = await Promise.all([
-      this.plugin.projects.list(),
-      this.plugin.repository.list()
-    ]);
-    const start = await this.plugin.repository.beginEdit(task);
-    if (start.status === "identity-conflict") {
-      this.showIdentityConflict(start.conflict.paths);
-      return;
-    }
-    if (start.status === "missing") {
-      new Notice(this.plugin.i18n().t("conflict.missing"));
-      this.requestRender();
-      return;
-    }
-    let modal: TaskModal;
-    modal = new TaskModal(this.app, start.task, projects, this.labelEditingOptions(tasks), start.task.projectId, this.contentEl, this.plugin.i18n(), async (draft) => {
-      const result = await this.plugin.repository.saveEditedTask(start.session, draft);
-      return this.handleTaskSaveResult(result, projects, modal, afterAction);
-    }, async () => {
-      try {
-        await this.plugin.repository.remove(start.task);
-        new Notice(this.plugin.i18n().t("tasks.deletedNotice"));
-        if (afterAction) afterAction();
-        else this.requestRender();
-        return true;
-      } catch (error) {
-        if (error instanceof DuplicateTaskIdError) {
-          this.showIdentityConflict(error.conflict.paths);
-          return false;
-        }
-        throw error;
-      }
-    });
-    modal.open();
-  }
-
-  private async handleTaskSaveResult(
-    result: TaskSaveResult,
-    projects: Project[],
-    taskModal: TaskModal,
-    afterAction?: () => void,
-    savedNotice?: "conflict.resolved"
-  ): Promise<boolean> {
-    const { t } = this.plugin.i18n();
-    if (result.status === "saved") {
-      await this.rememberLabels(result.task.labels);
-      if (result.task.projectId) {
-        const project = projects.find((item) => item.id === result.task.projectId);
-        if (project) await this.plugin.projects.touch(project);
-      }
-      if (savedNotice) new Notice(t(savedNotice));
-      else if (result.externalChangesPreserved) new Notice(t("conflict.externalPreserved"));
-      if (afterAction) afterAction();
-      else this.requestRender();
-      return true;
-    }
-    if (result.status === "conflict") {
-      this.openTaskConflict(result, projects, taskModal, afterAction);
-      return false;
-    }
-    if (result.status === "identity-conflict") {
-      this.showIdentityConflict(result.conflict.paths);
-      return false;
-    }
-    new Notice(t(result.status === "review-stale" ? "conflict.changedAgain" : "conflict.missing"));
-    this.requestRender();
-    return false;
-  }
-
-  private openTaskConflict(
-    conflict: TaskSaveConflict,
-    projects: Project[],
-    taskModal: TaskModal,
-    afterAction?: () => void
-  ): void {
-    new TaskConflictModal(this.app, conflict, projects, this.plugin.i18n(), async (choices) => {
-      const result = await this.plugin.repository.resolveEditConflict(conflict, choices);
-      if (result.status === "saved") {
-        await this.handleTaskSaveResult(result, projects, taskModal, afterAction, "conflict.resolved");
-        taskModal.close();
-        return true;
-      }
-      if (result.status === "conflict") {
-        new Notice(this.plugin.i18n().t("conflict.changedAgain"));
-        window.setTimeout(() => this.openTaskConflict(result, projects, taskModal, afterAction), 0);
-        return true;
-      }
-      await this.handleTaskSaveResult(result, projects, taskModal, afterAction);
-      return true;
-    }).open();
-  }
-
-  private showIdentityConflict(paths: string[]): void {
-    new Notice(this.plugin.i18n().t("conflict.identityNotice", { paths: paths.join(", ") }), 0);
     this.requestRender();
   }
 

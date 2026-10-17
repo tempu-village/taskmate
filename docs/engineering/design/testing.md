@@ -24,14 +24,14 @@ git diff --check
 
 | Contract | Automated evidence | Additional manual evidence |
 | --- | --- | --- |
-| [EDIT-01/02/03](../features/task-editing.md) | title, renderer, bulk action, Task write, selection, scroll tests | Create/cancel/delete and long-title editing on desktop/Android |
+| [EDIT-01/02/03](../features/task-editing.md) | title, editing flow, renderer, bulk action, Task write, selection, scroll tests | Create/cancel/delete and long-title editing on desktop/Android |
 | [STEP-01/02](../features/task-steps.md) | domain round trip and task-steps tests | Nested Step editor save/cancel and touch reorder |
 | [PROJECT-01/02](../features/projects.md) | domain Project format tests only | Rename/delete Project and check Task membership |
 | [LABEL-01/02/03](../features/labels.md) | picker, chip input, label management/maintenance/summary/suggestion tests | Japanese IME and mobile picker cancellation |
 | [LIST-01/02/03](../features/filtering-and-sorting.md) | domain, filter-state and list-model tests | Navigation retains filters; changing sort retains global rank |
 | [MOBILE-01/02](../features/mobile-layout.md) | static layout and keyboard calculation tests | Real keyboard and touch checks; DOM tests do not emulate WebView |
 | [I18N-01/02](../features/localization.md) | dictionary/fallback tests | Command/ribbon reload and narrow translated controls |
-| [CONFLICT-01/02/03/04](../features/edit-conflicts.md) | merge and repository tests, including Step value equality | Two-device synchronization |
+| [CONFLICT-01/02/03/04](../features/edit-conflicts.md) | merge, repository and editing flow tests, including Step value equality | Two-device synchronization |
 | [IMPORT-01/02/03/04](../features/source-import.md) | Python proposal/store tests | Actual agent's coverage inventory versus all source statements |
 | [PLAN-01 through PLAN-16](../features/task-pilot-planning.md) | Python planning/proposal/store tests | Actual agent estimate quality, explanation usefulness and conversation review |
 | [REVIEW-01 through REVIEW-17](../features/task-change-review/README.md) | Proposal model/repository/renderer tests and Python planning-store tests, including platform dispatch | Fresh desktop/mobile review, Full text unified-diff readability, Manual-order stale regeneration, and URI handoff delivery on macOS, Windows, and Linux |
