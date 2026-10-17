@@ -5393,6 +5393,54 @@ var TaskFilterState = class {
   }
 };
 
+// src/task-list/task-selection.ts
+var TaskSelection = class {
+  active = false;
+  selected = /* @__PURE__ */ new Set();
+  scope = /* @__PURE__ */ new Set();
+  isActive() {
+    return this.active;
+  }
+  selectedIds() {
+    return this.selected;
+  }
+  selectedCount() {
+    return this.selected.size;
+  }
+  scopeSize() {
+    return this.scope.size;
+  }
+  selectedTasks(tasks) {
+    return tasks.filter((task) => this.selected.has(task.id));
+  }
+  start(scopeIds) {
+    this.scope = new Set(scopeIds);
+    this.selected = /* @__PURE__ */ new Set();
+    this.active = true;
+  }
+  toggle(id) {
+    if (this.selected.has(id)) this.selected.delete(id);
+    else this.selected.add(id);
+  }
+  toggleAll() {
+    this.selected = this.selected.size === this.scope.size ? /* @__PURE__ */ new Set() : new Set(this.scope);
+  }
+  retainExisting(existingIds) {
+    const existing = new Set(existingIds);
+    this.scope = new Set([...this.scope].filter((id) => existing.has(id)));
+    this.selected = new Set([...this.selected].filter((id) => this.scope.has(id)));
+  }
+  restrictTo(ids) {
+    this.scope = new Set(ids);
+    this.selected = new Set(this.scope);
+  }
+  exit() {
+    this.active = false;
+    this.selected = /* @__PURE__ */ new Set();
+    this.scope = /* @__PURE__ */ new Set();
+  }
+};
+
 // src/task-list/scroll-position.ts
 var TASK_LIST_SCROLL_REGION = ".taskmate-scroll-region";
 function captureTaskListScrollTop(root) {
@@ -5437,9 +5485,7 @@ var TodoListView = class extends import_obsidian12.ItemView {
   projectScreen = "index";
   activeProjectId = null;
   renderedTaskList = null;
-  selectionMode = false;
-  selectedTaskIds = /* @__PURE__ */ new Set();
-  selectionScopeIds = /* @__PURE__ */ new Set();
+  selection = new TaskSelection();
   generation = 0;
   getViewType() {
     return TODO_VIEW_TYPE;
@@ -5470,7 +5516,7 @@ var TodoListView = class extends import_obsidian12.ItemView {
     root.empty();
     root.addClass("taskmate-view");
     const page = root.createDiv({ cls: "taskmate-page" });
-    if (this.selectionMode) this.renderSelectionToolbar(page, tasks);
+    if (this.selection.isActive()) this.renderSelectionToolbar(page, tasks);
     else this.renderNavigation(page);
     if (identityConflicts.length > 0) {
       const warning = page.createDiv({ cls: "taskmate-identity-conflict" });
@@ -5499,8 +5545,8 @@ var TodoListView = class extends import_obsidian12.ItemView {
     const { t } = this.plugin.i18n();
     const header = container.createDiv({ cls: "taskmate-header" });
     header.createEl("h2", { text: title });
-    if (!this.selectionMode && selectionScope) this.renderAdjustMenu(header, selectionScope);
-    if (!this.selectionMode && addTaskProjectId !== void 0) {
+    if (!this.selection.isActive() && selectionScope) this.renderAdjustMenu(header, selectionScope);
+    if (!this.selection.isActive() && addTaskProjectId !== void 0) {
       const add = header.createEl("button", { text: t("common.add"), cls: "mod-cta taskmate-add" });
       add.addEventListener("click", () => void this.openCreateTask(addTaskProjectId));
     }
@@ -5522,7 +5568,7 @@ var TodoListView = class extends import_obsidian12.ItemView {
         this.smartView = view;
         this.requestRender();
       });
-      button2.disabled = this.selectionMode;
+      button2.disabled = this.selection.isActive();
     });
     this.renderSortControl(controls);
     if (this.smartView === "scheduled" && this.sortMode === "date") {
@@ -5551,7 +5597,7 @@ var TodoListView = class extends import_obsidian12.ItemView {
         "enterkeyhint": "search"
       }
     });
-    input.disabled = this.selectionMode;
+    input.disabled = this.selection.isActive();
     const results = container.createDiv({ cls: "taskmate-search-results taskmate-scroll-region" });
     const updateResults = () => this.renderSearchResults(results, tasks, projects);
     let composing = false;
@@ -5577,7 +5623,7 @@ var TodoListView = class extends import_obsidian12.ItemView {
     this.destroyTaskList();
     container.empty();
     const recent = this.plugin.settings.recentSearches ?? [];
-    if (!this.selectionMode && recent.length > 0) {
+    if (!this.selection.isActive() && recent.length > 0) {
       const section = container.createDiv({ cls: "taskmate-section" });
       const heading = section.createDiv({ cls: "taskmate-section-heading" });
       heading.createEl("h3", { text: t("search.recent") });
@@ -5614,7 +5660,7 @@ var TodoListView = class extends import_obsidian12.ItemView {
     if (this.projectScreen === "detail" && active) {
       const visibleTasks = filterTasks(tasks.filter((task) => task.projectId === active.id), "all", this.filterState.value());
       const header2 = this.renderHeader(container, active.name, active.id, () => visibleTasks);
-      if (!this.selectionMode) {
+      if (!this.selection.isActive()) {
         this.addBackButton(header2, () => {
           this.projectScreen = "index";
           this.requestRender();
@@ -5729,7 +5775,7 @@ var TodoListView = class extends import_obsidian12.ItemView {
         }
         this.requestRender();
       });
-      button2.disabled = this.selectionMode;
+      button2.disabled = this.selection.isActive();
     });
   }
   renderTaskList(container, source, projects, allowReorder) {
@@ -5740,8 +5786,8 @@ var TodoListView = class extends import_obsidian12.ItemView {
       sortMode: this.sortMode,
       sortDirection: this.sortDirection,
       allowReorder,
-      selectionMode: this.selectionMode,
-      selectedIds: this.selectedTaskIds
+      selectionMode: this.selection.isActive(),
+      selectedIds: this.selection.selectedIds()
     });
     this.mountTaskList(container, model, source);
   }
@@ -5753,8 +5799,8 @@ var TodoListView = class extends import_obsidian12.ItemView {
       sortMode: this.sortMode,
       sortDirection: this.sortDirection,
       allowReorder: true,
-      selectionMode: this.selectionMode,
-      selectedIds: this.selectedTaskIds
+      selectionMode: this.selection.isActive(),
+      selectedIds: this.selection.selectedIds()
     });
     this.mountTaskList(container, model, source);
   }
@@ -5797,8 +5843,7 @@ var TodoListView = class extends import_obsidian12.ItemView {
     const task = tasksById.get(action.taskId);
     if (!task) return;
     if (action.type === "toggle-selected") {
-      if (this.selectedTaskIds.has(task.id)) this.selectedTaskIds.delete(task.id);
-      else this.selectedTaskIds.add(task.id);
+      this.selection.toggle(task.id);
       this.requestRender({ preserveScroll: true });
       return;
     }
@@ -5855,9 +5900,7 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
       const menu = new import_obsidian12.Menu();
       const scope = selectionScope();
       menu.addItem((item) => item.setTitle(t("selection.start")).setIcon("list-checks").setDisabled(scope.length === 0).onClick(() => {
-        this.selectionScopeIds = new Set(scope.map((task) => task.id));
-        this.selectedTaskIds.clear();
-        this.selectionMode = true;
+        this.selection.start(scope.map((task) => task.id));
         this.requestRender({ preserveScroll: true });
       }));
       menu.addItem((item) => item.setTitle(count > 0 ? t("filter.change") : t("filter.title")).setIcon("list-filter").onClick(() => void this.openFilterModal()));
@@ -5871,30 +5914,26 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
   }
   renderSelectionToolbar(root, tasks) {
     const { t } = this.plugin.i18n();
-    const existingIds = new Set(tasks.map((task) => task.id));
-    this.selectionScopeIds = new Set([...this.selectionScopeIds].filter((id) => existingIds.has(id)));
-    this.selectedTaskIds = new Set([...this.selectedTaskIds].filter((id) => this.selectionScopeIds.has(id)));
+    this.selection.retainExisting(tasks.map((task) => task.id));
     const toolbar = root.createDiv({ cls: "taskmate-selection-toolbar", attr: { "aria-label": t("selection.ariaLabel") } });
     const exit = toolbar.createEl("button", { text: `\xD7 ${t("selection.exit")}` });
     exit.addEventListener("click", () => this.exitSelectionMode());
-    toolbar.createDiv({ text: t("selection.count", { count: this.selectedTaskIds.size }), cls: "taskmate-selection-count" });
+    toolbar.createDiv({ text: t("selection.count", { count: this.selection.selectedCount() }), cls: "taskmate-selection-count" });
     const selectAll = toolbar.createEl("button", { text: t("selection.selectAll") });
-    selectAll.disabled = this.selectionScopeIds.size === 0;
+    selectAll.disabled = this.selection.scopeSize() === 0;
     selectAll.addEventListener("click", () => {
-      this.selectedTaskIds = this.selectedTaskIds.size === this.selectionScopeIds.size ? /* @__PURE__ */ new Set() : new Set(this.selectionScopeIds);
+      this.selection.toggleAll();
       this.requestRender({ preserveScroll: true });
     });
     const edit = toolbar.createEl("button", { text: t("common.edit") });
-    edit.disabled = this.selectedTaskIds.size === 0;
+    edit.disabled = this.selection.selectedCount() === 0;
     edit.addEventListener("click", () => void this.editSelectedTasks(tasks));
     const remove = toolbar.createEl("button", { text: t("common.delete"), cls: "mod-warning" });
-    remove.disabled = this.selectedTaskIds.size === 0;
+    remove.disabled = this.selection.selectedCount() === 0;
     remove.addEventListener("click", () => void this.deleteSelectedTasks(tasks));
   }
   exitSelectionMode() {
-    this.selectionMode = false;
-    this.selectedTaskIds.clear();
-    this.selectionScopeIds.clear();
+    this.selection.exit();
     this.requestRender({ preserveScroll: true });
   }
   async openFilterModal() {
@@ -5981,7 +6020,7 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
     this.requestRender();
   }
   async editSelectedTasks(tasks) {
-    const selected = tasks.filter((task) => this.selectedTaskIds.has(task.id));
+    const selected = this.selection.selectedTasks(tasks);
     if (selected.length === 1) {
       await this.openEditTask(selected[0], () => this.exitSelectionMode());
       return;
@@ -6005,7 +6044,7 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
   }
   async deleteSelectedTasks(tasks) {
     const { t } = this.plugin.i18n();
-    const selected = tasks.filter((task) => this.selectedTaskIds.has(task.id));
+    const selected = this.selection.selectedTasks(tasks);
     if (selected.length === 0 || !window.confirm(t("selection.deleteConfirm", { count: selected.length }))) return;
     const results = await Promise.allSettled(selected.map((task) => this.plugin.repository.remove(task)));
     this.finishBulkAction(selected, results, "selection.deletedNotice");
@@ -6018,8 +6057,7 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
       this.exitSelectionMode();
       return;
     }
-    this.selectedTaskIds = new Set(failed.map((task) => task.id));
-    this.selectionScopeIds = new Set(failed.map((task) => task.id));
+    this.selection.restrictTo(failed.map((task) => task.id));
     new import_obsidian12.Notice(t("selection.partialFailure", { failed: failed.length, total: tasks.length }));
     this.requestRender();
   }
