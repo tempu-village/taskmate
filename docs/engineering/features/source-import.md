@@ -40,9 +40,16 @@ Individual helper writes use temporary-file replacement, but multiple Tasks, dec
 
 Manifest validation checks declared candidates, not whether the agent understood all actions in prose. Human coverage review remains necessary. Indexed discovery and automatic Vault setup are separate proposed features, not alternate current implementations.
 
+## Pending changes
+
+[RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md), tracked by [Issue #62](https://github.com/tempu-village/taskmate/issues/62) with the Source candidate slice in [Issue #61](https://github.com/tempu-village/taskmate/issues/61), is accepted but not implemented. It proposes replacing each new `Active/<session>/Review.md` plus candidate-note set with one versioned Source candidate Proposal JSON and a TaskMate-native Review View. The proposed UI keeps complete coverage, supports per-candidate create/merge/exclude/hold decisions, shows merge evidence inside the candidate card, and separates decision selection from formal apply.
+
+Existing Active/Archive files would not be migrated, moved, or deleted. The new Review View would not enumerate legacy Markdown reviews. Until the replacement is implemented and verified, the Active/Archive workflow in this Feature remains the current authority.
+
 ## Related RFCs
 
 - [RFC 0004: Add coverage-review examples and omission failure cases](../rfcs/0004-add-coverage-review-examples-and-failure-cases.md) — implemented history for candidate-manifest validation and examples.
+- [RFC 0033: Reviewable rolling plans and Source candidate reviews](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md) — accepted replacement design; not implemented.
 
 ## 日本語参考
 
@@ -63,5 +70,11 @@ Manifest validation checks declared candidates, not whether the agent understood
 現在のPython探索は管理領域以外のMarkdownを読み、適格性を判定します。「対象外を一切読まない」は現在の保証ではありません。[索引](source-note-index.md)と[Vault登録](agent-vault-setup.md)は提案・未実装です。
 
 Agentが候補一覧とreview planを作り、todo storeが対象探索とprovenance hash、proposal storeがcoverage検証・stage・明示判断の反映を担当します。個別writeは一時ファイル置換を使いますが、複数Task、判断記録、Source metadata、Archive移動は一つのtransactionではありません。Task作成と反映ID記録の間で中断した場合は手動照合が必要になり得るため、完全な一度限り実行や自動rollbackは保証しません。
+
+### 保留中の変更
+
+[RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md)は[Issue #62](https://github.com/tempu-village/taskmate/issues/62)で追跡し、Source候補部分は[Issue #61](https://github.com/tempu-village/taskmate/issues/61)で実装します。合意済みですが未実装です。新しく作るレビューを、`Active/<session>/Review.md`と候補ノートの組み合わせから、1セッション1つのSource候補Proposal JSONとTaskMate内のReview Viewへ置き換える提案です。候補ごとの作成・統合・除外・保留、カード内の統合差分、判断選択と正式反映の分離を含みます。
+
+既存Active/Archiveファイルは移行・移動・削除せず、新UIでは列挙しません。実装と検証が完了するまでは、上記の現在のActive/Archive方式が正本です。
 
 IMPORT-01：複数メモの全候補を一つのレビューへまとめ、ステージではTaskを作らない。IMPORT-02：部分承認と残りの判断、再実行で重複しない。IMPORT-03：除外判断とSource変更検出を必須にする。IMPORT-04：過去と今回の関連IDを保つ。自動テストだけではAIの意味的な抽出漏れを証明できず、元メモとの照合も必要です。

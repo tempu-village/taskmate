@@ -221,6 +221,12 @@ Automated evidence: [planning behavior tests](../../../skills/taskpilot/tests/te
 - changing the user's Manual order;
 - a second database or non-Markdown source of truth.
 
+## Pending changes
+
+[RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md), tracked by [Issue #62](https://github.com/tempu-village/taskmate/issues/62) with the rolling-plan slice in [Issue #60](https://github.com/tempu-village/taskmate/issues/60), is accepted but not implemented. It proposes replacing conversation-only capacity-plan output with one Obsidian rolling-plan Markdown that covers every canonical incomplete Task as planned, `GAP`, or `CONFLICT`. The user would compare a recommended base with an evidence-only base, choose one working plan, revise it through Codex by stable IDs, and explicitly generate an existing Task change Proposal from all dates by default or from a narrower requested range.
+
+The proposed plan remains read-only: creating, choosing, or editing it would not change Tasks. Future placement would require a user-confirmed capacity profile, and plan-derived changes would be limited to date, Context labels, Steps, and Notes. This paragraph records accepted future direction only; the current conversation capacity-plan behavior above remains authoritative until implementation is verified.
+
 ## Related specifications and features
 
 - [Task schema](../../../skills/taskpilot/references/task-schema.md)
@@ -230,6 +236,7 @@ Automated evidence: [planning behavior tests](../../../skills/taskpilot/tests/te
 - [Task editing](task-editing.md)
 - [Storage and privacy](storage-and-privacy.md)
 - [Task change review](task-change-review/README.md)
+- [RFC 0033: Reviewable rolling plans and Source candidate reviews](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md)
 
 ## 日本語参考
 
@@ -431,6 +438,12 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 - Manual orderの変更
 - 第二のデータベースやMarkdown以外の正本
 
+### 保留中の変更
+
+[RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md)は[Issue #62](https://github.com/tempu-village/taskmate/issues/62)で追跡し、計画部分は[Issue #60](https://github.com/tempu-village/taskmate/issues/60)で実装します。合意済みですが未実装です。会話だけの計画出力を、すべての正式な未完了Taskを計画済み・`GAP`・`CONFLICT`のいずれかへ割り当てる1つのObsidian Markdownへ置き換える提案です。推奨ベース案と既存Task根拠ベース案の一方を選び、Codexとの会話で識別番号を使って修正し、明示依頼によって既存のTask変更Proposalを作ります。範囲省略時は全日程、指定時は今日分または指定項目だけが対象です。
+
+計画の作成・選択・修正だけではTaskを変更しません。将来配置には利用者が確認した容量が必要で、提案可能な変更は日付、Context label、Steps、Notesに限定します。実装確認までは、上に記載した現在の会話ベース計画が正本です。
+
 ### 関連仕様と機能
 
 - [Task schema](../../../skills/taskpilot/references/task-schema.md)
@@ -440,3 +453,4 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 - [Task editing](task-editing.md)
 - [Storage and privacy](storage-and-privacy.md)
 - [Task change review](task-change-review/README.md)
+- [RFC 0033: Reviewable rolling plans and Source candidate reviews](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md)
