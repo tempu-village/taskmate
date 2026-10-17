@@ -2142,6 +2142,12 @@ var BulkTaskModal = class extends import_obsidian5.Modal {
   }
 };
 
+// src/tasks/task-writes.ts
+async function failedTaskWrites(tasks, write) {
+  const results = await Promise.allSettled(tasks.map((task) => write(task)));
+  return tasks.filter((_, index2) => results[index2]?.status === "rejected");
+}
+
 // src/task-list/bulk-task-actions.ts
 function buildBulkTaskPatch(task, changes) {
   const labels = task.labels.filter((label) => !changes.removeLabels.includes(label)).concat(changes.addLabels.filter((label) => !task.labels.includes(label))).slice(0, 500);
@@ -2151,8 +2157,13 @@ function buildBulkTaskPatch(task, changes) {
   if ("priority" in changes) patch.priority = changes.priority;
   return patch;
 }
-function failedBulkTasks(tasks, results) {
-  return tasks.filter((_, index2) => results[index2]?.status === "rejected");
+async function applyBulkTaskChanges(repositories, tasks, changes) {
+  const failed = await failedTaskWrites(tasks, (task) => repositories.tasks.update(task, buildBulkTaskPatch(task, changes)));
+  if (typeof changes.projectId === "string") {
+    const project = (await repositories.projects.list()).find((item) => item.id === changes.projectId);
+    if (project) await repositories.projects.touch(project);
+  }
+  return failed;
 }
 
 // src/task-list/filter-modal.ts
@@ -2497,6 +2508,27 @@ var LabelManagerModal = class extends import_obsidian9.Modal {
     });
   }
 };
+
+// src/labels/label-maintenance.ts
+function renameLabelAcrossTasks(repository, tasks, preferences, from, to) {
+  return changeLabelAcrossTasks(repository, tasks, preferences, from, (labels) => renameLabelValues(labels, from, to));
+}
+function removeLabelAcrossTasks(repository, tasks, preferences, label) {
+  return changeLabelAcrossTasks(repository, tasks, preferences, label, (labels) => removeLabelValue(labels, label));
+}
+async function changeLabelAcrossTasks(repository, tasks, preferences, label, change) {
+  const affected = tasks.filter((task) => task.labels.includes(label));
+  const failed = await failedTaskWrites(affected, (task) => repository.update(task, { labels: change(task.labels) }));
+  if (failed.length > 0) return { kind: "partial-failure", affected: affected.length, failed };
+  return {
+    kind: "applied",
+    affected: affected.length,
+    preferences: {
+      recentLabels: change(preferences.recentLabels),
+      favoriteLabels: change(preferences.favoriteLabels)
+    }
+  };
+}
 
 // src/task-list/task-list-model.ts
 function toRow(task, projectNames) {
@@ -5974,45 +6006,42 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
     }).open();
   }
   async renameManagedLabel(tasks, from, to) {
-    const affected = tasks.filter((task) => task.labels.includes(from));
-    const results = await Promise.allSettled(affected.map(
-      (task) => this.plugin.repository.update(task, { labels: renameLabelValues(task.labels, from, to) })
-    ));
-    if (this.reportLabelWriteFailures(affected, results)) return;
-    this.plugin.settings.recentLabels = renameLabelValues(this.plugin.settings.recentLabels ?? [], from, to);
-    this.plugin.settings.favoriteLabels = renameLabelValues(this.plugin.settings.favoriteLabels ?? [], from, to);
+    const result = await renameLabelAcrossTasks(this.plugin.repository, tasks, this.labelPreferences(), from, to);
+    if (result.kind === "partial-failure") return this.reportLabelWriteFailures(result);
+    this.plugin.settings.recentLabels = result.preferences.recentLabels;
+    this.plugin.settings.favoriteLabels = result.preferences.favoriteLabels;
     const filters = this.filterState.value();
     this.filterState.replace({ ...filters, labels: renameLabelValues(filters.labels, from, to) });
     await this.plugin.saveSettings();
     const { t } = this.plugin.i18n();
-    new import_obsidian12.Notice(affected.length === 1 ? t("labelManager.renamedNoticeOne", { from, to, count: affected.length }) : t("labelManager.renamedNotice", { from, to, count: affected.length }));
+    new import_obsidian12.Notice(result.affected === 1 ? t("labelManager.renamedNoticeOne", { from, to, count: result.affected }) : t("labelManager.renamedNotice", { from, to, count: result.affected }));
     this.requestRender();
   }
   async deleteManagedLabel(tasks, label) {
-    const affected = tasks.filter((task) => task.labels.includes(label));
-    const results = await Promise.allSettled(affected.map(
-      (task) => this.plugin.repository.update(task, { labels: removeLabelValue(task.labels, label) })
-    ));
-    if (this.reportLabelWriteFailures(affected, results)) return;
-    this.plugin.settings.recentLabels = removeLabelValue(this.plugin.settings.recentLabels ?? [], label);
-    this.plugin.settings.favoriteLabels = removeLabelValue(this.plugin.settings.favoriteLabels ?? [], label);
+    const result = await removeLabelAcrossTasks(this.plugin.repository, tasks, this.labelPreferences(), label);
+    if (result.kind === "partial-failure") return this.reportLabelWriteFailures(result);
+    this.plugin.settings.recentLabels = result.preferences.recentLabels;
+    this.plugin.settings.favoriteLabels = result.preferences.favoriteLabels;
     const filters = this.filterState.value();
     this.filterState.replace({ ...filters, labels: removeLabelValue(filters.labels, label) });
     await this.plugin.saveSettings();
     const { t } = this.plugin.i18n();
-    new import_obsidian12.Notice(affected.length === 1 ? t("labelManager.deletedNoticeOne", { label, count: affected.length }) : t("labelManager.deletedNotice", { label, count: affected.length }));
+    new import_obsidian12.Notice(result.affected === 1 ? t("labelManager.deletedNoticeOne", { label, count: result.affected }) : t("labelManager.deletedNotice", { label, count: result.affected }));
     this.requestRender();
   }
-  reportLabelWriteFailures(tasks, results) {
-    const failed = failedBulkTasks(tasks, results);
-    if (failed.length === 0) return false;
+  labelPreferences() {
+    return {
+      recentLabels: this.plugin.settings.recentLabels ?? [],
+      favoriteLabels: this.plugin.settings.favoriteLabels ?? []
+    };
+  }
+  reportLabelWriteFailures(result) {
     new import_obsidian12.Notice(this.plugin.i18n().t("labelManager.partialFailure", {
-      failed: failed.length,
-      total: tasks.length,
-      paths: failed.map((task) => task.path).join(", ")
+      failed: result.failed.length,
+      total: result.affected,
+      paths: result.failed.map((task) => task.path).join(", ")
     }), 0);
     this.requestRender();
-    return true;
   }
   clearActiveFilters() {
     this.filterState.clear();
@@ -6032,26 +6061,19 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
     }).open();
   }
   async applyBulkChanges(tasks, changes) {
-    const results = await Promise.allSettled(tasks.map(
-      (task) => this.plugin.repository.update(task, buildBulkTaskPatch(task, changes))
-    ));
-    if (typeof changes.projectId === "string") {
-      const project = (await this.plugin.projects.list()).find((item) => item.id === changes.projectId);
-      if (project) await this.plugin.projects.touch(project);
-    }
+    const failed = await applyBulkTaskChanges({ tasks: this.plugin.repository, projects: this.plugin.projects }, tasks, changes);
     await this.rememberLabels(changes.addLabels);
-    this.finishBulkAction(tasks, results, "selection.updatedNotice");
+    this.finishBulkAction(tasks, failed, "selection.updatedNotice");
   }
   async deleteSelectedTasks(tasks) {
     const { t } = this.plugin.i18n();
     const selected = this.selection.selectedTasks(tasks);
     if (selected.length === 0 || !window.confirm(t("selection.deleteConfirm", { count: selected.length }))) return;
-    const results = await Promise.allSettled(selected.map((task) => this.plugin.repository.remove(task)));
-    this.finishBulkAction(selected, results, "selection.deletedNotice");
+    const failed = await failedTaskWrites(selected, (task) => this.plugin.repository.remove(task));
+    this.finishBulkAction(selected, failed, "selection.deletedNotice");
   }
-  finishBulkAction(tasks, results, successKey) {
+  finishBulkAction(tasks, failed, successKey) {
     const { t } = this.plugin.i18n();
-    const failed = failedBulkTasks(tasks, results);
     if (failed.length === 0) {
       new import_obsidian12.Notice(t(successKey, { count: tasks.length }));
       this.exitSelectionMode();

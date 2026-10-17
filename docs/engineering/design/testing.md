@@ -24,10 +24,10 @@ git diff --check
 
 | Contract | Automated evidence | Additional manual evidence |
 | --- | --- | --- |
-| [EDIT-01/02/03](../features/task-editing.md) | title, renderer, bulk action, selection, scroll tests | Create/cancel/delete and long-title editing on desktop/Android |
+| [EDIT-01/02/03](../features/task-editing.md) | title, renderer, bulk action, Task write, selection, scroll tests | Create/cancel/delete and long-title editing on desktop/Android |
 | [STEP-01/02](../features/task-steps.md) | domain round trip and task-steps tests | Nested Step editor save/cancel and touch reorder |
 | [PROJECT-01/02](../features/projects.md) | domain Project format tests only | Rename/delete Project and check Task membership |
-| [LABEL-01/02/03](../features/labels.md) | picker, chip input, label management/summary/suggestion tests | Japanese IME and mobile picker cancellation |
+| [LABEL-01/02/03](../features/labels.md) | picker, chip input, label management/maintenance/summary/suggestion tests | Japanese IME and mobile picker cancellation |
 | [LIST-01/02/03](../features/filtering-and-sorting.md) | domain, filter-state and list-model tests | Navigation retains filters; changing sort retains global rank |
 | [MOBILE-01/02](../features/mobile-layout.md) | static layout and keyboard calculation tests | Real keyboard and touch checks; DOM tests do not emulate WebView |
 | [I18N-01/02](../features/localization.md) | dictionary/fallback tests | Command/ribbon reload and narrow translated controls |
