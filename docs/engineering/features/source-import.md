@@ -5,6 +5,8 @@ Implementation: Staging and promotion implemented; indexed discovery is not impl
 
 ## Contract
 
+Source selection and provenance properties follow [Source note property format](../specifications/source-note-properties.md). Canonical Tasks created or updated by promotion follow [Task file format](../specifications/task-file-format.md); these are different property classes stored on different document roles.
+
 Only folder-selected notes or notes with `taskmate-source: true` are eligible for task extraction. `taskmate-source: false` overrides folder inclusion. Managed Task, Project, Proposal folders and Obsidian configuration are excluded. Scope remains independent of the proposal output location.
 
 Inventory every possible action before proposing create, merge, or exclude. Every candidate belongs to exactly one coverage mapping, including candidates the agent considers informational or redundant. Source identity is part of candidate identity; identical text in two notes cannot cover each other. An exclusion needs an explicit user decision and reason.
@@ -49,6 +51,8 @@ Manifest validation checks declared candidates, not whether the agent understood
 > 翻訳状態：`ai-translated`。英語版が正本です。
 
 承認：許可リスト・ステージ・coverageの既存ADRで決定済み。提案と反映は実装済み、索引探索は未実装です。
+
+ソース選択と取り込み履歴のPropertyは[Source note property format](../specifications/source-note-properties.md)、正式反映されるTaskは[Task file format](../specifications/task-file-format.md)に従います。両者は異なる文書役割のPropertyです。
 
 フォルダーで選択したノート、または`taskmate-source: true`だけが抽出対象です。`false`はフォルダー許可より優先し、Task・Project・Proposal・Obsidian設定は対象外です。
 
