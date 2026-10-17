@@ -228,6 +228,8 @@ A thin Review Catalog scans the configured Proposal root and History folder, rea
 
 The catalog must not parse complete feature-specific payloads, decide candidates, calculate diffs, perform stale recovery, or apply writes. Task change and Source candidate Modules must not import one another. Shared review code must not import either feature Module.
 
+The current source layout already places Task change review in `src/reviews/task-change/`, and the [review Module boundary test](../../../test/reviews/review-module-boundaries.test.ts) rejects imports between review kinds and from `reviews/shared` into a review kind. A Source candidate Module under `src/reviews/source-candidate/` and a catalog under `src/reviews/shared/` therefore satisfy RFC33-REVIEW-02 without new rules, provided routing to the owning Module happens outside the catalog. A catalog placed anywhere else must add its folder rule to the [Module boundary test](../../../test/module-boundaries.test.ts) and [Architecture](../design/architecture.md).
+
 The Source candidate Module uses a local TypeScript runtime validator, following the existing Task change Proposal approach and adding no runtime schema dependency. The RFC Schema and fixture are design/test authorities until implementation promotes the final strict contract into `docs/engineering/specifications/`.
 
 ### 5. Review View behavior
@@ -352,9 +354,13 @@ Implementation is tracked in three independently reviewable value slices:
 
 The final Source candidate JSON contract belongs in a new Specification only after implementation confirms the schema and validator. Implemented user-visible behavior must then replace the pending-change sections in the affected Features, and the RFC moves to `implemented` with PR/release evidence.
 
+The current [Source note property format](../specifications/source-note-properties.md) remains normative for ordinary Source notes. The new workflow keeps its `taskmate-source` eligibility rule. That Specification also defines `taskmate-import-*` provenance as written after every candidate in a staged review has a decision and promotion completes; when the Source candidate workflow replaces the staged review, the same change must update that Specification and the [user guide for importing Source notes](../../user/how-to/import-source-notes.md).
+
 ## Open questions
 
-None block implementation. Implementation pull requests and a release version remain delivery metadata rather than product-design questions.
+- **Source-note provenance timing (#61):** This RFC does not decide when the Source candidate workflow writes `taskmate-import-*` provenance on a Source note, given candidate-by-candidate apply and retained partial results. It was accepted before the [Source note property format](../specifications/source-note-properties.md) was published. Decide it before #61 completes; it does not block #60.
+
+Implementation pull requests and a release version remain delivery metadata rather than product-design questions.
 
 ## Decision / status
 
@@ -365,8 +371,9 @@ Accepted on 2026-10-17 after product review of A-D01–05, B-D01–07, C-D01–0
 - Tracking Issue: [#62](https://github.com/tempu-village/taskmate/issues/62)
 - Implementation Issues: [#60](https://github.com/tempu-village/taskmate/issues/60), [#61](https://github.com/tempu-village/taskmate/issues/61), [#62](https://github.com/tempu-village/taskmate/issues/62)
 - Current features: [Task Pilot planning](../features/task-pilot-planning.md), [Source-note import](../features/source-import.md), [Task change review](../features/task-change-review/README.md)
-- Current specification: [Task change Proposal format](../specifications/task-change-proposal-format.md); accepted Source candidate draft [Schema](0033-source-candidate-proposal.schema.json) and [example](0033-source-candidate-proposal-example.json), with the maintained Specification to be created from verified implementation
-- Current design: [Module boundaries](../design/module-boundaries.md)
+- Current specifications: [Task change Proposal format](../specifications/task-change-proposal-format.md), [Source note property format](../specifications/source-note-properties.md); accepted Source candidate draft [Schema](0033-source-candidate-proposal.schema.json) and [example](0033-source-candidate-proposal-example.json), with the maintained Specification to be created from verified implementation
+- Current design: [Module boundaries](../design/module-boundaries.md), [Architecture](../design/architecture.md)
+- Current user guide: [Import Source notes](../../user/how-to/import-source-notes.md)
 - ADRs: [opt-in Source notes](../adr/0004-opt-in-source-notes.md), [stage imports before promotion](../adr/0011-stage-source-imports-before-promotion.md), [candidate coverage](../adr/0017-require-a-candidate-manifest-for-coverage-review.md)
 - Implementation pull request: not created
 - Release: not implemented
@@ -395,8 +402,12 @@ Accepted on 2026-10-17 after product review of A-D01–05, B-D01–07, C-D01–0
 
 Task変更ReviewとSource候補Reviewは別のModule・別schema・別状態遷移を維持します。薄いReview CatalogだけがProposal rootとHistoryの最小envelopeを読み、正しいModuleへ振り分けます。Source候補JSONは専用TypeScript validatorで検証し、新しいruntime依存は追加しません。
 
+現在のソース構成ではTask変更Reviewは`src/reviews/task-change/`にあり、Review Module boundary testがReview種別同士と`reviews/shared`からReview種別へのimportを拒否します。Source候補Moduleを`src/reviews/source-candidate/`、Catalogを`src/reviews/shared/`に置き、正しいModuleへの振り分けをCatalogの外で行えば、RFC33-REVIEW-02は既存の規則で確認できます。別の場所に置く場合は、Module boundary testとArchitectureへフォルダー規則を追加します。
+
+通常のSource noteには、現在の[Source note property format](../specifications/source-note-properties.md)が引き続き適用されます。新しい流れでも`taskmate-source`による対象指定は維持します。
+
 計画Markdownの機械可読metadataはMVPではCodexだけが読みます。会話Sourceはlocal Source ID、選択範囲snapshot、hashを必須にし、thread/turn IDは取得できる場合だけ補助情報として保存します。
 
 ### 状態
 
-利用者との設計レビューで全決定IDを採用済みです。未決の製品判断はありません。実装、テスト、正式Specification、移行案内、Featureへの実装結果反映は今後の作業です。
+利用者との設計レビューで全決定IDを採用済みです。ただし、このRFCはSource note property formatの公開前に合意したため、候補ごとに正式反映し一部の結果を残す新しい流れで、Source noteへ`taskmate-import-*`の取り込み履歴をいつ書くかは決まっていません。#61の完了前に決めます（#60は妨げません）。新しい流れがstaged reviewを置き換えるときは、同じ変更でそのSpecificationと[Source noteの取り込み手順](../../user/how-to/import-source-notes.md)を更新します。実装、テスト、正式Specification、移行案内、Featureへの実装結果反映は今後の作業です。
