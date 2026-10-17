@@ -24,7 +24,7 @@ git diff --check
 
 | Contract | Automated evidence | Additional manual evidence |
 | --- | --- | --- |
-| [EDIT-01/02/03](../features/task-editing.md) | title, renderer, bulk action, scroll tests | Create/cancel/delete and long-title editing on desktop/Android |
+| [EDIT-01/02/03](../features/task-editing.md) | title, renderer, bulk action, selection, scroll tests | Create/cancel/delete and long-title editing on desktop/Android |
 | [STEP-01/02](../features/task-steps.md) | domain round trip and task-steps tests | Nested Step editor save/cancel and touch reorder |
 | [PROJECT-01/02](../features/projects.md) | domain Project format tests only | Rename/delete Project and check Task membership |
 | [LABEL-01/02/03](../features/labels.md) | picker, chip input, label management/summary/suggestion tests | Japanese IME and mobile picker cancellation |
