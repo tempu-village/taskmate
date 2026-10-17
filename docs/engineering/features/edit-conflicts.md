@@ -20,11 +20,11 @@ Conflict review also retains the exact file content shown to the user as a tempo
 - CONFLICT-03: Duplicate IDs block normal processing; a deleted Task is not recreated.
 - CONFLICT-04: Equal compound values should compare equal by value, including Steps.
 
-Evidence: [merge tests](../../../test/task-edit-merge.test.ts), [repository tests](../../../test/repository-conflicts.test.ts). The repository regression test covers saving an unchanged Task after a prior Step save.
+Evidence: [merge tests](../../../test/tasks/task-edit-merge.test.ts), [repository tests](../../../test/tasks/repository-conflicts.test.ts). The repository regression test covers saving an unchanged Task after a prior Step save.
 
 ## Processing flow and internal design
 
-[repository.ts](../../../src/repository.ts) captures an edit-session baseline and resolves the current Task by ID, with its path as a fast-path hint. Inside `Vault.process()`, [task-edit-merge.ts](../../../src/task-edit-merge.ts) compares baseline, draft and current values. The repository preserves unknown properties and leaves content unchanged when review is required. Renames use Obsidian's file manager after a successful content save.
+[repository.ts](../../../src/tasks/repository.ts) captures an edit-session baseline and resolves the current Task by ID, with its path as a fast-path hint. Inside `Vault.process()`, [task-edit-merge.ts](../../../src/tasks/task-edit-merge.ts) compares baseline, draft and current values. The repository preserves unknown properties and leaves content unchanged when review is required. Renames use Obsidian's file manager after a successful content save.
 
 Conflict review carries the exact displayed file content. Resolving a choice performs another guarded write and rejects a changed baseline. Duplicate identities and missing files return explicit outcomes. Content save and subsequent rename are separate operations; this is not a distributed transaction.
 

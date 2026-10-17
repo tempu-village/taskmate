@@ -1,5 +1,5 @@
 import { App, normalizePath, TFile } from "obsidian";
-import type { TaskRepository } from "../../repository";
+import type { TaskRepository } from "../../tasks/repository";
 import {
   applyProposalDecision,
   buildProposalReview,

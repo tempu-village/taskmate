@@ -16,7 +16,7 @@ Changing a managed-folder setting selects another storage location; it does not 
 - STORE-01: Task and Project Markdown remains after plugin removal.
 - STORE-02: Changing the configured folder does not silently migrate or delete files.
 
-Review [settings](../../../src/settings.ts), [repositories](../../../src/repository.ts), and [schema ownership](../design/data-model.md). STORE-01 and STORE-02 require a disposable-Vault manual check.
+Review [settings](../../../src/settings.ts), [repositories](../../../src/tasks/repository.ts), and [schema ownership](../design/data-model.md). STORE-01 and STORE-02 require a disposable-Vault manual check.
 
 ## 日本語参考
 

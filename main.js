@@ -24,10 +24,10 @@ __export(main_exports, {
 module.exports = __toCommonJS(main_exports);
 var import_obsidian16 = require("obsidian");
 
-// src/repository.ts
+// src/tasks/repository.ts
 var import_obsidian = require("obsidian");
 
-// src/task-body.ts
+// src/tasks/task-body.ts
 var STEP_LINE = /^- \[([ xX])\](?: (.*))?$/;
 var DUE_SUFFIX = /^(.*?)(?:\s+<!-- due: (\d{4}-\d{2}-\d{2}) -->)\s*$/;
 function isCalendarDate(value) {
@@ -91,7 +91,7 @@ function encodeTaskBody(steps, notes, stepSectionRemainder = "") {
 ${trimmedNotes}` : stepSection;
 }
 
-// src/markdown.ts
+// src/tasks/markdown.ts
 var FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
 var TASK_PROPERTY_LINES = {
   type: (task) => "type: todo",
@@ -248,7 +248,7 @@ function legacyTaskFileName(title, id) {
   return `${readableTaskFileStem(title)}--${id.slice(0, 8)}.md`;
 }
 
-// src/task-edit-merge.ts
+// src/tasks/task-edit-merge.ts
 var EDITABLE_TASK_FIELDS = [
   "title",
   "date",
@@ -319,7 +319,7 @@ function applyTaskConflictChoices(comparison, choices) {
   return resolved;
 }
 
-// src/repository.ts
+// src/tasks/repository.ts
 var RANK_STEP = 1024;
 var DuplicateTaskIdError = class extends Error {
   constructor(conflict) {
@@ -604,10 +604,10 @@ var TaskRepository = class {
   }
 };
 
-// src/project-repository.ts
+// src/projects/project-repository.ts
 var import_obsidian2 = require("obsidian");
 
-// src/project-markdown.ts
+// src/projects/project-markdown.ts
 var FRONTMATTER2 = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
 function parseValue(raw) {
   const value = raw.trim();
@@ -664,7 +664,7 @@ function projectFileName(name, id) {
   return `${readable}--${id.slice(0, 8)}.md`;
 }
 
-// src/project-repository.ts
+// src/projects/project-repository.ts
 function newId2() {
   if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
@@ -786,13 +786,13 @@ var TaskMateSettingTab = class extends import_obsidian3.PluginSettingTab {
   }
 };
 
-// src/view.ts
+// src/task-list/view.ts
 var import_obsidian12 = require("obsidian");
 
-// src/bulk-task-modal.ts
+// src/task-list/bulk-task-modal.ts
 var import_obsidian5 = require("obsidian");
 
-// src/domain.ts
+// src/tasks/domain.ts
 function localDateParts(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -864,7 +864,7 @@ function sortTasks(tasks, mode, direction = "asc") {
   }
 }
 
-// src/task-input-suggestions.ts
+// src/tasks/task-input-suggestions.ts
 function taskDateSuggestions(today = todayKey()) {
   return [
     { id: "today", date: today },
@@ -890,7 +890,7 @@ function recordRecentLabels(history, savedLabels, limit = 10) {
   return normalizeLabels([...used, ...history]).slice(0, limit);
 }
 
-// src/label-chip-input.ts
+// src/labels/label-chip-input.ts
 function updateLabelChipInput(currentLabels, value, commitPending, limit = 500) {
   const parts = value.split(",");
   const committed = commitPending ? parts : parts.slice(0, -1);
@@ -904,7 +904,7 @@ function shouldCommitLabelOnEnter(key, composing, keyCode = 0) {
   return key === "Enter" && !composing && keyCode !== 229;
 }
 
-// src/label-summary.ts
+// src/labels/label-summary.ts
 var COMPACT_LABEL_LIMIT = 3;
 function summarizeLabels(labels, limit = COMPACT_LABEL_LIMIT) {
   const safeLimit = Math.max(0, limit);
@@ -914,7 +914,7 @@ function summarizeLabels(labels, limit = COMPACT_LABEL_LIMIT) {
   };
 }
 
-// src/label-picker-modal.ts
+// src/labels/label-picker-modal.ts
 var import_obsidian4 = require("obsidian");
 
 // src/i18n/en.ts
@@ -1444,7 +1444,7 @@ function createI18n(preference, detectedLanguage) {
   return { locale, t };
 }
 
-// src/label-picker-model.ts
+// src/labels/label-picker-model.ts
 var FAVORITE_LABEL_LIMIT = 10;
 var RECENT_LABEL_LIMIT = 10;
 function firstCharacter(label) {
@@ -1501,7 +1501,7 @@ function toggleFavoriteLabel(favoriteLabels, label, limit = FAVORITE_LABEL_LIMIT
   return { favorites: [label, ...normalized], changed: true, atLimit: false };
 }
 
-// src/label-picker-modal.ts
+// src/labels/label-picker-modal.ts
 var LabelPickerModal = class extends import_obsidian4.Modal {
   constructor(app, options) {
     super(app);
@@ -1677,7 +1677,7 @@ var LabelPickerModal = class extends import_obsidian4.Modal {
   }
 };
 
-// src/mobile-keyboard-layout.ts
+// src/shared/mobile-keyboard-layout.ts
 function finiteNonNegative(value) {
   return Number.isFinite(value) ? Math.max(0, value) : 0;
 }
@@ -1875,7 +1875,7 @@ var MobileKeyboardScroller = class {
   }
 };
 
-// src/bulk-task-modal.ts
+// src/task-list/bulk-task-modal.ts
 var DATE_SUGGESTION_KEYS = { today: "date.today", tomorrow: "date.tomorrow", "seven-days": "date.sevenDays", none: "date.none" };
 function decorateField(setting, icon, accessibleName) {
   setting.settingEl.addClass("taskmate-compact-setting");
@@ -2140,7 +2140,7 @@ var BulkTaskModal = class extends import_obsidian5.Modal {
   }
 };
 
-// src/bulk-task-actions.ts
+// src/task-list/bulk-task-actions.ts
 function buildBulkTaskPatch(task, changes) {
   const labels = task.labels.filter((label) => !changes.removeLabels.includes(label)).concat(changes.addLabels.filter((label) => !task.labels.includes(label))).slice(0, 500);
   const patch = { labels };
@@ -2153,7 +2153,7 @@ function failedBulkTasks(tasks, results) {
   return tasks.filter((_, index2) => results[index2]?.status === "rejected");
 }
 
-// src/filter-modal.ts
+// src/task-list/filter-modal.ts
 var import_obsidian6 = require("obsidian");
 var TaskFilterModal = class extends import_obsidian6.Modal {
   constructor(app, filters, incompleteTaskLabels, allTaskLabels, recentLabels, favoriteLabels, i18n, onFavoritesChange, onApply) {
@@ -2225,7 +2225,7 @@ var TaskFilterModal = class extends import_obsidian6.Modal {
   }
 };
 
-// src/project-modal.ts
+// src/projects/project-modal.ts
 var import_obsidian7 = require("obsidian");
 var ProjectModal = class extends import_obsidian7.Modal {
   constructor(app, i18n, onSave) {
@@ -2262,7 +2262,7 @@ var ProjectModal = class extends import_obsidian7.Modal {
   }
 };
 
-// src/task-conflict-modal.ts
+// src/task-editor/task-conflict-modal.ts
 var import_obsidian8 = require("obsidian");
 var FIELD_LABEL_KEYS = {
   title: "taskModal.title",
@@ -2359,10 +2359,10 @@ var TaskConflictModal = class extends import_obsidian8.Modal {
   }
 };
 
-// src/label-manager-modal.ts
+// src/labels/label-manager-modal.ts
 var import_obsidian9 = require("obsidian");
 
-// src/label-management.ts
+// src/labels/label-management.ts
 function buildManagedLabels(tasks, recentLabels, favoriteLabels) {
   const counts = /* @__PURE__ */ new Map();
   for (const task of tasks) {
@@ -2386,7 +2386,7 @@ function removeLabelValue(labels, label) {
   return normalizeLabels(labels).filter((item) => item !== label);
 }
 
-// src/label-manager-modal.ts
+// src/labels/label-manager-modal.ts
 var LabelManagerModal = class extends import_obsidian9.Modal {
   constructor(app, options) {
     super(app);
@@ -2496,7 +2496,7 @@ var LabelManagerModal = class extends import_obsidian9.Modal {
   }
 };
 
-// src/task-list-model.ts
+// src/task-list/task-list-model.ts
 function toRow(task, projectNames) {
   return {
     id: task.id,
@@ -4721,7 +4721,7 @@ Sortable.mount(new AutoScrollPlugin());
 Sortable.mount(Remove, Revert);
 var sortable_esm_default = Sortable;
 
-// src/task-list-renderer.ts
+// src/task-list/task-list-renderer.ts
 var TASK_LIST_TITLE_CHARACTER_LIMIT = 100;
 var taskTitleSegmenter = typeof Intl.Segmenter === "function" ? new Intl.Segmenter(void 0, { granularity: "grapheme" }) : null;
 function* titleGraphemes(title) {
@@ -4872,15 +4872,15 @@ function renderTaskList(container, model, copy, dispatch) {
   };
 }
 
-// src/task-modal.ts
+// src/task-editor/task-modal.ts
 var import_obsidian11 = require("obsidian");
 
-// src/task-title.ts
+// src/tasks/task-title.ts
 function normalizeTaskTitleInput(value) {
   return value.replace(/[ \t]*(?:\r\n?|\n)+[ \t]*/g, " ");
 }
 
-// src/task-steps.ts
+// src/tasks/task-steps.ts
 function moveTaskStep(steps, from, to) {
   const reordered = steps.map((step) => ({ ...step }));
   if (from < 0 || from >= steps.length || to < 0 || to >= steps.length || from === to) return reordered;
@@ -4895,7 +4895,7 @@ function stepDateState(date, today) {
   return "later";
 }
 
-// src/step-modal.ts
+// src/task-editor/step-modal.ts
 var import_obsidian10 = require("obsidian");
 var StepModal = class extends import_obsidian10.Modal {
   constructor(app, step, availableRegion, i18n, onSave, onDelete = null) {
@@ -4969,7 +4969,7 @@ var StepModal = class extends import_obsidian10.Modal {
   }
 };
 
-// src/task-modal.ts
+// src/task-editor/task-modal.ts
 var DATE_SUGGESTION_KEYS2 = {
   today: "date.today",
   tomorrow: "date.tomorrow",
@@ -5358,7 +5358,7 @@ var TaskModal = class extends import_obsidian11.Modal {
   }
 };
 
-// src/task-filter-state.ts
+// src/task-list/task-filter-state.ts
 var EMPTY_FILTERS = {
   priorities: [],
   labels: [],
@@ -5391,7 +5391,7 @@ var TaskFilterState = class {
   }
 };
 
-// src/scroll-position.ts
+// src/task-list/scroll-position.ts
 var TASK_LIST_SCROLL_REGION = ".taskmate-scroll-region";
 function captureTaskListScrollTop(root) {
   const region = root.querySelector(TASK_LIST_SCROLL_REGION);
@@ -5403,7 +5403,7 @@ function restoreTaskListScrollTop(root, scrollTop) {
   if (region) region.scrollTop = scrollTop;
 }
 
-// src/view.ts
+// src/task-list/view.ts
 var TODO_VIEW_TYPE = "taskmate-list";
 var SMART_VIEW_KEYS = {
   scheduled: "view.scheduled",

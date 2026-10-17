@@ -1,9 +1,9 @@
 import { Notice, Plugin, TFile, normalizePath } from "obsidian";
-import { TaskRepository } from "./repository";
-import { ProjectRepository } from "./project-repository";
+import { TaskRepository } from "./tasks/repository";
+import { ProjectRepository } from "./projects/project-repository";
 import { DEFAULT_SETTINGS, TaskMateSettingTab } from "./settings";
 import type { TaskMateSettings } from "./settings";
-import { TODO_VIEW_TYPE, TodoListView } from "./view";
+import { TODO_VIEW_TYPE, TodoListView } from "./task-list/view";
 import { createI18n, isLanguagePreference } from "./i18n";
 import type { I18n } from "./i18n";
 import { detectObsidianLanguage } from "./i18n/obsidian-locale";
