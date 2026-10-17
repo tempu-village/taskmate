@@ -1,12 +1,13 @@
 import { App, Modal, Setting, setIcon } from "obsidian";
 import type { Priority, Project, Task } from "../tasks/domain";
-import { taskDateSuggestions, normalizeLabels } from "../tasks/task-input-suggestions";
+import { taskDateSuggestions } from "../tasks/date-suggestions";
+import { normalizeLabels } from "../labels/label-suggestions";
 import type { I18n, TranslationKey } from "../i18n";
 import { shouldCommitLabelOnEnter, updateLabelChipInput } from "../labels/label-chip-input";
 import { summarizeLabels } from "../labels/label-summary";
 import { LabelPickerModal } from "../labels/label-picker-modal";
+import type { LabelEditingOptions } from "../labels/label-picker-modal";
 import { MobileKeyboardScroller } from "../shared/mobile-keyboard-layout";
-import type { TaskModalLabelOptions } from "../task-editor/task-modal";
 import type { BulkTaskChanges } from "./bulk-task-actions";
 
 const DATE_SUGGESTION_KEYS = { today: "date.today", tomorrow: "date.tomorrow", "seven-days": "date.sevenDays", none: "date.none" } satisfies Record<ReturnType<typeof taskDateSuggestions>[number]["id"], TranslationKey>;
@@ -60,7 +61,7 @@ export class BulkTaskModal extends Modal {
   private readonly baselineAvailableHeight: number;
   private readonly initialLabels: string[];
 
-  constructor(app: App, private readonly tasks: Task[], private readonly projects: Project[], private readonly labelOptions: TaskModalLabelOptions, private readonly availableRegion: HTMLElement, private readonly i18n: I18n, private readonly onApply: (changes: BulkTaskChanges) => Promise<void>) {
+  constructor(app: App, private readonly tasks: Task[], private readonly projects: Project[], private readonly labelOptions: LabelEditingOptions, private readonly availableRegion: HTMLElement, private readonly i18n: I18n, private readonly onApply: (changes: BulkTaskChanges) => Promise<void>) {
     super(app);
     this.baselineAvailableHeight = availableRegion.getBoundingClientRect().height;
     this.initialLabels = normalizeLabels(tasks.flatMap((task) => task.labels)).slice(0, 500);

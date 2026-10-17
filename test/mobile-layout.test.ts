@@ -311,7 +311,7 @@ describe("mobile layout", () => {
     expect(taskModalSource).not.toContain('event.key === "Backspace"');
     expect(taskModalSource).not.toContain("recentLabelSuggestions");
     expect(taskModalSource).not.toContain("taskmate-recent-labels");
-    expect(viewSource).toContain("this.taskModalLabelOptions(tasks)");
+    expect(viewSource).toContain("this.labelEditingOptions(tasks)");
     expect(viewSource).toContain("availableFilterLabels(tasks, true)");
 
     const controls = declarations(".taskmate-label-setting .setting-item-control");

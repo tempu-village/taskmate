@@ -12,16 +12,16 @@ import { ProjectModal } from "../projects/project-modal";
 import { TaskConflictModal } from "../task-editor/task-conflict-modal";
 import { DuplicateTaskIdError } from "../tasks/repository";
 import type { TaskSaveConflict, TaskSaveResult } from "../tasks/repository";
-import { recordRecentLabels } from "../tasks/task-input-suggestions";
+import { recordRecentLabels } from "../labels/label-suggestions";
 import { availableFilterLabels } from "../labels/label-picker-model";
 import { LabelManagerModal } from "../labels/label-manager-modal";
+import type { LabelEditingOptions } from "../labels/label-picker-modal";
 import { buildManagedLabels, removeLabelValue, renameLabelValues } from "../labels/label-management";
 import { buildTaskListModel } from "./task-list-model";
 import type { TaskListModel } from "./task-list-model";
 import { renderTaskList as renderTaskListDom } from "./task-list-renderer";
 import type { RenderedTaskList, TaskListAction, TaskListCopy } from "./task-list-renderer";
 import { TaskModal } from "../task-editor/task-modal";
-import type { TaskModalLabelOptions } from "../task-editor/task-modal";
 import { TaskFilterState } from "./task-filter-state";
 import { captureTaskListScrollTop, restoreTaskListScrollTop } from "./scroll-position";
 
@@ -684,7 +684,7 @@ export class TodoListView extends ItemView {
     }
     if (selected.length < 2) return;
     const [projects, allTasks] = await Promise.all([this.plugin.projects.list(), this.plugin.repository.list()]);
-    new BulkTaskModal(this.app, selected, projects, this.taskModalLabelOptions(allTasks), this.contentEl, this.plugin.i18n(), async (changes) => {
+    new BulkTaskModal(this.app, selected, projects, this.labelEditingOptions(allTasks), this.contentEl, this.plugin.i18n(), async (changes) => {
       await this.applyBulkChanges(selected, changes);
     }).open();
   }
@@ -750,7 +750,7 @@ export class TodoListView extends ItemView {
       this.plugin.projects.list(),
       this.plugin.repository.list()
     ]);
-    new TaskModal(this.app, null, projects, this.taskModalLabelOptions(tasks), projectId, this.contentEl, this.plugin.i18n(), async (draft) => {
+    new TaskModal(this.app, null, projects, this.labelEditingOptions(tasks), projectId, this.contentEl, this.plugin.i18n(), async (draft) => {
       await this.plugin.repository.create(draft);
       await this.rememberLabels(draft.labels);
       if (draft.projectId) {
@@ -778,7 +778,7 @@ export class TodoListView extends ItemView {
       return;
     }
     let modal: TaskModal;
-    modal = new TaskModal(this.app, start.task, projects, this.taskModalLabelOptions(tasks), start.task.projectId, this.contentEl, this.plugin.i18n(), async (draft) => {
+    modal = new TaskModal(this.app, start.task, projects, this.labelEditingOptions(tasks), start.task.projectId, this.contentEl, this.plugin.i18n(), async (draft) => {
       const result = await this.plugin.repository.saveEditedTask(start.session, draft);
       return this.handleTaskSaveResult(result, projects, modal, afterAction);
     }, async () => {
@@ -860,7 +860,7 @@ export class TodoListView extends ItemView {
     this.requestRender();
   }
 
-  private taskModalLabelOptions(tasks: Task[]): TaskModalLabelOptions {
+  private labelEditingOptions(tasks: Task[]): LabelEditingOptions {
     const i18n = this.plugin.i18n();
     return {
       allLabels: availableFilterLabels(tasks, true)

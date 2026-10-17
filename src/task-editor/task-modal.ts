@@ -2,11 +2,12 @@ import { App, Modal, Setting, setIcon } from "obsidian";
 import Sortable from "sortablejs";
 import type { Project, Task, TaskDraft } from "../tasks/domain";
 import { todayKey } from "../tasks/domain";
-import { taskDateSuggestions } from "../tasks/task-input-suggestions";
+import { taskDateSuggestions } from "../tasks/date-suggestions";
 import type { I18n, TranslationKey } from "../i18n";
 import { shouldCommitLabelOnEnter, updateLabelChipInput } from "../labels/label-chip-input";
 import { summarizeLabels } from "../labels/label-summary";
 import { LabelPickerModal } from "../labels/label-picker-modal";
+import type { LabelEditingOptions } from "../labels/label-picker-modal";
 import { MobileKeyboardScroller } from "../shared/mobile-keyboard-layout";
 import { normalizeTaskTitleInput } from "../tasks/task-title";
 import { moveTaskStep, stepDateState } from "../tasks/task-steps";
@@ -40,13 +41,6 @@ function addEmbeddedLabel(setting: Setting, label: string): void {
   setting.controlEl.prepend(labelEl);
 }
 
-export interface TaskModalLabelOptions {
-  allLabels: string[];
-  recentLabels: string[];
-  favoriteLabels: string[];
-  onFavoriteLabelsChange: (labels: string[]) => Promise<void>;
-}
-
 export class TaskModal extends Modal {
   private draft: TaskDraft;
   private keyboardScroller: MobileKeyboardScroller | null = null;
@@ -57,7 +51,7 @@ export class TaskModal extends Modal {
     app: App,
     task: Task | null,
     private readonly projects: Project[],
-    private readonly labelOptions: TaskModalLabelOptions,
+    private readonly labelOptions: LabelEditingOptions,
     defaultProjectId: string | null,
     private readonly availableRegion: HTMLElement,
     private readonly i18n: I18n,

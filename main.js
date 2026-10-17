@@ -864,7 +864,7 @@ function sortTasks(tasks, mode, direction = "asc") {
   }
 }
 
-// src/tasks/task-input-suggestions.ts
+// src/tasks/date-suggestions.ts
 function taskDateSuggestions(today = todayKey()) {
   return [
     { id: "today", date: today },
@@ -873,6 +873,8 @@ function taskDateSuggestions(today = todayKey()) {
     { id: "none", date: null }
   ];
 }
+
+// src/labels/label-suggestions.ts
 function normalizeLabels(labels) {
   const result = [];
   for (const raw of labels) {
@@ -5986,7 +5988,7 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
     }
     if (selected.length < 2) return;
     const [projects, allTasks] = await Promise.all([this.plugin.projects.list(), this.plugin.repository.list()]);
-    new BulkTaskModal(this.app, selected, projects, this.taskModalLabelOptions(allTasks), this.contentEl, this.plugin.i18n(), async (changes) => {
+    new BulkTaskModal(this.app, selected, projects, this.labelEditingOptions(allTasks), this.contentEl, this.plugin.i18n(), async (changes) => {
       await this.applyBulkChanges(selected, changes);
     }).open();
   }
@@ -6042,7 +6044,7 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
       this.plugin.projects.list(),
       this.plugin.repository.list()
     ]);
-    new TaskModal(this.app, null, projects, this.taskModalLabelOptions(tasks), projectId, this.contentEl, this.plugin.i18n(), async (draft) => {
+    new TaskModal(this.app, null, projects, this.labelEditingOptions(tasks), projectId, this.contentEl, this.plugin.i18n(), async (draft) => {
       await this.plugin.repository.create(draft);
       await this.rememberLabels(draft.labels);
       if (draft.projectId) {
@@ -6069,7 +6071,7 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
       return;
     }
     let modal;
-    modal = new TaskModal(this.app, start.task, projects, this.taskModalLabelOptions(tasks), start.task.projectId, this.contentEl, this.plugin.i18n(), async (draft) => {
+    modal = new TaskModal(this.app, start.task, projects, this.labelEditingOptions(tasks), start.task.projectId, this.contentEl, this.plugin.i18n(), async (draft) => {
       const result = await this.plugin.repository.saveEditedTask(start.session, draft);
       return this.handleTaskSaveResult(result, projects, modal, afterAction);
     }, async () => {
@@ -6136,7 +6138,7 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
     new import_obsidian12.Notice(this.plugin.i18n().t("conflict.identityNotice", { paths: paths.join(", ") }), 0);
     this.requestRender();
   }
-  taskModalLabelOptions(tasks) {
+  labelEditingOptions(tasks) {
     const i18n = this.plugin.i18n();
     return {
       allLabels: availableFilterLabels(tasks, true).sort((a, b) => compareDisplayText(a, b, i18n.locale)).slice(0, 500),

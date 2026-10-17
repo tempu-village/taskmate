@@ -1,4 +1,4 @@
-import { normalizeLabels } from "../tasks/task-input-suggestions";
+import { normalizeLabels } from "./label-suggestions";
 
 export interface LabelChipInputState {
   labels: string[];
