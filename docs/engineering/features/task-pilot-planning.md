@@ -1,7 +1,7 @@
 # Task Pilot review and capacity planning
 
 Approval: Accepted — product review confirmed on 2026-10-11.
-Implementation: Implemented on the current branch — tracked by [Issue #52](https://github.com/tempu-village/taskmate/issues/52); not yet identified with a release.
+Implementation: Implemented on the current branch — tracked by [Issue #52](https://github.com/tempu-village/taskmate/issues/52), with rolling plans tracked by [Issue #60](https://github.com/tempu-village/taskmate/issues/60); not yet identified with a release.
 
 > English is canonical. Japanese is an AI-translated reference.
 
@@ -118,6 +118,14 @@ The user can supply a duration and optionally a device, place, situation, or ene
 
 Missing context labels do not automatically exclude a Task. A free-time request returns as many credible options as fit the capacity; it is not fixed to three. An explicit contradiction in the Task text, such as “requires PC” during a phone-only request, excludes it from the plan. Task Pilot does not interrupt the user or automatically detect breaks in this iteration.
 
+### Maintaining a rolling plan
+
+When the user wants every incomplete Task accounted for beyond today, Task Pilot writes one rolling-plan Markdown per plan ID to `planFolder` (default `TaskMate/Plans`, excluded from Source discovery). The plan contains a recommended base, which may use displayed assumptions, and an evidence base, which uses only explicit Task data. Each base accounts for every canonical incomplete Task exactly once as a planned item, a `GAP`, or a `CONFLICT`. Work is placed only on today and on future dates whose capacity profile the user has confirmed; the horizon extends until every Task is accounted for. A Task's existing date is a strong constraint: a capacity move is shown with the old date and reason.
+
+The user selects exactly one base as the working plan and revises it through Task Pilot by stable `PLAN-xx`, `GAP-xx`, and `CONFLICT-xx` IDs. Creating, selecting, revising, closing, and superseding a plan never writes Task Markdown. Every plan write requires the current plan revision and stops if the file was edited outside Task Pilot. Replanning starts from current canonical Tasks and marks the previous plan `superseded`.
+
+Only an explicit request turns the working plan into a Task change Proposal. Without a range, it covers every date; `today only` or named `PLAN-xx` items narrow it. Task Pilot rereads each Task and omits missing, completed, stale, unchanged, or already proposed items without blocking the rest. Plan-derived changes are limited to the date, new `context/*` labels, Steps, and Notes. The Proposal opens in the [Task change review](task-change-review/README.md), and no Task changes before approval there.
+
 ## Context label vocabulary
 
 A Context label is an ordinary, user-editable Label whose name begins with `context/`. It describes circumstances in which a Task is practical to perform. It is neither a Task status nor required metadata. Multiple Context labels may be attached to one Task.
@@ -202,8 +210,15 @@ All criteria below are implemented on the current branch. Semantic judgment stil
 - PLAN-14: A 50-Task review groups only identical visible changes, lets the user inspect every member, and leaves clarification items unchanged.
 - PLAN-15: Without future-capacity evidence, the review does not assign arbitrary future dates or priorities to clear an old backlog.
 - PLAN-16: Candidate selection follows must-consider, feasibility, and multi-signal comparison stages; a conflict between schedule and Priority is explained or returned to the user instead of resolved by a hidden fixed precedence.
+- PLAN-17: One generated rolling plan shows both bases and, after selection, one clearly identified working plan without changing Task Markdown.
+- PLAN-18: When Tasks exceed today's capacity, work is placed only on user-confirmed future dates, and the horizon extends until every Task appears exactly once per base as planned, `GAP`, or `CONFLICT`.
+- PLAN-19: Missing effort or scheduling authority produces a visible `GAP`; a deadline that capacity cannot meet produces a `CONFLICT` instead of a fabricated date.
+- PLAN-20: Selecting a base and revising the working plan change only the plan artifact; bases are never mixed silently, and writes require the current revision and stop on outside edits.
+- PLAN-21: An unqualified Proposal request covers every working-plan date; `today only` or explicit `PLAN-xx` IDs cover only that subset, and plan-derived changes are limited to date, `context/*` labels, Steps, and Notes.
+- PLAN-22: Proposal generation omits stale, completed, missing, unchanged, and already proposed Tasks while unaffected Tasks continue, and no Task changes before approval in the Task change Review View.
+- PLAN-23: Replanning starts from current canonical Tasks and marks the prior plan `superseded` without treating unapproved plan dates as facts.
 
-Automated evidence: [planning behavior tests](../../../skills/taskpilot/tests/test_planning_store.py), [Source-note proposal tests](../../../skills/taskpilot/tests/test_proposal_store.py), and [Task store tests](../../../skills/taskpilot/tests/test_todo_store.py). The deterministic planning tests cover 50-Task grouping, stale and partial writes, 20% capacity arithmetic, upper-bound packing, Context evidence, read-only plans, estimate clarification, and schedule/Priority conflict disclosure. They cannot prove that an agent's semantic estimates or reasons are good; the visible user review remains required.
+Automated evidence: [planning behavior tests](../../../skills/taskpilot/tests/test_planning_store.py), [rolling-plan tests](../../../skills/taskpilot/tests/test_rolling_plan.py) for PLAN-17 through PLAN-23, [Source-note proposal tests](../../../skills/taskpilot/tests/test_proposal_store.py), and [Task store tests](../../../skills/taskpilot/tests/test_todo_store.py). The deterministic planning tests cover 50-Task grouping, stale and partial writes, 20% capacity arithmetic, upper-bound packing, Context evidence, read-only plans, estimate clarification, and schedule/Priority conflict disclosure. They cannot prove that an agent's semantic estimates or reasons are good; the visible user review remains required.
 
 ## Out of scope for this iteration
 
@@ -214,7 +229,7 @@ Automated evidence: [planning behavior tests](../../../skills/taskpilot/tests/te
 - calendar integration or automatic free-time detection;
 - scheduled morning planning or unsolicited break notifications;
 - persistence of actual duration or automatic learning from completion history;
-- persisted capacity plans, effort estimates, or custom Context-label dictionaries;
+- persisting conversation capacity plans, effort estimates, or custom Context-label dictionaries into Task Markdown (rolling plans are separate artifacts);
 - automatic discovery and import of recently edited Source notes without an explicit request;
 - fully automatic Task mutation without review;
 - bulk merge, split, rename, completion, or deletion during backlog review;
@@ -223,11 +238,7 @@ Automated evidence: [planning behavior tests](../../../skills/taskpilot/tests/te
 
 ## Pending changes
 
-[RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md), tracked by [Issue #62](https://github.com/tempu-village/taskmate/issues/62) with the rolling-plan slice in [Issue #60](https://github.com/tempu-village/taskmate/issues/60), is accepted but not implemented. It proposes replacing conversation-only capacity-plan output with one Obsidian rolling-plan Markdown that covers every canonical incomplete Task as planned, `GAP`, or `CONFLICT`. The user would compare a recommended base with an evidence-only base, choose one working plan, revise it through Codex by stable IDs, and explicitly generate an existing Task change Proposal from all dates by default or from a narrower requested range.
-
-The proposed plan remains read-only: creating, choosing, or editing it would not change Tasks. Future placement would require a user-confirmed capacity profile, and plan-derived changes would be limited to date, Context labels, Steps, and Notes. This paragraph records accepted future direction only; the current conversation capacity-plan behavior above remains authoritative until implementation is verified.
-
-Implementation progress: Task Pilot can create, select a base for, revise, close, and supersede the plan artifact with `scripts/rolling_plan.py`, writing to `planFolder` (default `TaskMate/Plans`). Generating a Task change Proposal from the working plan is not implemented, so Issue #60 remains open.
+The rolling-plan slice of [RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md), [Issue #60](https://github.com/tempu-village/taskmate/issues/60), is implemented as described in [Maintaining a rolling plan](#maintaining-a-rolling-plan); the conversation capacity plan above remains available for a single bounded window. The rest of RFC 0033, Source candidate review and the Review Catalog, is tracked by [Issue #61](https://github.com/tempu-village/taskmate/issues/61) and [Issue #62](https://github.com/tempu-village/taskmate/issues/62) and described as pending in the Source-note import and Task change review Features.
 
 ## Related specifications and features
 
@@ -337,6 +348,14 @@ Task Pilotは一つの固定順位ではなく、三段階で作業を選びま�
 
 Context labelがないだけでTaskを除外しません。固定3件ではなく、時間内で信頼できる件数を返します。ただし「PC必須」と書かれたTaskに対するphone-only依頼のように、Task本文と明確に矛盾する場合は計画から除外します。今回のイテレーションでは、休憩を自動検出したり利用者へ割り込んだりしません。
 
+### 見直せる計画を保つ
+
+今日より先まで未完了Taskをすべて割り当てたいとき、Task Pilotは計画IDごとに1つの計画Markdownを`planFolder`（既定は`TaskMate/Plans`、Source探索の対象外）へ書きます。計画には、示した前提を使える推奨案と、Taskに明示された情報だけを使う根拠案があります。どちらの案も、正式な未完了Taskをすべてちょうど1回ずつ、計画済み・`GAP`・`CONFLICT`のいずれかとして載せます。作業は今日と、利用者が容量を承認した将来の日付にだけ置き、全Taskが載るまで期間を延ばします。Taskに既にある日付は強い制約で、容量のために動かす場合は元の日付と理由を示します。
+
+利用者はどちらか一方の案を作業中の計画として選び、`PLAN-xx`・`GAP-xx`・`CONFLICT-xx`のIDを使ってTask Pilotで修正します。計画の作成、選択、修正、終了、置き換えではTaskのMarkdownを書き換えません。計画への書き込みには今の版番号が必要で、Task Pilotの外で編集されていれば止まります。計画の作り直しは今の正式なTaskから始め、前の計画を`superseded`にします。
+
+作業中の計画からTask変更Proposalを作るのは明示的な依頼があるときだけです。範囲の指定がなければ全日程、「今日だけ」や`PLAN-xx`の指定があればその分だけが対象です。Task Pilotは各Taskを読み直し、見つからない・完了済み・変更済み・変更なし・提案済みの項目を、ほかを止めずに外します。計画から変えられるのは日付、新しい`context/*`、Steps、Notesだけです。Proposalは[Task変更レビュー](task-change-review/README.md)で開き、そこで承認するまでTaskは変わりません。
+
 ### Context labelの語彙
 
 Context labelは、名前が`context/`で始まる通常のユーザー編集可能なLabelです。Taskを実行しやすい状況を表し、Taskの状態でも必須情報でもありません。一つのTaskへ複数付けられます。
@@ -421,8 +440,15 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 - PLAN-14：50件の見直しでは同じ変更だけを見える形でまとめ、全対象を確認でき、要確認項目は変更しない。
 - PLAN-15：将来の作業容量を示す根拠がなければ、古いバックログを片付けるためだけの将来日付や優先度を付けない。
 - PLAN-16：候補選択を「最初に必ず考慮・実行可能性・複数情報の比較」の三段階で行い、予定日とPriorityの競合を非表示の固定順位で解決せず、説明または利用者確認へ戻す。
+- PLAN-17：作った計画は両方の案を示し、選択後は作業中の計画をはっきり示し、TaskのMarkdownを変えない。
+- PLAN-18：今日の容量を超えるTaskは、利用者が承認した将来の日付にだけ置き、全Taskが各案にちょうど1回ずつ計画済み・`GAP`・`CONFLICT`として載るまで期間を延ばす。
+- PLAN-19：見積もりや日程の根拠がなければ`GAP`、容量で間に合わない締め切りは`CONFLICT`として示し、うその日付を付けない。
+- PLAN-20：案の選択と作業中の計画の修正は計画ファイルだけを変え、案を黙って混ぜず、書き込みには今の版番号が必要で、外部での編集があれば止まる。
+- PLAN-21：範囲を指定しないProposal依頼は作業中の計画の全日程、「今日だけ」や`PLAN-xx`の指定はその分だけを対象にし、変更は日付、`context/*`、Steps、Notesに限る。
+- PLAN-22：Proposalの作成では、変更済み・完了済み・見つからない・変更なし・提案済みのTaskを外しつつ、ほかのTaskは続け、Task変更Review Viewで承認するまでTaskを変えない。
+- PLAN-23：計画の作り直しは今の正式なTaskから始め、前の計画を`superseded`にし、承認されていない計画上の日付を事実として扱わない。
 
-自動根拠は[planning挙動テスト](../../../skills/taskpilot/tests/test_planning_store.py)、[Source-note proposalテスト](../../../skills/taskpilot/tests/test_proposal_store.py)、[Task storeテスト](../../../skills/taskpilot/tests/test_todo_store.py)です。50件のグループ化、変更競合と一部失敗、20%余白、上限による容量判定、Context根拠、読み取り専用計画、見積もり要確認、予定日とPriorityの競合表示を検証します。Agentによる意味上の見積もりや理由の品質は決定的テストだけでは証明できないため、見える利用者レビューを必須とします。
+自動根拠は[planning挙動テスト](../../../skills/taskpilot/tests/test_planning_store.py)、PLAN-17〜23の[計画ファイルのテスト](../../../skills/taskpilot/tests/test_rolling_plan.py)、[Source-note proposalテスト](../../../skills/taskpilot/tests/test_proposal_store.py)、[Task storeテスト](../../../skills/taskpilot/tests/test_todo_store.py)です。50件のグループ化、変更競合と一部失敗、20%余白、上限による容量判定、Context根拠、読み取り専用計画、見積もり要確認、予定日とPriorityの競合表示を検証します。Agentによる意味上の見積もりや理由の品質は決定的テストだけでは証明できないため、見える利用者レビューを必須とします。
 
 ### 今回のイテレーションの対象外
 
@@ -433,7 +459,7 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 - カレンダー連携や空き時間の自動検出
 - 朝の自動計画や休憩中の自動通知
 - 実績時間の保存や完了履歴からの自動学習
-- 時間ベース計画、所要時間見積もり、カスタムContext label意味辞書の永続化
+- 会話での時間ベース計画、所要時間見積もり、カスタムContext label意味辞書をTaskのMarkdownへ保存すること（見直せる計画は別ファイル）
 - 明示依頼なしで最近編集したSource noteを自動発見・取り込みすること
 - レビューなしの完全自動Task変更
 - バックログ見直しでの一括統合、分割、改名、完了、削除
@@ -442,11 +468,7 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 
 ### 保留中の変更
 
-[RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md)は[Issue #62](https://github.com/tempu-village/taskmate/issues/62)で追跡し、計画部分は[Issue #60](https://github.com/tempu-village/taskmate/issues/60)で実装します。合意済みですが未実装です。会話だけの計画出力を、すべての正式な未完了Taskを計画済み・`GAP`・`CONFLICT`のいずれかへ割り当てる1つのObsidian Markdownへ置き換える提案です。推奨ベース案と既存Task根拠ベース案の一方を選び、Codexとの会話で識別番号を使って修正し、明示依頼によって既存のTask変更Proposalを作ります。範囲省略時は全日程、指定時は今日分または指定項目だけが対象です。
-
-計画の作成・選択・修正だけではTaskを変更しません。将来配置には利用者が確認した容量が必要で、提案可能な変更は日付、Context label、Steps、Notesに限定します。実装確認までは、上に記載した現在の会話ベース計画が正本です。
-
-実装の進み具合：Task Pilotは`scripts/rolling_plan.py`で、計画ファイルの作成、ベース案の選択、修正、終了、置き換えができます。保存先は`planFolder`（既定は`TaskMate/Plans`）です。作業中の計画からTask変更Proposalを作る処理は未実装のため、Issue #60は未完了です。
+[RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md)のうち計画部分（[Issue #60](https://github.com/tempu-village/taskmate/issues/60)）は、上の「見直せる計画を保つ」のとおり実装済みです。1回分の時間に合わせる会話での計画も引き続き使えます。RFC 0033の残り（Source候補レビューとReview Catalog）は[Issue #61](https://github.com/tempu-village/taskmate/issues/61)と[Issue #62](https://github.com/tempu-village/taskmate/issues/62)で追跡し、Source-note importとTask change reviewのFeatureで保留中の変更として扱います。
 
 ### 関連仕様と機能
 

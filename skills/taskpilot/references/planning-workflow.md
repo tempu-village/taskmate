@@ -191,7 +191,15 @@ python3 scripts/rolling_plan.py --vault <vault> revise --plan-id <id> --revision
 
 Every write requires the current `--revision` and fails if the file was edited outside Task Pilot; run `show` and ask the user how to proceed. Close a plan with `close`. To replan, run `inspect` again and create a new plan with `--supersedes`; never treat unapproved plan dates as facts.
 
-Generating a Task change Proposal from a working plan is not available yet ([#60](https://github.com/tempu-village/taskmate/issues/60)). Until then, prepare a backlog review as in section 2 when the user wants plan dates applied.
+### Task change Proposal from the working plan
+
+Create a Task change Proposal only when the user explicitly asks, for example "Create a Task change review from this working plan". With no range qualifier, cover every date in the working plan. Narrow it only when the user says "today only" (`--today-only`) or names `PLAN-xx` items (`--items PLAN-01,PLAN-03`):
+
+```bash
+python3 scripts/rolling_plan.py --vault <vault> proposal --plan-id <id> --revision <n> --proposal-id proposal-<id> [--today-only | --items PLAN-01,PLAN-03] --open-review
+```
+
+The helper rereads every selected Task and omits it, without blocking the others, when it is `missing`, `completed`, `stale` (changed since the plan snapshot), `no-change`, or `already-proposed` (included in an earlier Proposal and not revised since). It proposes only date, new `context/*` labels, Steps, and Notes, never Priority. Each change reason names the plan item and any move. It writes the same Proposal format as `planning_store.py propose`, marks the plan `proposal-created`, and records the Proposal and its scope in the plan. Report every included and omitted item. TaskMate's Task change Review View remains the only place where changes are approved and written; the working plan may still be revised afterwards.
 
 ## Context-label interpretation
 

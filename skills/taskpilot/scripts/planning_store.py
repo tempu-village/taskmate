@@ -201,14 +201,19 @@ def command_review(args: argparse.Namespace) -> None:
     print(json.dumps(validated_review(args.vault, args.task_folder, read_json(args.plan)), ensure_ascii=False, indent=2))
 
 
-def command_propose(args: argparse.Namespace) -> None:
-    if not re.fullmatch(r"proposal-[A-Za-z0-9._-]+", args.proposal_id):
+def validated_proposal_id(value: str) -> str:
+    if not re.fullmatch(r"proposal-[A-Za-z0-9._-]+", value):
         fail("proposal-id must start with proposal- and contain only safe identifier characters")
-    review = validated_review(args.vault, args.task_folder, read_json(args.plan))
+    return value
+
+
+def write_task_change_proposal(vault: Path, override: Optional[str], plan: Dict[str, Any], proposal_id: str) -> Dict[str, Any]:
+    validated_proposal_id(proposal_id)
+    review = validated_review(vault, override, plan)
     timestamp = todo_store.now_iso()
     tasks, change_number = [], 1
     for item in (value for value in review["proposals"] if value["disposition"] == "change"):
-        path, task = todo_store.find_task(args.vault, args.task_folder, item["taskId"])
+        path, task = todo_store.find_task(vault, override, item["taskId"])
         before_markdown = path.read_text(encoding="utf-8")
         after_task = json.loads(json.dumps(task, ensure_ascii=False))
         changes, typed = [], item["changes"]
@@ -238,18 +243,23 @@ def command_propose(args: argparse.Namespace) -> None:
         })
     if not tasks:
         fail("review plan has no change proposals to persist")
-    proposal = {"schemaVersion": 1, "id": args.proposal_id, "status": "pending", "createdAt": timestamp, "tasks": tasks}
-    folder = todo_store.safe_path(args.vault, str(todo_store.plugin_settings(args.vault)["proposalFolder"]))
-    destination = folder / f"{args.proposal_id}.json"
+    proposal = {"schemaVersion": 1, "id": proposal_id, "status": "pending", "createdAt": timestamp, "tasks": tasks}
+    folder = todo_store.safe_path(vault, str(todo_store.plugin_settings(vault)["proposalFolder"]))
+    destination = folder / f"{proposal_id}.json"
     if destination.exists():
-        fail(f"Proposal already exists: {args.proposal_id}")
+        fail(f"Proposal already exists: {proposal_id}")
     todo_store.atomic_write(destination, json.dumps(proposal, ensure_ascii=False, indent=2) + "\n")
-    uri = "obsidian://taskmate-review?" + urllib.parse.urlencode({"vault": args.vault.name, "proposal": args.proposal_id})
+    uri = "obsidian://taskmate-review?" + urllib.parse.urlencode({"vault": vault.name, "proposal": proposal_id})
+    return {"proposalId": proposal_id, "path": destination.relative_to(vault).as_posix(), "uri": uri}
+
+
+def command_propose(args: argparse.Namespace) -> None:
+    result = write_task_change_proposal(args.vault, args.task_folder, read_json(args.plan), args.proposal_id)
     opened = False
     if args.open_review:
-        open_review_uri(uri)
+        open_review_uri(result["uri"])
         opened = True
-    print(json.dumps({"proposalId": args.proposal_id, "path": destination.relative_to(args.vault).as_posix(), "uri": uri, "opened": opened}, ensure_ascii=False, indent=2))
+    print(json.dumps({**result, "opened": opened}, ensure_ascii=False, indent=2))
 
 
 def command_apply(args: argparse.Namespace) -> None:

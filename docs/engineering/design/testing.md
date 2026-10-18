@@ -33,7 +33,7 @@ git diff --check
 | [I18N-01/02](../features/localization.md) | dictionary/fallback tests | Command/ribbon reload and narrow translated controls |
 | [CONFLICT-01/02/03/04](../features/edit-conflicts.md) | merge, repository and editing flow tests, including Step value equality | Two-device synchronization |
 | [IMPORT-01/02/03/04](../features/source-import.md) | Python proposal/store tests | Actual agent's coverage inventory versus all source statements |
-| [PLAN-01 through PLAN-16](../features/task-pilot-planning.md) | Python planning/proposal/store tests | Actual agent estimate quality, explanation usefulness and conversation review |
+| [PLAN-01 through PLAN-23](../features/task-pilot-planning.md) | Python planning, rolling-plan, proposal and store tests | Actual agent estimate quality, explanation usefulness and conversation review; a Codex-created multi-day rolling plan revised in a disposable Vault and its generated Proposal approved in TaskMate |
 | [REVIEW-01 through REVIEW-17](../features/task-change-review/README.md) | Proposal model/repository/renderer tests and Python planning-store tests, including platform dispatch | Fresh desktop/mobile review, Full text unified-diff readability, Manual-order stale regeneration, and URI handoff delivery on macOS, Windows, and Linux |
 | [STORE-01/02](../features/storage-and-privacy.md) | settings/repository inspection | Uninstall retention and folder-setting change |
 
@@ -67,7 +67,7 @@ In a disposable Vault, follow [getting started](../../user/getting-started.md), 
 
 受け入れIDとテスト・手動確認の対応は表を正本にします。Project削除、実キーボード、同期など、自動テストだけでは確認できない範囲を明記します。
 
-PLAN-01〜16はplanning/proposal/storeのPythonテストで決定的な境界を確認し、実際のAgentによる見積もり品質、説明の有用性、対話レビューは追加の手動確認対象とします。REVIEW-01〜17はProposalモデル・repository・rendererとPython planning-storeテストで確認し、Full textのunified diffの読みやすさ、Proposal作成後のManual order変更によるstaleと再生成、各OSでのURI配信は追加の手動確認対象とします。
+PLAN-01〜23はplanning・計画ファイル・proposal・storeのPythonテストで決定的な境界を確認し、実際のAgentによる見積もり品質、説明の有用性、対話レビュー、Codexで作った複数日の計画を使い捨てVaultで修正し、作ったProposalをTaskMateで承認する流れは追加の手動確認対象とします。REVIEW-01〜17はProposalモデル・repository・rendererとPython planning-storeテストで確認し、Full textのunified diffの読みやすさ、Proposal作成後のManual order変更によるstaleと再生成、各OSでのURI配信は追加の手動確認対象とします。
 
 既知の不足：Source探索の対象外読み取り、複数ファイル反映のクラッシュ復旧、今回未実施の実機確認を区別します。iOSは未検証です。CONFLICT-04は、Stepを追加して保存した後の未変更再保存を対象とするrepository回帰テストで確認します。
 
