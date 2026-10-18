@@ -34,8 +34,7 @@ export class TaskChangeProposalRepository {
   async listPending(): Promise<ProposalSummary[]> {
     const prefix = `${this.folder()}/`;
     const files = this.app.vault.getFiles().filter((file) => (
-      file.path.startsWith(prefix)
-      && !file.path.startsWith(`${this.historyFolder()}/`)
+      file.path.startsWith(`${prefix}proposal-`)
       && file.extension === "json"
     ));
     const summaries: ProposalSummary[] = [];
@@ -52,7 +51,7 @@ export class TaskChangeProposalRepository {
   }
 
   async listHistory(): Promise<ProposalSummary[]> {
-    const prefix = `${this.historyFolder()}/`;
+    const prefix = `${this.historyFolder()}/proposal-`;
     const files = this.app.vault.getFiles().filter((file) => file.path.startsWith(prefix) && file.extension === "json");
     const summaries: ProposalSummary[] = [];
     for (const file of files) {

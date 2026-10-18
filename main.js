@@ -381,12 +381,12 @@ var TaskRepository = class {
   async list() {
     return (await this.scan()).tasks;
   }
-  async create(draft) {
+  async create(draft, id = newId()) {
     if (!draft.title.trim()) throw new Error("Task title is required");
     await this.ensureFolder(this.folder());
     const tasks = await this.list();
+    if (tasks.some((task2) => task2.id === id)) throw new Error(`Task ID already exists: ${id}`);
     const rank = tasks.reduce((maximum, task2) => Math.max(maximum, task2.rank), 0) + RANK_STEP;
-    const id = newId();
     const path = this.availableTaskPath(draft.title);
     const task = taskFromDraft(id, path, draft, rank, (/* @__PURE__ */ new Date()).toISOString());
     await this.app.vault.create(path, encodeTask(task));
@@ -7228,7 +7228,7 @@ var TaskChangeProposalRepository = class {
   }
   async listPending() {
     const prefix = `${this.folder()}/`;
-    const files = this.app.vault.getFiles().filter((file) => file.path.startsWith(prefix) && !file.path.startsWith(`${this.historyFolder()}/`) && file.extension === "json");
+    const files = this.app.vault.getFiles().filter((file) => file.path.startsWith(`${prefix}proposal-`) && file.extension === "json");
     const summaries = [];
     for (const file of files) {
       try {
@@ -7242,7 +7242,7 @@ var TaskChangeProposalRepository = class {
     return summaries.sort((left, right) => right.createdAt.localeCompare(left.createdAt));
   }
   async listHistory() {
-    const prefix = `${this.historyFolder()}/`;
+    const prefix = `${this.historyFolder()}/proposal-`;
     const files = this.app.vault.getFiles().filter((file) => file.path.startsWith(prefix) && file.extension === "json");
     const summaries = [];
     for (const file of files) {

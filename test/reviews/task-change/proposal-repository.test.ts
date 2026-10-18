@@ -44,6 +44,30 @@ function baseTask(overrides: Partial<Task> = {}): Task {
 }
 
 describe("TaskChangeProposalRepository", () => {
+  it("lists only Task change Proposal files, not Source candidate reviews", async () => {
+    const vault = new MemoryVault();
+    const proposal: TaskChangeProposal = {
+      schemaVersion: 1, id: "proposal-only", status: "pending", createdAt: "2026-10-12T00:00:00.000Z",
+      tasks: [{ taskId: "task-uuid", path: "TaskMate/Tasks/Example.md", title: "Example", beforeMarkdown: "x", afterMarkdown: "y",
+        beforeSha256: await sha256("x"), changes: [{ id: "C-01", field: "notes", before: "x", after: "y", reason: "r" }] }]
+    };
+    vault.put("TaskMate/Proposals/proposal-only.json", JSON.stringify(proposal));
+    vault.put("TaskMate/Proposals/source-review-other.json", JSON.stringify({ reviewType: "source-candidate" }));
+    vault.put("TaskMate/Proposals/History/source-review-old.json", JSON.stringify({ reviewType: "source-candidate" }));
+    const app = { vault, fileManager: { renameFile: async () => undefined } } as unknown as App;
+    const proposals = new TaskChangeProposalRepository(app, () => "TaskMate/Proposals", new TaskRepository(app, () => "TaskMate/Tasks"));
+    const errors: unknown[] = [];
+    const original = console.error;
+    console.error = (...args: unknown[]) => { errors.push(args); };
+    try {
+      expect((await proposals.listPending()).map((summary) => summary.id)).toEqual(["proposal-only"]);
+      expect(await proposals.listHistory()).toEqual([]);
+    } finally {
+      console.error = original;
+    }
+    expect(errors).toEqual([]);
+  });
+
   it("applies selected changes, archives the reviewed Proposal and persists a follow-up", async () => {
     const vault = new MemoryVault();
     vault.folders.add("TaskMate"); vault.folders.add("TaskMate/Tasks"); vault.folders.add("TaskMate/Proposals");
