@@ -2,6 +2,8 @@
 
 Read this reference whenever existing Obsidian notes should become TaskMate tasks.
 
+A JSON-based replacement is in development in [source-review-workflow.md](source-review-workflow.md). Do not use it unless the user explicitly asks to test it.
+
 ## Discover eligible notes
 
 Use `python3 scripts/todo_store.py sources --vault <vault>` when available. It reads the plugin's explicit `sourceFolders` allowlist. A note property overrides the folder rule:

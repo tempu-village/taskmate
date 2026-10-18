@@ -18,7 +18,7 @@ The dependency direction is `main.ts → review-view.ts → proposal-repository.
 
 `src/reviews/source-candidate/` is the Source candidate review feature Module ([#61](https://github.com/tempu-village/taskmate/issues/61)). So far it contains only [proposal.ts](../../../src/reviews/source-candidate/proposal.ts), its pure Domain: it validates the versioned Source candidate Proposal against the RFC 0033 contract, verifies merge evidence, and calculates candidate edits, decisions, application results, review status and health, formal-apply eligibility, and Source-note completion. No Persistence or UI Adapter uses it yet.
 
-Task Pilot, the [portable agent skill](../../../skills/taskpilot/SKILL.md), runs separately in an agent host. Its Python helpers operate on the same Markdown contract; they are not bundled plugin runtime dependencies.
+Task Pilot, the [portable agent skill](../../../skills/taskpilot/SKILL.md), runs separately in an agent host. Its Python helpers operate on the same Markdown contract; they are not bundled plugin runtime dependencies. `scripts/source_review.py` stages Source candidate Proposal JSON for the Source candidate review; a [contract test](../../../test/reviews/source-candidate/staging-contract.test.ts) runs it and checks the output with TaskMate's Domain validator and the Draft 2020-12 Schema.
 
 ## Change boundaries
 
@@ -49,4 +49,4 @@ Task変更Reviewは`src/reviews/task-change/`へ集約します。`proposal.ts`�
 
 Source候補Reviewは`src/reviews/source-candidate/`の機能Moduleで（#61）、今は純粋Domainの`proposal.ts`だけがあります。RFC 0033の契約に沿ってSource候補Proposalを検証し、統合の根拠を確かめ、候補の編集、判断、反映結果、レビューの状態と健全性、正式反映の対象、Source noteの完了を計算します。まだPersistenceやUIのAdapterからは使われていません。
 
-Task PilotとPython helperは別のホストで同じMarkdown契約を操作します。Proposalのstale判定はMarkdown全体を比較するため、Manual orderによる`rank`の並行更新も古い書き込みと混ぜず、現在の内容を基準にしたfollow-upへ戻します。プラグイン実行時へNode/Pythonを持ち込まず、描画の破棄処理を保ち、形式変更時は双方のwriterを更新します。型・モデル・DOMテストと実機検証の範囲は[testing](testing.md)で区別します。
+Task PilotとPython helperは別のホストで同じMarkdown契約を操作します。`scripts/source_review.py`はSource候補ReviewのためのSource候補Proposal JSONを作り、契約テストがその出力をTaskMateのDomainの検証とDraft 2020-12の型定義で確かめます。Proposalのstale判定はMarkdown全体を比較するため、Manual orderによる`rank`の並行更新も古い書き込みと混ぜず、現在の内容を基準にしたfollow-upへ戻します。プラグイン実行時へNode/Pythonを持ち込まず、描画の破棄処理を保ち、形式変更時は双方のwriterを更新します。型・モデル・DOMテストと実機検証の範囲は[testing](testing.md)で区別します。
