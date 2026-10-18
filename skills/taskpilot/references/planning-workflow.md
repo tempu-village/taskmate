@@ -115,6 +115,84 @@ python3 scripts/planning_store.py --vault <vault> plan --request <request.json>
 
 The command reserves the displayed buffer, packs only upper bounds into `planned`, separates lower-bound-only fits into `nearMatches`, and leaves constraint conflicts in `omitted`. `needsBreakdown` and unresolved choices appear in `needsClarification`. It never writes Task Markdown.
 
+## 6. Maintain a rolling plan
+
+Use a rolling plan when the user wants every incomplete Task accounted for across today and future days. It is a separate Markdown artifact, not a Task change: creating, selecting, revising, closing, and superseding it never writes Task Markdown. Run `inspect` first and plan only canonical incomplete Tasks; never include pending Source candidates.
+
+### Capacity
+
+Ask for today's net available minutes. For future days, ask for usable weekdays, daily minutes, a buffer, fixed commitments, and date exceptions. If the user does not give them, propose one concrete profile with `"mode": "assumed"` and `"confirmedAt": null`. Set `confirmedAt` only after the user approves the profile; until then no Task receives a future plan date and work that does not fit today becomes a `future-capacity-unconfirmed` gap.
+
+### Bases
+
+Write two bases. Each lists every canonical incomplete Task exactly once with the `inspect` snapshot, a unique `order`, a reason, and reason codes:
+
+- `recommended` may use displayed assumptions, including coarse inferred estimates and `proposedFields`;
+- `evidence` may use only explicit Task data: estimates with basis `user` or `task-text`, and no `proposedFields`.
+
+`proposedFields` may contain only `addLabels` (`context/*`), `steps`, and `notes`; the plan date comes from placement. Mark an entry with `gap` or `conflict` (`code` and `reason`) when you cannot schedule it honestly, and give `deadline` only for a stated hard deadline.
+
+```json
+{
+  "targetDate": "2026-10-19",
+  "capacity": {
+    "today": {"availableMinutes": 120, "bufferPercent": 20},
+    "future": {
+      "mode": "explicit",
+      "confirmedAt": "2026-10-19T08:00:00Z",
+      "dailyMinutes": 90,
+      "bufferPercent": 20,
+      "weekdays": ["mon", "tue", "wed", "thu", "fri"],
+      "exceptions": {"2026-10-22": 0},
+      "commitments": [{"date": "2026-10-21", "minutes": 30, "label": "Dentist"}]
+    }
+  },
+  "bases": {
+    "recommended": [
+      {"taskId": "task-1", "snapshot": "sha256-from-inspect", "order": 1, "estimate": {"minMinutes": 30, "maxMinutes": 60, "basis": "inference"}, "reason": "Unblocks the report.", "reasonCodes": ["dependency"], "proposedFields": {"addLabels": ["context/pc"]}}
+    ],
+    "evidence": [
+      {"taskId": "task-1", "snapshot": "sha256-from-inspect", "order": 1, "estimate": null, "reason": "No explicit effort.", "reasonCodes": []}
+    ]
+  }
+}
+```
+
+Run:
+
+```bash
+python3 scripts/rolling_plan.py --vault <vault> create --request <request.json> --plan-id plan-<id> [--supersedes plan-<old-id>] [--open]
+```
+
+The helper keeps each Task with an existing date on that date when capacity allows and records `moved-capacity` with the old date otherwise. Overdue Tasks start today with `overdue`. It extends the horizon day by day until every Task is placed, and turns the rest into gaps (`missing-effort`, `needs-breakdown`, `future-capacity-unconfirmed`, `no-usable-capacity`) or conflicts (`deadline-capacity`). It writes `<planFolder>/<plan-id>.md`; `planFolder` defaults to `TaskMate/Plans` and is excluded from Source discovery. Report the returned plan ID, counts, and path or URI. If opening fails, the plan still exists; do not regenerate it.
+
+### Working plan
+
+Show both bases and ask the user to choose one. Never mix them. Copy the chosen base into `PLAN-xx` items:
+
+```bash
+python3 scripts/rolling_plan.py --vault <vault> select-base --plan-id <id> --base recommended --revision <n>
+```
+
+Revise only the working plan, with a reason for every change:
+
+```json
+{"changes": [
+  {"id": "PLAN-02", "operation": "move", "date": "2026-10-23", "reason": "Busy on Tuesday."},
+  {"id": "PLAN-03", "operation": "unschedule", "reason": "Waiting for a reply."},
+  {"id": "GAP-01", "operation": "schedule", "date": "2026-10-26", "estimate": {"minMinutes": 15, "maxMinutes": 30, "basis": "user"}, "reason": "The user estimated it."},
+  {"id": "PLAN-01", "operation": "set-fields", "proposedFields": {"steps": [{"text": "Draft outline", "completed": false, "date": null}]}, "reason": "Agreed first Step."}
+]}
+```
+
+```bash
+python3 scripts/rolling_plan.py --vault <vault> revise --plan-id <id> --revision <n> --changes <changes.json>
+```
+
+Every write requires the current `--revision` and fails if the file was edited outside Task Pilot; run `show` and ask the user how to proceed. Close a plan with `close`. To replan, run `inspect` again and create a new plan with `--supersedes`; never treat unapproved plan dates as facts.
+
+Generating a Task change Proposal from a working plan is not available yet ([#60](https://github.com/tempu-village/taskmate/issues/60)). Until then, prepare a backlog review as in section 2 when the user wants plan dates applied.
+
 ## Context-label interpretation
 
 Task Pilot initially understands `context/break`, `context/phone`, `context/pc`, `context/home`, `context/outside`, `context/low-energy`, and `context/errand`. They express positive suitability, not exclusive requirements. Missing labels mean unknown.

@@ -272,7 +272,7 @@ def available_task_path(folder: Path, title: str, current: Optional[Path] = None
 def plugin_settings(vault: Path) -> Dict[str, Any]:
     path = vault / ".obsidian" / "plugins" / "taskmate" / "data.json"
     if not path.exists():
-        return {"taskFolder": "TaskMate/Tasks", "projectFolder": "TaskMate/Projects", "proposalFolder": "TaskMate/Proposals", "sourceFolders": [], "includeSourceSubfolders": True}
+        return {"taskFolder": "TaskMate/Tasks", "projectFolder": "TaskMate/Projects", "proposalFolder": "TaskMate/Proposals", "planFolder": "TaskMate/Plans", "sourceFolders": [], "includeSourceSubfolders": True}
     try:
         loaded = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError) as error:
@@ -281,6 +281,7 @@ def plugin_settings(vault: Path) -> Dict[str, Any]:
         "taskFolder": loaded.get("taskFolder") or "TaskMate/Tasks",
         "projectFolder": loaded.get("projectFolder") or "TaskMate/Projects",
         "proposalFolder": loaded.get("proposalFolder") or "TaskMate/Proposals",
+        "planFolder": loaded.get("planFolder") or "TaskMate/Plans",
         "sourceFolders": loaded.get("sourceFolders") or [],
         "includeSourceSubfolders": loaded.get("includeSourceSubfolders", True),
     }
@@ -473,6 +474,7 @@ def source_records(vault: Path) -> List[Dict[str, Any]]:
         safe_path(vault, str(settings["taskFolder"])),
         safe_path(vault, str(settings["projectFolder"])),
         safe_path(vault, str(settings["proposalFolder"])),
+        safe_path(vault, str(settings["planFolder"])),
     ]
     results: List[Dict[str, Any]] = []
     for path in sorted(vault.rglob("*.md")):
