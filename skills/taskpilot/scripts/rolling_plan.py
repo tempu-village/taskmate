@@ -405,6 +405,8 @@ def item_lines(item: Dict[str, Any], section: str) -> List[str]:
             notes.append("newly dated")
         if item["proposedFields"]:
             notes.append("proposes " + ", ".join(sorted(item["proposedFields"])))
+        if item.get("proposalId"):
+            notes.append(f"in {item['proposalId']}")
         line = f"- {item['id']} {task_link(item)} — " + "; ".join(notes) + f". {item['reason']}"
     else:
         line = f"- {item['id']} {task_link(item)} — {item['code']}: {item['detail']}"
@@ -464,6 +466,8 @@ def render_plan(plan: Dict[str, Any]) -> str:
     else:
         days = ", ".join(day.capitalize() for day in future["weekdays"]) or "no weekdays"
         lines.append(f"Future capacity ({future['mode']}, confirmed {future['confirmedAt']}): {future['dailyMinutes']} min on {days}, {future['bufferPercent']}% buffer.")
+    for proposal in plan.get("proposals") or []:
+        lines.append(f"Task change Proposal {proposal['proposalId']}: {proposal['scope']['kind']} scope, {len(proposal['itemIds'])} Tasks, plan revision {proposal['planRevision']}.")
     lines.append("")
     if plan["working"] is None:
         lines += [f"## {SECTION_TITLES['working']}", "", "_No base selected. Choose the recommended base or the evidence base; they are never mixed._", ""]
@@ -522,7 +526,7 @@ def command_create(args: argparse.Namespace) -> None:
         "schemaVersion": SCHEMA_VERSION, "planId": args.plan_id, "targetDate": target_text, "status": "draft",
         "baseMode": None, "revision": 1, "createdAt": timestamp, "updatedAt": timestamp, "endDate": None,
         "supersedes": args.supersedes, "supersededBy": None, "capacity": capacity,
-        "counters": {"gap": 0, "conflict": 0, "plan": 0}, "bases": {}, "working": None,
+        "counters": {"gap": 0, "conflict": 0, "plan": 0}, "proposals": [], "bases": {}, "working": None,
     }
     bases = request.get("bases")
     if not isinstance(bases, dict) or set(bases) != set(BASES):
@@ -587,8 +591,8 @@ def allowed_plan_date(plan: Dict[str, Any], value: Any) -> str:
 def command_revise(args: argparse.Namespace) -> None:
     path, plan = load_plan(args.vault, args.plan_id)
     check_revision(plan, args.revision)
-    if plan["status"] != "ready" or plan["working"] is None:
-        fail("only a ready working plan can be revised")
+    if plan["status"] not in {"ready", "proposal-created"} or plan["working"] is None:
+        fail("only a selected working plan can be revised")
     raw_changes = planning_store.read_json(args.changes).get("changes")
     if not isinstance(raw_changes, list) or not raw_changes:
         fail("revision requires a non-empty changes array")
@@ -643,6 +647,109 @@ def command_revise(args: argparse.Namespace) -> None:
     print_result(args.vault, path, plan)
 
 
+def proposal_reason(plan: Dict[str, Any], item: Dict[str, Any]) -> str:
+    details = [f"rolling plan {plan['planId']} {item['id']}"]
+    if "moved-capacity" in item.get("moveCodes", []):
+        details.append(f"moved from {item['currentDate']} for capacity")
+    if "overdue" in item.get("moveCodes", []):
+        details.append(f"overdue from {item['currentDate']}")
+    if "user-moved" in item.get("moveCodes", []) or "user-scheduled" in item.get("moveCodes", []):
+        details.append("placed by the user")
+    return f"{item['reason']} ({'; '.join(details)})"
+
+
+def selected_items(plan: Dict[str, Any], args: argparse.Namespace) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+    planned = [item for item in plan["working"] if item["kind"] == "planned"]
+    if args.items:
+        by_id = {item["id"]: item for item in plan["working"]}
+        requested = list(dict.fromkeys(value.strip() for value in args.items.split(",") if value.strip()))
+        for item_id in requested:
+            if item_id not in by_id:
+                fail(f"unknown working-plan item: {item_id}")
+            if by_id[item_id]["kind"] != "planned":
+                fail(f"only planned PLAN items can be proposed: {item_id}")
+        return [by_id[item_id] for item_id in requested], {"kind": "items", "requested": requested}
+    if args.today_only:
+        return [item for item in planned if item["plannedDate"] == plan["targetDate"]], {"kind": "today"}
+    return planned, {"kind": "all"}
+
+
+def proposed_changes(item: Dict[str, Any], task: Dict[str, Any]) -> Dict[str, Any]:
+    changes: Dict[str, Any] = {}
+    if item["plannedDate"] != task["date"]:
+        changes["date"] = item["plannedDate"]
+    fields = item["proposedFields"]
+    labels = [label for label in fields.get("addLabels", []) if label not in task["labels"]]
+    if labels:
+        changes["addLabels"] = labels
+    if "steps" in fields and fields["steps"] != task["steps"]:
+        changes["steps"] = fields["steps"]
+    if "notes" in fields and fields["notes"] != task["notes"]:
+        changes["notes"] = fields["notes"]
+    return changes
+
+
+def command_proposal(args: argparse.Namespace) -> None:
+    path, plan = load_plan(args.vault, args.plan_id)
+    check_revision(plan, args.revision)
+    if plan["status"] not in {"ready", "proposal-created"} or plan["working"] is None:
+        fail("a Task change Proposal can be generated only from a selected working plan")
+    planning_store.validated_proposal_id(args.proposal_id)
+    selected, scope = selected_items(plan, args)
+    if not selected:
+        fail("the requested scope contains no planned items")
+    tasks = {task["id"]: task for task in todo_store.all_tasks(args.vault, args.task_folder)}
+    review, included, omitted = [], [], []
+    for item in sorted(selected, key=sort_key):
+        task = tasks.get(item["taskId"])
+        status = None
+        if task is None:
+            status = "missing"
+        elif task["completed"]:
+            status = "completed"
+        elif planning_store.task_snapshot(args.vault, task) != item["snapshot"]:
+            status = "stale"
+        elif item.get("proposalId") and item.get("proposedItemRevision") == item["revision"]:
+            status = "already-proposed"
+        changes = {} if status else proposed_changes(item, task)
+        if not status and not changes:
+            status = "no-change"
+        if status:
+            omitted.append({"id": item["id"], "taskId": item["taskId"], "title": item["title"], "reason": status})
+            continue
+        review.append({
+            "taskId": item["taskId"], "snapshot": item["snapshot"], "changes": changes,
+            "reason": proposal_reason(plan, item), "dateAuthority": f"rolling plan {plan['planId']} {item['id']}",
+        })
+        included.append({"id": item["id"], "taskId": item["taskId"], "title": item["title"], "fields": sorted(changes)})
+    if not review:
+        fail("no Task changes to propose; omitted: " + ", ".join(f"{value['id']} ({value['reason']})" for value in omitted))
+    result = planning_store.write_task_change_proposal(args.vault, args.task_folder, {"proposals": review}, args.proposal_id)
+    bump(plan)
+    included_ids = {value["id"] for value in included}
+    for item in plan["working"]:
+        if item["id"] in included_ids:
+            item["proposalId"] = args.proposal_id
+            item["proposedItemRevision"] = item["revision"]
+    plan["status"] = "proposal-created"
+    plan.setdefault("proposals", []).append({
+        "proposalId": args.proposal_id, "createdAt": plan["updatedAt"], "planRevision": plan["revision"],
+        "scope": scope, "itemIds": [value["id"] for value in included], "omitted": omitted,
+    })
+    save_plan(path, plan)
+    output = {
+        **result, "opened": False, "planId": plan["planId"], "planRevision": plan["revision"], "status": plan["status"],
+        "scope": scope, "included": included, "omitted": omitted,
+    }
+    if args.open_review:
+        try:
+            planning_store.open_review_uri(result["uri"])
+            output["opened"] = True
+        except SystemExit as error:
+            output["openError"] = str(error)
+    print(json.dumps(output, ensure_ascii=False, indent=2))
+
+
 def command_close(args: argparse.Namespace) -> None:
     path, plan = load_plan(args.vault, args.plan_id)
     check_revision(plan, args.revision)
@@ -683,6 +790,16 @@ def parser() -> argparse.ArgumentParser:
     revise.add_argument("--revision", required=True, type=int)
     revise.add_argument("--changes", required=True, type=Path)
     revise.set_defaults(run=command_revise)
+
+    proposal = commands.add_parser("proposal")
+    proposal.add_argument("--plan-id", required=True, type=validated_plan_id)
+    proposal.add_argument("--revision", required=True, type=int)
+    proposal.add_argument("--proposal-id", required=True)
+    scope = proposal.add_mutually_exclusive_group()
+    scope.add_argument("--today-only", action="store_true")
+    scope.add_argument("--items")
+    proposal.add_argument("--open-review", action="store_true")
+    proposal.set_defaults(run=command_proposal)
 
     close = commands.add_parser("close")
     close.add_argument("--plan-id", required=True, type=validated_plan_id)

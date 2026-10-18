@@ -380,6 +380,117 @@ class RollingPlanTest(unittest.TestCase):
         self.assertTrue((self.vault / "Planning" / "plan-week.md").exists())
         self.assertEqual([source["path"] for source in sources], ["Notes/meeting.md"])
 
+    def ready_plan(self):
+        today = self.create_task("Today work")
+        moved = self.create_task("Moved work", "--date", "2026-10-26")
+        unchanged = self.create_task("Already dated", "--date", "2026-10-20", "--label", "context/pc")
+        snapshots = self.snapshots()
+        recommended = [
+            self.entry(today, snapshots, 1, proposedFields={"addLabels": ["context/pc"], "notes": "Use the template."}),
+            self.entry(unchanged, snapshots, 2, proposedFields={"addLabels": ["context/pc"]}),
+            self.entry(moved, snapshots, 3),
+        ]
+        evidence = [self.entry(today, snapshots, 1), self.entry(unchanged, snapshots, 2), self.entry(moved, snapshots, 3)]
+        future = {**CONFIRMED_WEEKDAYS, "exceptions": {"2026-10-26": 0}}
+        self.create_plan(self.request(recommended, evidence, future=future))
+        self.run_script(ROLLING_PLAN, "select-base", "--plan-id", "plan-week", "--base", "recommended", "--revision", "1")
+        return today, moved, unchanged
+
+    def propose(self, proposal_id, revision, *scope, check=True):
+        return self.run_script(ROLLING_PLAN, "proposal", "--plan-id", "plan-week", "--revision", str(revision), "--proposal-id", proposal_id, *scope, check=check)
+
+    def proposal_json(self, proposal_id):
+        return json.loads((self.vault / "TaskMate" / "Proposals" / f"{proposal_id}.json").read_text(encoding="utf-8"))
+
+    def test_unqualified_proposal_covers_every_date_without_changing_tasks(self):
+        today, moved, unchanged = self.ready_plan()
+        before = self.task_bytes()
+
+        _, result = self.propose("proposal-all", 2)
+
+        self.assertEqual(self.task_bytes(), before)
+        self.assertEqual((result["status"], result["planRevision"], result["scope"]), ("proposal-created", 3, {"kind": "all"}))
+        self.assertTrue(result["uri"].startswith("obsidian://taskmate-review?"))
+        self.assertEqual([value["taskId"] for value in result["included"]], [today["id"], moved["id"]])
+        self.assertEqual(result["omitted"], [{"id": "PLAN-02", "taskId": unchanged["id"], "title": "Already dated", "reason": "no-change"}])
+        proposal = self.proposal_json("proposal-all")
+        self.assertEqual((proposal["schemaVersion"], proposal["status"]), (1, "pending"))
+        by_task = {task["taskId"]: task for task in proposal["tasks"]}
+        today_changes = {change["field"]: change for change in by_task[today["id"]]["changes"]}
+        self.assertEqual(sorted(today_changes), ["date", "labels", "notes"])
+        self.assertEqual((today_changes["date"]["before"], today_changes["date"]["after"]), (None, TARGET))
+        self.assertEqual(today_changes["labels"]["after"], ["context/pc"])
+        moved_change = by_task[moved["id"]]["changes"][0]
+        self.assertEqual((moved_change["field"], moved_change["before"], moved_change["after"]), ("date", "2026-10-26", "2026-10-27"))
+        self.assertIn("moved from 2026-10-26 for capacity", moved_change["reason"])
+        self.assertTrue(all(change["field"] != "priority" for task in proposal["tasks"] for change in task["changes"]))
+        plan = self.show()
+        self.assertEqual(plan["proposals"][0]["itemIds"], ["PLAN-01", "PLAN-03"])
+        self.assertIn("in proposal-all", (self.vault / "TaskMate" / "Plans" / "plan-week.md").read_text(encoding="utf-8"))
+
+    def test_today_only_and_explicit_items_narrow_the_scope(self):
+        today, moved, _ = self.ready_plan()
+
+        _, today_result = self.propose("proposal-today", 2, "--today-only")
+        _, item_result = self.propose("proposal-items", 3, "--items", "PLAN-03")
+
+        self.assertEqual([value["taskId"] for value in today_result["included"]], [today["id"]])
+        self.assertEqual([value["taskId"] for value in item_result["included"]], [moved["id"]])
+        self.assertEqual(item_result["scope"], {"kind": "items", "requested": ["PLAN-03"]})
+        self.assertEqual([task["taskId"] for task in self.proposal_json("proposal-today")["tasks"]], [today["id"]])
+
+    def test_already_proposed_items_are_skipped_until_revised(self):
+        today, _, _ = self.ready_plan()
+        self.propose("proposal-first", 2, "--today-only")
+
+        _, second = self.propose("proposal-second", 3)
+        changes = self.write_json({"changes": [{"id": "PLAN-01", "operation": "set-fields", "proposedFields": {"notes": "New plan."}, "reason": "Changed after review."}]})
+        self.run_script(ROLLING_PLAN, "revise", "--plan-id", "plan-week", "--revision", "4", "--changes", str(changes))
+        _, third = self.propose("proposal-third", 5, "--items", "PLAN-01")
+
+        self.assertIn({"id": "PLAN-01", "taskId": today["id"], "title": "Today work", "reason": "already-proposed"}, second["omitted"])
+        self.assertEqual([value["taskId"] for value in third["included"]], [today["id"]])
+
+    def test_stale_completed_and_missing_tasks_are_omitted_while_others_continue(self):
+        today, moved, unchanged = self.ready_plan()
+        self.run_script(TODO_STORE, "update", "--id", today["id"], "--title", "Edited elsewhere")
+        self.run_script(TODO_STORE, "complete", "--id", unchanged["id"])
+
+        _, result = self.propose("proposal-partial", 2)
+
+        reasons = {value["id"]: value["reason"] for value in result["omitted"]}
+        self.assertEqual(reasons, {"PLAN-01": "stale", "PLAN-02": "completed"})
+        self.assertEqual([value["taskId"] for value in result["included"]], [moved["id"]])
+        (self.vault / moved["path"]).unlink()
+        missing, _ = self.propose("proposal-none", 3, "--items", "PLAN-03", check=False)
+        self.assertIn("PLAN-03 (missing)", missing.stderr)
+        self.assertFalse((self.vault / "TaskMate" / "Proposals" / "proposal-none.json").exists())
+
+    def test_proposal_requires_a_selected_working_plan_and_valid_scope(self):
+        self.simple_plan(count=1)
+
+        draft, _ = self.propose("proposal-draft", 1, check=False)
+        self.run_script(ROLLING_PLAN, "select-base", "--plan-id", "plan-week", "--base", "recommended", "--revision", "1")
+        stale, _ = self.propose("proposal-stale", 1, check=False)
+        gap, _ = self.propose("proposal-gap", 2, "--items", "GAP-01", check=False)
+        unknown, _ = self.propose("proposal-unknown", 2, "--items", "PLAN-09", check=False)
+        bad_id, _ = self.propose("not-a-proposal", 2, check=False)
+
+        self.assertIn("selected working plan", draft.stderr)
+        self.assertIn("re-read the plan", stale.stderr)
+        self.assertIn("unknown working-plan item: GAP-01", gap.stderr)
+        self.assertIn("unknown working-plan item: PLAN-09", unknown.stderr)
+        self.assertIn("proposal-id must start with proposal-", bad_id.stderr)
+
+    def test_revision_remains_possible_after_a_proposal(self):
+        self.ready_plan()
+        self.propose("proposal-today", 2, "--today-only")
+        changes = self.write_json({"changes": [{"id": "PLAN-03", "operation": "move", "date": "2026-10-28", "reason": "Later is fine."}]})
+
+        _, result = self.run_script(ROLLING_PLAN, "revise", "--plan-id", "plan-week", "--revision", "3", "--changes", str(changes))
+
+        self.assertEqual((result["status"], result["revision"]), ("proposal-created", 4))
+
     def test_invalid_plan_identifier_is_rejected(self):
         result, _ = self.run_script(ROLLING_PLAN, "show", "--plan-id", "../escape", check=False)
         self.assertNotEqual(result.returncode, 0)
