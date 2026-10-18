@@ -10,7 +10,7 @@ Use `python3 scripts/todo_store.py sources --vault <vault>` when available. It r
 - `taskmate-source: false` excludes a note inside a selected folder.
 - no property inherits the selected-folder rule.
 
-The folder setting may include subfolders. Exclude the task, project, proposal, and `.obsidian` folders. Discovery may inspect frontmatter to apply these deterministic rules; it does not authorize interpreting unrelated notes.
+The folder setting may include subfolders. Exclude the task, project, proposal, rolling-plan, and `.obsidian` folders. Discovery may inspect frontmatter to apply these deterministic rules; it does not authorize interpreting unrelated notes.
 
 ## Build a coverage review
 

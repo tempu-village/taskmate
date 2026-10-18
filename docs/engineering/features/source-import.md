@@ -7,7 +7,7 @@ Implementation: Staging and promotion implemented; indexed discovery is not impl
 
 Source selection and provenance properties follow [Source note property format](../specifications/source-note-properties.md). Canonical Tasks created or updated by promotion follow [Task file format](../specifications/task-file-format.md); these are different property classes stored on different document roles.
 
-Only folder-selected notes or notes with `taskmate-source: true` are eligible for task extraction. `taskmate-source: false` overrides folder inclusion. Managed Task, Project, Proposal folders and Obsidian configuration are excluded. Scope remains independent of the proposal output location.
+Only folder-selected notes or notes with `taskmate-source: true` are eligible for task extraction. `taskmate-source: false` overrides folder inclusion. Managed Task, Project, Proposal and rolling-plan folders and Obsidian configuration are excluded. Scope remains independent of the proposal output location.
 
 Inventory every possible action before proposing create, merge, or exclude. Every candidate belongs to exactly one coverage mapping, including candidates the agent considers informational or redundant. Source identity is part of candidate identity; identical text in two notes cannot cover each other. An exclusion needs an explicit user decision and reason.
 

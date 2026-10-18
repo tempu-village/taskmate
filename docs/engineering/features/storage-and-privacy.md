@@ -5,7 +5,7 @@ Implementation: Implemented; code review and schema tests, not an independent pr
 
 ## Contract
 
-Tasks, Projects, and proposal sessions are stored in configurable folders under `TaskMate` by default. TaskMate uses Obsidian's vault and file-management APIs and has no telemetry, hosted TaskMate account, runtime AI, translation service, or TaskMate synchronization server. Uninstalling the plugin leaves its Markdown data in the vault.
+Tasks, Projects, and proposal sessions are stored in configurable folders under `TaskMate` by default. Task Pilot writes rolling plans to `planFolder`, which defaults to `TaskMate/Plans` and is set only in the plugin data file, not in the settings screen. TaskMate uses Obsidian's vault and file-management APIs and has no telemetry, hosted TaskMate account, runtime AI, translation service, or TaskMate synchronization server. Uninstalling the plugin leaves its Markdown data in the vault.
 
 Task Pilot runs in a separate host with that host's filesystem and model-service permissions. Plugin privacy claims do not describe the agent client's data handling. [Source discovery limitations](source-import.md#current-discovery-limitation) also apply.
 
@@ -24,7 +24,7 @@ Review [settings](../../../src/settings.ts), [repositories](../../../src/tasks/r
 
 > 翻訳状態：`ai-translated`。英語版が正本です。
 
-タスク、プロジェクト、提案セッションは、初期状態では`TaskMate`配下の設定可能なフォルダーへ保存します。TaskMateはObsidianのVault APIとファイル管理APIを使い、テレメトリー、TaskMateのホスト型アカウント、実行時AI、翻訳サービス、TaskMate独自の同期サーバーを持ちません。プラグインをアンインストールしても、MarkdownデータはVaultに残ります。
+タスク、プロジェクト、提案セッションは、初期状態では`TaskMate`配下の設定可能なフォルダーへ保存します。Task Pilotは計画ファイルを`planFolder`（既定は`TaskMate/Plans`）へ保存します。この値はプラグインのデータファイルだけで設定し、設定画面にはありません。TaskMateはObsidianのVault APIとファイル管理APIを使い、テレメトリー、TaskMateのホスト型アカウント、実行時AI、翻訳サービス、TaskMate独自の同期サーバーを持ちません。プラグインをアンインストールしても、MarkdownデータはVaultに残ります。
 
 承認：既存契約から継承。実装済みですが、独立したプライバシー監査は行っていません。
 

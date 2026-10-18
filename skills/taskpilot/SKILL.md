@@ -17,9 +17,9 @@ Manage a local-first task store while keeping the user in control of source scop
 - For creating, renaming, or deleting projects, read [references/project-schema.md](references/project-schema.md).
 - For turning existing notes into tasks, read [references/import-workflow.md](references/import-workflow.md) before inspecting source content.
 - For staging and approving import proposals, also read [references/proposal-workflow.md](references/proposal-workflow.md).
-- For backlog review, effort estimation, Context-label suggestions, or capacity planning, read [references/planning-workflow.md](references/planning-workflow.md).
+- For backlog review, effort estimation, Context-label suggestions, capacity planning, or rolling plans, read [references/planning-workflow.md](references/planning-workflow.md).
 
-Use `scripts/todo_store.py` for deterministic direct task operations, `scripts/proposal_store.py` for staged imports, and `scripts/planning_store.py` for review snapshots, persisted Task change Proposals, and capacity packing when Python is available. Otherwise follow the same schemas with the environment's ordinary file tools. Obtain vault and managed-folder paths from user scope or the TaskMate plugin settings; never invent or search outside that scope.
+Use `scripts/todo_store.py` for deterministic direct task operations, `scripts/proposal_store.py` for staged imports, `scripts/rolling_plan.py` for rolling-plan artifacts, and `scripts/planning_store.py` for review snapshots, persisted Task change Proposals, and capacity packing when Python is available. Otherwise follow the same schemas with the environment's ordinary file tools. Obtain vault and managed-folder paths from user scope or the TaskMate plugin settings; never invent or search outside that scope.
 
 ## Preserve control
 

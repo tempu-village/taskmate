@@ -227,6 +227,8 @@ Automated evidence: [planning behavior tests](../../../skills/taskpilot/tests/te
 
 The proposed plan remains read-only: creating, choosing, or editing it would not change Tasks. Future placement would require a user-confirmed capacity profile, and plan-derived changes would be limited to date, Context labels, Steps, and Notes. This paragraph records accepted future direction only; the current conversation capacity-plan behavior above remains authoritative until implementation is verified.
 
+Implementation progress: Task Pilot can create, select a base for, revise, close, and supersede the plan artifact with `scripts/rolling_plan.py`, writing to `planFolder` (default `TaskMate/Plans`). Generating a Task change Proposal from the working plan is not implemented, so Issue #60 remains open.
+
 ## Related specifications and features
 
 - [Task schema](../../../skills/taskpilot/references/task-schema.md)
@@ -443,6 +445,8 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 [RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md)は[Issue #62](https://github.com/tempu-village/taskmate/issues/62)で追跡し、計画部分は[Issue #60](https://github.com/tempu-village/taskmate/issues/60)で実装します。合意済みですが未実装です。会話だけの計画出力を、すべての正式な未完了Taskを計画済み・`GAP`・`CONFLICT`のいずれかへ割り当てる1つのObsidian Markdownへ置き換える提案です。推奨ベース案と既存Task根拠ベース案の一方を選び、Codexとの会話で識別番号を使って修正し、明示依頼によって既存のTask変更Proposalを作ります。範囲省略時は全日程、指定時は今日分または指定項目だけが対象です。
 
 計画の作成・選択・修正だけではTaskを変更しません。将来配置には利用者が確認した容量が必要で、提案可能な変更は日付、Context label、Steps、Notesに限定します。実装確認までは、上に記載した現在の会話ベース計画が正本です。
+
+実装の進み具合：Task Pilotは`scripts/rolling_plan.py`で、計画ファイルの作成、ベース案の選択、修正、終了、置き換えができます。保存先は`planFolder`（既定は`TaskMate/Plans`）です。作業中の計画からTask変更Proposalを作る処理は未実装のため、Issue #60は未完了です。
 
 ### 関連仕様と機能
 
