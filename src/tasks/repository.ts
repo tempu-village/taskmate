@@ -133,12 +133,12 @@ export class TaskRepository {
     return (await this.scan()).tasks;
   }
 
-  async create(draft: TaskDraft): Promise<Task> {
+  async create(draft: TaskDraft, id = newId()): Promise<Task> {
     if (!draft.title.trim()) throw new Error("Task title is required");
     await this.ensureFolder(this.folder());
     const tasks = await this.list();
+    if (tasks.some((task) => task.id === id)) throw new Error(`Task ID already exists: ${id}`);
     const rank = tasks.reduce((maximum, task) => Math.max(maximum, task.rank), 0) + RANK_STEP;
-    const id = newId();
     const path = this.availableTaskPath(draft.title);
     const task = taskFromDraft(id, path, draft, rank, new Date().toISOString());
     await this.app.vault.create(path, encodeTask(task));
