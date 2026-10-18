@@ -44,7 +44,7 @@ Manifest validation checks declared candidates, not whether the agent understood
 
 [RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md), tracked by [Issue #62](https://github.com/tempu-village/taskmate/issues/62) with the Source candidate slice in [Issue #61](https://github.com/tempu-village/taskmate/issues/61), is accepted but not implemented. It proposes replacing each new `Active/<session>/Review.md` plus candidate-note set with one versioned Source candidate Proposal JSON and a TaskMate-native Review View. The proposed UI keeps complete coverage, supports per-candidate create/merge/exclude/hold decisions, shows merge evidence inside the candidate card, and separates decision selection from formal apply.
 
-Under the RFC, `taskmate-import-*` provenance keeps its meaning but would be written once per Source note after all of its candidates are applied or excluded; partial progress would stay in the Proposal. Existing Active/Archive files would not be migrated, moved, or deleted. The new Review View would not enumerate legacy Markdown reviews. Until the replacement is implemented and verified, the Active/Archive workflow in this Feature remains the current authority. Implementation progress: only the Source candidate Proposal Domain exists so far; there is no staging helper, persistence, or Review View yet.
+Under the RFC, `taskmate-import-*` provenance keeps its meaning but would be written once per Source note after all of its candidates are applied or excluded; partial progress would stay in the Proposal. Existing Active/Archive files would not be migrated, moved, or deleted. The new Review View would not enumerate legacy Markdown reviews. Until the replacement is implemented and verified, the Active/Archive workflow in this Feature remains the current authority. Implementation progress: the Source candidate Proposal Domain and the Task Pilot staging helper (`scripts/source_review.py`) exist; TaskMate cannot yet store decisions, apply candidates, or show a Review View.
 
 ## Related RFCs
 
@@ -75,6 +75,6 @@ Agentが候補一覧とreview planを作り、todo storeが対象探索とproven
 
 [RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md)は[Issue #62](https://github.com/tempu-village/taskmate/issues/62)で追跡し、Source候補部分は[Issue #61](https://github.com/tempu-village/taskmate/issues/61)で実装します。合意済みですが未実装です。新しく作るレビューを、`Active/<session>/Review.md`と候補ノートの組み合わせから、1セッション1つのSource候補Proposal JSONとTaskMate内のReview Viewへ置き換える提案です。候補ごとの作成・統合・除外・保留、カード内の統合差分、判断選択と正式反映の分離を含みます。
 
-RFCでは、`taskmate-import-*`の意味は変えず、そのノートの候補がすべて反映済みか除外になった時点でノートごとに1回だけ書き、途中経過はProposalに残します。既存Active/Archiveファイルは移行・移動・削除せず、新UIでは列挙しません。実装と検証が完了するまでは、上記の現在のActive/Archive方式が正本です。実装の進み具合：今はSource候補ProposalのDomainだけがあり、ステージ用のhelper、保存、Review Viewはまだありません。
+RFCでは、`taskmate-import-*`の意味は変えず、そのノートの候補がすべて反映済みか除外になった時点でノートごとに1回だけ書き、途中経過はProposalに残します。既存Active/Archiveファイルは移行・移動・削除せず、新UIでは列挙しません。実装と検証が完了するまでは、上記の現在のActive/Archive方式が正本です。実装の進み具合：Source候補ProposalのDomainと、Task Pilotのステージ用helper（`scripts/source_review.py`）があります。TaskMateでの判断の保存、候補の反映、Review Viewはまだありません。
 
 IMPORT-01：複数メモの全候補を一つのレビューへまとめ、ステージではTaskを作らない。IMPORT-02：部分承認と残りの判断、再実行で重複しない。IMPORT-03：除外判断とSource変更検出を必須にする。IMPORT-04：過去と今回の関連IDを保つ。自動テストだけではAIの意味的な抽出漏れを証明できず、元メモとの照合も必要です。
