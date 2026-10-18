@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import json
 import re
+import urllib.parse
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -265,8 +266,17 @@ def command_stage(args: argparse.Namespace) -> None:
         "sources": sources, "candidates": candidates,
     }
     todo_store.atomic_write(destination, json.dumps(review, ensure_ascii=False, indent=2) + "\n")
+    uri = "obsidian://taskmate-source-review?" + urllib.parse.urlencode({"vault": args.vault.name, "review": args.review_id})
+    opened, open_error = False, None
+    if args.open_review:
+        try:
+            planning_store.open_review_uri(uri)
+            opened = True
+        except SystemExit as error:
+            open_error = str(error)
     print(json.dumps({
         "reviewId": args.review_id, "path": destination.relative_to(args.vault).as_posix(), "status": "pending",
+        "uri": uri, "opened": opened, "openError": open_error,
         "sources": [{"id": source["id"], "type": source["type"], "name": names[source["id"]]} for source in sources],
         "candidates": [{"id": candidate["id"], "operation": candidate["operation"], "title": candidate["title"]} for candidate in candidates],
     }, ensure_ascii=False, indent=2))
@@ -280,6 +290,7 @@ def parser() -> argparse.ArgumentParser:
     stage = commands.add_parser("stage")
     stage.add_argument("--request", required=True, type=Path)
     stage.add_argument("--review-id", required=True, type=validated_review_id)
+    stage.add_argument("--open-review", action="store_true")
     stage.set_defaults(run=command_stage)
     return result
 
