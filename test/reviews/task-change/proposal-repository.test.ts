@@ -5,7 +5,7 @@ import type { Task } from "../../../src/tasks/domain";
 import { encodeTask, parseTaskMarkdown } from "../../../src/tasks/markdown";
 import { TaskRepository } from "../../../src/tasks/repository";
 import { TaskChangeProposalRepository } from "../../../src/reviews/task-change/proposal-repository";
-import { sha256 } from "../../../src/reviews/task-change/proposal";
+import { sha256 } from "../../../src/shared/sha256";
 import type { TaskChangeProposal } from "../../../src/reviews/task-change/proposal";
 
 class MemoryVault {

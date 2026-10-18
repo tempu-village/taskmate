@@ -76,7 +76,7 @@ Potentially shareable concepts include a stable review-kind discriminator, pendi
 
 Do not combine opening a review, making an in-memory decision, and persisting an application result into one Interface merely because they occur in one workflow. Navigation, UI state, Domain decisions, and persistence change for different reasons.
 
-The current implementation has only Task change review, so it lives in `src/reviews/task-change/` and no `shared` Module exists. A future review kind should be added as a sibling Module; adding it must not require changing the Task change Proposal Domain.
+Task change review lives in `src/reviews/task-change/`. Source candidate review is being added as the sibling `src/reviews/source-candidate/` ([#61](https://github.com/tempu-village/taskmate/issues/61)); so far it has only its Domain, and it neither imports nor changes the Task change Proposal Domain. No `reviews/shared` Module exists because no review contract has yet been proven common. The SHA-256 helper both review kinds use is a generic utility in `src/shared/`, not a review contract.
 
 ## Verification
 
@@ -117,7 +117,7 @@ For a Module-structure change:
 
 interfaceまたはportは、呼び出し側、隠す知識、同じ意味を持つ複数Adapter、削除時に複数callerへ漏れる複雑さを説明できる実在のseamにだけ置きます。Adapterが一つだけなら通常は具象型を保ち、テスト用の内部seamを外部Interfaceへ広げません。
 
-各Review種別はDomain schema、判断、永続化、UI詳細を所有します。`src/reviews/shared/`は、実装済みの複数Reviewが同じ意味で使う契約が現れた場合だけ作ります。`shared`から機能固有Reviewへの依存、Review種別間の依存、異なるProposal schemaの統合は禁止します。現在はTask変更Reviewだけなので`src/reviews/task-change/`へ集約し、`shared`は作りません。
+各Review種別はDomain schema、判断、永続化、UI詳細を所有します。`src/reviews/shared/`は、実装済みの複数Reviewが同じ意味で使う契約が現れた場合だけ作ります。`shared`から機能固有Reviewへの依存、Review種別間の依存、異なるProposal schemaの統合は禁止します。Task変更Reviewは`src/reviews/task-change/`にあります。Source候補Reviewは兄弟Moduleの`src/reviews/source-candidate/`として追加中で（[#61](https://github.com/tempu-village/taskmate/issues/61)）、今はDomainだけがあり、Task変更Proposal Domainをimportも変更もしません。共通と証明されたReview契約はまだないため、`reviews/shared`は作りません。両方のReviewが使うSHA-256の計算は、Review契約ではなく汎用の道具として`src/shared/`に置きます。
 
 構造変更後はrepository指定の全検証に加え、exportのcaller、Domainの依存、`import type`、Review間の依存方向、import cycleを確認します。Module boundary testは`npm test`の一部として、実行時の循環依存、全ソースの既知フォルダーへの所属、Architectureに記録したフォルダー間の依存方向、指定したAdapterから`main.ts`への`import type`だけの参照、`src/tasks/`のrepository以外がObsidianへ依存しないことを自動確認します。Review Module boundary testは、`reviews/shared`からReview種別への依存、Review種別同士の依存、Task変更Proposal DomainからObsidianとReview Adapterへの依存を自動確認します。export、`main.ts`参照以外の`import type`、`src/tasks/`とTask変更Proposal Domain以外のDomainファイルの依存は自動確認の対象外なので、レビューで確認します。新しいフォルダーやReview種別を追加するときは、Module boundary testのフォルダー規則とArchitectureを一緒に更新します。
 
