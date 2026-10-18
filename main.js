@@ -6947,13 +6947,15 @@ function splitLines(text) {
   return result;
 }
 
-// src/reviews/task-change/proposal.ts
-var TASK_CHANGE_PROPOSAL_SCHEMA_VERSION = 1;
+// src/shared/sha256.ts
 async function sha256(content) {
   const bytes = new TextEncoder().encode(content);
   const digest = await globalThis.crypto.subtle.digest("SHA-256", bytes);
   return [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, "0")).join("");
 }
+
+// src/reviews/task-change/proposal.ts
+var TASK_CHANGE_PROPOSAL_SCHEMA_VERSION = 1;
 async function buildProposalReview(proposal) {
   validateProposalShape(proposal);
   const tasks = [];
