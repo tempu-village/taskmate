@@ -1,6 +1,6 @@
 # Source candidate JSON review (in development)
 
-This workflow replaces the staged `Active/<session>/Review.md` import described in [import-workflow.md](import-workflow.md) and [proposal-workflow.md](proposal-workflow.md). It is not usable end to end yet: TaskMate cannot open or apply these reviews until its Source candidate Review View ships ([#61](https://github.com/tempu-village/taskmate/issues/61)). Use it only when the user explicitly asks to test it; otherwise keep using the staged import workflow.
+This workflow replaces the staged `Active/<session>/Review.md` import described in [import-workflow.md](import-workflow.md) and [proposal-workflow.md](proposal-workflow.md). It is still in development ([#61](https://github.com/tempu-village/taskmate/issues/61)): TaskMate can open these reviews, record decisions and formally apply them, but candidates cannot be edited in TaskMate yet. Use it only when the user explicitly asks to test it; otherwise keep using the staged import workflow.
 
 ## Stage a review
 
@@ -29,7 +29,7 @@ For every Source, list its complete statement inventory: every statement that co
 ```
 
 ```bash
-python3 scripts/source_review.py --vault <vault> stage --request <request.json> --review-id source-review-<id>
+python3 scripts/source_review.py --vault <vault> stage --request <request.json> --review-id source-review-<id> --open-review
 ```
 
 The helper writes `<proposalFolder>/<review-id>.json` and nothing else. It refuses to stage when:
@@ -40,3 +40,5 @@ The helper writes `<proposalFolder>/<review-id>.json` and nothing else. It refus
 - a merge target is completed, changed since `inspect`, or would not actually change, or a merge names a field other than title, date, priority, labels, project, Steps, or Notes.
 
 It records the note hash used for provenance, the conversation snapshot hash, complete before/after Markdown for merges, and every candidate as pending. Report the review ID, Sources, and candidates. Decisions and formal apply happen only in TaskMate.
+
+The output includes `uri`, the TaskMate-owned `obsidian://taskmate-source-review` link for the review. On macOS, Windows, and Linux, `--open-review` invokes it directly through the operating system, as `propose --open-review` does. The review is already saved before opening, so a launch failure does not fail the command: it sets `opened` to false and reports `openError`. Then give the user the review ID; the review is listed under TaskMate's Open Source candidate reviews command.

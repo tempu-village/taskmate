@@ -115,6 +115,8 @@ class SourceReviewTest(unittest.TestCase):
 
         self.assertEqual(self.tree(), before)
         self.assertEqual(result["path"], "TaskMate/Proposals/source-review-sync.json")
+        self.assertEqual(result["uri"], f"obsidian://taskmate-source-review?vault={self.vault.name}&review=source-review-sync")
+        self.assertEqual((result["opened"], result["openError"]), (False, None))
         self.assertFalse((self.vault / "TaskMate" / "Proposals" / "Active").exists())
         review = json.loads((self.vault / result["path"]).read_text(encoding="utf-8"))
         self.assertEqual((review["schemaVersion"], review["reviewType"], review["status"], review["health"], review["revision"]), (1, "source-candidate", "pending", "ok", 1))
