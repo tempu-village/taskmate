@@ -297,6 +297,16 @@ export function planFormalApply(proposal: SourceCandidateProposal): FormalApplyP
   return plan;
 }
 
+// The before and after Task fields of a merge target, in the same shape as a Task draft.
+export function mergeTargetFields(candidate: SourceCandidate): { before: CandidateTaskDraft; after: CandidateTaskDraft } | null {
+  const target = candidate.mergeTarget;
+  if (!target) return null;
+  return {
+    before: taskFields(requiredTask(target.path, target.beforeMarkdown, target.taskId)),
+    after: taskFields(requiredTask(target.path, target.afterMarkdown, target.taskId))
+  };
+}
+
 export function noteSourceCompletion(proposal: SourceCandidateProposal): NoteSourceCompletion[] {
   return proposal.sources.flatMap((source) => {
     if (source.type !== "note") return [];
@@ -387,6 +397,10 @@ function mergeValue(task: Task, field: MergeField): MergeValue {
     case "steps": return task.steps;
     case "notes": return task.notes;
   }
+}
+
+function taskFields(task: Task): CandidateTaskDraft {
+  return { title: task.title, date: task.date, priority: task.priority, labels: [...task.labels], project: task.projectId, steps: structuredClone(task.steps), notes: task.notes };
 }
 
 function requiredTask(path: string, markdown: string, taskId: string): Task {

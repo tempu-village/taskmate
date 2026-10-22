@@ -185,6 +185,14 @@ $taskpilot Find work for a 30-minute phone-only break.
 
 Task Pilot writes proposals under `TaskMate/Proposals/Active` and does not create canonical tasks at this stage. Review every candidate in the conversation and explicitly approve, revise, or exclude it. Approved and revised proposals become tasks. The completed review moves to `TaskMate/Proposals/Archive` with visible and machine-readable decision markers and remains there until you delete it manually.
 
+You can instead review the candidates in TaskMate. Ask Task Pilot to stage the review for TaskMate:
+
+```text
+$taskpilot Stage a Source candidate review of the selected notes and open it in TaskMate.
+```
+
+Task Pilot saves one review file in the proposal folder and opens it in TaskMate; you can also run **TaskMate: Open Source candidate reviews**. Each candidate is a card that quotes its source sentences. Edit a card when needed, choose to create, merge, exclude, or hold it, and then select **Apply decisions…**. TaskMate changes no Task before you confirm, asks for an extra confirmation for merges whose diff you did not open, and records the import on a source note once all of its candidates are applied. Completed reviews move to `TaskMate/Proposals/History`. Reviews already in `TaskMate/Proposals/Active` are finished in the conversation as before.
+
 Backlog changes are also shown before writing. Capacity plans are read-only, use a visible 20% default buffer and upper effort estimates, and never add Task statuses or change Manual order. “Do later” removes the date instead of adding a Pending or Waiting state.
 
 Change the proposal location under **Settings → TaskMate → Proposal folder** when needed. The proposal folder is an approval boundary, not a security sandbox, and does not expand the source-note allowlist.

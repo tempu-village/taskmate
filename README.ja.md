@@ -3,7 +3,7 @@
 [English](README.md) | 日本語
 
 <!-- translation-status: ai-translated -->
-<!-- translation-source-sha256: f5b3123fa6b6d24bfb12468915d79acbc5360d2145604e097273e081a6aff0f4 -->
+<!-- translation-source-sha256: 73544d42f19b534ff5e3cc0255abbbb6a8f05712a4383b418830562a49ea143a -->
 
 > 翻訳状態：`ai-translated`
 >
@@ -191,6 +191,14 @@ $taskpilot Find work for a 30-minute phone-only break.
 ```
 
 Task Pilotは`TaskMate/Proposals/Active`へ提案を書き込み、この段階では正式なタスクを作成しません。会話ですべての候補を確認し、承認、修正、除外のいずれかを明示的に判断します。承認または修正した提案はタスクになります。完了した確認は、人が読める目印と機械可読な判断情報を付けて`TaskMate/Proposals/Archive`へ移動し、手動で削除するまで残ります。
+
+代わりに、候補をTaskMateの画面で確認することもできます。TaskMate用のレビューを作るようTask Pilotに依頼します。
+
+```text
+$taskpilot Stage a Source candidate review of the selected notes and open it in TaskMate.
+```
+
+Task Pilotは提案フォルダへレビューのファイルを1つ保存し、TaskMateで開きます。**TaskMate: Source候補レビューを開く**からも開けます。候補はそれぞれ、元の文を引用したカードになります。必要ならカードを編集し、作成、統合、除外、保留のいずれかを選んでから、**判断を反映…**を選びます。TaskMateは確定するまでタスクを変更せず、差分を開いていない統合には追加の確認を求め、ソースノートの候補がすべて反映されたときにそのノートへ取り込み履歴を記録します。完了したレビューは`TaskMate/Proposals/History`へ移動します。既に`TaskMate/Proposals/Active`にある確認は、これまでどおり会話で完了させます。
 
 バックログ変更も書き込み前に提示します。時間ベース計画は読み取り専用で、表示される初期20%の余白と所要時間の上限を使い、新しいTask状態やManual orderの変更を行いません。「後で」はPendingやWaitingを追加せず、日付を外します。
 
