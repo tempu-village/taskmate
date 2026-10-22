@@ -2,7 +2,7 @@
 
 Read this reference whenever existing Obsidian notes should become TaskMate tasks.
 
-A JSON-based replacement is in development in [source-review-workflow.md](source-review-workflow.md). Do not use it unless the user explicitly asks to test it.
+When the user asks to review the candidates in TaskMate instead of the conversation, follow [source-review-workflow.md](source-review-workflow.md) after discovering and selecting Sources here. Otherwise keep the staged workflow below; it remains the default until the TaskMate review replaces it.
 
 ## Discover eligible notes
 

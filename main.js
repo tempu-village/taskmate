@@ -47,8 +47,8 @@ function splitStepDeadline(rawText) {
   }
   return { text: text2, date };
 }
-function normalizeTaskSteps(steps) {
-  return steps.map((step) => {
+function normalizeTaskSteps(steps2) {
+  return steps2.map((step) => {
     const parsed = splitStepDeadline(step.text.replace(/\r?\n/g, " ").trim());
     return { text: parsed.text, completed: step.completed, date: step.date && isCalendarDate(step.date) ? step.date : parsed.date };
   }).filter((step) => step.text.length > 0);
@@ -61,7 +61,7 @@ function parseTaskBody(body) {
   const notesHeading = lines.findIndex((line, index2) => index2 > stepsHeading && line.trim() === "## Notes");
   const sectionEnd = notesHeading >= 0 ? notesHeading : lines.findIndex((line, index2) => index2 > stepsHeading && /^##\s+/.test(line));
   const end = sectionEnd >= 0 ? sectionEnd : lines.length;
-  const steps = [];
+  const steps2 = [];
   const remainder = [];
   for (const line of lines.slice(stepsHeading + 1, end)) {
     const checkbox = line.match(STEP_LINE);
@@ -71,14 +71,14 @@ function parseTaskBody(body) {
       continue;
     }
     const parsed = splitStepDeadline(rawText);
-    steps.push({ text: parsed.text, completed: checkbox[1].toLowerCase() === "x", date: parsed.date });
+    steps2.push({ text: parsed.text, completed: checkbox[1].toLowerCase() === "x", date: parsed.date });
   }
   const before = lines.slice(0, stepsHeading).join("\n").trim();
   const after = notesHeading >= 0 ? lines.slice(notesHeading + 1).join("\n").trim() : "";
-  return { steps, notes: [before, after].filter(Boolean).join("\n\n"), stepSectionRemainder: remainder.join("\n").trim() };
+  return { steps: steps2, notes: [before, after].filter(Boolean).join("\n\n"), stepSectionRemainder: remainder.join("\n").trim() };
 }
-function encodeTaskBody(steps, notes, stepSectionRemainder = "") {
-  const normalized = normalizeTaskSteps(steps);
+function encodeTaskBody(steps2, notes, stepSectionRemainder = "") {
+  const normalized = normalizeTaskSteps(steps2);
   const remainder = stepSectionRemainder.trim();
   const trimmedNotes = notes.trim();
   if (normalized.length === 0 && !remainder) return trimmedNotes;
@@ -875,9 +875,9 @@ function taskDateSuggestions(today = todayKey()) {
 }
 
 // src/labels/label-suggestions.ts
-function normalizeLabels(labels) {
+function normalizeLabels(labels2) {
   const result = [];
-  for (const raw of labels) {
+  for (const raw of labels2) {
     const label = raw.trim().replace(/^#/, "");
     if (label && !result.includes(label)) result.push(label);
   }
@@ -908,11 +908,11 @@ function shouldCommitLabelOnEnter(key, composing, keyCode = 0) {
 
 // src/labels/label-summary.ts
 var COMPACT_LABEL_LIMIT = 3;
-function summarizeLabels(labels, limit = COMPACT_LABEL_LIMIT) {
+function summarizeLabels(labels2, limit = COMPACT_LABEL_LIMIT) {
   const safeLimit = Math.max(0, limit);
   return {
-    visible: labels.slice(0, safeLimit),
-    hidden: labels.slice(safeLimit)
+    visible: labels2.slice(0, safeLimit),
+    hidden: labels2.slice(safeLimit)
   };
 }
 
@@ -1011,6 +1011,7 @@ var en = {
   "sourceReview.decisionGroupAria": "Decision for {candidate}",
   "sourceReview.sources": "Sources",
   "sourceReview.conversation": "Conversation {id}",
+  "sourceReview.field.title": "Title",
   "sourceReview.field.date": "Date",
   "sourceReview.field.priority": "Priority",
   "sourceReview.field.labels": "Labels",
@@ -1037,6 +1038,21 @@ var en = {
   "sourceReview.acknowledge": "Apply these {count} merges without viewing their diffs",
   "sourceReview.confirm": "Apply",
   "sourceReview.cancel": "Cancel",
+  "sourceReview.edit": "Edit",
+  "sourceReview.editAria": "Edit {candidate}",
+  "sourceReview.finishEditFirst": "Save or cancel the open edit first",
+  "sourceReview.editOperation": "Operation",
+  "sourceReview.changeReason": "Reason for the change (optional)",
+  "sourceReview.editHelp.labels": "Separate labels with commas",
+  "sourceReview.editHelp.steps": "One Step per line",
+  "sourceReview.editHelp.changeReason": "Shown with each field you changed. If left empty, \u201CEdited in TaskMate\u201D is recorded.",
+  "sourceReview.editedReason": "Edited in TaskMate",
+  "sourceReview.editHelp.noMergeTarget": "Merging into another Task needs a new review from Task Pilot",
+  "sourceReview.editError.required": "Enter a value",
+  "sourceReview.editError.invalidDate": "Enter a date as YYYY-MM-DD",
+  "sourceReview.editError.noChange": "This merge would not change the Task. Change a field or exclude the candidate.",
+  "sourceReview.editConflict": "This candidate changed after you started editing. Cancel and edit it again.",
+  "sourceReview.save": "Save",
   "sourceReview.result": "Applied {applied}, failed {failed}, stale {stale}.",
   "sourceReview.provenanceChanged": "{count} notes changed after review, so their import record was not written.",
   "sourceReview.provenanceFailed": "Could not record the import on {count} notes; it will be retried on the next apply.",
@@ -1319,6 +1335,7 @@ var ja = {
   "sourceReview.decisionGroupAria": "{candidate}\u306E\u5224\u65AD",
   "sourceReview.sources": "Source",
   "sourceReview.conversation": "\u4F1A\u8A71 {id}",
+  "sourceReview.field.title": "\u30BF\u30A4\u30C8\u30EB",
   "sourceReview.field.date": "\u65E5\u4ED8",
   "sourceReview.field.priority": "\u512A\u5148\u5EA6",
   "sourceReview.field.labels": "\u30E9\u30D9\u30EB",
@@ -1345,6 +1362,21 @@ var ja = {
   "sourceReview.acknowledge": "\u5DEE\u5206\u3092\u898B\u305A\u306B\u3053\u306E{count}\u4EF6\u306E\u7D71\u5408\u3092\u53CD\u6620\u3059\u308B",
   "sourceReview.confirm": "\u53CD\u6620\u3059\u308B",
   "sourceReview.cancel": "\u30AD\u30E3\u30F3\u30BB\u30EB",
+  "sourceReview.edit": "\u7DE8\u96C6",
+  "sourceReview.editAria": "{candidate}\u3092\u7DE8\u96C6",
+  "sourceReview.finishEditFirst": "\u5148\u306B\u958B\u3044\u3066\u3044\u308B\u7DE8\u96C6\u3092\u4FDD\u5B58\u3059\u308B\u304B\u30AD\u30E3\u30F3\u30BB\u30EB\u3057\u3066\u304F\u3060\u3055\u3044",
+  "sourceReview.editOperation": "\u64CD\u4F5C",
+  "sourceReview.changeReason": "\u5909\u66F4\u306E\u7406\u7531\uFF08\u4EFB\u610F\uFF09",
+  "sourceReview.editHelp.labels": "\u30E9\u30D9\u30EB\u306F\u30AB\u30F3\u30DE\u3067\u533A\u5207\u308A\u307E\u3059",
+  "sourceReview.editHelp.steps": "1\u884C\u306B1\u3064\u306EStep",
+  "sourceReview.editHelp.changeReason": "\u5909\u3048\u305F\u9805\u76EE\u3054\u3068\u306B\u8868\u793A\u3055\u308C\u307E\u3059\u3002\u7A7A\u6B04\u306A\u3089\u300CTaskMate\u3067\u7DE8\u96C6\u300D\u3068\u8A18\u9332\u3057\u307E\u3059\u3002",
+  "sourceReview.editedReason": "TaskMate\u3067\u7DE8\u96C6",
+  "sourceReview.editHelp.noMergeTarget": "\u5225\u306ETask\u3078\u7D71\u5408\u3059\u308B\u306B\u306F\u3001Task Pilot\u3067\u30EC\u30D3\u30E5\u30FC\u3092\u4F5C\u308A\u76F4\u3057\u3066\u304F\u3060\u3055\u3044",
+  "sourceReview.editError.required": "\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044",
+  "sourceReview.editError.invalidDate": "\u65E5\u4ED8\u306FYYYY-MM-DD\u3067\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044",
+  "sourceReview.editError.noChange": "\u3053\u306E\u7D71\u5408\u3067\u306FTask\u304C\u5909\u308F\u308A\u307E\u305B\u3093\u3002\u9805\u76EE\u3092\u5909\u3048\u308B\u304B\u3001\u5019\u88DC\u3092\u9664\u5916\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
+  "sourceReview.editConflict": "\u7DE8\u96C6\u3092\u59CB\u3081\u305F\u5F8C\u306B\u3053\u306E\u5019\u88DC\u304C\u5909\u308F\u308A\u307E\u3057\u305F\u3002\u30AD\u30E3\u30F3\u30BB\u30EB\u3057\u3066\u3001\u3082\u3046\u4E00\u5EA6\u7DE8\u96C6\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
+  "sourceReview.save": "\u4FDD\u5B58",
   "sourceReview.result": "\u53CD\u6620{applied}\u4EF6\u3001\u5931\u6557{failed}\u4EF6\u3001\u53E4\u304F\u306A\u3063\u305F\u3082\u306E{stale}\u4EF6\u3002",
   "sourceReview.provenanceChanged": "{count}\u4EF6\u306E\u30CE\u30FC\u30C8\u306F\u30EC\u30D3\u30E5\u30FC\u5F8C\u306B\u5909\u66F4\u3055\u308C\u305F\u305F\u3081\u3001\u53D6\u308A\u8FBC\u307F\u5C65\u6B74\u3092\u66F8\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002",
   "sourceReview.provenanceFailed": "{count}\u4EF6\u306E\u30CE\u30FC\u30C8\u306B\u53D6\u308A\u8FBC\u307F\u5C65\u6B74\u3092\u66F8\u3051\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u6B21\u306E\u53CD\u6620\u3067\u3082\u3046\u4E00\u5EA6\u66F8\u304D\u307E\u3059\u3002",
@@ -1589,12 +1621,12 @@ function groupOrder(id) {
   return 27;
 }
 function availableFilterLabels(tasks, includeCompleted) {
-  const labels = [];
+  const labels2 = [];
   for (const task of tasks) {
     if (!includeCompleted && task.completed) continue;
-    labels.push(...task.labels);
+    labels2.push(...task.labels);
   }
-  return normalizeLabels(labels);
+  return normalizeLabels(labels2);
 }
 function initialLabelPickerSelection(selectedLabels, availableLabels, preserveUnavailable) {
   const selected = normalizeLabels(selectedLabels);
@@ -1602,10 +1634,10 @@ function initialLabelPickerSelection(selectedLabels, availableLabels, preserveUn
   const available = new Set(normalizeLabels(availableLabels));
   return selected.filter((label) => available.has(label));
 }
-function buildLabelGroups(labels, query, locale) {
+function buildLabelGroups(labels2, query, locale) {
   const needle = query.trim().toLocaleLowerCase(locale);
   const grouped = /* @__PURE__ */ new Map();
-  normalizeLabels(labels).filter((label) => !needle || label.toLocaleLowerCase(locale).includes(needle)).forEach((label) => {
+  normalizeLabels(labels2).filter((label) => !needle || label.toLocaleLowerCase(locale).includes(needle)).forEach((label) => {
     const id = groupId(label);
     grouped.set(id, [...grouped.get(id) ?? [], label]);
   });
@@ -1751,11 +1783,11 @@ var LabelPickerModal = class extends import_obsidian4.Modal {
     this.resultsEl.createEl("h3", { text: this.groupLabel(active.id) });
     active.labels.forEach((label) => this.renderLabelRow(label));
   }
-  renderSection(title, labels) {
-    if (!this.resultsEl || labels.length === 0) return;
+  renderSection(title, labels2) {
+    if (!this.resultsEl || labels2.length === 0) return;
     const section = this.resultsEl.createDiv({ cls: "taskmate-label-picker-section" });
     section.createEl("h3", { text: title });
-    labels.forEach((label) => this.renderLabelRow(label, section));
+    labels2.forEach((label) => this.renderLabelRow(label, section));
   }
   renderLabelRow(label, container = this.resultsEl) {
     if (!container) return;
@@ -1763,13 +1795,13 @@ var LabelPickerModal = class extends import_obsidian4.Modal {
     const selected = this.selectedLabels.includes(label);
     const favorite = this.favoriteLabels.includes(label);
     const row = container.createDiv({ cls: "taskmate-label-picker-row" });
-    const select = row.createEl("button", {
+    const select2 = row.createEl("button", {
       cls: `taskmate-label-picker-select${selected ? " is-selected" : ""}`,
       attr: { "aria-pressed": String(selected) }
     });
-    if (selected) select.createSpan({ text: "\u2713", cls: "taskmate-label-picker-check", attr: { "aria-hidden": "true" } });
-    select.createSpan({ text: label });
-    select.addEventListener("click", () => {
+    if (selected) select2.createSpan({ text: "\u2713", cls: "taskmate-label-picker-check", attr: { "aria-hidden": "true" } });
+    select2.createSpan({ text: label });
+    select2.addEventListener("click", () => {
       this.selectedLabels = selected ? this.selectedLabels.filter((item) => item !== label) : [...this.selectedLabels, label].slice(0, 500);
       this.renderPicker();
     });
@@ -2144,9 +2176,9 @@ var BulkTaskModal = class extends import_obsidian5.Modal {
     };
     const refresh = () => {
       editor.querySelectorAll("[data-taskmate-label-chip], .taskmate-label-overflow-toggle").forEach((element3) => element3.remove());
-      const labels = labelsNow();
-      const summary = summarizeLabels(labels);
-      for (const label of expanded ? labels : summary.visible) {
+      const labels2 = labelsNow();
+      const summary = summarizeLabels(labels2);
+      for (const label of expanded ? labels2 : summary.visible) {
         const assigned = this.tasks.filter((task) => task.labels.includes(label)).length;
         const partial = assigned > 0 && assigned < this.tasks.length && !this.changes.addLabels.includes(label);
         const chip = document.createElement("span");
@@ -2274,8 +2306,8 @@ async function failedTaskWrites(tasks, write) {
 
 // src/task-list/bulk-task-actions.ts
 function buildBulkTaskPatch(task, changes) {
-  const labels = task.labels.filter((label) => !changes.removeLabels.includes(label)).concat(changes.addLabels.filter((label) => !task.labels.includes(label))).slice(0, 500);
-  const patch = { labels };
+  const labels2 = task.labels.filter((label) => !changes.removeLabels.includes(label)).concat(changes.addLabels.filter((label) => !task.labels.includes(label))).slice(0, 500);
+  const patch = { labels: labels2 };
   if ("date" in changes) patch.date = changes.date;
   if ("projectId" in changes) patch.projectId = changes.projectId;
   if ("priority" in changes) patch.priority = changes.priority;
@@ -2321,8 +2353,8 @@ var TaskFilterModal = class extends import_obsidian6.Modal {
       });
       refresh();
     }));
-    const labels = new import_obsidian6.Setting(this.contentEl).setName(t("filter.labels")).setDesc(t("filter.labelsDescription"));
-    const chooseLabels = labels.controlEl.createEl("button", { cls: "taskmate-label-picker-open" });
+    const labels2 = new import_obsidian6.Setting(this.contentEl).setName(t("filter.labels")).setDesc(t("filter.labelsDescription"));
+    const chooseLabels = labels2.controlEl.createEl("button", { cls: "taskmate-label-picker-open" });
     const renderLabelChoice = () => {
       chooseLabels.textContent = this.draft.labels.length > 0 ? t("filter.selectedLabelCount", { count: this.draft.labels.length }) : t("filter.chooseLabels");
     };
@@ -2408,22 +2440,22 @@ function buildManagedLabels(tasks, recentLabels, favoriteLabels) {
   for (const task of tasks) {
     for (const label of normalizeLabels(task.labels)) counts.set(label, (counts.get(label) ?? 0) + 1);
   }
-  const labels = normalizeLabels([...counts.keys(), ...recentLabels, ...favoriteLabels]);
-  return labels.map((label) => ({
+  const labels2 = normalizeLabels([...counts.keys(), ...recentLabels, ...favoriteLabels]);
+  return labels2.map((label) => ({
     label,
     taskCount: counts.get(label) ?? 0,
     storedOnly: !counts.has(label)
   }));
 }
 function normalizeManagedLabel(value) {
-  const labels = normalizeLabels(value.split(","));
-  return labels.length === 1 ? labels[0] : null;
+  const labels2 = normalizeLabels(value.split(","));
+  return labels2.length === 1 ? labels2[0] : null;
 }
-function renameLabelValues(labels, from, to) {
-  return normalizeLabels([...labels].map((label) => label === from ? to : label));
+function renameLabelValues(labels2, from, to) {
+  return normalizeLabels([...labels2].map((label) => label === from ? to : label));
 }
-function removeLabelValue(labels, label) {
-  return normalizeLabels(labels).filter((item) => item !== label);
+function removeLabelValue(labels2, label) {
+  return normalizeLabels(labels2).filter((item) => item !== label);
 }
 
 // src/labels/label-manager-modal.ts
@@ -2459,13 +2491,13 @@ var LabelManagerModal = class extends import_obsidian8.Modal {
     if (!this.resultsEl) return;
     const { t, locale } = this.options.i18n;
     const needle = this.query.trim().toLocaleLowerCase(locale);
-    const labels = this.options.labels.filter((item) => item.label.toLocaleLowerCase(locale).includes(needle)).sort((left, right) => compareDisplayText(left.label, right.label, locale));
+    const labels2 = this.options.labels.filter((item) => item.label.toLocaleLowerCase(locale).includes(needle)).sort((left, right) => compareDisplayText(left.label, right.label, locale));
     this.resultsEl.empty();
-    if (labels.length === 0) {
+    if (labels2.length === 0) {
       this.resultsEl.createDiv({ text: t("labelManager.empty"), cls: "taskmate-empty-compact" });
       return;
     }
-    for (const item of labels) this.renderRow(item);
+    for (const item of labels2) this.renderRow(item);
   }
   renderRow(item) {
     if (!this.resultsEl) return;
@@ -2538,10 +2570,10 @@ var LabelManagerModal = class extends import_obsidian8.Modal {
 
 // src/labels/label-maintenance.ts
 function renameLabelAcrossTasks(repository, tasks, preferences, from, to) {
-  return changeLabelAcrossTasks(repository, tasks, preferences, from, (labels) => renameLabelValues(labels, from, to));
+  return changeLabelAcrossTasks(repository, tasks, preferences, from, (labels2) => renameLabelValues(labels2, from, to));
 }
 function removeLabelAcrossTasks(repository, tasks, preferences, label) {
-  return changeLabelAcrossTasks(repository, tasks, preferences, label, (labels) => removeLabelValue(labels, label));
+  return changeLabelAcrossTasks(repository, tasks, preferences, label, (labels2) => removeLabelValue(labels2, label));
 }
 async function changeLabelAcrossTasks(repository, tasks, preferences, label, change) {
   const affected = tasks.filter((task) => task.labels.includes(label));
@@ -4854,19 +4886,19 @@ function renderRow(list, row, selectionMode, copy, signal, dispatch) {
     className: `taskmate-priority taskmate-priority-${row.priority}`
   });
   if (row.projectName) appendElement(metadata, "span", { text: row.projectName });
-  const labels = summarizeLabels(row.labels);
-  labels.visible.forEach((label) => appendElement(metadata, "span", { text: `#${label}` }));
-  if (labels.hidden.length > 0) {
+  const labels2 = summarizeLabels(row.labels);
+  labels2.visible.forEach((label) => appendElement(metadata, "span", { text: `#${label}` }));
+  if (labels2.hidden.length > 0) {
     const extra = appendElement(metadata, "span", { className: "taskmate-extra-labels" });
     extra.hidden = true;
-    labels.hidden.forEach((label) => appendElement(extra, "span", { text: `#${label}` }));
+    labels2.hidden.forEach((label) => appendElement(extra, "span", { text: `#${label}` }));
     const toggle = appendElement(metadata, "button", {
       className: "taskmate-label-overflow-toggle",
-      text: copy.moreLabels(labels.hidden.length),
+      text: copy.moreLabels(labels2.hidden.length),
       attributes: {
         type: "button",
         "aria-expanded": "false",
-        "aria-label": copy.moreLabelsAriaLabel(labels.hidden.length)
+        "aria-label": copy.moreLabelsAriaLabel(labels2.hidden.length)
       }
     });
     toggle.addEventListener("click", (event) => {
@@ -4874,8 +4906,8 @@ function renderRow(list, row, selectionMode, copy, signal, dispatch) {
       const expanded = toggle.getAttribute("aria-expanded") === "true";
       extra.hidden = expanded;
       toggle.setAttribute("aria-expanded", String(!expanded));
-      toggle.setAttribute("aria-label", expanded ? copy.moreLabelsAriaLabel(labels.hidden.length) : copy.hideExtraLabels);
-      toggle.textContent = expanded ? copy.moreLabels(labels.hidden.length) : copy.hideExtraLabels;
+      toggle.setAttribute("aria-label", expanded ? copy.moreLabelsAriaLabel(labels2.hidden.length) : copy.hideExtraLabels);
+      toggle.textContent = expanded ? copy.moreLabels(labels2.hidden.length) : copy.hideExtraLabels;
     }, { signal });
   }
 }
@@ -5042,9 +5074,9 @@ function normalizeTaskTitleInput(value) {
 }
 
 // src/tasks/task-steps.ts
-function moveTaskStep(steps, from, to) {
-  const reordered = steps.map((step) => ({ ...step }));
-  if (from < 0 || from >= steps.length || to < 0 || to >= steps.length || from === to) return reordered;
+function moveTaskStep(steps2, from, to) {
+  const reordered = steps2.map((step) => ({ ...step }));
+  if (from < 0 || from >= steps2.length || to < 0 || to >= steps2.length || from === to) return reordered;
   const [moved2] = reordered.splice(from, 1);
   reordered.splice(to, 0, moved2);
   return reordered;
@@ -5742,7 +5774,7 @@ var TodoListView = class extends import_obsidian13.ItemView {
       projects: plugin.projects,
       i18n: () => plugin.i18n(),
       labelOptions: (tasks) => this.labelEditingOptions(tasks),
-      rememberLabels: (labels) => this.rememberLabels(labels),
+      rememberLabels: (labels2) => this.rememberLabels(labels2),
       refresh: () => this.requestRender()
     });
   }
@@ -6232,13 +6264,13 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
   }
   async openLabelManager() {
     const tasks = await this.plugin.repository.list();
-    const labels = buildManagedLabels(
+    const labels2 = buildManagedLabels(
       tasks,
       this.plugin.settings.recentLabels ?? [],
       this.plugin.settings.favoriteLabels ?? []
     );
     new LabelManagerModal(this.app, {
-      labels,
+      labels: labels2,
       i18n: this.plugin.i18n(),
       onRename: async (from, to) => this.renameManagedLabel(tasks, from, to),
       onDelete: async (label) => this.deleteManagedLabel(tasks, label)
@@ -6344,8 +6376,8 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
       allLabels: availableFilterLabels(tasks, true).sort((a, b) => compareDisplayText(a, b, i18n.locale)).slice(0, 500),
       recentLabels: this.plugin.settings.recentLabels ?? [],
       favoriteLabels: this.plugin.settings.favoriteLabels ?? [],
-      onFavoriteLabelsChange: async (labels) => {
-        this.plugin.settings.favoriteLabels = labels;
+      onFavoriteLabelsChange: async (labels2) => {
+        this.plugin.settings.favoriteLabels = labels2;
         await this.plugin.saveSettings();
       }
     };
@@ -6358,9 +6390,9 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
       this.requestRender();
     }).open();
   }
-  async rememberLabels(labels) {
+  async rememberLabels(labels2) {
     const current = this.plugin.settings.recentLabels ?? [];
-    const next = recordRecentLabels(current, labels);
+    const next = recordRecentLabels(current, labels2);
     if (next.length === current.length && next.every((label, index2) => label === current[index2])) return;
     this.plugin.settings.recentLabels = next;
     await this.plugin.saveSettings();
@@ -7319,14 +7351,14 @@ function validateProposalShape(value) {
     if (typeof task.beforeSha256 !== "string" || !/^[a-f0-9]{64}$/.test(task.beforeSha256)) throw new Error("Invalid beforeSha256");
     if (!Array.isArray(task.changes) || task.changes.length === 0) throw new Error("Proposal task requires changes");
     taskIds.add(task.taskId);
-    const taskFields = /* @__PURE__ */ new Set();
+    const taskFields2 = /* @__PURE__ */ new Set();
     for (const change of task.changes) {
       if (!isRecord(change) || !isIdentifier(change.id, /^C-[0-9]{2,}$/) || changeIds.has(change.id)) throw new Error("Invalid or duplicate change id");
       if (!isChangeField(change.field)) throw new Error("Invalid change field");
-      if (taskFields.has(change.field)) throw new Error("Duplicate change field");
+      if (taskFields2.has(change.field)) throw new Error("Duplicate change field");
       if (typeof change.reason !== "string" || !change.reason.trim()) throw new Error("Change reason is required");
       changeIds.add(change.id);
-      taskFields.add(change.field);
+      taskFields2.add(change.field);
     }
   }
 }
@@ -7934,6 +7966,32 @@ ${revision}`);
   const variant = (parseInt(hex[16], 16) & 3 | 8).toString(16);
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-8${hex.slice(13, 16)}-${variant}${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }
+function editCandidate(proposal, candidateId, edit, now) {
+  return updateCandidate(proposal, candidateId, now, (candidate) => {
+    if (candidate.application.status === "applied") throw new Error(`Candidate ${candidateId} is already applied`);
+    const base = {
+      ...candidate,
+      title: requiredText(edit.title ?? candidate.title, "title"),
+      revision: candidate.revision + 1,
+      decision: "pending",
+      decisionRevision: null,
+      decidedAt: null,
+      diffViewedRevision: null,
+      health: "ok",
+      healthReason: null,
+      application: emptyApplication()
+    };
+    if (edit.operation === "create") {
+      validateTaskDraft(edit.taskDraft, `${candidateId}.taskDraft`);
+      return { ...base, operation: "create", taskDraft: structuredClone(edit.taskDraft) };
+    }
+    if (edit.operation === "exclude") {
+      return { ...base, operation: "exclude", exclusionReason: requiredText(edit.exclusionReason, "exclusionReason") };
+    }
+    if (!candidate.mergeTarget) throw new Error(`Candidate ${candidateId} has no merge target evidence from Task Pilot`);
+    return { ...base, operation: "merge", mergeTarget: regeneratedMergeTarget(candidate.mergeTarget, edit.values, requiredText(edit.reason, "reason"), now) };
+  });
+}
 function decideCandidate(proposal, candidateId, decision, now) {
   return updateCandidate(proposal, candidateId, now, (candidate) => {
     if (candidate.application.status === "applied") throw new Error(`Candidate ${candidateId} is already applied`);
@@ -8008,6 +8066,14 @@ function planFormalApply(proposal) {
   plan.requiresAcknowledgement = plan.unviewedMerges.length > 0;
   return plan;
 }
+function mergeTargetFields(candidate) {
+  const target = candidate.mergeTarget;
+  if (!target) return null;
+  return {
+    before: taskFields(requiredTask(target.path, target.beforeMarkdown, target.taskId)),
+    after: taskFields(requiredTask(target.path, target.afterMarkdown, target.taskId))
+  };
+}
 function noteSourceCompletion(proposal) {
   return proposal.sources.flatMap((source) => {
     if (source.type !== "note") return [];
@@ -8035,6 +8101,58 @@ function updateCandidate(proposal, candidateId, now, update) {
   next.status = derivedStatus(next);
   return next;
 }
+function regeneratedMergeTarget(target, values, reason, now) {
+  const before = requiredTask(target.path, target.beforeMarkdown, target.taskId);
+  const current = requiredTask(target.path, target.afterMarkdown, target.taskId);
+  const after = structuredClone(current);
+  for (const [field, value] of Object.entries(values)) {
+    if (!MERGE_FIELDS.includes(field)) throw new Error(`Merge field ${field} cannot be edited`);
+    assignMergeValue(after, field, value);
+  }
+  after.updatedAt = now;
+  const previousReasons = new Map(target.changes.map((change) => [change.field, change]));
+  const changes = MERGE_FIELDS.flatMap((field) => {
+    const beforeValue = mergeValue(before, field);
+    const afterValue = mergeValue(after, field);
+    if (sameValue2(beforeValue, afterValue)) return [];
+    const previous = previousReasons.get(field);
+    const kept = previous && sameValue2(previous.after, afterValue) ? previous.reason : reason;
+    return [{ field, before: beforeValue, after: afterValue, reason: kept }];
+  });
+  if (changes.length === 0) throw new Error(`Merge into Task ${target.taskId} must change at least one field`);
+  return { ...target, afterMarkdown: encodeTaskPreservingProperties(after, target.beforeMarkdown), changes };
+}
+function assignMergeValue(task, field, value) {
+  switch (field) {
+    case "title":
+      task.title = requiredText(value, "title");
+      return;
+    case "date":
+      if (value !== null && !(typeof value === "string" && DATE.test(value))) throw new Error("Merge date must be YYYY-MM-DD or null");
+      task.date = value;
+      return;
+    case "priority":
+      if (value !== null && value !== 1 && value !== 2 && value !== 3) throw new Error("Merge priority must be 1, 2, 3 or null");
+      task.priority = value;
+      return;
+    case "labels":
+      if (!isStringArray(value)) throw new Error("Merge labels must be strings");
+      task.labels = [...value];
+      return;
+    case "project":
+      if (value !== null && typeof value !== "string") throw new Error("Merge project must be a string or null");
+      task.projectId = value;
+      return;
+    case "steps":
+      validateSteps(value, "steps");
+      task.steps = structuredClone(value);
+      return;
+    case "notes":
+      if (typeof value !== "string") throw new Error("Merge notes must be a string");
+      task.notes = value;
+      return;
+  }
+}
 function mergeValue(task, field) {
   switch (field) {
     case "title":
@@ -8052,6 +8170,9 @@ function mergeValue(task, field) {
     case "notes":
       return task.notes;
   }
+}
+function taskFields(task) {
+  return { title: task.title, date: task.date, priority: task.priority, labels: [...task.labels], project: task.projectId, steps: structuredClone(task.steps), notes: task.notes };
 }
 function requiredTask(path, markdown, taskId) {
   const task = parseTaskMarkdown(path, markdown);
@@ -8071,6 +8192,9 @@ function derivedStatus(proposal) {
   if (applied > 0) return "partially-applied";
   const ready = proposal.candidates.every((candidate) => candidate.decision === "approved" && candidate.decisionRevision === candidate.revision && candidate.health === "ok");
   return ready ? "ready-to-apply" : "pending";
+}
+function emptyApplication() {
+  return { status: "not-applied", appliedAt: null, promotedTaskId: null, error: null };
 }
 function sameValue2(left, right) {
   return JSON.stringify(left) === JSON.stringify(right);
@@ -8161,8 +8285,8 @@ function validateCandidate(value, path) {
   if (candidate.taskDraft !== void 0) validateTaskDraft(candidate.taskDraft, `${path}.taskDraft`);
   if (candidate.mergeTarget !== void 0) validateMergeTarget(candidate.mergeTarget, `${path}.mergeTarget`);
   if (candidate.exclusionReason !== void 0) nonEmpty(candidate.exclusionReason, `${path}.exclusionReason`);
-  const required = { create: "taskDraft", merge: "mergeTarget", exclude: "exclusionReason" };
-  const requiredField = required[candidate.operation];
+  const required2 = { create: "taskDraft", merge: "mergeTarget", exclude: "exclusionReason" };
+  const requiredField = required2[candidate.operation];
   if (candidate[requiredField] === void 0) invalid(path, `${candidate.operation} requires ${requiredField}`);
   oneOf(candidate.decision, ["pending", "approved", "hold"], `${path}.decision`);
   optionalRevision(candidate.decisionRevision, `${path}.decisionRevision`);
@@ -8593,9 +8717,126 @@ function summarize2(review) {
 // src/reviews/source-candidate/review-view.ts
 var import_obsidian18 = require("obsidian");
 
+// src/reviews/source-candidate/candidate-edit-form.ts
+var TASK_FIELDS = ["title", "date", "priority", "labels", "project", "steps", "notes"];
+var DATE2 = /^\d{4}-\d{2}-\d{2}$/;
+var CANDIDATE_EDIT_FIELDS = [...TASK_FIELDS, "reason", "exclusionReason"];
+function candidateEditForm(candidate) {
+  const merge = mergeTargetFields(candidate);
+  return {
+    operation: candidate.operation,
+    draft: fieldsForm(candidate.taskDraft ?? emptyDraft(candidate.title)),
+    merge: merge ? fieldsForm(merge.after) : null,
+    reason: "",
+    exclusionReason: candidate.exclusionReason ?? ""
+  };
+}
+function candidateEditFromForm(candidate, form, editedReason) {
+  if (form.operation === "exclude") {
+    const exclusionReason = form.exclusionReason.trim();
+    if (!exclusionReason) return { kind: "invalid", errors: { exclusionReason: "required" } };
+    if (candidate.operation === "exclude" && exclusionReason === candidate.exclusionReason) return { kind: "unchanged" };
+    return { kind: "edit", edit: { operation: "exclude", exclusionReason } };
+  }
+  if (form.operation === "create") {
+    const previous = candidate.taskDraft ?? emptyDraft(candidate.title);
+    const parsed2 = parseFields(form.draft, previous.steps);
+    if ("errors" in parsed2) return { kind: "invalid", errors: parsed2.errors };
+    if (candidate.operation === "create" && sameValue3(parsed2.draft, candidate.taskDraft)) return { kind: "unchanged" };
+    return { kind: "edit", edit: { operation: "create", title: parsed2.draft.title, taskDraft: parsed2.draft } };
+  }
+  const target = mergeTargetFields(candidate);
+  if (!target || !form.merge || !candidate.mergeTarget) throw new Error(`Candidate ${candidate.id} has no merge target evidence from Task Pilot`);
+  const parsed = parseFields(form.merge, target.after.steps);
+  if ("errors" in parsed) return { kind: "invalid", errors: parsed.errors };
+  if (TASK_FIELDS.every((field) => sameValue3(parsed.draft[field], target.before[field]))) return { kind: "invalid", errors: { form: "no-change" } };
+  const values = {};
+  for (const field of TASK_FIELDS) {
+    if (!sameValue3(parsed.draft[field], target.after[field])) Object.assign(values, { [field]: parsed.draft[field] });
+  }
+  if (Object.keys(values).length === 0 && candidate.operation === "merge") return { kind: "unchanged" };
+  return { kind: "edit", edit: { operation: "merge", values, reason: form.reason.trim() || editedReason } };
+}
+function saveCandidateEdit(review, editing, now, editedReason) {
+  const candidate = review.candidates.find((item) => item.id === editing.candidateId);
+  if (!candidate || candidate.revision !== editing.revision || candidate.application.status === "applied" || review.status === "history") return { kind: "conflict" };
+  const result = candidateEditFromForm(candidate, editing.form, editedReason);
+  if (result.kind !== "edit") return result;
+  return { kind: "saved", review: editCandidate(review, candidate.id, result.edit, now) };
+}
+function fieldsForm(draft) {
+  return {
+    title: draft.title,
+    date: draft.date ?? "",
+    priority: draft.priority === null ? "" : String(draft.priority),
+    labels: draft.labels.join(", "),
+    project: draft.project ?? "",
+    steps: draft.steps.map((step) => step.text).join("\n"),
+    notes: draft.notes
+  };
+}
+function parseFields(form, previousSteps) {
+  const errors = {};
+  const title = form.title.trim();
+  if (!title) errors.title = "required";
+  const date = form.date.trim();
+  if (date && !validDate(date)) errors.date = "invalid-date";
+  if (Object.keys(errors).length > 0) return { errors };
+  const priority = form.priority === "1" ? 1 : form.priority === "2" ? 2 : form.priority === "3" ? 3 : null;
+  return {
+    draft: {
+      title,
+      date: date || null,
+      priority,
+      labels: labels(form.labels),
+      project: form.project.trim() || null,
+      steps: steps(form.steps, previousSteps),
+      notes: form.notes
+    }
+  };
+}
+function labels(value) {
+  const result = [];
+  for (const raw of value.split(",")) {
+    const label = raw.trim().replace(/^#/, "");
+    if (label && !result.includes(label)) result.push(label);
+  }
+  return result;
+}
+function steps(value, previous) {
+  const unused = [...previous];
+  return value.split("\n").map((line) => line.trim()).filter(Boolean).map((text2) => {
+    const index2 = unused.findIndex((step2) => step2.text === text2);
+    if (index2 < 0) return { text: text2, completed: false, date: null };
+    const [step] = unused.splice(index2, 1);
+    return { ...step };
+  });
+}
+function validDate(value) {
+  if (!DATE2.test(value)) return false;
+  const date = /* @__PURE__ */ new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+function emptyDraft(title) {
+  return { title, date: null, priority: null, labels: [], project: null, steps: [], notes: "" };
+}
+function sameValue3(left, right) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
 // src/reviews/source-candidate/review-renderer.ts
+var OPERATION_ID = "taskmate-source-edit-operation";
+var FORM_ERROR_ID = "taskmate-source-edit-form-error";
+var OPEN_APPLY_ID = "taskmate-source-review-open-apply";
+var APPLY_TITLE_ID = "taskmate-source-review-apply-title";
+function editFieldId(field) {
+  return `taskmate-source-edit-${field}`;
+}
+function editButtonId(candidateId) {
+  return `taskmate-source-candidate-edit-${candidateId}`;
+}
 function createSourceReviewUiState() {
-  return { expandedDiffs: /* @__PURE__ */ new Set(), applyOpen: false, acknowledged: false };
+  return { expandedDiffs: /* @__PURE__ */ new Set(), applyOpen: false, acknowledged: false, editing: null, focus: null };
 }
 function reduceSourceReviewUiState(state, action) {
   switch (action.type) {
@@ -8606,14 +8847,38 @@ function reduceSourceReviewUiState(state, action) {
       return { ...state, expandedDiffs };
     }
     case "open-apply":
-      return { ...state, applyOpen: true, acknowledged: false };
+      return { ...state, applyOpen: true, acknowledged: false, focus: APPLY_TITLE_ID };
     case "cancel-apply":
-      return { ...state, applyOpen: false, acknowledged: false };
+      return { ...state, applyOpen: false, acknowledged: false, focus: OPEN_APPLY_ID };
     case "set-acknowledged":
       return { ...state, acknowledged: action.acknowledged };
+    case "start-edit":
+      return {
+        ...state,
+        applyOpen: false,
+        acknowledged: false,
+        editing: { candidateId: action.candidateId, revision: action.revision, form: action.form, errors: {} },
+        focus: OPERATION_ID
+      };
+    case "edit-input":
+      return state.editing ? { ...state, editing: { ...state.editing, form: withField(state.editing.form, action.field, action.value) } } : state;
+    case "edit-operation":
+      return state.editing ? { ...state, editing: { ...state.editing, form: { ...state.editing.form, operation: action.operation }, errors: {} }, focus: OPERATION_ID } : state;
+    case "edit-invalid": {
+      if (!state.editing) return state;
+      const first = CANDIDATE_EDIT_FIELDS.find((field) => action.errors[field]);
+      return { ...state, editing: { ...state.editing, errors: action.errors }, focus: first ? editFieldId(first) : FORM_ERROR_ID };
+    }
+    case "cancel-edit":
+      return state.editing ? { ...state, editing: null, focus: editButtonId(state.editing.candidateId) } : state;
     default:
       return state;
   }
+}
+function withField(form, field, value) {
+  if (field === "reason" || field === "exclusionReason") return { ...form, [field]: value };
+  if (form.operation === "merge" && form.merge) return { ...form, merge: { ...form.merge, [field]: value } };
+  return { ...form, draft: { ...form.draft, [field]: value } };
 }
 function renderSourceCandidateReview(container, review, plan, state, copy, dispatch, options = {}) {
   container.replaceChildren();
@@ -8628,10 +8893,12 @@ function renderSourceCandidateReview(container, review, plan, state, copy, dispa
   const summary = element2("p", "taskmate-source-review-summary", container);
   summary.textContent = [review.reviewId, copy.status[review.status], review.health === "ok" ? "" : copy.health[review.health]].filter(Boolean).join(" \xB7 ");
   const list = element2("div", "taskmate-review-files", container);
-  for (const candidate of review.candidates) renderCard(list, review, candidate, state, copy, dispatch, Boolean(options.readOnly));
+  const projects = options.projects ?? [];
+  for (const candidate of review.candidates) renderCard(list, review, candidate, state, copy, dispatch, Boolean(options.readOnly), projects);
   if (!options.readOnly) renderApply(container, plan, state, copy, dispatch);
+  if (state.focus) container.querySelector(`[id="${state.focus}"]`)?.focus();
 }
-function renderCard(parent, review, candidate, state, copy, dispatch, readOnly) {
+function renderCard(parent, review, candidate, state, copy, dispatch, readOnly, projects) {
   const card = element2("section", "taskmate-review-file taskmate-source-candidate", parent);
   card.id = `taskmate-source-candidate-${candidate.id}`;
   card.dataset.operation = candidate.operation;
@@ -8656,15 +8923,21 @@ function renderCard(parent, review, candidate, state, copy, dispatch, readOnly) 
     text(quote, "cite", `${ref.sourceId} \xB7 ${label}`);
     text(quote, "p", ref.statement);
   }
-  if (candidate.operation === "create") renderDraft(card, candidate.taskDraft, copy);
-  else if (candidate.operation === "merge") renderMerge(card, candidate, state, copy, dispatch);
+  const editing = state.editing?.candidateId === candidate.id ? state.editing : null;
+  if (editing) {
+    renderEditForm(card, candidate, editing, copy, dispatch, projects);
+    return;
+  }
+  if (candidate.operation === "create") renderDraft(card, candidate.taskDraft, copy, projects);
+  else if (candidate.operation === "merge") renderMerge(card, candidate, state, copy, dispatch, projects);
   else {
     const reason = element2("p", "taskmate-source-candidate-reason", card);
     text(reason, "strong", `${copy.exclusionReason}: `);
     reason.append(candidate.exclusionReason);
   }
   if (!readOnly && !applied) {
-    const decisions = element2("div", "taskmate-source-candidate-decisions", card);
+    const actions = element2("div", "taskmate-source-candidate-actions", card);
+    const decisions = element2("div", "taskmate-source-candidate-decisions", actions);
     decisions.setAttribute("role", "group");
     decisions.setAttribute("aria-label", copy.decisionGroupAria(candidate.id));
     const choices = [["approved", copy.decide[candidate.operation]], ["hold", copy.decide.hold], ["pending", copy.decide.pending]];
@@ -8675,15 +8948,21 @@ function renderCard(parent, review, candidate, state, copy, dispatch, readOnly) 
       choice.setAttribute("aria-label", copy.decideAria(label, candidate.id));
       decisions.append(choice);
     }
+    const edit = button2(copy.edit, () => dispatch({ type: "start-edit", candidateId: candidate.id, revision: candidate.revision, form: candidateEditForm(candidate) }));
+    edit.id = editButtonId(candidate.id);
+    edit.classList.add("taskmate-source-candidate-edit-button");
+    edit.setAttribute("aria-label", copy.editAria(candidate.id));
+    edit.disabled = state.editing !== null;
+    actions.append(edit);
   }
 }
-function renderDraft(card, draft, copy) {
+function renderDraft(card, draft, copy, projects) {
   const fields = element2("dl", "taskmate-source-candidate-fields", card);
   const rows = [
     ["date", draft.date ?? copy.empty],
-    ["priority", draft.priority === null ? copy.empty : String(draft.priority)],
+    ["priority", draft.priority === null ? copy.empty : copy.priorityValue(draft.priority)],
     ["labels", draft.labels.length ? draft.labels.join(", ") : copy.empty],
-    ["project", draft.project ?? copy.empty],
+    ["project", draft.project === null ? copy.empty : projectName(draft.project, projects)],
     ["notes", draft.notes || copy.empty]
   ];
   for (const [field, value] of rows) {
@@ -8692,20 +8971,21 @@ function renderDraft(card, draft, copy) {
   }
   if (draft.steps.length > 0) {
     text(fields, "dt", copy.fields.steps);
-    const steps = element2("dd", "", fields);
-    const listEl = element2("ul", "taskmate-source-candidate-steps", steps);
+    const steps2 = element2("dd", "", fields);
+    const listEl = element2("ul", "taskmate-source-candidate-steps", steps2);
     for (const step of draft.steps) text(listEl, "li", step.date ? `${step.text} (${step.date})` : step.text);
   }
 }
-function renderMerge(card, candidate, state, copy, dispatch) {
+function renderMerge(card, candidate, state, copy, dispatch, projects) {
   const target = candidate.mergeTarget;
   const block = element2("div", "taskmate-source-candidate-merge", card);
   text(block, "p", copy.mergeTarget(target.title), "taskmate-source-candidate-target");
   for (const change of target.changes) {
     const row = element2("div", "taskmate-review-change is-read-only", block);
-    text(row, "strong", change.field);
+    text(row, "strong", copy.fields[change.field]);
     const details = element2("span", "taskmate-review-change-details", row);
-    text(details, "span", `${formatValue2(change.before)} \u2192 ${formatValue2(change.after)}`, "taskmate-review-values");
+    const format = (value) => change.field === "project" && typeof value === "string" ? projectName(value, projects) : formatValue2(value);
+    text(details, "span", `${format(change.before)} \u2192 ${format(change.after)}`, "taskmate-review-values");
     text(details, "span", change.reason, "taskmate-review-reason");
   }
   const expanded = state.expandedDiffs.has(candidate.id);
@@ -8733,15 +9013,20 @@ function renderApply(container, plan, state, copy, dispatch) {
   const footer = element2("footer", "taskmate-review-footer taskmate-source-review-apply", container);
   if (!state.applyOpen) {
     const open = button2(copy.openApply, () => dispatch({ type: "open-apply" }));
+    open.id = OPEN_APPLY_ID;
     open.classList.add("mod-cta");
-    open.disabled = plan.eligible.length === 0;
-    if (open.disabled) open.title = copy.nothingToApply;
+    open.disabled = plan.eligible.length === 0 || state.editing !== null;
+    if (state.editing) open.title = copy.finishEditFirst;
+    else if (open.disabled) open.title = copy.nothingToApply;
     footer.append(open);
     return;
   }
+  footer.classList.add("is-open");
   const panel = element2("section", "taskmate-source-review-apply-panel", footer);
-  panel.setAttribute("aria-labelledby", "taskmate-source-review-apply-title");
-  text(panel, "h3", copy.applyTitle).id = "taskmate-source-review-apply-title";
+  panel.setAttribute("aria-labelledby", APPLY_TITLE_ID);
+  const title = text(panel, "h3", copy.applyTitle);
+  title.id = APPLY_TITLE_ID;
+  title.tabIndex = -1;
   text(panel, "p", copy.applyCounts(plan.counts));
   if (plan.blocked.length > 0) {
     text(panel, "h4", copy.blockedTitle);
@@ -8765,6 +9050,101 @@ function renderApply(container, plan, state, copy, dispatch) {
   confirm.disabled = plan.eligible.length === 0 || plan.requiresAcknowledgement && !state.acknowledged;
   const cancel = button2(copy.cancel, () => dispatch({ type: "cancel-apply" }));
   actions.append(confirm, cancel);
+}
+function renderEditForm(card, candidate, editing, copy, dispatch, projects) {
+  const form = element2("form", "taskmate-source-candidate-edit", card);
+  form.noValidate = true;
+  form.setAttribute("aria-label", copy.editAria(candidate.id));
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    dispatch({ type: "save-edit" });
+  });
+  if (editing.errors.form) {
+    const error = text(form, "p", copy.editErrors[editing.errors.form], "taskmate-source-candidate-edit-error");
+    error.id = FORM_ERROR_ID;
+    error.tabIndex = -1;
+    error.setAttribute("role", "alert");
+  }
+  const { operation, merge } = editing.form;
+  const operations = merge ? ["create", "merge", "exclude"] : ["create", "exclude"];
+  const operationSelect = select(operations.map((value) => [value, copy.operation[value]]), operation);
+  operationSelect.addEventListener("change", () => dispatch({ type: "edit-operation", operation: operationSelect.value }));
+  editField(form, OPERATION_ID, copy.editOperation, operationSelect, merge ? void 0 : copy.editHelp.noMergeTarget);
+  const control = (name, label, input, help) => {
+    input.addEventListener(input instanceof HTMLSelectElement ? "change" : "input", () => dispatch({ type: "edit-input", field: name, value: input.value }));
+    const error = editing.errors[name];
+    editField(form, editFieldId(name), label, input, help, error ? copy.editErrors[error] : void 0);
+  };
+  if (operation === "exclude") {
+    control("exclusionReason", copy.exclusionReason, required(textArea(editing.form.exclusionReason)));
+  } else {
+    const values = operation === "merge" && merge ? merge : editing.form.draft;
+    control("title", copy.fields.title, required(textInput("text", values.title)));
+    control("date", copy.fields.date, textInput("date", values.date));
+    control("priority", copy.fields.priority, select([["", copy.noPriority], ...[1, 2, 3].map((value) => [String(value), copy.priorityValue(value)])], values.priority));
+    control("labels", copy.fields.labels, textInput("text", values.labels), copy.editHelp.labels);
+    const projectOptions = [["", copy.unassigned], ...projects.map((project) => [project.id, project.name])];
+    if (values.project && !projects.some((project) => project.id === values.project)) projectOptions.push([values.project, values.project]);
+    control("project", copy.fields.project, select(projectOptions, values.project));
+    control("steps", copy.fields.steps, textArea(values.steps), copy.editHelp.steps);
+    control("notes", copy.fields.notes, textArea(values.notes));
+    if (operation === "merge") control("reason", copy.changeReason, textArea(editing.form.reason), copy.editHelp.changeReason);
+  }
+  const actions = element2("div", "taskmate-source-candidate-edit-actions", form);
+  const save2 = element2("button", "mod-cta", actions);
+  save2.type = "submit";
+  save2.textContent = copy.save;
+  actions.append(button2(copy.cancel, () => dispatch({ type: "cancel-edit" })));
+}
+function editField(form, id, label, control, help, error) {
+  const wrapper = element2("div", "taskmate-source-candidate-edit-field", form);
+  const caption = element2("label", "", wrapper);
+  caption.htmlFor = id;
+  caption.textContent = label;
+  control.id = id;
+  wrapper.append(control);
+  const describedBy = [];
+  if (help) {
+    const note = text(wrapper, "p", help, "taskmate-source-candidate-edit-help");
+    note.id = `${id}-help`;
+    describedBy.push(note.id);
+  }
+  if (error) {
+    const message = text(wrapper, "p", error, "taskmate-source-candidate-edit-error");
+    message.id = `${id}-error`;
+    describedBy.push(message.id);
+    control.setAttribute("aria-invalid", "true");
+  }
+  if (describedBy.length > 0) control.setAttribute("aria-describedby", describedBy.join(" "));
+}
+function textInput(type, value) {
+  const input = document.createElement("input");
+  input.type = type;
+  input.value = value;
+  return input;
+}
+function textArea(value) {
+  const area = document.createElement("textarea");
+  area.rows = 3;
+  area.value = value;
+  return area;
+}
+function select(options, value) {
+  const control = document.createElement("select");
+  for (const [optionValue, label] of options) {
+    const option2 = element2("option", "", control);
+    option2.value = optionValue;
+    option2.textContent = label;
+  }
+  control.value = value;
+  return control;
+}
+function required(control) {
+  control.setAttribute("aria-required", "true");
+  return control;
+}
+function projectName(id, projects) {
+  return projects.find((project) => project.id === id)?.name ?? id;
 }
 function element2(tag, className, parent) {
   const value = document.createElement(tag);
@@ -8842,6 +9222,8 @@ var SourceCandidateReviewView = class extends import_obsidian18.ItemView {
   }
   async render(preserveScroll = false) {
     const scrollTop = preserveScroll ? this.contentEl.scrollTop : 0;
+    const active = this.contentEl.ownerDocument.activeElement;
+    const focused = preserveScroll && active instanceof HTMLElement && this.contentEl.contains(active) ? active.id : "";
     this.contentEl.empty();
     const i18n = this.plugin.i18n();
     if (!this.reviewId) {
@@ -8850,10 +9232,14 @@ var SourceCandidateReviewView = class extends import_obsidian18.ItemView {
     }
     try {
       const review = await this.plugin.sourceReviews.load(this.reviewId);
-      renderSourceCandidateReview(this.contentEl, review, planFormalApply(review), this.state, sourceReviewCopy(i18n), (action) => void this.handle(action), {
+      const projects = (await this.plugin.projects.list()).map((project) => ({ id: project.id, name: project.name }));
+      const state = !this.state.focus && focused ? { ...this.state, focus: focused } : this.state;
+      renderSourceCandidateReview(this.contentEl, review, planFormalApply(review), state, sourceReviewCopy(i18n), (action) => void this.handle(action), {
         readOnly: review.status === "history",
-        onBack: () => void this.openIndex(review.status === "history" ? "history" : "pending")
+        onBack: () => void this.openIndex(review.status === "history" ? "history" : "pending"),
+        projects
       });
+      this.state = { ...this.state, focus: null };
     } catch (error) {
       console.error("TaskMate could not open Source candidate review", error);
       this.contentEl.createDiv({ cls: "taskmate-empty", text: i18n.t("sourceReview.invalid") });
@@ -8888,6 +9274,7 @@ var SourceCandidateReviewView = class extends import_obsidian18.ItemView {
     if (!reviewId) return;
     const previous = this.state;
     this.state = reduceSourceReviewUiState(this.state, action);
+    if (action.type === "edit-input") return;
     try {
       if (action.type === "decide") {
         const review = await this.plugin.sourceReviews.load(reviewId);
@@ -8897,6 +9284,8 @@ var SourceCandidateReviewView = class extends import_obsidian18.ItemView {
         if (needsDiffViewed(review, action.candidateId)) {
           await this.plugin.sourceReviews.save(markDiffViewed(review, action.candidateId, (/* @__PURE__ */ new Date()).toISOString()));
         }
+      } else if (action.type === "save-edit" && previous.editing) {
+        await this.saveEdit(reviewId, previous.editing);
       } else if (action.type === "confirm-apply") {
         const result = await this.plugin.sourceReviews.formalApply(reviewId, { acknowledgeUnviewedMerges: previous.acknowledged });
         this.state = createSourceReviewUiState();
@@ -8907,6 +9296,20 @@ var SourceCandidateReviewView = class extends import_obsidian18.ItemView {
       new import_obsidian18.Notice(this.plugin.i18n().t("sourceReview.actionFailed", { error: error instanceof Error ? error.message : String(error) }), 0);
     }
     await this.render(true);
+  }
+  async saveEdit(reviewId, editing) {
+    const i18n = this.plugin.i18n();
+    const result = saveCandidateEdit(await this.plugin.sourceReviews.load(reviewId), editing, (/* @__PURE__ */ new Date()).toISOString(), i18n.t("sourceReview.editedReason"));
+    if (result.kind === "conflict") {
+      new import_obsidian18.Notice(i18n.t("sourceReview.editConflict"), 1e4);
+      return;
+    }
+    if (result.kind === "invalid") {
+      this.state = reduceSourceReviewUiState(this.state, { type: "edit-invalid", errors: result.errors });
+      return;
+    }
+    if (result.kind === "saved") await this.plugin.sourceReviews.save(result.review);
+    this.state = reduceSourceReviewUiState(this.state, { type: "cancel-edit" });
   }
 };
 function needsDiffViewed(review, candidateId) {
@@ -8943,6 +9346,7 @@ function sourceReviewCopy(i18n) {
     sources: t("sourceReview.sources"),
     conversation: (id) => t("sourceReview.conversation", { id }),
     fields: {
+      title: t("sourceReview.field.title"),
       date: t("sourceReview.field.date"),
       priority: t("sourceReview.field.priority"),
       labels: t("sourceReview.field.labels"),
@@ -8951,6 +9355,9 @@ function sourceReviewCopy(i18n) {
       notes: t("sourceReview.field.notes")
     },
     empty: t("sourceReview.empty"),
+    unassigned: t("taskModal.unassigned"),
+    noPriority: t("taskModal.noPriority"),
+    priorityValue: (priority) => t("filter.priorityValue", { priority }),
     mergeTarget: (title) => t("sourceReview.mergeTarget", { title }),
     showDiff: t("sourceReview.showDiff"),
     hideDiff: t("sourceReview.hideDiff"),
@@ -8971,7 +9378,24 @@ function sourceReviewCopy(i18n) {
     unviewedTitle: t("sourceReview.unviewedTitle"),
     acknowledge: (count) => t("sourceReview.acknowledge", { count }),
     confirm: t("sourceReview.confirm"),
-    cancel: t("sourceReview.cancel")
+    cancel: t("sourceReview.cancel"),
+    edit: t("sourceReview.edit"),
+    editAria: (candidate) => t("sourceReview.editAria", { candidate }),
+    finishEditFirst: t("sourceReview.finishEditFirst"),
+    editOperation: t("sourceReview.editOperation"),
+    changeReason: t("sourceReview.changeReason"),
+    editHelp: {
+      labels: t("sourceReview.editHelp.labels"),
+      steps: t("sourceReview.editHelp.steps"),
+      changeReason: t("sourceReview.editHelp.changeReason"),
+      noMergeTarget: t("sourceReview.editHelp.noMergeTarget")
+    },
+    editErrors: {
+      "required": t("sourceReview.editError.required"),
+      "invalid-date": t("sourceReview.editError.invalidDate"),
+      "no-change": t("sourceReview.editError.noChange")
+    },
+    save: t("sourceReview.save")
   };
 }
 

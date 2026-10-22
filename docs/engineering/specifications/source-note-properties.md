@@ -9,7 +9,7 @@ Implementations MUST distinguish these property classes and MUST NOT interpret o
 | Class | Properties | Owner | Meaning |
 | --- | --- | --- | --- |
 | Source selection | `taskmate-source` | User or TaskMate source-selection command | Whether this ordinary note is eligible for Task Pilot extraction |
-| Import provenance | `taskmate-import-status`, `taskmate-imported-at`, `taskmate-imported-hash`, `taskmate-task-ids` | Task Pilot import workflow | What source version was processed and which canonical Tasks are associated with it |
+| Import provenance | `taskmate-import-status`, `taskmate-imported-at`, `taskmate-imported-hash`, `taskmate-task-ids` | Task Pilot import workflow or TaskMate's Source candidate review | What source version was processed and which canonical Tasks are associated with it |
 | TaskMate-unowned | Any other property, such as `type: meeting-note`, `owner`, or `scenario` | User, another plugin, or the note's own convention | Ordinary note metadata that TaskMate does not define |
 
 Properties in this specification belong on source notes. A source note MUST NOT be treated as a canonical Task unless it independently satisfies [Task file format](task-file-format.md), including `type: todo` and a stable Task `id` in the configured Task folder.
@@ -26,7 +26,11 @@ Selecting a note only changes eligibility. It MUST NOT create a Proposal, create
 
 ## Import provenance properties
 
-After every candidate in a staged source review has an explicit decision and promotion completes, Task Pilot writes:
+Two workflows write import provenance with the same properties and meaning:
+
+- in the staged Markdown import, Task Pilot writes it after every candidate in the source review has an explicit decision and promotion completes;
+- in the Source candidate review ([RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md)), TaskMate writes it once per source note, when every candidate from that note has an applied create, merge or exclude result.
+
 
 ```yaml
 taskmate-import-status: "processed"
@@ -38,7 +42,7 @@ taskmate-task-ids:
 
 - `taskmate-import-status` MUST be `processed` when written by the current workflow.
 - `taskmate-imported-at` MUST be an ISO timestamp for the completed promotion.
-- `taskmate-imported-hash` MUST identify the processed source content while excluding these provenance fields themselves.
+- `taskmate-imported-hash` MUST identify the processed source content while excluding these provenance fields themselves. Both writers MUST compute it the same way, so either workflow recognizes a note processed by the other as unchanged. The Source candidate review records the hash of the reviewed snapshot and writes no provenance if the note changed since then.
 - `taskmate-task-ids` MUST contain stable IDs for Tasks associated with the source, including created Tasks and approved merge targets. It MUST preserve prior valid associations across later imports.
 - Excluded candidates MUST NOT add a Task ID.
 
@@ -46,7 +50,7 @@ These properties are workflow state, not Task scheduling fields. They MUST NOT b
 
 ## Preservation and compatibility
 
-Task Pilot MUST preserve source prose and TaskMate-unowned properties when recording provenance. It MUST NOT redefine values such as `type: meeting-note`, `owner`, or `scenario`. Unknown source properties remain owned by their original user or plugin.
+Both writers MUST preserve source prose and TaskMate-unowned properties when recording provenance. It MUST NOT redefine values such as `type: meeting-note`, `owner`, or `scenario`. Unknown source properties remain owned by their original user or plugin.
 
 Changing source content after staging invalidates the staged snapshot and requires renewed review before promotion. Writing provenance alone MUST NOT make the source appear semantically changed because the import hash excludes provenance fields.
 
@@ -77,11 +81,11 @@ taskmate-task-ids:
 | 種類 | Property | 管理者 | 意味 |
 | --- | --- | --- | --- |
 | ソース選択 | `taskmate-source` | 利用者またはTaskMateコマンド | AIによる候補抽出の対象にできるか |
-| 取り込み履歴 | `taskmate-import-status`、`taskmate-imported-at`、`taskmate-imported-hash`、`taskmate-task-ids` | Task Pilot | 処理済みのソース版と関連する正式Task |
+| 取り込み履歴 | `taskmate-import-status`、`taskmate-imported-at`、`taskmate-imported-hash`、`taskmate-task-ids` | Task PilotまたはTaskMateのSource候補レビュー | 処理済みのソース版と関連する正式Task |
 | TaskMate管理外 | `type: meeting-note`、`owner`、`scenario`など | 利用者、他プラグイン、ノート規約 | TaskMateが意味を定義しない通常のメタデータ |
 
 `taskmate-source: true`はフォルダー指定外でも対象、`false`はフォルダー指定内でも対象外、未指定はソースフォルダー設定を継承します。対象指定だけではProposalもTaskも作らず、処理済みにもしません。
 
-全候補の判断と正式反映が完了すると、Task Pilotは`processed`、処理日時、ソース内容hash、関連Task IDを記録します。これらは取り込み履歴であり、Taskの日付、Priority、Label、完了、並び順ではありません。除外候補はTask IDを追加しません。
+ステージ方式の取り込みでは全候補の判断と正式反映が完了した時点でTask Pilotが、Source候補レビューではそのノートの全候補が作成・統合・除外として反映された時点でTaskMateが、`processed`、処理日時、ソース内容hash、関連Task IDを記録します。両者は同じ方法でhashを計算するため、一方で処理したノートを他方も変更なしと判断します。Source候補レビューはレビューしたときのhashを記録し、その後ノートが変わっていれば取り込み履歴を書きません。これらは取り込み履歴であり、Taskの日付、Priority、Label、完了、並び順ではありません。除外候補はTask IDを追加しません。
 
-Task Pilotは本文とTaskMate管理外Propertyを保持し、`meeting-note`、`owner`、`scenario`などの意味を再定義しません。正式Taskとして扱うには、設定されたTaskフォルダー内で`type: todo`と安定した`id`を含む[Task形式](task-file-format.md)を別途満たす必要があります。
+どちらも本文とTaskMate管理外Propertyを保持し、`meeting-note`、`owner`、`scenario`などの意味を再定義しません。正式Taskとして扱うには、設定されたTaskフォルダー内で`type: todo`と安定した`id`を含む[Task形式](task-file-format.md)を別途満たす必要があります。

@@ -1,6 +1,7 @@
 import { ItemView, Notice, WorkspaceLeaf } from "obsidian";
 import type { I18n } from "../../i18n";
 import type TaskMatePlugin from "../../main";
+import { saveCandidateEdit } from "./candidate-edit-form";
 import { decideCandidate, markDiffViewed, planFormalApply } from "./proposal";
 import type { SourceCandidateProposal } from "./proposal";
 import type { FormalApplyResult } from "./review-repository";
@@ -56,6 +57,9 @@ export class SourceCandidateReviewView extends ItemView {
 
   private async render(preserveScroll = false): Promise<void> {
     const scrollTop = preserveScroll ? this.contentEl.scrollTop : 0;
+    // A refresh from a Vault change keeps keyboard focus on the same control, such as an edit field.
+    const active = this.contentEl.ownerDocument.activeElement;
+    const focused = preserveScroll && active instanceof HTMLElement && this.contentEl.contains(active) ? active.id : "";
     this.contentEl.empty();
     const i18n = this.plugin.i18n();
     if (!this.reviewId) {
@@ -64,10 +68,14 @@ export class SourceCandidateReviewView extends ItemView {
     }
     try {
       const review = await this.plugin.sourceReviews.load(this.reviewId);
-      renderSourceCandidateReview(this.contentEl, review, planFormalApply(review), this.state, sourceReviewCopy(i18n), (action) => void this.handle(action), {
+      const projects = (await this.plugin.projects.list()).map((project) => ({ id: project.id, name: project.name }));
+      const state = !this.state.focus && focused ? { ...this.state, focus: focused } : this.state;
+      renderSourceCandidateReview(this.contentEl, review, planFormalApply(review), state, sourceReviewCopy(i18n), (action) => void this.handle(action), {
         readOnly: review.status === "history",
-        onBack: () => void this.openIndex(review.status === "history" ? "history" : "pending")
+        onBack: () => void this.openIndex(review.status === "history" ? "history" : "pending"),
+        projects
       });
+      this.state = { ...this.state, focus: null };
     } catch (error) {
       console.error("TaskMate could not open Source candidate review", error);
       this.contentEl.createDiv({ cls: "taskmate-empty", text: i18n.t("sourceReview.invalid") });
@@ -104,6 +112,8 @@ export class SourceCandidateReviewView extends ItemView {
     if (!reviewId) return;
     const previous = this.state;
     this.state = reduceSourceReviewUiState(this.state, action);
+    // Typing only updates the form state; re-rendering would move the caret.
+    if (action.type === "edit-input") return;
     try {
       if (action.type === "decide") {
         const review = await this.plugin.sourceReviews.load(reviewId);
@@ -113,6 +123,8 @@ export class SourceCandidateReviewView extends ItemView {
         if (needsDiffViewed(review, action.candidateId)) {
           await this.plugin.sourceReviews.save(markDiffViewed(review, action.candidateId, new Date().toISOString()));
         }
+      } else if (action.type === "save-edit" && previous.editing) {
+        await this.saveEdit(reviewId, previous.editing);
       } else if (action.type === "confirm-apply") {
         const result = await this.plugin.sourceReviews.formalApply(reviewId, { acknowledgeUnviewedMerges: previous.acknowledged });
         this.state = createSourceReviewUiState();
@@ -123,6 +135,21 @@ export class SourceCandidateReviewView extends ItemView {
       new Notice(this.plugin.i18n().t("sourceReview.actionFailed", { error: error instanceof Error ? error.message : String(error) }), 0);
     }
     await this.render(true);
+  }
+
+  private async saveEdit(reviewId: string, editing: NonNullable<SourceReviewUiState["editing"]>): Promise<void> {
+    const i18n = this.plugin.i18n();
+    const result = saveCandidateEdit(await this.plugin.sourceReviews.load(reviewId), editing, new Date().toISOString(), i18n.t("sourceReview.editedReason"));
+    if (result.kind === "conflict") {
+      new Notice(i18n.t("sourceReview.editConflict"), 10000);
+      return;
+    }
+    if (result.kind === "invalid") {
+      this.state = reduceSourceReviewUiState(this.state, { type: "edit-invalid", errors: result.errors });
+      return;
+    }
+    if (result.kind === "saved") await this.plugin.sourceReviews.save(result.review);
+    this.state = reduceSourceReviewUiState(this.state, { type: "cancel-edit" });
   }
 }
 
@@ -162,6 +189,7 @@ function sourceReviewCopy(i18n: I18n): SourceReviewCopy {
     sources: t("sourceReview.sources"),
     conversation: (id) => t("sourceReview.conversation", { id }),
     fields: {
+      title: t("sourceReview.field.title"),
       date: t("sourceReview.field.date"),
       priority: t("sourceReview.field.priority"),
       labels: t("sourceReview.field.labels"),
@@ -170,6 +198,9 @@ function sourceReviewCopy(i18n: I18n): SourceReviewCopy {
       notes: t("sourceReview.field.notes")
     },
     empty: t("sourceReview.empty"),
+    unassigned: t("taskModal.unassigned"),
+    noPriority: t("taskModal.noPriority"),
+    priorityValue: (priority) => t("filter.priorityValue", { priority }),
     mergeTarget: (title) => t("sourceReview.mergeTarget", { title }),
     showDiff: t("sourceReview.showDiff"),
     hideDiff: t("sourceReview.hideDiff"),
@@ -190,6 +221,23 @@ function sourceReviewCopy(i18n: I18n): SourceReviewCopy {
     unviewedTitle: t("sourceReview.unviewedTitle"),
     acknowledge: (count) => t("sourceReview.acknowledge", { count }),
     confirm: t("sourceReview.confirm"),
-    cancel: t("sourceReview.cancel")
+    cancel: t("sourceReview.cancel"),
+    edit: t("sourceReview.edit"),
+    editAria: (candidate) => t("sourceReview.editAria", { candidate }),
+    finishEditFirst: t("sourceReview.finishEditFirst"),
+    editOperation: t("sourceReview.editOperation"),
+    changeReason: t("sourceReview.changeReason"),
+    editHelp: {
+      labels: t("sourceReview.editHelp.labels"),
+      steps: t("sourceReview.editHelp.steps"),
+      changeReason: t("sourceReview.editHelp.changeReason"),
+      noMergeTarget: t("sourceReview.editHelp.noMergeTarget")
+    },
+    editErrors: {
+      "required": t("sourceReview.editError.required"),
+      "invalid-date": t("sourceReview.editError.invalidDate"),
+      "no-change": t("sourceReview.editError.noChange")
+    },
+    save: t("sourceReview.save")
   };
 }

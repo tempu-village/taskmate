@@ -1,14 +1,32 @@
 import { structuredPatch } from "diff";
+import { CANDIDATE_EDIT_FIELDS, candidateEditForm } from "./candidate-edit-form";
+import type { CandidateEditError, CandidateEditErrors, CandidateEditField, CandidateEditForm } from "./candidate-edit-form";
 import type { FormalApplyPlan, SourceCandidate, SourceCandidateProposal } from "./proposal";
 
 type Operation = SourceCandidate["operation"];
 type Decision = SourceCandidate["decision"];
 type BlockReason = FormalApplyPlan["blocked"][number]["reason"];
 
+export interface CandidateEditState {
+  candidateId: string;
+  // The candidate revision the form started from; saving is refused if the candidate changed meanwhile.
+  revision: number;
+  form: CandidateEditForm;
+  errors: CandidateEditErrors;
+}
+
 export interface SourceReviewUiState {
   expandedDiffs: ReadonlySet<string>;
   applyOpen: boolean;
   acknowledged: boolean;
+  editing: CandidateEditState | null;
+  // ID of the element to focus after the next render.
+  focus: string | null;
+}
+
+export interface SourceReviewProject {
+  id: string;
+  name: string;
 }
 
 export interface SourceReviewCopy {
@@ -23,8 +41,11 @@ export interface SourceReviewCopy {
   decisionGroupAria: (candidateId: string) => string;
   sources: string;
   conversation: (id: string) => string;
-  fields: Record<"date" | "priority" | "labels" | "project" | "steps" | "notes", string>;
+  fields: Record<"title" | "date" | "priority" | "labels" | "project" | "steps" | "notes", string>;
   empty: string;
+  unassigned: string;
+  noPriority: string;
+  priorityValue: (priority: number) => string;
   mergeTarget: (title: string) => string;
   showDiff: string;
   hideDiff: string;
@@ -41,6 +62,14 @@ export interface SourceReviewCopy {
   acknowledge: (count: number) => string;
   confirm: string;
   cancel: string;
+  edit: string;
+  editAria: (candidateId: string) => string;
+  finishEditFirst: string;
+  editOperation: string;
+  changeReason: string;
+  editHelp: Record<"labels" | "steps" | "changeReason" | "noMergeTarget", string>;
+  editErrors: Record<CandidateEditError, string>;
+  save: string;
 }
 
 export type SourceReviewAction =
@@ -49,10 +78,29 @@ export type SourceReviewAction =
   | { type: "open-apply" }
   | { type: "cancel-apply" }
   | { type: "set-acknowledged"; acknowledged: boolean }
-  | { type: "confirm-apply" };
+  | { type: "confirm-apply" }
+  | { type: "start-edit"; candidateId: string; revision: number; form: CandidateEditForm }
+  | { type: "edit-input"; field: CandidateEditField; value: string }
+  | { type: "edit-operation"; operation: Operation }
+  | { type: "edit-invalid"; errors: CandidateEditErrors }
+  | { type: "cancel-edit" }
+  | { type: "save-edit" };
+
+const OPERATION_ID = "taskmate-source-edit-operation";
+const FORM_ERROR_ID = "taskmate-source-edit-form-error";
+const OPEN_APPLY_ID = "taskmate-source-review-open-apply";
+const APPLY_TITLE_ID = "taskmate-source-review-apply-title";
+
+export function editFieldId(field: CandidateEditField): string {
+  return `taskmate-source-edit-${field}`;
+}
+
+export function editButtonId(candidateId: string): string {
+  return `taskmate-source-candidate-edit-${candidateId}`;
+}
 
 export function createSourceReviewUiState(): SourceReviewUiState {
-  return { expandedDiffs: new Set(), applyOpen: false, acknowledged: false };
+  return { expandedDiffs: new Set(), applyOpen: false, acknowledged: false, editing: null, focus: null };
 }
 
 export function reduceSourceReviewUiState(state: SourceReviewUiState, action: SourceReviewAction): SourceReviewUiState {
@@ -63,11 +111,35 @@ export function reduceSourceReviewUiState(state: SourceReviewUiState, action: So
       else expandedDiffs.add(action.candidateId);
       return { ...state, expandedDiffs };
     }
-    case "open-apply": return { ...state, applyOpen: true, acknowledged: false };
-    case "cancel-apply": return { ...state, applyOpen: false, acknowledged: false };
+    case "open-apply": return { ...state, applyOpen: true, acknowledged: false, focus: APPLY_TITLE_ID };
+    case "cancel-apply": return { ...state, applyOpen: false, acknowledged: false, focus: OPEN_APPLY_ID };
     case "set-acknowledged": return { ...state, acknowledged: action.acknowledged };
+    case "start-edit": return {
+      ...state,
+      applyOpen: false,
+      acknowledged: false,
+      editing: { candidateId: action.candidateId, revision: action.revision, form: action.form, errors: {} },
+      focus: OPERATION_ID
+    };
+    case "edit-input":
+      return state.editing ? { ...state, editing: { ...state.editing, form: withField(state.editing.form, action.field, action.value) } } : state;
+    case "edit-operation":
+      return state.editing ? { ...state, editing: { ...state.editing, form: { ...state.editing.form, operation: action.operation }, errors: {} }, focus: OPERATION_ID } : state;
+    case "edit-invalid": {
+      if (!state.editing) return state;
+      const first = CANDIDATE_EDIT_FIELDS.find((field) => action.errors[field]);
+      return { ...state, editing: { ...state.editing, errors: action.errors }, focus: first ? editFieldId(first) : FORM_ERROR_ID };
+    }
+    case "cancel-edit":
+      return state.editing ? { ...state, editing: null, focus: editButtonId(state.editing.candidateId) } : state;
     default: return state;
   }
+}
+
+function withField(form: CandidateEditForm, field: CandidateEditField, value: string): CandidateEditForm {
+  if (field === "reason" || field === "exclusionReason") return { ...form, [field]: value };
+  if (form.operation === "merge" && form.merge) return { ...form, merge: { ...form.merge, [field]: value } };
+  return { ...form, draft: { ...form.draft, [field]: value } };
 }
 
 export function renderSourceCandidateReview(
@@ -77,7 +149,7 @@ export function renderSourceCandidateReview(
   state: SourceReviewUiState,
   copy: SourceReviewCopy,
   dispatch: (action: SourceReviewAction) => void,
-  options: { readOnly?: boolean; onBack?: () => void } = {}
+  options: { readOnly?: boolean; onBack?: () => void; projects?: readonly SourceReviewProject[] } = {}
 ): void {
   container.replaceChildren();
   container.classList.add("taskmate-review", "taskmate-source-review");
@@ -92,9 +164,11 @@ export function renderSourceCandidateReview(
   summary.textContent = [review.reviewId, copy.status[review.status], review.health === "ok" ? "" : copy.health[review.health]].filter(Boolean).join(" · ");
 
   const list = element("div", "taskmate-review-files", container);
-  for (const candidate of review.candidates) renderCard(list, review, candidate, state, copy, dispatch, Boolean(options.readOnly));
+  const projects = options.projects ?? [];
+  for (const candidate of review.candidates) renderCard(list, review, candidate, state, copy, dispatch, Boolean(options.readOnly), projects);
 
   if (!options.readOnly) renderApply(container, plan, state, copy, dispatch);
+  if (state.focus) container.querySelector<HTMLElement>(`[id="${state.focus}"]`)?.focus();
 }
 
 function renderCard(
@@ -104,7 +178,8 @@ function renderCard(
   state: SourceReviewUiState,
   copy: SourceReviewCopy,
   dispatch: (action: SourceReviewAction) => void,
-  readOnly: boolean
+  readOnly: boolean,
+  projects: readonly SourceReviewProject[]
 ): void {
   const card = element("section", "taskmate-review-file taskmate-source-candidate", parent);
   card.id = `taskmate-source-candidate-${candidate.id}`;
@@ -133,8 +208,14 @@ function renderCard(
     text(quote, "p", ref.statement);
   }
 
-  if (candidate.operation === "create") renderDraft(card, candidate.taskDraft, copy);
-  else if (candidate.operation === "merge") renderMerge(card, candidate, state, copy, dispatch);
+  const editing = state.editing?.candidateId === candidate.id ? state.editing : null;
+  if (editing) {
+    renderEditForm(card, candidate, editing, copy, dispatch, projects);
+    return;
+  }
+
+  if (candidate.operation === "create") renderDraft(card, candidate.taskDraft, copy, projects);
+  else if (candidate.operation === "merge") renderMerge(card, candidate, state, copy, dispatch, projects);
   else {
     const reason = element("p", "taskmate-source-candidate-reason", card);
     text(reason, "strong", `${copy.exclusionReason}: `);
@@ -142,7 +223,8 @@ function renderCard(
   }
 
   if (!readOnly && !applied) {
-    const decisions = element("div", "taskmate-source-candidate-decisions", card);
+    const actions = element("div", "taskmate-source-candidate-actions", card);
+    const decisions = element("div", "taskmate-source-candidate-decisions", actions);
     decisions.setAttribute("role", "group");
     decisions.setAttribute("aria-label", copy.decisionGroupAria(candidate.id));
     const choices: Array<[Decision, string]> = [["approved", copy.decide[candidate.operation]], ["hold", copy.decide.hold], ["pending", copy.decide.pending]];
@@ -153,16 +235,27 @@ function renderCard(
       choice.setAttribute("aria-label", copy.decideAria(label, candidate.id));
       decisions.append(choice);
     }
+    const edit = button(copy.edit, () => dispatch({ type: "start-edit", candidateId: candidate.id, revision: candidate.revision, form: candidateEditForm(candidate) }));
+    edit.id = editButtonId(candidate.id);
+    edit.classList.add("taskmate-source-candidate-edit-button");
+    edit.setAttribute("aria-label", copy.editAria(candidate.id));
+    edit.disabled = state.editing !== null;
+    actions.append(edit);
   }
 }
 
-function renderDraft(card: HTMLElement, draft: Extract<SourceCandidate, { operation: "create" }>["taskDraft"], copy: SourceReviewCopy): void {
+function renderDraft(
+  card: HTMLElement,
+  draft: Extract<SourceCandidate, { operation: "create" }>["taskDraft"],
+  copy: SourceReviewCopy,
+  projects: readonly SourceReviewProject[]
+): void {
   const fields = element("dl", "taskmate-source-candidate-fields", card);
   const rows: Array<[keyof SourceReviewCopy["fields"], string]> = [
     ["date", draft.date ?? copy.empty],
-    ["priority", draft.priority === null ? copy.empty : String(draft.priority)],
+    ["priority", draft.priority === null ? copy.empty : copy.priorityValue(draft.priority)],
     ["labels", draft.labels.length ? draft.labels.join(", ") : copy.empty],
-    ["project", draft.project ?? copy.empty],
+    ["project", draft.project === null ? copy.empty : projectName(draft.project, projects)],
     ["notes", draft.notes || copy.empty]
   ];
   for (const [field, value] of rows) {
@@ -182,16 +275,18 @@ function renderMerge(
   candidate: Extract<SourceCandidate, { operation: "merge" }>,
   state: SourceReviewUiState,
   copy: SourceReviewCopy,
-  dispatch: (action: SourceReviewAction) => void
+  dispatch: (action: SourceReviewAction) => void,
+  projects: readonly SourceReviewProject[]
 ): void {
   const target = candidate.mergeTarget;
   const block = element("div", "taskmate-source-candidate-merge", card);
   text(block, "p", copy.mergeTarget(target.title), "taskmate-source-candidate-target");
   for (const change of target.changes) {
     const row = element("div", "taskmate-review-change is-read-only", block);
-    text(row, "strong", change.field);
+    text(row, "strong", copy.fields[change.field]);
     const details = element("span", "taskmate-review-change-details", row);
-    text(details, "span", `${formatValue(change.before)} → ${formatValue(change.after)}`, "taskmate-review-values");
+    const format = (value: unknown) => change.field === "project" && typeof value === "string" ? projectName(value, projects) : formatValue(value);
+    text(details, "span", `${format(change.before)} → ${format(change.after)}`, "taskmate-review-values");
     text(details, "span", change.reason, "taskmate-review-reason");
   }
   const expanded = state.expandedDiffs.has(candidate.id);
@@ -224,15 +319,21 @@ function renderApply(
   const footer = element("footer", "taskmate-review-footer taskmate-source-review-apply", container);
   if (!state.applyOpen) {
     const open = button(copy.openApply, () => dispatch({ type: "open-apply" }));
+    open.id = OPEN_APPLY_ID;
     open.classList.add("mod-cta");
-    open.disabled = plan.eligible.length === 0;
-    if (open.disabled) open.title = copy.nothingToApply;
+    open.disabled = plan.eligible.length === 0 || state.editing !== null;
+    if (state.editing) open.title = copy.finishEditFirst;
+    else if (open.disabled) open.title = copy.nothingToApply;
     footer.append(open);
     return;
   }
+  footer.classList.add("is-open");
   const panel = element("section", "taskmate-source-review-apply-panel", footer);
-  panel.setAttribute("aria-labelledby", "taskmate-source-review-apply-title");
-  text(panel, "h3", copy.applyTitle).id = "taskmate-source-review-apply-title";
+  panel.setAttribute("aria-labelledby", APPLY_TITLE_ID);
+  const title = text(panel, "h3", copy.applyTitle);
+  title.id = APPLY_TITLE_ID;
+  // Focusing the title scrolls the confirmation into view and announces it.
+  title.tabIndex = -1;
   text(panel, "p", copy.applyCounts(plan.counts));
   if (plan.blocked.length > 0) {
     text(panel, "h4", copy.blockedTitle);
@@ -256,6 +357,119 @@ function renderApply(
   confirm.disabled = plan.eligible.length === 0 || (plan.requiresAcknowledgement && !state.acknowledged);
   const cancel = button(copy.cancel, () => dispatch({ type: "cancel-apply" }));
   actions.append(confirm, cancel);
+}
+
+function renderEditForm(
+  card: HTMLElement,
+  candidate: SourceCandidate,
+  editing: CandidateEditState,
+  copy: SourceReviewCopy,
+  dispatch: (action: SourceReviewAction) => void,
+  projects: readonly SourceReviewProject[]
+): void {
+  const form = element("form", "taskmate-source-candidate-edit", card);
+  form.noValidate = true;
+  form.setAttribute("aria-label", copy.editAria(candidate.id));
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    dispatch({ type: "save-edit" });
+  });
+  if (editing.errors.form) {
+    const error = text(form, "p", copy.editErrors[editing.errors.form], "taskmate-source-candidate-edit-error");
+    error.id = FORM_ERROR_ID;
+    error.tabIndex = -1;
+    error.setAttribute("role", "alert");
+  }
+
+  const { operation, merge } = editing.form;
+  const operations: Operation[] = merge ? ["create", "merge", "exclude"] : ["create", "exclude"];
+  const operationSelect = select(operations.map((value) => [value, copy.operation[value]]), operation);
+  operationSelect.addEventListener("change", () => dispatch({ type: "edit-operation", operation: operationSelect.value as Operation }));
+  editField(form, OPERATION_ID, copy.editOperation, operationSelect, merge ? undefined : copy.editHelp.noMergeTarget);
+
+  const control = (name: CandidateEditField, label: string, input: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement, help?: string) => {
+    input.addEventListener(input instanceof HTMLSelectElement ? "change" : "input", () => dispatch({ type: "edit-input", field: name, value: input.value }));
+    const error = editing.errors[name];
+    editField(form, editFieldId(name), label, input, help, error ? copy.editErrors[error] : undefined);
+  };
+
+  if (operation === "exclude") {
+    control("exclusionReason", copy.exclusionReason, required(textArea(editing.form.exclusionReason)));
+  } else {
+    const values = operation === "merge" && merge ? merge : editing.form.draft;
+    control("title", copy.fields.title, required(textInput("text", values.title)));
+    control("date", copy.fields.date, textInput("date", values.date));
+    control("priority", copy.fields.priority, select([["", copy.noPriority], ...[1, 2, 3].map((value): [string, string] => [String(value), copy.priorityValue(value)])], values.priority));
+    control("labels", copy.fields.labels, textInput("text", values.labels), copy.editHelp.labels);
+    const projectOptions: Array<[string, string]> = [["", copy.unassigned], ...projects.map((project): [string, string] => [project.id, project.name])];
+    if (values.project && !projects.some((project) => project.id === values.project)) projectOptions.push([values.project, values.project]);
+    control("project", copy.fields.project, select(projectOptions, values.project));
+    control("steps", copy.fields.steps, textArea(values.steps), copy.editHelp.steps);
+    control("notes", copy.fields.notes, textArea(values.notes));
+    if (operation === "merge") control("reason", copy.changeReason, textArea(editing.form.reason), copy.editHelp.changeReason);
+  }
+
+  const actions = element("div", "taskmate-source-candidate-edit-actions", form);
+  const save = element("button", "mod-cta", actions);
+  save.type = "submit";
+  save.textContent = copy.save;
+  actions.append(button(copy.cancel, () => dispatch({ type: "cancel-edit" })));
+}
+
+function editField(form: HTMLElement, id: string, label: string, control: HTMLElement, help?: string, error?: string): void {
+  const wrapper = element("div", "taskmate-source-candidate-edit-field", form);
+  const caption = element("label", "", wrapper);
+  caption.htmlFor = id;
+  caption.textContent = label;
+  control.id = id;
+  wrapper.append(control);
+  const describedBy: string[] = [];
+  if (help) {
+    const note = text(wrapper, "p", help, "taskmate-source-candidate-edit-help");
+    note.id = `${id}-help`;
+    describedBy.push(note.id);
+  }
+  if (error) {
+    const message = text(wrapper, "p", error, "taskmate-source-candidate-edit-error");
+    message.id = `${id}-error`;
+    describedBy.push(message.id);
+    control.setAttribute("aria-invalid", "true");
+  }
+  if (describedBy.length > 0) control.setAttribute("aria-describedby", describedBy.join(" "));
+}
+
+function textInput(type: "text" | "date", value: string): HTMLInputElement {
+  const input = document.createElement("input");
+  input.type = type;
+  input.value = value;
+  return input;
+}
+
+function textArea(value: string): HTMLTextAreaElement {
+  const area = document.createElement("textarea");
+  area.rows = 3;
+  area.value = value;
+  return area;
+}
+
+function select(options: Array<[string, string]>, value: string): HTMLSelectElement {
+  const control = document.createElement("select");
+  for (const [optionValue, label] of options) {
+    const option = element("option", "", control);
+    option.value = optionValue;
+    option.textContent = label;
+  }
+  control.value = value;
+  return control;
+}
+
+function required<Control extends HTMLElement>(control: Control): Control {
+  control.setAttribute("aria-required", "true");
+  return control;
+}
+
+function projectName(id: string, projects: readonly SourceReviewProject[]): string {
+  return projects.find((project) => project.id === id)?.name ?? id;
 }
 
 function element<Tag extends keyof HTMLElementTagNameMap>(tag: Tag, className: string, parent?: HTMLElement): HTMLElementTagNameMap[Tag] {

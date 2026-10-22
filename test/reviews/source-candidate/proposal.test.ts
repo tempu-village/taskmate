@@ -5,6 +5,7 @@ import {
   editCandidate,
   markDiffViewed,
   markSourceStale,
+  mergeTargetFields,
   newlyCompletedNoteSources,
   noteSourceCompletion,
   parseSourceCandidateProposal,
@@ -126,6 +127,15 @@ describe("Source candidate transitions", () => {
     expect(candidate(excluded, "SC-02").operation).toBe("exclude");
     expect(candidate(merged, "SC-02").operation).toBe("merge");
     expect(candidate(merged, "SC-02").revision).toBe(4);
+  });
+
+  it("reads merge target fields before and after the merge in Task draft shape", () => {
+    const proposal = example();
+    const fields = mergeTargetFields(candidate(proposal, "SC-02"));
+
+    expect(fields?.before).toEqual({ title: "明日のデモを準備する", date: "2026-10-18", priority: 2, labels: ["context/pc"], project: null, steps: [{ text: "デモデータを準備する", completed: false, date: null }], notes: "" });
+    expect(fields?.after.steps.map((step) => step.text)).toEqual(["デモデータを準備する", "検索フィルターを確認する"]);
+    expect(mergeTargetFields(candidate(proposal, "SC-01"))).toBeNull();
   });
 
   it("records decisions at the candidate revision", () => {

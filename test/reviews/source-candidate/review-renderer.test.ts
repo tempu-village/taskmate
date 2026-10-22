@@ -3,6 +3,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { decideCandidate, markDiffViewed, parseSourceCandidateProposal, planFormalApply, recordApplication } from "../../../src/reviews/source-candidate/proposal";
 import type { SourceCandidateProposal } from "../../../src/reviews/source-candidate/proposal";
+import { candidateEditForm } from "../../../src/reviews/source-candidate/candidate-edit-form";
 import { createSourceReviewUiState, reduceSourceReviewUiState, renderSourceCandidateReview } from "../../../src/reviews/source-candidate/review-renderer";
 import type { SourceReviewAction, SourceReviewCopy, SourceReviewUiState } from "../../../src/reviews/source-candidate/review-renderer";
 import { NOW, exampleText } from "./fixture";
@@ -19,8 +20,11 @@ const copy: SourceReviewCopy = {
   decisionGroupAria: (candidate) => `Decision for ${candidate}`,
   sources: "Sources",
   conversation: (id) => `Conversation ${id}`,
-  fields: { date: "Date", priority: "Priority", labels: "Labels", project: "Project", steps: "Steps", notes: "Notes" },
+  fields: { title: "Title", date: "Date", priority: "Priority", labels: "Labels", project: "Project", steps: "Steps", notes: "Notes" },
   empty: "None",
+  unassigned: "Unassigned",
+  noPriority: "No priority",
+  priorityValue: (priority) => `P${priority}`,
   mergeTarget: (title) => `Merge into ${title}`,
   showDiff: "Show diff",
   hideDiff: "Hide diff",
@@ -36,10 +40,18 @@ const copy: SourceReviewCopy = {
   unviewedTitle: "Unviewed merges",
   acknowledge: (count) => `Apply ${count} merges without viewing their diffs`,
   confirm: "Apply",
-  cancel: "Cancel"
+  cancel: "Cancel",
+  edit: "Edit",
+  editAria: (candidate) => `Edit ${candidate}`,
+  finishEditFirst: "Finish editing first",
+  editOperation: "Operation",
+  changeReason: "Reason for the change",
+  editHelp: { labels: "Comma separated", steps: "One per line", changeReason: "Needed for changes", noMergeTarget: "Restage to merge" },
+  editErrors: { "required": "Enter a value", "invalid-date": "Use YYYY-MM-DD", "no-change": "Nothing would change" },
+  save: "Save"
 };
 
-function render(review: SourceCandidateProposal, state: SourceReviewUiState = createSourceReviewUiState(), options = {}) {
+function render(review: SourceCandidateProposal, state: SourceReviewUiState = createSourceReviewUiState(), options: Parameters<typeof renderSourceCandidateReview>[6] = {}) {
   const container = document.createElement("div");
   document.body.replaceChildren(container);
   const dispatch = vi.fn<(action: SourceReviewAction) => void>();
@@ -52,6 +64,11 @@ function buttons(container: HTMLElement, name: string): HTMLButtonElement[] {
 }
 
 const example = () => parseSourceCandidateProposal(exampleText());
+
+function editing(review: SourceCandidateProposal, id: string, state: SourceReviewUiState = createSourceReviewUiState()): SourceReviewUiState {
+  const candidate = review.candidates.find((item) => item.id === id)!;
+  return reduceSourceReviewUiState(state, { type: "start-edit", candidateId: id, revision: candidate.revision, form: candidateEditForm(candidate) });
+}
 
 describe("Source candidate review renderer", () => {
   it("renders one card per candidate with Sources, draft fields, merge summary and exclusion reason", () => {
@@ -66,6 +83,7 @@ describe("Source candidate review renderer", () => {
     expect(cards[1].textContent).toContain("Merge into 明日のデモを準備する");
     expect(cards[1].textContent).toContain("デモデータを準備する → デモデータを準備する, 検索フィルターを確認する");
     expect(cards[2].textContent).toContain("Reason: 候補日時であり、利用者が実行する独立した行動ではない");
+    expect(cards[0].textContent).toContain("PriorityP2");
     expect(container.querySelector(".taskmate-source-review-summary")?.textContent).toBe("source-review-20261017T101500-demo · Ready");
   });
 
@@ -145,7 +163,133 @@ describe("Source candidate review renderer", () => {
     const { container } = render(example());
 
     const order = Array.from(container.querySelector("#taskmate-source-candidate-SC-02")!.querySelectorAll("button")).map((button) => button.textContent);
-    expect(order).toEqual(["Show diff", "Merge", "Hold", "Undecide"]);
+    expect(order).toEqual(["Show diff", "Merge", "Hold", "Undecide", "Edit"]);
+  });
+
+  it("starts editing a candidate from its Edit button", () => {
+    const review = example();
+    const { container, dispatch } = render(review);
+
+    const edit = buttons(container, "Edit SC-01")[0];
+    expect([edit.textContent, edit.id]).toEqual(["Edit", "taskmate-source-candidate-edit-SC-01"]);
+    edit.click();
+    expect(dispatch).toHaveBeenCalledWith({ type: "start-edit", candidateId: "SC-01", revision: review.candidates[0].revision, form: candidateEditForm(review.candidates[0]) });
+  });
+
+  it("replaces the card body with a labelled form and locks other actions while editing", () => {
+    const review = example();
+    const state = editing(review, "SC-01");
+    const { container } = render(review, state, { projects: [{ id: "project-1", name: "Customer A" }] });
+
+    const card = container.querySelector<HTMLElement>("#taskmate-source-candidate-SC-01")!;
+    expect([card.querySelector(".taskmate-source-candidate-fields"), card.querySelector("[role=group]")]).toEqual([null, null]);
+    const form = card.querySelector("form")!;
+    expect(form.getAttribute("aria-label")).toBe("Edit SC-01");
+    expect(Array.from(form.querySelectorAll("label")).map((label) => [label.textContent, label.htmlFor])).toEqual([
+      ["Operation", "taskmate-source-edit-operation"], ["Title", "taskmate-source-edit-title"], ["Date", "taskmate-source-edit-date"],
+      ["Priority", "taskmate-source-edit-priority"], ["Labels", "taskmate-source-edit-labels"], ["Project", "taskmate-source-edit-project"],
+      ["Steps", "taskmate-source-edit-steps"], ["Notes", "taskmate-source-edit-notes"]
+    ]);
+    const operation = form.querySelector<HTMLSelectElement>("#taskmate-source-edit-operation")!;
+    expect(Array.from(operation.options).map((option) => option.value)).toEqual(["create", "exclude"]);
+    expect(operation.getAttribute("aria-describedby")).toBe("taskmate-source-edit-operation-help");
+    expect(form.querySelector<HTMLInputElement>("#taskmate-source-edit-title")?.value).toBe("顧客Aへ修正版の契約書を送る");
+    expect(form.querySelector<HTMLInputElement>("#taskmate-source-edit-date")?.type).toBe("date");
+    expect(Array.from(form.querySelector<HTMLSelectElement>("#taskmate-source-edit-project")!.options).map((option) => option.textContent)).toEqual(["Unassigned", "Customer A"]);
+    expect(document.activeElement).toBe(operation);
+    expect(buttons(container, "Edit SC-02")[0].disabled).toBe(true);
+    const apply = buttons(container, "Apply decisions…")[0];
+    expect([apply.disabled, apply.title]).toEqual([true, "Finish editing first"]);
+  });
+
+  it("shows merge fields with a change reason, or only the reason when excluding", () => {
+    const review = example();
+    const merge = render(review, editing(review, "SC-02")).container;
+    expect(Array.from(merge.querySelector<HTMLSelectElement>("#taskmate-source-edit-operation")!.options).map((option) => option.value)).toEqual(["create", "merge", "exclude"]);
+    expect(merge.querySelector<HTMLTextAreaElement>("#taskmate-source-edit-steps")?.value).toBe("デモデータを準備する\n検索フィルターを確認する");
+    expect(merge.querySelector("#taskmate-source-edit-reason")?.getAttribute("aria-describedby")).toBe("taskmate-source-edit-reason-help");
+
+    const exclude = render(review, editing(review, "SC-03")).container;
+    expect(Array.from(exclude.querySelectorAll("form label")).map((label) => label.textContent)).toEqual(["Operation", "Reason"]);
+    expect(exclude.querySelector("#taskmate-source-edit-exclusionReason")?.getAttribute("aria-required")).toBe("true");
+  });
+
+  it("dispatches typing, operation changes, save and cancel", () => {
+    const review = example();
+    const { container, dispatch } = render(review, editing(review, "SC-01"));
+
+    const title = container.querySelector<HTMLInputElement>("#taskmate-source-edit-title")!;
+    title.value = "新しいタイトル";
+    title.dispatchEvent(new Event("input", { bubbles: true }));
+    const priority = container.querySelector<HTMLSelectElement>("#taskmate-source-edit-priority")!;
+    priority.value = "3";
+    priority.dispatchEvent(new Event("change", { bubbles: true }));
+    const operation = container.querySelector<HTMLSelectElement>("#taskmate-source-edit-operation")!;
+    operation.value = "exclude";
+    operation.dispatchEvent(new Event("change", { bubbles: true }));
+    container.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    buttons(container, "Cancel")[0].click();
+
+    expect(dispatch.mock.calls.map(([action]) => action)).toEqual([
+      { type: "edit-input", field: "title", value: "新しいタイトル" },
+      { type: "edit-input", field: "priority", value: "3" },
+      { type: "edit-operation", operation: "exclude" },
+      { type: "save-edit" },
+      { type: "cancel-edit" }
+    ]);
+  });
+
+  it("marks invalid fields, describes the error and focuses the first one", () => {
+    const review = example();
+    const state = reduceSourceReviewUiState(editing(review, "SC-01"), { type: "edit-invalid", errors: { date: "invalid-date", title: "required" } });
+    const { container } = render(review, state);
+
+    const title = container.querySelector<HTMLInputElement>("#taskmate-source-edit-title")!;
+    expect([title.getAttribute("aria-invalid"), title.getAttribute("aria-describedby"), title.getAttribute("aria-required")]).toEqual(["true", "taskmate-source-edit-title-error", "true"]);
+    expect(container.querySelector("#taskmate-source-edit-title-error")?.textContent).toBe("Enter a value");
+    expect(container.querySelector("#taskmate-source-edit-date-error")?.textContent).toBe("Use YYYY-MM-DD");
+    expect(document.activeElement).toBe(title);
+
+    const noChange = render(review, reduceSourceReviewUiState(editing(review, "SC-02"), { type: "edit-invalid", errors: { form: "no-change" } })).container;
+    const alert = noChange.querySelector<HTMLElement>("#taskmate-source-edit-form-error")!;
+    expect([alert.getAttribute("role"), alert.textContent, document.activeElement === alert]).toEqual(["alert", "Nothing would change", true]);
+  });
+
+  it("keeps typed values in the edit state and returns focus to the Edit button", () => {
+    const review = example();
+    let state = editing(review, "SC-02");
+    state = reduceSourceReviewUiState(state, { type: "edit-input", field: "date", value: "2026-10-20" });
+    state = reduceSourceReviewUiState(state, { type: "edit-input", field: "reason", value: "延期" });
+    expect([state.editing?.form.merge?.date, state.editing?.form.draft.date, state.editing?.form.reason]).toEqual(["2026-10-20", "", "延期"]);
+
+    state = reduceSourceReviewUiState(state, { type: "edit-operation", operation: "create" });
+    state = reduceSourceReviewUiState(state, { type: "edit-input", field: "date", value: "2026-10-21" });
+    expect([state.editing?.form.merge?.date, state.editing?.form.draft.date]).toEqual(["2026-10-20", "2026-10-21"]);
+
+    state = reduceSourceReviewUiState(state, { type: "cancel-edit" });
+    expect([state.editing, state.focus]).toEqual([null, "taskmate-source-candidate-edit-SC-02"]);
+    render(review, state);
+    expect(document.activeElement?.id).toBe("taskmate-source-candidate-edit-SC-02");
+  });
+
+  it("closes the apply confirmation when editing starts and shows project names", () => {
+    const review = example();
+    review.candidates[0].taskDraft!.project = "project-1";
+    const opened = reduceSourceReviewUiState(createSourceReviewUiState(), { type: "open-apply" });
+    expect(editing(review, "SC-01", opened).applyOpen).toBe(false);
+
+    const { container } = render(review, createSourceReviewUiState(), { projects: [{ id: "project-1", name: "Customer A" }] });
+    expect(container.querySelector("#taskmate-source-candidate-SC-01 .taskmate-source-candidate-fields")?.textContent).toContain("ProjectCustomer A");
+  });
+
+  it("moves focus into the opened confirmation and back to its button when cancelled", () => {
+    const opened = reduceSourceReviewUiState(createSourceReviewUiState(), { type: "open-apply" });
+    const panel = render(example(), opened).container;
+    const title = panel.querySelector<HTMLElement>("#taskmate-source-review-apply-title")!;
+    expect([document.activeElement === title, title.tabIndex, panel.querySelector("footer")?.classList.contains("is-open")]).toEqual([true, -1, true]);
+
+    const closed = render(example(), reduceSourceReviewUiState(opened, { type: "cancel-apply" })).container;
+    expect([document.activeElement?.id, closed.querySelector("footer")?.classList.contains("is-open")]).toEqual(["taskmate-source-review-open-apply", false]);
   });
 
   it("resets the acknowledgement whenever the apply panel opens or closes", () => {
