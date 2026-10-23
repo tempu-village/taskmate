@@ -13,20 +13,20 @@ The initial scope covers scheduled date, Priority, Labels, title, Steps, and Not
 ## User-visible behavior
 
 1. Task Pilot records a Proposal containing a ChangeSet without modifying the canonical Task files.
-2. TaskMate opens the pending Proposal from an Obsidian URI handoff or its pending-review list.
+2. TaskMate opens the pending Proposal from an Obsidian URI handoff or the shared review list, which shows Task change Proposals together with Source candidate reviews.
 3. Desktop and mobile use the same dedicated ItemView so URI handoff and pending-review selection share one tested rendering path.
 4. The Review View presents a compact continuous list of proposed changes with stable change identifiers.
 5. The user can switch between semantic and raw Markdown diffs and approve changes individually.
 6. Opening a Proposal never applies it. TaskMate writes only the explicitly approved changes.
-7. The Review View provides pending and history tabs. History entries show status and success/failure counts and open the original diff as read-only evidence.
-8. Pending and history details both provide an in-view back action to their originating list; returning discards any unapplied selection state.
+7. The shared review list provides pending and history tabs. Each entry is labelled with its review kind. Task change history entries show status and success/failure counts and open the original diff as read-only evidence. A Proposal file that cannot be read appears under unreadable files and cannot be opened.
+8. Pending and history details both provide an in-view back action to the shared list in the same tab; returning discards any unapplied selection state. Applying a Proposal without a follow-up, or rejecting it, also returns to the list.
 
 Affected Tasks appear directly as always-expanded sections; there is no separate Task index or collapse interaction. A section header shows the Task title but omits the stored file path and change counts. Compact section gaps and header padding prioritize the change content vertically. The review toolbar separates selection from display. Selection uses persistent select-all and clear-all buttons whose unavailable action remains visible but disabled. Display uses an `Items / Full text` segmented control. Task-level bulk controls appear only when a Task has more than one change. Selection redraws preserve numeric scroll position; switching between Items and Full text restores the nearest stable Task UUID or `C-xx` anchor.
 
 Full text is a unified diff of the Proposal's recorded before/after Markdown: `-` lines are removed, `+` lines are added, and unprefixed lines are unchanged context around a change. It does not compare the live Task while the review is open. The serializer updates `updated-at` when it creates proposed Markdown and can normalize Markdown formatting, so Full text can include those generated differences in addition to the visible ChangeSet fields.
 
 The review surface contains horizontal overflow at every level except the Full text diff itself. Long titles, reasons and controls wrap within the available width. The sticky footer remains above Task headers and reserves mobile toolbar and safe-area clearance. The sticky toolbar and footer meet the review's visible top and bottom edges so scrolled content does not show past them, and Task headers stick directly under a one-row toolbar.
-Proposal identifiers in pending and history lists wrap within the available width. Proposal name, status, success/failure counts and Task/change counts each occupy separate rows so long names cannot overlap metadata or create page-level horizontal scrolling, including when a name wraps to three or more lines on phones.
+Proposal identifiers in pending and history lists wrap within the available width. Review kind, Proposal name, status, success/failure counts and Task/change counts each occupy separate rows so long names cannot overlap metadata or create page-level horizontal scrolling, including when a name wraps to three or more lines on phones.
 
 ## Obsidian Sync on mobile
 
@@ -34,7 +34,7 @@ Task change Proposals are JSON rather than Markdown. To make pending Proposals a
 
 `Settings → Sync → Selective sync → Sync all other types`
 
-After synchronization finishes, run `Open Task change reviews` in TaskMate and open the pending Proposal. TaskMate intentionally does not repeat this setup guidance in the pending-review screen.
+After synchronization finishes, run `Open reviews` in TaskMate and open the pending Proposal. TaskMate intentionally does not repeat this setup guidance in the pending-review screen.
 
 ## Target contract
 
@@ -111,7 +111,7 @@ The strict persisted format, lifecycle and URI security contract are defined by 
 
 [RFC 0033](../../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md), tracked by [Issue #62](https://github.com/tempu-village/taskmate/issues/62), is accepted but not implemented. It keeps this Review View as the only approval surface for changes to already-canonical Tasks that originate from a rolling plan. Plan creation and editing remain non-mutating; Codex must create a normal Task change Proposal before this view can approve anything.
 
-The RFC also adds a sibling Source candidate Review Module and a thin Review Catalog for pending/history discovery. The catalog may classify and route minimal envelopes, but Task change and Source candidate schemas, decisions, stale recovery, application, and UI state remain separate. Current Task change Proposal behavior and version 1 compatibility remain unchanged until an implementation is verified.
+The RFC also adds a sibling Source candidate Review Module and a thin Review Catalog for pending/history discovery. The catalog now classifies minimal envelopes for the shared list, while Task change and Source candidate schemas, decisions, stale recovery, application, and UI state remain separate. Task change Proposal version 1 is still recognized by its `proposal-*` name, so its behavior and compatibility are unchanged.
 
 ## Related documents
 

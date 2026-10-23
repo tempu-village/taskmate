@@ -6,7 +6,7 @@ vi.mock("obsidian", () => ({
 }));
 
 import { createI18n } from "../../../src/i18n";
-import { formalApplyMessage, sourceReviewIdFromLink } from "../../../src/reviews/source-candidate/review-view";
+import { formalApplyMessage, sourceReviewIdFromLink, sourceReviewIndexDetails } from "../../../src/reviews/source-candidate/review-view";
 import type { FormalApplyResult } from "../../../src/reviews/source-candidate/review-repository";
 import { parseSourceCandidateProposal } from "../../../src/reviews/source-candidate/proposal";
 import { exampleText } from "./fixture";
@@ -27,6 +27,13 @@ describe("Source candidate review view", () => {
     expect(sourceReviewIdFromLink({ review: "proposal-1" })).toBeNull();
     expect(sourceReviewIdFromLink({ review: "source-review-../x" })).toBeNull();
     expect(sourceReviewIdFromLink({})).toBeNull();
+  });
+
+  it("describes a review for the shared review list", () => {
+    expect(sourceReviewIndexDetails({
+      reviewId: "source-review-a", status: "partially-applied", health: "ok",
+      createdAt: "2026-10-20T09:00:00Z", updatedAt: "2026-10-21T09:00:00Z", candidateCount: 3, appliedCount: 1
+    }, createI18n("en"))).toEqual({ sortKey: "2026-10-21T09:00:00Z", lines: ["Partially applied", "3 candidates, 1 applied"] });
   });
 
   it("summarizes formal apply results, provenance problems and archiving", () => {

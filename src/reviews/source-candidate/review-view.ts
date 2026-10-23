@@ -4,7 +4,9 @@ import type TaskMatePlugin from "../../main";
 import { saveCandidateEdit } from "./candidate-edit-form";
 import { decideCandidate, markDiffViewed, planFormalApply } from "./proposal";
 import type { SourceCandidateProposal } from "./proposal";
-import type { FormalApplyResult } from "./review-repository";
+import type { FormalApplyResult, SourceReviewSummary } from "./review-repository";
+import { renderNoOpenReview } from "../shared/review-index";
+import type { ReviewIndexDetails } from "../shared/review-index";
 import { createSourceReviewUiState, reduceSourceReviewUiState, renderSourceCandidateReview } from "./review-renderer";
 import type { SourceReviewAction, SourceReviewCopy, SourceReviewUiState } from "./review-renderer";
 
@@ -25,9 +27,15 @@ export function formalApplyMessage(result: FormalApplyResult, i18n: I18n): strin
   return parts.join(" ");
 }
 
+export function sourceReviewIndexDetails(summary: SourceReviewSummary, i18n: I18n): ReviewIndexDetails {
+  return {
+    sortKey: summary.updatedAt,
+    lines: [statusText(summary.status, i18n), i18n.t("sourceReview.summary", { candidates: summary.candidateCount, applied: summary.appliedCount })]
+  };
+}
+
 export class SourceCandidateReviewView extends ItemView {
   private reviewId: string | null = null;
-  private indexMode: "pending" | "history" = "pending";
   private state: SourceReviewUiState = createSourceReviewUiState();
 
   constructor(leaf: WorkspaceLeaf, private readonly plugin: TaskMatePlugin) {
@@ -41,13 +49,6 @@ export class SourceCandidateReviewView extends ItemView {
   async onOpen(): Promise<void> { await this.render(); }
 
   requestRender(): void { void this.render(true); }
-
-  async openIndex(mode: "pending" | "history" = "pending"): Promise<void> {
-    this.reviewId = null;
-    this.indexMode = mode;
-    this.state = createSourceReviewUiState();
-    await this.render();
-  }
 
   async openReview(reviewId: string): Promise<void> {
     this.reviewId = reviewId;
@@ -63,7 +64,7 @@ export class SourceCandidateReviewView extends ItemView {
     this.contentEl.empty();
     const i18n = this.plugin.i18n();
     if (!this.reviewId) {
-      await this.renderIndex(i18n);
+      renderNoOpenReview(this.contentEl, i18n.t("reviews.notOpen"), { label: i18n.t("command.openReviews"), onClick: () => void this.plugin.openReviewIndex("pending", this.leaf) });
       return;
     }
     try {
@@ -72,7 +73,7 @@ export class SourceCandidateReviewView extends ItemView {
       const state = !this.state.focus && focused ? { ...this.state, focus: focused } : this.state;
       renderSourceCandidateReview(this.contentEl, review, planFormalApply(review), state, sourceReviewCopy(i18n), (action) => void this.handle(action), {
         readOnly: review.status === "history",
-        onBack: () => void this.openIndex(review.status === "history" ? "history" : "pending"),
+        onBack: () => void this.plugin.openReviewIndex(review.status === "history" ? "history" : "pending", this.leaf),
         projects
       });
       this.state = { ...this.state, focus: null };
@@ -81,30 +82,6 @@ export class SourceCandidateReviewView extends ItemView {
       this.contentEl.createDiv({ cls: "taskmate-empty", text: i18n.t("sourceReview.invalid") });
     }
     this.contentEl.scrollTop = scrollTop;
-  }
-
-  private async renderIndex(i18n: I18n): Promise<void> {
-    const reviews = this.indexMode === "pending" ? await this.plugin.sourceReviews.listPending() : await this.plugin.sourceReviews.listHistory();
-    const root = this.contentEl.createDiv({ cls: "taskmate-review-index" });
-    root.createEl("h2", { text: i18n.t("sourceReview.title") });
-    const tabs = root.createDiv({ cls: "taskmate-review-index-tabs" });
-    for (const mode of ["pending", "history"] as const) {
-      const tab = tabs.createEl("button", {
-        text: i18n.t(mode === "pending" ? "sourceReview.pending" : "sourceReview.history"),
-        cls: this.indexMode === mode ? "is-active" : "",
-        attr: { "aria-pressed": String(this.indexMode === mode) }
-      });
-      tab.addEventListener("click", () => void this.openIndex(mode));
-    }
-    if (reviews.length === 0) root.createDiv({ cls: "taskmate-empty", text: i18n.t(this.indexMode === "pending" ? "sourceReview.none" : "sourceReview.historyNone") });
-    for (const summary of reviews) {
-      const open = root.createEl("button", { cls: "taskmate-review-index-item" });
-      const identity = open.createSpan({ cls: "taskmate-review-index-identity" });
-      identity.createSpan({ text: summary.reviewId });
-      identity.createSpan({ cls: "taskmate-review-history-status", text: statusText(summary.status, i18n) });
-      open.createSpan({ cls: "taskmate-review-index-summary", text: i18n.t("sourceReview.summary", { candidates: summary.candidateCount, applied: summary.appliedCount }) });
-      open.addEventListener("click", () => void this.openReview(summary.reviewId));
-    }
   }
 
   private async handle(action: SourceReviewAction): Promise<void> {

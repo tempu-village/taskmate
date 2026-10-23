@@ -68,6 +68,7 @@ flowchart TB
   subgraph reviews["reviews/"]
     tcr["task-change/<br/>Task change review<br/>Domain, storage and UI"]
     scr["source-candidate/<br/>Source candidate review<br/>Domain, storage and UI"]
+    rsh["shared/<br/>Review Catalog and<br/>the shared review list"]
   end
 
   editor["task-editor/<br/>Task, Step and conflict modals,<br/>editing flow"]
@@ -86,6 +87,7 @@ flowchart TB
   main --> tasklist
   main --> tcr
   main --> scr
+  main --> rsh
   main --> projects
   main --> tasks
   tasklist --> editor
@@ -99,12 +101,14 @@ flowchart TB
   projects -.->|"type only"| tasks
   tcr --> tasks
   scr --> tasks
+  tcr --> rsh
+  scr --> rsh
   tasks ~~~ cross
 ```
 
 - Dependencies only point downward: `task-list → task-editor → labels / projects → tasks`, plus `reviews → tasks`. `tasks/` depends on no other feature folder. The [Module boundary test](../../../test/module-boundaries.test.ts) enforces this.
-- `reviews/` holds one sibling Module per review kind, and review kinds never import each other.
-- `task-list/view.ts`, `reviews/task-change/review-view.ts`, `reviews/source-candidate/review-view.ts` and `settings.ts` refer back to `main.ts` with type-only imports. Those references are erased at runtime and are omitted from the diagram.
+- `reviews/` holds one sibling Module per review kind, and review kinds never import each other. `reviews/shared/` holds the Review Catalog that both kinds use; it imports neither kind, and `main.ts` routes each list entry to the owning review view.
+- `task-list/view.ts`, `reviews/task-change/review-view.ts`, `reviews/source-candidate/review-view.ts`, `reviews/shared/review-index-view.ts` and `settings.ts` refer back to `main.ts` with type-only imports. Those references are erased at runtime and are omitted from the diagram.
 
 ## 3. Layers inside the folders
 
@@ -230,12 +234,22 @@ classDiagram
     <<composition root>>
     taskmate-review URI handler
     taskmate-source-review URI handler
+    +openReview() route by kind
+  }
+
+  class ReviewIndexView {
+    <<UI Adapter>>
+    shared pending and history list
+  }
+  class ReviewCatalog {
+    <<Persistence Adapter>>
+    reads envelopes only
+    +list() +classifyReviewFile()
   }
 
   class TaskChangeReviewView {
     <<UI Adapter>>
-    pending and history lists
-    +openProposal()
+    +openProposal() +openHistoryProposal()
   }
   class ReviewRenderer {
     <<UI Adapter>>
@@ -293,6 +307,9 @@ classDiagram
     +create()
   }
 
+  TaskMatePlugin --> ReviewIndexView : registers and opens
+  TaskMatePlugin --> ReviewCatalog : creates
+  ReviewIndexView --> TaskMatePlugin : list entries, open
   TaskMatePlugin --> TaskChangeReviewView : registers and opens
   TaskMatePlugin --> TaskChangeProposalRepository : creates
   TaskChangeReviewView --> ReviewRenderer : renders
@@ -311,7 +328,7 @@ classDiagram
   SourceCandidateReviewRepository --> TaskRepository : create or merge Tasks
 ```
 
-Both review kinds follow the same shape (Domain decides, Persistence Adapter writes) but keep separate schemas and code. No `reviews/shared` Module exists until a contract is proven common.
+Both review kinds follow the same shape (Domain decides, Persistence Adapter writes) but keep separate schemas and code. They share only the Review Catalog: it classifies each file from its envelope, each owning Module describes its own reviews for the list, and the plugin opens an entry in the owning view.
 
 ## 4. Data model
 
@@ -565,7 +582,7 @@ TaskMateを説明するための図をまとめたページです。正本は[Ar
 
 - **1. System context**：誰がどのファイルに触るかを示します。プラグインとTask Pilotはお互いのコードを呼ばず、同じファイル形式を共有して連携します。直接の受け渡しは、Task変更レビューを開く`obsidian://taskmate-review`と、Source候補レビューを開く`obsidian://taskmate-source-review`のURIだけです。Task Pilotはプラグインの`data.json`を読み、管理フォルダーの場所を合わせます。
 - **2. Module map**：`src/`のフォルダーを依存の段ごとに並べた図です。矢印は実際のimportから描いています。依存は下向きだけで、`task-list → task-editor → labels / projects → tasks`、`reviews → tasks`です。`tasks/`はほかの機能フォルダーに依存しません。この規則はModule boundary testで自動確認しています。`i18n/`と`shared/`はどこからでも使えます。
-- **3. Layers**：各フォルダーの中身を4つの役割で示します。UI Adapterは画面、Applicationは操作の段取り、Domainは純粋なルール（Obsidianに依存しない）、Persistence Adapterはファイルの読み書きです。3aは一覧と編集、3bはレビューの主要クラスです。2種類のレビューは同じ形をしていますが、スキーマとコードは別々に保っています。
+- **3. Layers**：各フォルダーの中身を4つの役割で示します。UI Adapterは画面、Applicationは操作の段取り、Domainは純粋なルール（Obsidianに依存しない）、Persistence Adapterはファイルの読み書きです。3aは一覧と編集、3bはレビューの主要クラスです。2種類のレビューは同じ形をしていますが、スキーマとコードは別々に保っています。共通なのはReview Catalogだけで、ファイルを「封筒」で分類し、一覧の説明は各Review Moduleが作り、プラグインが持ち主の画面で開きます。
 - **4. Data model**：4aは正本のデータです。TaskはStepを中に持ち、IDでProjectを参照し、Labelは文字列です。`rank`は全体で一つの手動順です。4bはレビュー用のデータです。Task変更Proposalは既存Taskの変更前後のMarkdownを丸ごと持ち、Source候補Proposalは元ノートから見つけた候補をすべて作成・統合・除外のいずれかに振り分けます。
 - **5. Key flows**：5aは編集保存の流れです。開いたときの内容・自分の編集・今のファイルを3方向で比べ、同じ項目が両方で変わっていれば項目ごとに選んでもらいます。5bはTask Pilotの変更提案を承認する流れです。承認した変更だけを、元の内容から変わっていない場合に書き込みます。5cはメモからTaskを作る今の流れで、Task Pilotの中で完結します。RFC 0033で、プラグイン側のSource候補レビューに置き換える作業が進んでいます。Review Viewで候補の編集・判断・正式反映ができ、Task PilotはTaskMateでのレビューを頼まれたときにこちらを使います。古い流れは#62で廃止するまで既定のままです。
 - **6. Where each feature lives**：機能ごとに、利用者が得られることと主なコードの場所を対応させた表です。

@@ -6,7 +6,8 @@ vi.mock("obsidian", () => ({
   Notice: class {}
 }));
 
-import { applyNoticeKind, openProposalInReviewView, TaskChangeReviewView } from "../../../src/reviews/task-change/review-view";
+import { createI18n } from "../../../src/i18n";
+import { applyNoticeKind, openProposalInReviewView, TaskChangeReviewView, taskChangeIndexDetails } from "../../../src/reviews/task-change/review-view";
 
 describe("Task change review view", () => {
   it("distinguishes stale regeneration from an ordinary zero-count notice", () => {
@@ -47,30 +48,36 @@ describe("Task change review view", () => {
     }));
   });
 
-  it("returns an existing review view to a freshly rendered pending index", async () => {
+  it("describes pending and history Proposals for the shared review list", () => {
+    const i18n = createI18n("en");
+    const summary = {
+      id: "proposal-a", createdAt: "2026-10-20T09:00:00Z", taskCount: 2, changeCount: 3,
+      status: "pending" as const, succeededCount: 0, failedCount: 0, followUpProposalId: null
+    };
+
+    expect(taskChangeIndexDetails(summary, i18n)).toEqual({ sortKey: "2026-10-20T09:00:00Z", lines: ["2 Tasks, 3 changes"] });
+    expect(taskChangeIndexDetails({ ...summary, status: "partially-applied", resultAt: "2026-10-21T09:00:00Z", succeededCount: 2, failedCount: 1 }, i18n)).toEqual({
+      sortKey: "2026-10-21T09:00:00Z",
+      lines: ["Partially applied", "2 applied · 1 failed", "2 Tasks, 3 changes"]
+    });
+  });
+
+  it("opens a history Proposal from the shared review list as read-only evidence", async () => {
     const view = Object.create(TaskChangeReviewView.prototype) as TaskChangeReviewView;
     const render = vi.fn().mockResolvedValue(undefined);
     Object.assign(view, {
-      proposalId: "proposal-old",
-      targetTaskId: "task-old",
-      targetChangeId: "C-01",
-      review: { proposalId: "proposal-old" },
-      indexMode: "history",
-      proposalSource: "history",
+      proposalId: null,
+      proposalSource: "pending",
       state: { mode: "raw", approvedChangeIds: new Set(["C-01"]) },
       render
     });
 
-    await view.openIndex();
+    await view.openHistoryProposal("proposal-old");
 
     expect(render).toHaveBeenCalledOnce();
     expect(view).toEqual(expect.objectContaining({
-      proposalId: null,
-      targetTaskId: null,
-      targetChangeId: null,
-      review: null,
-      indexMode: "pending",
-      proposalSource: "pending",
+      proposalId: "proposal-old",
+      proposalSource: "history",
       state: { mode: "semantic", approvedChangeIds: new Set() }
     }));
   });

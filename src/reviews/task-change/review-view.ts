@@ -1,5 +1,9 @@
 import { ItemView, Notice, WorkspaceLeaf } from "obsidian";
+import type { I18n } from "../../i18n";
 import type TaskMatePlugin from "../../main";
+import { renderNoOpenReview } from "../shared/review-index";
+import type { ReviewIndexDetails } from "../shared/review-index";
+import type { ProposalSummary } from "./proposal-repository";
 import { createTaskChangeReviewState, reduceTaskChangeReviewState, renderTaskChangeReview } from "./review-renderer";
 import type { TaskChangeReviewAction, TaskChangeReviewCopy, TaskChangeReviewState } from "./review-renderer";
 import type { ProposalReview } from "./proposal";
@@ -21,12 +25,21 @@ export async function openProposalInReviewView(
   await view.openProposal(proposalId, taskId, changeId);
 }
 
+export function taskChangeIndexDetails(summary: ProposalSummary, i18n: I18n): ReviewIndexDetails {
+  const { t } = i18n;
+  const counts = t("review.summary", { tasks: summary.taskCount, changes: summary.changeCount });
+  if (summary.status === "pending") return { sortKey: summary.createdAt, lines: [counts] };
+  return {
+    sortKey: summary.resultAt ?? summary.createdAt,
+    lines: [t(`review.status.${summary.status}`), t("review.historyCounts", { succeeded: summary.succeededCount, failed: summary.failedCount }), counts]
+  };
+}
+
 export class TaskChangeReviewView extends ItemView {
   private proposalId: string | null = null;
   private targetTaskId: string | null = null;
   private targetChangeId: string | null = null;
   private review: ProposalReview | null = null;
-  private indexMode: "pending" | "history" = "pending";
   private proposalSource: "pending" | "history" = "pending";
   private state: TaskChangeReviewState = createTaskChangeReviewState();
 
@@ -42,17 +55,6 @@ export class TaskChangeReviewView extends ItemView {
 
   requestRender(): void { void this.render("scroll"); }
 
-  async openIndex(mode: "pending" | "history" = "pending"): Promise<void> {
-    this.proposalId = null;
-    this.targetTaskId = null;
-    this.targetChangeId = null;
-    this.review = null;
-    this.indexMode = mode;
-    this.proposalSource = mode;
-    this.state = createTaskChangeReviewState();
-    await this.render();
-  }
-
   async openProposal(proposalId: string, taskId?: string, changeId?: string): Promise<void> {
     this.proposalId = proposalId;
     this.targetTaskId = taskId ?? null;
@@ -62,7 +64,7 @@ export class TaskChangeReviewView extends ItemView {
     await this.render();
   }
 
-  private async openHistoryProposal(proposalId: string): Promise<void> {
+  async openHistoryProposal(proposalId: string): Promise<void> {
     this.proposalId = proposalId;
     this.proposalSource = "history";
     this.state = createTaskChangeReviewState();
@@ -73,39 +75,8 @@ export class TaskChangeReviewView extends ItemView {
     const position = preserve ? captureReviewPosition(this.contentEl, preserve) : null;
     this.contentEl.empty();
     if (!this.proposalId) {
-      const proposals = this.indexMode === "pending"
-        ? await this.plugin.proposals.listPending()
-        : await this.plugin.proposals.listHistory();
-      const root = this.contentEl.createDiv({ cls: "taskmate-review-index" });
-      const tabs = root.createDiv({ cls: "taskmate-review-index-tabs" });
-      for (const mode of ["pending", "history"] as const) {
-        const tab = tabs.createEl("button", {
-          text: this.plugin.i18n().t(mode === "pending" ? "review.pending" : "review.history"),
-          cls: this.indexMode === mode ? "is-active" : ""
-        });
-        tab.addEventListener("click", () => { this.indexMode = mode; void this.render(); });
-      }
-      if (proposals.length === 0) root.createDiv({ cls: "taskmate-empty", text: this.plugin.i18n().t(this.indexMode === "pending" ? "review.none" : "review.historyNone") });
-      for (const proposal of proposals) {
-        const open = root.createEl("button", { cls: "taskmate-review-index-item" });
-        const identity = open.createSpan({ cls: "taskmate-review-index-identity" });
-        identity.createSpan({ text: proposal.id });
-        if (this.indexMode === "history") {
-          identity.createSpan({
-            cls: "taskmate-review-history-status",
-            text: this.plugin.i18n().t(`review.status.${proposal.status}`)
-          });
-          identity.createSpan({
-            cls: "taskmate-review-history-counts",
-            text: this.plugin.i18n().t("review.historyCounts", {
-              succeeded: proposal.succeededCount,
-              failed: proposal.failedCount
-            })
-          });
-        }
-        open.createSpan({ cls: "taskmate-review-index-summary", text: this.plugin.i18n().t("review.summary", { tasks: proposal.taskCount, changes: proposal.changeCount }) });
-        open.addEventListener("click", () => void (this.indexMode === "pending" ? this.openProposal(proposal.id) : this.openHistoryProposal(proposal.id)));
-      }
+      const { t } = this.plugin.i18n();
+      renderNoOpenReview(this.contentEl, t("reviews.notOpen"), { label: t("command.openReviews"), onClick: () => void this.plugin.openReviewIndex("pending", this.leaf) });
       return;
     }
     try {
@@ -116,7 +87,7 @@ export class TaskChangeReviewView extends ItemView {
         readOnly: this.proposalSource === "history",
         back: {
           label: this.plugin.i18n().t("common.back"),
-          onClick: () => void this.openIndex(this.proposalSource)
+          onClick: () => void this.plugin.openReviewIndex(this.proposalSource, this.leaf)
         }
       });
       if (position) restoreReviewPosition(this.contentEl, position);
@@ -142,13 +113,18 @@ export class TaskChangeReviewView extends ItemView {
       this.proposalId = result.followUp?.id ?? null;
       this.state = createTaskChangeReviewState();
       preserve = undefined;
+      if (!this.proposalId) {
+        await this.plugin.openReviewIndex("pending", this.leaf);
+        return;
+      }
     }
     if (action.type === "reject" && this.proposalId) {
       if (!window.confirm(this.plugin.i18n().t("review.rejectConfirm"))) return;
       await this.plugin.proposals.reject(this.proposalId);
       this.proposalId = null;
       new Notice(this.plugin.i18n().t("review.rejected"));
-      preserve = undefined;
+      await this.plugin.openReviewIndex("pending", this.leaf);
+      return;
     }
     await this.render(preserve);
   }

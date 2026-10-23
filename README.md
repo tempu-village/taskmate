@@ -191,7 +191,7 @@ You can instead review the candidates in TaskMate. Ask Task Pilot to stage the r
 $taskpilot Stage a Source candidate review of the selected notes and open it in TaskMate.
 ```
 
-Task Pilot saves one review file in the proposal folder and opens it in TaskMate; you can also run **TaskMate: Open Source candidate reviews**. Each candidate is a card that quotes its source sentences. Edit a card when needed, choose to create, merge, exclude, or hold it, and then select **Apply decisions…**. TaskMate changes no Task before you confirm, asks for an extra confirmation for merges whose diff you did not open, and records the import on a source note once all of its candidates are applied. Completed reviews move to `TaskMate/Proposals/History`. Reviews already in `TaskMate/Proposals/Active` are finished in the conversation as before.
+Task Pilot saves one review file in the proposal folder and opens it in TaskMate; you can also run **TaskMate: Open reviews**, which lists every pending review. Each candidate is a card that quotes its source sentences. Edit a card when needed, choose to create, merge, exclude, or hold it, and then select **Apply decisions…**. TaskMate changes no Task before you confirm, asks for an extra confirmation for merges whose diff you did not open, and records the import on a source note once all of its candidates are applied. Completed reviews move to `TaskMate/Proposals/History`. Reviews already in `TaskMate/Proposals/Active` are finished in the conversation as before.
 
 Backlog changes are also shown before writing. Capacity plans are read-only, use a visible 20% default buffer and upper effort estimates, and never add Task statuses or change Manual order. “Do later” removes the date instead of adding a Pending or Waiting state.
 
