@@ -441,9 +441,23 @@ describe("mobile layout", () => {
   });
 
   it("keeps Source candidate headers at the top and the open confirmation below the cards", () => {
-    expect(declarations(".taskmate-review-index")).toMatch(/padding\s*:\s*var\(--taskmate-review-padding\)/);
     expect(declarations(".taskmate-source-candidate .taskmate-review-file-header")).toMatch(/top\s*:\s*calc\(-1 \* var\(--taskmate-review-padding\)\)/);
-    expect(declarations(".taskmate-source-review .taskmate-source-review-apply")).toMatch(/bottom\s*:\s*calc\(-1 \* var\(--taskmate-review-padding\)\)/);
     expect(declarations(".taskmate-source-review-apply.is-open")).toMatch(/position\s*:\s*static\s*;/);
+  });
+
+  it("keeps Task change review sticky boxes at the visible edges and headers under the toolbar", () => {
+    const phone = stylesheet.slice(stylesheet.indexOf("@media (max-width: 600px)"), stylesheet.indexOf("@media (max-width: 360px)"));
+    const controls = declarations(".taskmate-review-controls");
+
+    // Obsidian's .view-content padding must not replace the padding that the sticky offsets subtract.
+    expect(declarations(".taskmate-review-index")).toMatch(/padding\s*:\s*var\(--taskmate-review-padding\)\s*!important\s*;/);
+    expect(controls).toMatch(/top\s*:\s*calc\(-1 \* var\(--taskmate-review-padding\)\)/);
+    expect(controls).toMatch(/min-height\s*:\s*var\(--taskmate-review-controls-height\)/);
+    expect(declarations(".taskmate-review-file-header")).toMatch(/top\s*:\s*calc\(var\(--taskmate-review-controls-height\) - var\(--taskmate-review-padding\)\)/);
+    expect(stylesheet).toMatch(/\.taskmate-review-footer\s*\{\s*position\s*:\s*sticky;\s*bottom\s*:\s*calc\(-1 \* var\(--taskmate-review-padding\)\)/);
+    expect(declarations(".is-phone .taskmate-review-footer")).toMatch(/-\s*var\(--taskmate-review-padding\)\s*\)/);
+    expect(declarations(".taskmate-review")).toMatch(/--taskmate-review-controls-height\s*:\s*calc\(1\.6rem \+ var\(--input-height\)\)/);
+    expect(phone).toMatch(/--taskmate-review-controls-height\s*:\s*calc\(1\.6rem \+ max\(var\(--input-height\), 36px\)\)/);
+    expect(phone).not.toMatch(/\.taskmate-review-file-header\s*\{[^}]*top\s*:/);
   });
 });

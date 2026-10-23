@@ -14,9 +14,13 @@
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: var(--taskmate-review-padding);
+  /* The review renders into Obsidian's .view-content, whose own padding would otherwise win. The sticky offsets
+     below rely on this padding. */
+  padding: var(--taskmate-review-padding) !important;
 }
 .taskmate-review {
+  /* One row of controls: 0.6rem toolbar padding and 0.2rem display-switch padding around each button. */
+  --taskmate-review-controls-height: calc(1.6rem + var(--input-height));
   min-width: 0;
   max-width: 100%;
   overflow-x: hidden;
@@ -37,12 +41,15 @@
 .taskmate-review-history-counts,
 .taskmate-review-index-summary { color: var(--text-muted); font-size: var(--font-ui-smaller); }
 .taskmate-review-index-summary { align-self: start; white-space: normal; text-align: start; }
+/* Sticky boxes stop at the scroll container's padding edge, so the toolbar and footer move past the padding to
+   meet the visible edge and hide the content behind them. File headers stick directly under the toolbar. */
 .taskmate-review-controls {
   position: sticky;
-  top: 0;
+  top: calc(-1 * var(--taskmate-review-padding));
   z-index: 3;
   justify-content: space-between;
   flex-wrap: wrap;
+  min-height: var(--taskmate-review-controls-height);
   padding: 0.6rem 0;
   background: var(--background-primary);
 }
@@ -74,7 +81,7 @@
 .taskmate-review-file { min-width: 0; max-width: 100%; border: 1px solid var(--background-modifier-border); border-radius: 10px; overflow: clip; }
 .taskmate-review-file-header {
   position: sticky;
-  top: 52px;
+  top: calc(var(--taskmate-review-controls-height) - var(--taskmate-review-padding));
   z-index: 1;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -97,14 +104,12 @@
 .taskmate-diff-add { color: var(--text-success); background: color-mix(in srgb, var(--color-green) 12%, transparent); }
 .taskmate-diff-delete { color: var(--text-error); background: color-mix(in srgb, var(--color-red) 12%, transparent); }
 .taskmate-diff-header { color: var(--text-accent); }
-.taskmate-review-footer { position: sticky; bottom: 0; z-index: 5; justify-content: flex-end; flex-wrap: wrap; padding: 0.7rem 0; background: var(--background-primary); }
+.taskmate-review-footer { position: sticky; bottom: calc(-1 * var(--taskmate-review-padding)); z-index: 5; justify-content: flex-end; flex-wrap: wrap; padding: 0.7rem 0; background: var(--background-primary); }
 .taskmate-review-index-item { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.35rem; align-items: start; width: 100%; max-width: 100%; height: auto; min-height: var(--input-height); margin: 0.4rem 0; padding: 0.7rem; }
 .taskmate-source-review-summary { margin: 0 0 0.7rem; color: var(--text-muted); font-size: var(--font-ui-smaller); overflow-wrap: anywhere; }
 .taskmate-source-candidate { padding-bottom: 0.6rem; }
-/* Sticky boxes stop at the scroll container's padding edge. The Source review has no sticky toolbar above its
-   cards, so headers and the footer move past the padding to meet the visible edge and hide the content behind it. */
+/* The Source review has no toolbar above its cards, so its headers meet the visible top edge. */
 .taskmate-source-candidate .taskmate-review-file-header { top: calc(-1 * var(--taskmate-review-padding)); }
-.taskmate-source-review .taskmate-source-review-apply { bottom: calc(-1 * var(--taskmate-review-padding)); }
 .taskmate-source-candidate .taskmate-review-file-identity { flex-wrap: wrap; gap: 0.45rem; }
 .taskmate-source-candidate-operation { padding: 0.05rem 0.45rem; border-radius: 999px; background: var(--background-modifier-hover); font-size: var(--font-ui-smaller); }
 .taskmate-source-candidate-status { margin: 0.4rem 0.7rem; color: var(--text-muted); font-size: var(--font-ui-smaller); overflow-wrap: anywhere; }
@@ -158,7 +163,10 @@
 
 @media (max-width: 600px) {
   .taskmate-review-modal { width: 100vw; height: 100vh; max-width: none; border-radius: 0; }
-  .taskmate-review { --taskmate-review-padding: 0.6rem; }
+  .taskmate-review {
+    --taskmate-review-padding: 0.6rem;
+    --taskmate-review-controls-height: calc(1.6rem + max(var(--input-height), 36px));
+  }
   .taskmate-review-controls { gap: 0.45rem; }
   .taskmate-review-wide-label { display: none; }
   .taskmate-review-compact-label { display: inline; }
@@ -168,7 +176,7 @@
   .taskmate-review-display-switch button,
   .taskmate-review-file-actions button { min-height: 36px; padding-inline: 0.55rem; }
   .taskmate-review-display-switch button { min-width: 3.2rem; }
-  .taskmate-review-file-header { grid-template-columns: minmax(0, 1fr); top: 50px; }
+  .taskmate-review-file-header { grid-template-columns: minmax(0, 1fr); }
   .taskmate-review-file-actions { grid-column: 1; grid-row: 2; justify-self: start; flex-wrap: wrap; max-width: 100%; }
   .taskmate-review-change { grid-template-columns: auto auto minmax(0, 1fr); padding-inline: 0.55rem; }
   .taskmate-review-footer > button { flex: 1 1 auto; }
@@ -194,7 +202,10 @@
   );
 }
 .is-phone .taskmate-review-footer {
-  bottom: calc(var(--mobile-toolbar-height, 0px) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  bottom: calc(
+    var(--mobile-toolbar-height, 0px) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))
+      - var(--taskmate-review-padding)
+  );
   padding-bottom: max(0.7rem, var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
 }
 .is-phone .taskmate-review-index-item { grid-template-columns: minmax(0, 1fr); gap: 0.35rem; }
