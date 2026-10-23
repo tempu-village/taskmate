@@ -25,7 +25,7 @@ Affected Tasks appear directly as always-expanded sections; there is no separate
 
 Full text is a unified diff of the Proposal's recorded before/after Markdown: `-` lines are removed, `+` lines are added, and unprefixed lines are unchanged context around a change. It does not compare the live Task while the review is open. The serializer updates `updated-at` when it creates proposed Markdown and can normalize Markdown formatting, so Full text can include those generated differences in addition to the visible ChangeSet fields.
 
-The review surface contains horizontal overflow at every level except the Full text diff itself. Long titles, reasons and controls wrap within the available width. The sticky footer remains above Task headers and reserves mobile toolbar and safe-area clearance.
+The review surface contains horizontal overflow at every level except the Full text diff itself. Long titles, reasons and controls wrap within the available width. The sticky footer remains above Task headers and reserves mobile toolbar and safe-area clearance. The sticky toolbar and footer meet the review's visible top and bottom edges so scrolled content does not show past them, and Task headers stick directly under a one-row toolbar.
 Proposal identifiers in pending and history lists wrap within the available width. Proposal name, status, success/failure counts and Task/change counts each occupy separate rows so long names cannot overlap metadata or create page-level horizontal scrolling, including when a name wraps to three or more lines on phones.
 
 ## Obsidian Sync on mobile
