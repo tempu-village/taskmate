@@ -49,6 +49,7 @@ After synchronization finishes, run `Open reviews` in TaskMate and open the pend
 - Partial approval produces an explicit result for every proposed change.
 - Unrelated content and manual ordering are preserved.
 - The canonical context label is `context/break`; legacy `brk` input is normalized at the boundary.
+- Review text, such as titles, values, reasons and the Full text diff, can be selected and copied even though Obsidian turns off text selection elsewhere in its interface. Buttons stay unselectable, and the Source candidate review follows the same rule.
 
 ## Processing flow
 
