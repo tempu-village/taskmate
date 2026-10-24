@@ -50,7 +50,7 @@ For each Task that may change, Task Pilot shows the current value, proposed valu
 - make no change;
 - ask the user to clarify.
 
-These actions describe a proposal session. They are not stored as Task statuses or displayed as a new status system in TaskMate.
+These actions classify a proposed change in a review. They are not stored as Task statuses or displayed as a new status system in TaskMate.
 
 Task Pilot may point out a possible duplicate, unclear title, oversized Task, or Task that may already be complete, but the first iteration does not merge, split, rename, complete, or delete it automatically or through a bulk review action. The user may still perform those operations through existing TaskMate behavior. Completion is allowed through Task Pilot only when the user directly instructs it to complete a named Task; it is not inferred from age, wording, or missing activity.
 
@@ -176,7 +176,7 @@ If some writes in an approved batch fail, Task Pilot identifies which Tasks succ
 7. Recheck current files, apply only approved changes, and validate the saved Markdown.
 8. Build a read-only capacity plan from the current canonical Tasks and display the capacity calculation, reasons, estimates, and inferences.
 
-Backlog-review mutations use persisted, reviewable [Task change Proposals](task-change-review/README.md) containing typed ChangeSets and complete before/after Markdown evidence. Capacity plans remain conversation output and read-only. Source-note imports continue to use their distinct persisted Proposal sessions. Canonical Task Markdown remains the only Task master data.
+Backlog-review mutations use persisted, reviewable [Task change Proposals](task-change-review/README.md) containing typed ChangeSets and complete before/after Markdown evidence. Capacity plans remain conversation output and read-only. Source-note imports use their own persisted Source candidate reviews. Canonical Task Markdown remains the only Task master data.
 
 ## Failure handling and limitations
 
@@ -406,7 +406,7 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 7. 現在のファイルを再確認し、承認分だけ反映してMarkdownを検証する。
 8. 現在の正式Taskから読み取り専用の時間ベース計画を作り、時間計算、理由、見積もり、推測を表示する。
 
-バックログ変更は、型付きChangeSetと変更前後Markdown全文を含む永続化されたレビュー可能な[Task change Proposal](task-change-review/README.md)を使います。時間ベース計画は引き続き対話内だけの読み取り専用です。Source note取り込みは別の永続Proposal sessionを使い続け、正式なTask MarkdownだけをTaskの正本とします。
+バックログ変更は、型付きChangeSetと変更前後Markdown全文を含む永続化されたレビュー可能な[Task change Proposal](task-change-review/README.md)を使います。時間ベース計画は引き続き対話内だけの読み取り専用です。Source note取り込みは、それ専用の永続的なSource候補レビューを使い、正式なTask MarkdownだけをTaskの正本とします。
 
 ### 失敗時と制限
 
