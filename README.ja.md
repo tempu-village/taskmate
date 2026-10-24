@@ -3,7 +3,7 @@
 [English](README.md) | 日本語
 
 <!-- translation-status: ai-translated -->
-<!-- translation-source-sha256: 18c879dc56546867aced778900396baed5b5e088d00351b0350d3cc4e95a5d82 -->
+<!-- translation-source-sha256: ac2e502a5b5c0d82ef89c5aad863aa0e5ec5ada0b7c336efd32fc691489a0dc7 -->
 
 > 翻訳状態：`ai-translated`
 >
@@ -179,7 +179,7 @@ ln -s "$(pwd)/skills/taskpilot" "$HOME/.agents/skills/taskpilot"
 Vaultをエージェントのワークスペースとして開き、次のように依頼します。
 
 ```text
-$taskpilot Review the selected source notes and propose every Task candidate.
+$taskpilot Review the selected source notes and stage every Task candidate for review in TaskMate.
 ```
 
 バックログ見直しや時間ベース計画では、操作内容に加え、分かる場合は利用可能時間やContextを指定します。
@@ -190,15 +190,9 @@ $taskpilot I have two hours. Build a realistic plan without changing my Tasks.
 $taskpilot Find work for a 30-minute phone-only break.
 ```
 
-Task Pilotは`TaskMate/Proposals/Active`へ提案を書き込み、この段階では正式なタスクを作成しません。会話ですべての候補を確認し、承認、修正、除外のいずれかを明示的に判断します。承認または修正した提案はタスクになります。完了した確認は、人が読める目印と機械可読な判断情報を付けて`TaskMate/Proposals/Archive`へ移動し、手動で削除するまで残ります。
+Task Pilotは提案フォルダへレビューのファイルを1つ保存してTaskMateで開き、この段階では正式なタスクを作成しません。未レビューのレビューを一覧にする**TaskMate: レビューを開く**からも開けます。候補はそれぞれ、元の文を引用したカードになります。必要ならカードを編集し、作成、統合、除外、保留のいずれかを選んでから、**判断を反映…**を選びます。TaskMateは確定するまでタスクを変更せず、差分を開いていない統合には追加の確認を求め、ソースノートの候補がすべて反映されたときにそのノートへ取り込み履歴を記録します。完了したレビューは`TaskMate/Proposals/History`へ移動し、削除するまで残ります。詳しい手順は[ソースノートを確認してTaskを作る](docs/user/how-to/import-source-notes.md)を参照してください。
 
-代わりに、候補をTaskMateの画面で確認することもできます。TaskMate用のレビューを作るようTask Pilotに依頼します。
-
-```text
-$taskpilot Stage a Source candidate review of the selected notes and open it in TaskMate.
-```
-
-Task Pilotは提案フォルダへレビューのファイルを1つ保存し、TaskMateで開きます。未レビューのレビューを一覧にする**TaskMate: レビューを開く**からも開けます。候補はそれぞれ、元の文を引用したカードになります。必要ならカードを編集し、作成、統合、除外、保留のいずれかを選んでから、**判断を反映…**を選びます。TaskMateは確定するまでタスクを変更せず、差分を開いていない統合には追加の確認を求め、ソースノートの候補がすべて反映されたときにそのノートへ取り込み履歴を記録します。完了したレビューは`TaskMate/Proposals/History`へ移動します。既に`TaskMate/Proposals/Active`にある確認は、これまでどおり会話で完了させます。
+以前のバージョンは、レビューをMarkdownで`TaskMate/Proposals/Active`に作り、会話で承認していました。TaskMateはこれらのレビューを表示せず、Task Pilotも読み書きしません。移動や削除も一切しません。`Active`に残っているレビューは更新前に終わらせるか、更新後に普通のノートとして読み、元のノートから新しいレビューを作るようTask Pilotに依頼してください。
 
 バックログ変更も書き込み前に提示します。時間ベース計画は読み取り専用で、表示される初期20%の余白と所要時間の上限を使い、新しいTask状態やManual orderの変更を行いません。「後で」はPendingやWaitingを追加せず、日付を外します。
 
@@ -208,13 +202,13 @@ Task Pilotは提案フォルダへレビューのファイルを1つ保存し、
 
 - タスクは初期設定で`TaskMate/Tasks`に保存されます。
 - プロジェクトは初期設定で`TaskMate/Projects`に保存されます。
-- Proposal sessionは初期設定で`TaskMate/Proposals`に保存されます。
+- レビューは初期設定で`TaskMate/Proposals`に、完了したレビューはその`History`フォルダに保存されます。
 - 各フォルダの場所はTaskMateの設定で変更できます。
 - プラグインはObsidianのVault APIとファイル管理APIを使い、TaskMateが管理するMarkdownを読み書きします。
 - プラグインには、テレメトリ、ホストされたTaskMateアカウント、実行時AI、翻訳サービス、TaskMate独自の同期サーバーはありません。
 - プラグインはタスク内容を外部の翻訳サービスへ送信しません。
 - Task Pilotはエージェントクライアントの権限で動作し、Obsidianプラグインとは別のものです。
-- プラグインをアンインストールしても、タスク、プロジェクト、提案のMarkdownはVaultに残ります。
+- プラグインをアンインストールしても、タスク、プロジェクト、レビューのファイルはVaultに残ります。
 
 公開リリース前に、これらの記述をリリース用ビルドと照合してください。重要なデータにTaskMateを使用する前にVaultをバックアップし、利用する同期サービスの競合処理を理解してください。
 

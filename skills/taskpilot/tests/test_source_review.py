@@ -107,6 +107,25 @@ class SourceReviewTest(unittest.TestCase):
         self.run_script(TODO_STORE, "update", "--id", task["id"], "--steps-json", json.dumps([{"text": "Prepare demo data", "completed": False, "date": None}]))
         return task
 
+    def test_stage_leaves_reviews_from_earlier_versions_untouched(self):
+        legacy = {
+            "TaskMate/Proposals/Active/session-1/Review.md": "# Review\n\n- [ ] proposal-1\n",
+            "TaskMate/Proposals/Active/session-1/Tasks/proposal-1.md": "---\ntype: taskmate-proposal\nproposal-id: \"proposal-1\"\n---\n",
+            "TaskMate/Proposals/Archive/session-0/Review.md": "# Review\n\n> [!success] Decided\n",
+        }
+        for relative, text in legacy.items():
+            path = self.vault / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text, encoding="utf-8")
+        target = self.demo_task()
+        before = {path: path.read_bytes() for path in sorted((self.vault / "TaskMate" / "Proposals").rglob("*")) if path.is_file()}
+
+        self.stage(self.request(target))
+
+        after = {path: path.read_bytes() for path in sorted((self.vault / "TaskMate" / "Proposals").rglob("*")) if path.is_file()}
+        self.assertEqual({path: content for path, content in after.items() if path in before}, before)
+        self.assertEqual([path.relative_to(self.vault).as_posix() for path in after if path not in before], ["TaskMate/Proposals/source-review-sync.json"])
+
     def test_stage_writes_one_pending_json_without_changing_tasks_or_notes(self):
         target = self.demo_task()
         before = self.tree()

@@ -1,6 +1,6 @@
-# Source candidate review in TaskMate
+# Source candidate review
 
-This workflow is the TaskMate-native alternative to the staged `Active/<session>/Review.md` import described in [import-workflow.md](import-workflow.md) and [proposal-workflow.md](proposal-workflow.md), and will replace it ([#62](https://github.com/tempu-village/taskmate/issues/62)). Use it when the user asks to review the candidates in TaskMate; otherwise keep using the staged import workflow. In TaskMate the user can edit each candidate's fields or operation, decide, and formally apply; TaskMate then writes Source-note provenance itself.
+Stage the coverage review from [import-workflow.md](import-workflow.md) as one Source candidate review. In TaskMate the user can edit each candidate's fields or operation, decide, and formally apply; TaskMate then writes Source-note provenance itself.
 
 ## Stage a review
 

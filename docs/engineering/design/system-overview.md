@@ -49,7 +49,7 @@ flowchart TB
   helpers -->|"write"| plans
 ```
 
-- Task Pilot's helpers are `todo_store` (direct Task and Project operations), `proposal_store` (current Source-note import), `planning_store` (backlog review, Task change Proposals and capacity plans), `rolling_plan` (rolling plans) and `source_review` (Source candidate Proposals).
+- Task Pilot's helpers are `todo_store` (direct Task and Project operations), `planning_store` (backlog review, Task change Proposals and capacity plans), `rolling_plan` (rolling plans) and `source_review` (Source candidate Proposals).
 - The plugin and Task Pilot never call each other's code. They share the file formats in [Specifications](../specifications/README.md) and Task Pilot's [Task schema](../../../skills/taskpilot/references/task-schema.md). The only direct handoffs are the URIs that open a Task change review or a Source candidate review.
 - Task Pilot reads the plugin's `data.json` to find the managed folders, so both sides agree on where Tasks live.
 - The plugin's Source candidate review also writes import provenance on a Source note once all of that note's candidates are applied.
@@ -523,7 +523,7 @@ Details: [Task change review](../features/task-change-review/README.md).
 
 ### 5c. Turn Source notes into Tasks
 
-The current import path runs entirely in Task Pilot. The plugin only marks which notes are in scope.
+Task Pilot reads the notes and stages the review; every decision and every write happens in the plugin.
 
 ```mermaid
 sequenceDiagram
@@ -536,15 +536,16 @@ sequenceDiagram
   Plugin->>Vault: set taskmate-source or add to sourceFolders
   User->>Agent: turn my notes into Tasks
   Agent->>Vault: todo_store finds eligible Source notes
-  Agent->>Agent: list every candidate as a coverage manifest
-  Agent->>Vault: proposal_store stage writes Active/session/Review.md
+  Agent->>Agent: map every statement to a create, merge or exclude candidate
+  Agent->>Vault: source_review stage writes source-review-ID.json
+  Agent-->>Plugin: obsidian://taskmate-source-review
   Note right of Vault: No canonical Task exists yet
-  User->>Agent: approve, revise or exclude each candidate
-  Agent->>Vault: proposal_store promote creates or merges Tasks
-  Agent->>Vault: write provenance on Source notes, move session to Archive
+  User->>Plugin: edit, decide, then confirm formal apply
+  Plugin->>Vault: create or merge Tasks, one candidate at a time
+  Plugin->>Vault: write provenance on completed notes, move the review to History
 ```
 
-Under RFC 0033 this path is being replaced: `source_review.py` stages one `source-review-*.json`, and the user edits, decides and formally applies its candidates in the plugin's Source candidate Review View. Task Pilot takes that path when the user asks for a TaskMate review; the path above stays the default until [#62](https://github.com/tempu-village/taskmate/issues/62) retires it. Details: [Source-note import](../features/source-import.md).
+Reviews that earlier versions staged as Markdown under `Active` and `Archive` are retired: neither side reads or writes them, and they are never moved or deleted. Details: [Source-note import](../features/source-import.md).
 
 ## 6. Where each feature lives
 
@@ -560,7 +561,7 @@ Under RFC 0033 this path is being replaced: `source_review.py` stages one `sourc
 | [Localization](../features/localization.md) | English and Japanese UI | `i18n/` |
 | [Storage and privacy](../features/storage-and-privacy.md) | Plain Markdown in the user's Vault | `tasks/repository.ts`, `projects/project-repository.ts` |
 | [Task change review](../features/task-change-review/README.md) | Approve AI-suggested changes field by field | `reviews/task-change/`, Task Pilot `planning_store.py` |
-| [Source-note import](../features/source-import.md) | Turn selected notes into Tasks with nothing silently dropped | Task Pilot `todo_store.py`, `proposal_store.py`; next: `reviews/source-candidate/`, `source_review.py` |
+| [Source-note import](../features/source-import.md) | Turn selected notes into Tasks with nothing silently dropped | Task Pilot `todo_store.py`, `source_review.py`; `reviews/source-candidate/` |
 | [Task Pilot review and capacity planning](../features/task-pilot-planning.md) | Backlog review and plans sized to available time | Task Pilot `planning_store.py`, `rolling_plan.py` |
 
 ## 日本語参考
@@ -584,5 +585,5 @@ TaskMateを説明するための図をまとめたページです。正本は[Ar
 - **2. Module map**：`src/`のフォルダーを依存の段ごとに並べた図です。矢印は実際のimportから描いています。依存は下向きだけで、`task-list → task-editor → labels / projects → tasks`、`reviews → tasks`です。`tasks/`はほかの機能フォルダーに依存しません。この規則はModule boundary testで自動確認しています。`i18n/`と`shared/`はどこからでも使えます。
 - **3. Layers**：各フォルダーの中身を4つの役割で示します。UI Adapterは画面、Applicationは操作の段取り、Domainは純粋なルール（Obsidianに依存しない）、Persistence Adapterはファイルの読み書きです。3aは一覧と編集、3bはレビューの主要クラスです。2種類のレビューは同じ形をしていますが、スキーマとコードは別々に保っています。共通なのはReview Catalogだけで、ファイルを「封筒」で分類し、一覧の説明は各Review Moduleが作り、プラグインが持ち主の画面で開きます。
 - **4. Data model**：4aは正本のデータです。TaskはStepを中に持ち、IDでProjectを参照し、Labelは文字列です。`rank`は全体で一つの手動順です。4bはレビュー用のデータです。Task変更Proposalは既存Taskの変更前後のMarkdownを丸ごと持ち、Source候補Proposalは元ノートから見つけた候補をすべて作成・統合・除外のいずれかに振り分けます。
-- **5. Key flows**：5aは編集保存の流れです。開いたときの内容・自分の編集・今のファイルを3方向で比べ、同じ項目が両方で変わっていれば項目ごとに選んでもらいます。5bはTask Pilotの変更提案を承認する流れです。承認した変更だけを、元の内容から変わっていない場合に書き込みます。5cはメモからTaskを作る今の流れで、Task Pilotの中で完結します。RFC 0033で、プラグイン側のSource候補レビューに置き換える作業が進んでいます。Review Viewで候補の編集・判断・正式反映ができ、Task PilotはTaskMateでのレビューを頼まれたときにこちらを使います。古い流れは#62で廃止するまで既定のままです。
+- **5. Key flows**：5aは編集保存の流れです。開いたときの内容・自分の編集・今のファイルを3方向で比べ、同じ項目が両方で変わっていれば項目ごとに選んでもらいます。5bはTask Pilotの変更提案を承認する流れです。承認した変更だけを、元の内容から変わっていない場合に書き込みます。5cはメモからTaskを作る流れです。Task Pilotがノートを読んでレビューをステージし、判断と書き込みはすべてプラグインのSource候補レビューで行います。以前の`Active`と`Archive`のMarkdownのレビューは廃止し、どちらも読み書きせず、移動や削除もしません。
 - **6. Where each feature lives**：機能ごとに、利用者が得られることと主なコードの場所を対応させた表です。

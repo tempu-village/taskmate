@@ -172,7 +172,7 @@ ln -s "$(pwd)/skills/taskpilot" "$HOME/.agents/skills/taskpilot"
 Open the vault as the agent workspace and ask:
 
 ```text
-$taskpilot Review the selected source notes and propose every Task candidate.
+$taskpilot Review the selected source notes and stage every Task candidate for review in TaskMate.
 ```
 
 For backlog review or a capacity-based plan, ask for the operation and give the available time or Context when known:
@@ -183,15 +183,9 @@ $taskpilot I have two hours. Build a realistic plan without changing my Tasks.
 $taskpilot Find work for a 30-minute phone-only break.
 ```
 
-Task Pilot writes proposals under `TaskMate/Proposals/Active` and does not create canonical tasks at this stage. Review every candidate in the conversation and explicitly approve, revise, or exclude it. Approved and revised proposals become tasks. The completed review moves to `TaskMate/Proposals/Archive` with visible and machine-readable decision markers and remains there until you delete it manually.
+Task Pilot saves one review file in the proposal folder, opens it in TaskMate, and creates no Task at this stage; you can also run **TaskMate: Open reviews**, which lists every pending review. Each candidate is a card that quotes its source sentences. Edit a card when needed, choose to create, merge, exclude, or hold it, and then select **Apply decisions…**. TaskMate changes no Task before you confirm, asks for an extra confirmation for merges whose diff you did not open, and records the import on a source note once all of its candidates are applied. Completed reviews move to `TaskMate/Proposals/History` and remain there until you delete them. See [Review source notes and create Tasks](docs/user/how-to/import-source-notes.md) for the full steps.
 
-You can instead review the candidates in TaskMate. Ask Task Pilot to stage the review for TaskMate:
-
-```text
-$taskpilot Stage a Source candidate review of the selected notes and open it in TaskMate.
-```
-
-Task Pilot saves one review file in the proposal folder and opens it in TaskMate; you can also run **TaskMate: Open reviews**, which lists every pending review. Each candidate is a card that quotes its source sentences. Edit a card when needed, choose to create, merge, exclude, or hold it, and then select **Apply decisions…**. TaskMate changes no Task before you confirm, asks for an extra confirmation for merges whose diff you did not open, and records the import on a source note once all of its candidates are applied. Completed reviews move to `TaskMate/Proposals/History`. Reviews already in `TaskMate/Proposals/Active` are finished in the conversation as before.
+Earlier versions staged reviews as Markdown under `TaskMate/Proposals/Active` and approved them in the conversation. TaskMate does not show those reviews, and Task Pilot no longer reads or writes them; they are never moved or deleted. Finish any review still in `Active` before updating, or afterwards read it as an ordinary note and ask Task Pilot to stage a new review from its source notes.
 
 Backlog changes are also shown before writing. Capacity plans are read-only, use a visible 20% default buffer and upper effort estimates, and never add Task statuses or change Manual order. “Do later” removes the date instead of adding a Pending or Waiting state.
 
@@ -201,13 +195,13 @@ Change the proposal location under **Settings → TaskMate → Proposal folder**
 
 - Tasks are stored under `TaskMate/Tasks` by default.
 - Projects are stored under `TaskMate/Projects` by default.
-- Proposal sessions are stored under `TaskMate/Proposals` by default.
+- Reviews are stored under `TaskMate/Proposals` by default, and completed reviews under its `History` folder.
 - Folder locations can be changed in TaskMate settings.
 - The plugin uses Obsidian's vault and file-management APIs to read and write TaskMate-managed Markdown.
 - The plugin contains no telemetry, hosted TaskMate account, runtime AI, translation service, or TaskMate synchronization server.
 - The plugin does not send task content to an external translation service.
 - Task Pilot runs with the permissions of the agent client and is separate from the Obsidian plugin.
-- Uninstalling the plugin leaves task, project, and proposal Markdown in the vault.
+- Uninstalling the plugin leaves tasks, projects, and review files in the vault.
 
 Review these claims against the release build before public release. Back up the vault and understand the synchronization provider's conflict behavior before using TaskMate with important data.
 

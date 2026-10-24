@@ -33,19 +33,19 @@ An ordinary Obsidian note explicitly placed in scope for task extraction by a fo
 _Avoid_: AI note, import file
 
 **Coverage review**:
-The user confirmation in which every candidate from a source note is accounted for as a new task, a merge, or an explicit exclusion.
+The accounting in which every statement from a source note that could imply follow-up is mapped to exactly one create, merge, or exclude candidate before the user decides in TaskMate.
 _Avoid_: Import preview, AI summary
 
-**Proposal session**:
-A staged group of task proposals and possible exclusions derived from one review operation, kept separate from canonical Tasks until the user decides.
-_Avoid_: Sandbox, draft import
+**Source candidate review**:
+One staged review of explicitly selected Sources and every candidate derived from them, kept separate from canonical Tasks until the user applies decisions in TaskMate. Markdown Proposal sessions from earlier versions are retired.
+_Avoid_: Proposal session, Sandbox, draft import
 
-**Task proposal**:
-A non-canonical candidate that may become a new Task or a change to an existing Task after explicit review.
-_Avoid_: Draft task, temporary task
+**Source candidate**:
+A non-canonical create, merge, or exclude entry in a Source candidate review that may become a new Task, a change to an existing Task, or a recorded exclusion once the user applies it.
+_Avoid_: Task proposal, Draft task, temporary task
 
 **Review decision**:
-The user's explicit approval, revision, or exclusion of a task proposal, retained with the proposal after review.
+The user's explicit approval or hold of a Source candidate at its current revision, retained in the review. Editing a candidate returns it to undecided.
 _Avoid_: AI decision, implicit approval
 
 **ChangeSet**:
@@ -53,7 +53,7 @@ An ordered set of typed instructions for changing fields of existing canonical T
 _Avoid_: Diff, approval record, Proposal
 
 **Task change Proposal**:
-A persisted, non-canonical review envelope containing a ChangeSet, complete before/after Markdown evidence, review decisions, and apply results. It never replaces canonical Task Markdown. This is distinct from a Source-note Proposal session.
+A persisted, non-canonical review envelope containing a ChangeSet, complete before/after Markdown evidence, review decisions, and apply results. It never replaces canonical Task Markdown. This is distinct from a Source candidate review.
 _Avoid_: ChangeSet, Task database, draft Task
 
 **Manual order**:
