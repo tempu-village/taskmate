@@ -43,6 +43,15 @@ export function resolveLocale(preference: LanguagePreference | string | undefine
   return "en";
 }
 
+// Task Pilot runs outside Obsidian and cannot ask it for its language, so the desktop app records the language Auto
+// resolves to. Returns the value to save, or null when nothing should be written: the mobile app never records, so a
+// phone set to another language cannot overwrite the desktop's value, and an unchanged value is not rewritten.
+export function desktopLanguageToRecord(recorded: unknown, isDesktop: boolean, detectedLanguage?: string): SupportedLocale | null {
+  if (!isDesktop) return null;
+  const language = resolveLocale("auto", detectedLanguage);
+  return recorded === language ? null : language;
+}
+
 export function compareDisplayText(a: string, b: string, locale: SupportedLocale): number {
   return new Intl.Collator(locale).compare(a, b);
 }

@@ -93,6 +93,22 @@ class TodoStoreTest(unittest.TestCase):
         self.assertEqual(Path(second["path"]).name, "Buy milk (2).md")
         self.assertNotEqual(first["id"], second["id"])
 
+    def test_output_language_follows_the_taskmate_setting_then_the_desktop_language(self):
+        settings = self.vault / ".obsidian" / "plugins" / "taskmate" / "data.json"
+
+        def language(**values):
+            settings.write_text(json.dumps({"taskFolder": "TaskMate/Tasks", **values}), encoding="utf-8")
+            return self.run_store("language")
+
+        self.assertEqual(language(language="ja", desktopLanguage="en"), {"language": "ja", "source": "setting"})
+        self.assertEqual(language(language="en", desktopLanguage="ja"), {"language": "en", "source": "setting"})
+        self.assertEqual(language(language="auto", desktopLanguage="ja"), {"language": "ja", "source": "desktop"})
+        self.assertEqual(language(desktopLanguage="ja"), {"language": "ja", "source": "desktop"})
+        self.assertEqual(language(language="auto"), {"language": "en", "source": "default"})
+        self.assertEqual(language(language="auto", desktopLanguage="fr"), {"language": "en", "source": "default"})
+        settings.unlink()
+        self.assertEqual(self.run_store("language"), {"language": "en", "source": "default"})
+
     def test_update_can_clear_priority_labels_and_project(self):
         created = self.run_store(
             "create", "--title", "Prepare launch", "--priority", "2",
