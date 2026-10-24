@@ -5,7 +5,7 @@ Implementation: Staging in Task Pilot and review, editing and formal apply in Ta
 
 ## Contract
 
-Source selection and provenance properties follow [Source note property format](../specifications/source-note-properties.md). Canonical Tasks created or updated by formal apply follow [Task file format](../specifications/task-file-format.md); these are different property classes stored on different document roles.
+The review file and its lifecycle follow [Source candidate Proposal format](../specifications/source-candidate-proposal-format.md). Source selection and provenance properties follow [Source note property format](../specifications/source-note-properties.md). Canonical Tasks created or updated by formal apply follow [Task file format](../specifications/task-file-format.md); these are different property classes stored on different document roles.
 
 Only folder-selected notes or notes with `taskmate-source: true` are eligible for task extraction. `taskmate-source: false` overrides folder inclusion. Managed Task, Project, Proposal and rolling-plan folders and Obsidian configuration are excluded. Scope remains independent of the proposal output location.
 
@@ -43,14 +43,10 @@ Formal apply saves the review after each candidate and stops if a save fails. Cr
 
 Statement validation checks the declared inventory, not whether the agent understood all actions in prose, so human review in TaskMate remains necessary. Indexed discovery and automatic Vault setup are separate proposed features, not alternate current implementations.
 
-## Pending changes
-
-Promoting the verified Source candidate format from [RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md) into Specifications and marking the RFC implemented remain in [Issue #62](https://github.com/tempu-village/taskmate/issues/62).
-
 ## Related RFCs
 
 - [RFC 0004: Add coverage-review examples and omission failure cases](../rfcs/0004-add-coverage-review-examples-and-failure-cases.md) — implemented history for candidate-manifest validation and examples.
-- [RFC 0033: Reviewable rolling plans and Source candidate reviews](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md) — accepted design for the current workflow; specification promotion pending.
+- [RFC 0033: Reviewable rolling plans and Source candidate reviews](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md) — implemented history of the current workflow; its contract now lives in [Source candidate Proposal format](../specifications/source-candidate-proposal-format.md).
 
 ## 日本語参考
 
@@ -58,9 +54,9 @@ Promoting the verified Source candidate format from [RFC 0033](../rfcs/0033-add-
 
 > 翻訳状態：`ai-translated`。英語版が正本です。
 
-承認：許可リスト・ステージ・coverageの既存ADRと、Source候補レビューについてのRFC 0033で決定済み。Task Pilotでのステージと、TaskMateでのレビュー・編集・正式反映は実装済みで、索引探索は未実装です。
+承認：許可リスト・ステージ・coverageの既存ADRと、Source候補レビューについての[RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md)（実装済み）で決定済み。Task Pilotでのステージと、TaskMateでのレビュー・編集・正式反映は実装済みで、索引探索は未実装です。
 
-ソース選択と取り込み履歴のPropertyは[Source note property format](../specifications/source-note-properties.md)、正式反映されるTaskは[Task file format](../specifications/task-file-format.md)に従います。両者は異なる文書役割のPropertyです。
+レビューのファイルとその流れは[Source candidate Proposal format](../specifications/source-candidate-proposal-format.md)、ソース選択と取り込み履歴のPropertyは[Source note property format](../specifications/source-note-properties.md)、正式反映されるTaskは[Task file format](../specifications/task-file-format.md)に従います。両者は異なる文書役割のPropertyです。
 
 フォルダーで選択したノート、または`taskmate-source: true`だけが抽出対象です。`false`はフォルダー許可より優先し、Task・Project・Proposal・rolling planのフォルダーとObsidian設定は対象外です。
 
@@ -77,9 +73,5 @@ Task Pilotは、レビューごとに1つのSource候補レビューJSONを提�
 Agentが文の棚卸しとステージ用の依頼を作り、todo storeが対象を探し、`source_review.py`が棚卸しの文がSourceにあり正確に一度割り当てられていることを確かめ、Sourceと統合先のスナップショットを取ってレビューJSONを書きます。TaskMateのSource候補Moduleがレビューを検証し、編集と判断を記録し、承認した候補を正式反映して、取り込み履歴を書き、完了したレビューをHistoryへ移します。共通のレビュー一覧はReview Catalogでファイルを分類し、Source候補Review Viewで開きます。
 
 正式反映は候補ごとにレビューを保存し、保存に失敗したらそこで止まります。作るTaskのIDはレビュー・候補・版番号から決まり、統合先が既に結果と同じなら反映済みとみなすため、中断後のやり直しでも二重作成や二重統合は起きません。取り込み履歴の書き込みに失敗した場合は、次の反映でやり直します。全候補の反映後にノートが変わっていた場合は、取り込み履歴を書かずに報告します。棚卸しの検証は宣言された文を確かめるだけで、Agentが文中の行動をすべて理解したかは証明しないため、TaskMateでの人のレビューが必要です。
-
-### 保留中の変更
-
-確認済みのSource候補の形式を[RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md)からSpecificationsへ昇格し、RFCを実装済みにする作業は[Issue #62](https://github.com/tempu-village/taskmate/issues/62)で行います。
 
 IMPORT-01：2つのノートから、すべての文を正確に一度候補へ割り当てた1つのレビューを作り、ステージではTaskもMarkdownのレビューファイルも作らない。IMPORT-02：一部の候補だけを反映して他を保留するとレビューは未処理のまま残り、残りを反映するとHistoryへ移り、やり直してもTaskや統合が二重にならない。IMPORT-03：除外には利用者の判断が必要で、Sourceや統合先の変更はその候補だけを止める。IMPORT-04：取り込み履歴は完了したノートごとに1回だけ書き、作成したTaskと統合先のIDを含め、以前の取り込みのIDも保つ。IMPORT-05：`Active`と`Archive`にある以前のバージョンのレビューは1バイトも変わらず、一覧にも出ない。自動テストだけではAIの意味的な抽出漏れを証明できず、元メモとの照合も必要です。

@@ -29,7 +29,7 @@ Selecting a note only changes eligibility. It MUST NOT create a Proposal, create
 Two workflows write import provenance with the same properties and meaning:
 
 - in the staged Markdown import, Task Pilot writes it after every candidate in the source review has an explicit decision and promotion completes;
-- in the Source candidate review ([RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md)), TaskMate writes it once per source note, when every candidate from that note has an applied create, merge or exclude result.
+- in the Source candidate review ([Source candidate Proposal format](source-candidate-proposal-format.md)), TaskMate writes it once per source note, when every candidate from that note has an applied create, merge or exclude result.
 
 
 ```yaml

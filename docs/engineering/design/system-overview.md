@@ -449,7 +449,7 @@ classDiagram
 ```
 
 - A Task change Proposal edits existing Tasks only. It stores complete before/after Markdown so the diff can be regenerated and a stale Task can be detected. When some writes fail or go stale, apply produces a follow-up Proposal linked by `originProposalId`. See [Task change Proposal format](../specifications/task-change-proposal-format.md).
-- A Source candidate Proposal accounts for every candidate found in its sources as create, merge or exclude. Its schema is defined by [RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md), and the user reviews it in the Source candidate Review View.
+- A Source candidate Proposal accounts for every candidate found in its sources as create, merge or exclude. Its contract is the [Source candidate Proposal format](../specifications/source-candidate-proposal-format.md), and the user reviews it in the Source candidate Review View.
 
 ## 5. Key flows
 

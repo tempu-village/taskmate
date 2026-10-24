@@ -439,7 +439,7 @@ function requiredText(value: unknown, name: string): string {
   return value;
 }
 
-// Shape validation (mirrors docs/engineering/rfcs/0033-source-candidate-proposal.schema.json)
+// Shape validation (mirrors docs/engineering/specifications/source-candidate-proposal.schema.json)
 
 function validateProposal(value: unknown): asserts value is SourceCandidateProposal {
   const proposal = record(value, "Proposal");
