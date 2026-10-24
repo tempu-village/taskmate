@@ -460,4 +460,9 @@ describe("mobile layout", () => {
     expect(phone).toMatch(/--taskmate-review-controls-height\s*:\s*calc\(1\.6rem \+ max\(var\(--input-height\), 36px\)\)/);
     expect(phone).not.toMatch(/\.taskmate-review-file-header\s*\{[^}]*top\s*:/);
   });
+
+  it("lets review text be selected while controls stay unselectable", () => {
+    expect(stylesheet).toMatch(/\n\.taskmate-review \{[^}]*(?:^|[;{\s])user-select:\s*text;[^}]*\}/);
+    expect(exactDeclarations(".taskmate-review button")).toMatch(/(?:^|[;\s])user-select\s*:\s*none\s*;/);
+  });
 });

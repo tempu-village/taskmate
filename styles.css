@@ -26,6 +26,10 @@
   overflow-x: hidden;
 }
 .taskmate-review * { box-sizing: border-box; }
+/* Obsidian turns off text selection across its interface. Review text is evidence people quote, so it can be selected
+   and copied; buttons stay unselectable so a tap or long press on a control never starts a selection. */
+.taskmate-review { -webkit-user-select: text; user-select: text; }
+.taskmate-review button { -webkit-user-select: none; user-select: none; }
 .taskmate-review-header,
 .taskmate-review-controls,
 .taskmate-review-footer {
