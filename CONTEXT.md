@@ -5,7 +5,7 @@ TaskMate is a local-first task system in which Markdown remains inspectable and 
 ## Language
 
 **Task Pilot**:
-The optional portable agent skill that helps turn explicitly selected Source notes into reviewable Task proposals and manages TaskMate task Markdown. Its installable identifier and directory name are `taskpilot`.
+The optional portable agent skill that helps turn explicitly selected Source notes into a Source candidate review that the user decides in TaskMate, and manages TaskMate task Markdown. Its installable identifier and directory name are `taskpilot`.
 _Avoid_: Agent Skill, TaskMate Skill
 
 **Task**:
