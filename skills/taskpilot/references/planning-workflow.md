@@ -2,7 +2,7 @@
 
 Use this workflow for on-demand Task review and planning. It does not replace the Source-note coverage workflow. A normal review or plan reads canonical Tasks only; invoke Source-note import separately and plan with promoted Tasks only.
 
-When the user explicitly requests Source-note import, resolve only eligible notes under the requested bounded rule, show their Vault-relative paths before reading them for candidate extraction, and let the user remove notes from the run without changing the long-term allowlist. Then follow [import-workflow.md](import-workflow.md) and [proposal-workflow.md](proposal-workflow.md).
+When the user explicitly requests Source-note import, resolve only eligible notes under the requested bounded rule, show their Vault-relative paths before reading them for candidate extraction, and let the user remove notes from the run without changing the long-term allowlist. Then follow [import-workflow.md](import-workflow.md) and [source-review-workflow.md](source-review-workflow.md).
 
 ## 1. Inspect before reasoning
 

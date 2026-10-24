@@ -1,6 +1,6 @@
 # ADR 0017: Require a candidate manifest for coverage review
 
-Status: Accepted
+Status: Accepted; the coverage rule continues in the Source candidate review of [RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md), where every inventory statement is mapped to exactly one candidate. The Markdown staging tool and its complete-line matching are retired.
 
 ## Context
 

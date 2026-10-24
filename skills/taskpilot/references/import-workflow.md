@@ -1,8 +1,6 @@
 # Source-note import
 
-Read this reference whenever existing Obsidian notes should become TaskMate tasks.
-
-When the user asks to review the candidates in TaskMate instead of the conversation, follow [source-review-workflow.md](source-review-workflow.md) after discovering and selecting Sources here. Otherwise keep the staged workflow below; it remains the default until the TaskMate review replaces it.
+Read this reference whenever existing Obsidian notes should become TaskMate tasks. Task Pilot discovers the notes, builds the coverage review and stages it with [source-review-workflow.md](source-review-workflow.md). The user then edits, decides and applies every candidate in TaskMate; Task Pilot never creates or changes canonical tasks for an import.
 
 ## Discover eligible notes
 
@@ -16,20 +14,21 @@ The folder setting may include subfolders. Exclude the task, project, proposal, 
 
 ## Build a coverage review
 
-Read each eligible new or changed note completely. First inventory every exact source statement that could reasonably imply follow-up; this is the candidate manifest. A statement is one complete non-empty source line, ignoring only leading and trailing whitespace. Then classify every candidate into two sections:
+Read each eligible new or changed note completely. First inventory every source statement that could reasonably imply follow-up, copied exactly from the note body; this is the statement inventory. Then map every statement to exactly one candidate:
 
-1. **Add or merge** — the tasks that will be created, including the source statements covered by each.
-2. **Possible exclusions** — every source statement that could reasonably imply action but that you propose not to add, with a concise reason and an explicit confirmation request.
+1. **create** — a new task, with the statements it covers;
+2. **merge** — a change to one existing task, with the statements it covers;
+3. **exclude** — a statement that could reasonably imply action but that you propose not to add, with a concise reason. The user confirms or changes every exclusion in TaskMate.
 
-Default every ambiguous action to **Add**. Pure headings and connective prose need not become candidates, but background facts, decisions, promises, questions, and dependencies must be accounted for whenever they could imply follow-up work.
+Default every ambiguous action to **create**. Pure headings and connective prose need not enter the inventory, but background facts, decisions, promises, questions, and dependencies must be accounted for whenever they could imply follow-up work.
 
-Read [coverage-review-examples.md](coverage-review-examples.md) when building the manifest. It shows meeting notes, ambiguous background, task merging, task splitting, and explicit exclusions.
+Read [coverage-review-examples.md](coverage-review-examples.md) when building the inventory. It shows meeting notes, ambiguous background, task merging, task splitting, and explicit exclusions.
 
-Write the complete review to a proposal session before asking for a decision. Do not create or change canonical task files during staging. Follow [proposal-workflow.md](proposal-workflow.md) to obtain explicit decisions and promote approved or revised proposals. Apply the task-boundary rules in [task-schema.md](task-schema.md); the agent may decide whether related statements become one task or several.
+Stage the complete review with [source-review-workflow.md](source-review-workflow.md) before the user decides anything. Do not create or change canonical task files. Apply the task-boundary rules in [task-schema.md](task-schema.md); the agent may decide whether related statements become one task or several.
 
-## Record provenance
+## Provenance
 
-Every created task sets `source-note` to the source note's vault-relative path. After approved tasks are written, run `mark-source` or equivalently update the source note with:
+TaskMate records the import on a source note once every candidate from that note has been applied in TaskMate:
 
 ```yaml
 taskmate-import-status: processed
@@ -39,4 +38,8 @@ taskmate-task-ids:
   - "task-id"
 ```
 
-The content hash excludes these processing fields so recording the import does not make the note appear changed. When the current hash differs later, present a new coverage review and propose changes; preserve existing tasks until the user approves the diff.
+Do not write these properties yourself for a staged review. The content hash excludes these processing fields, so recording the import does not make the note appear changed. When a processed note changes later, its current hash differs from `taskmate-imported-hash`; stage a new review for it and leave existing tasks unchanged until the user applies the new candidates.
+
+## Reviews from earlier versions
+
+Earlier versions staged reviews as Markdown under `<proposal folder>/Active/<session>/` and moved finished ones to `Archive`. Those files are no longer read or written. Never move, edit, promote or delete them. If the user asks about one, explain that it can be read as an ordinary note. To finish its remaining candidates, stage a new review from its source notes and treat tasks it already created as merge targets or exclusions.

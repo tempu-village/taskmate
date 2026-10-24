@@ -218,7 +218,7 @@ All criteria below are implemented on the current branch. Semantic judgment stil
 - PLAN-22: Proposal generation omits stale, completed, missing, unchanged, and already proposed Tasks while unaffected Tasks continue, and no Task changes before approval in the Task change Review View.
 - PLAN-23: Replanning starts from current canonical Tasks and marks the prior plan `superseded` without treating unapproved plan dates as facts.
 
-Automated evidence: [planning behavior tests](../../../skills/taskpilot/tests/test_planning_store.py), [rolling-plan tests](../../../skills/taskpilot/tests/test_rolling_plan.py) for PLAN-17 through PLAN-23, [Source-note proposal tests](../../../skills/taskpilot/tests/test_proposal_store.py), and [Task store tests](../../../skills/taskpilot/tests/test_todo_store.py). The deterministic planning tests cover 50-Task grouping, stale and partial writes, 20% capacity arithmetic, upper-bound packing, Context evidence, read-only plans, estimate clarification, and schedule/Priority conflict disclosure. They cannot prove that an agent's semantic estimates or reasons are good; the visible user review remains required.
+Automated evidence: [planning behavior tests](../../../skills/taskpilot/tests/test_planning_store.py), [rolling-plan tests](../../../skills/taskpilot/tests/test_rolling_plan.py) for PLAN-17 through PLAN-23, and [Task store tests](../../../skills/taskpilot/tests/test_todo_store.py). The deterministic planning tests cover 50-Task grouping, stale and partial writes, 20% capacity arithmetic, upper-bound packing, Context evidence, read-only plans, estimate clarification, and schedule/Priority conflict disclosure. They cannot prove that an agent's semantic estimates or reasons are good; the visible user review remains required.
 
 ## Out of scope for this iteration
 
@@ -448,7 +448,7 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 - PLAN-22：Proposalの作成では、変更済み・完了済み・見つからない・変更なし・提案済みのTaskを外しつつ、ほかのTaskは続け、Task変更Review Viewで承認するまでTaskを変えない。
 - PLAN-23：計画の作り直しは今の正式なTaskから始め、前の計画を`superseded`にし、承認されていない計画上の日付を事実として扱わない。
 
-自動根拠は[planning挙動テスト](../../../skills/taskpilot/tests/test_planning_store.py)、PLAN-17〜23の[計画ファイルのテスト](../../../skills/taskpilot/tests/test_rolling_plan.py)、[Source-note proposalテスト](../../../skills/taskpilot/tests/test_proposal_store.py)、[Task storeテスト](../../../skills/taskpilot/tests/test_todo_store.py)です。50件のグループ化、変更競合と一部失敗、20%余白、上限による容量判定、Context根拠、読み取り専用計画、見積もり要確認、予定日とPriorityの競合表示を検証します。Agentによる意味上の見積もりや理由の品質は決定的テストだけでは証明できないため、見える利用者レビューを必須とします。
+自動根拠は[planning挙動テスト](../../../skills/taskpilot/tests/test_planning_store.py)、PLAN-17〜23の[計画ファイルのテスト](../../../skills/taskpilot/tests/test_rolling_plan.py)、[Task storeテスト](../../../skills/taskpilot/tests/test_todo_store.py)です。50件のグループ化、変更競合と一部失敗、20%余白、上限による容量判定、Context根拠、読み取り専用計画、見積もり要確認、予定日とPriorityの競合表示を検証します。Agentによる意味上の見積もりや理由の品質は決定的テストだけでは証明できないため、見える利用者レビューを必須とします。
 
 ### 今回のイテレーションの対象外
 
