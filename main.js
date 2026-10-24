@@ -22,7 +22,7 @@ __export(main_exports, {
   default: () => TaskMatePlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian19 = require("obsidian");
+var import_obsidian21 = require("obsidian");
 
 // src/tasks/repository.ts
 var import_obsidian = require("obsidian");
@@ -37,15 +37,15 @@ function isCalendarDate(value) {
   return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
 }
 function splitStepDeadline(rawText) {
-  let text2 = rawText;
+  let text3 = rawText;
   let date = null;
   while (true) {
-    const due = text2.match(DUE_SUFFIX);
+    const due = text3.match(DUE_SUFFIX);
     if (!due?.[2] || !isCalendarDate(due[2]) || !due[1].trim()) break;
     date ??= due[2];
-    text2 = due[1].trimEnd();
+    text3 = due[1].trimEnd();
   }
-  return { text: text2, date };
+  return { text: text3, date };
 }
 function normalizeTaskSteps(steps2) {
   return steps2.map((step) => {
@@ -757,24 +757,24 @@ var TaskMateSettingTab = class extends import_obsidian3.PluginSettingTab {
       this.plugin.refreshViews();
       this.display();
     }));
-    new import_obsidian3.Setting(containerEl).setName(t("settings.taskFolder")).setDesc(t("settings.taskFolderDescription")).addText((text2) => text2.setValue(this.plugin.settings.taskFolder).onChange(async (value) => {
+    new import_obsidian3.Setting(containerEl).setName(t("settings.taskFolder")).setDesc(t("settings.taskFolderDescription")).addText((text3) => text3.setValue(this.plugin.settings.taskFolder).onChange(async (value) => {
       this.plugin.settings.taskFolder = value.trim() || DEFAULT_SETTINGS.taskFolder;
       await this.plugin.saveSettings();
       this.plugin.refreshViews();
     }));
-    new import_obsidian3.Setting(containerEl).setName(t("settings.projectFolder")).setDesc(t("settings.projectFolderDescription")).addText((text2) => text2.setValue(this.plugin.settings.projectFolder).onChange(async (value) => {
+    new import_obsidian3.Setting(containerEl).setName(t("settings.projectFolder")).setDesc(t("settings.projectFolderDescription")).addText((text3) => text3.setValue(this.plugin.settings.projectFolder).onChange(async (value) => {
       this.plugin.settings.projectFolder = value.trim() || DEFAULT_SETTINGS.projectFolder;
       await this.plugin.saveSettings();
       this.plugin.refreshViews();
     }));
-    new import_obsidian3.Setting(containerEl).setName(t("settings.proposalFolder")).setDesc(t("settings.proposalFolderDescription")).addText((text2) => text2.setValue(this.plugin.settings.proposalFolder).onChange(async (value) => {
+    new import_obsidian3.Setting(containerEl).setName(t("settings.proposalFolder")).setDesc(t("settings.proposalFolderDescription")).addText((text3) => text3.setValue(this.plugin.settings.proposalFolder).onChange(async (value) => {
       this.plugin.settings.proposalFolder = value.trim() || DEFAULT_SETTINGS.proposalFolder;
       await this.plugin.saveSettings();
     }));
-    new import_obsidian3.Setting(containerEl).setName(t("settings.sourceFolders")).setDesc(t("settings.sourceFoldersDescription")).addTextArea((text2) => {
-      text2.inputEl.rows = 6;
-      text2.inputEl.addClass("taskmate-folder-list");
-      text2.setValue(this.plugin.settings.sourceFolders.join("\n")).onChange(async (value) => {
+    new import_obsidian3.Setting(containerEl).setName(t("settings.sourceFolders")).setDesc(t("settings.sourceFoldersDescription")).addTextArea((text3) => {
+      text3.inputEl.rows = 6;
+      text3.inputEl.addClass("taskmate-folder-list");
+      text3.setValue(this.plugin.settings.sourceFolders.join("\n")).onChange(async (value) => {
         this.plugin.settings.sourceFolders = value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
         await this.plugin.saveSettings();
       });
@@ -949,13 +949,23 @@ var en = {
   "common.save": "Save",
   "common.back": "Back",
   "common.clear": "Clear",
-  "command.openReviews": "Open Task change reviews",
-  "command.openSourceReviews": "Open Source candidate reviews",
+  "command.openReviews": "Open reviews",
   "review.title": "Review Task changes",
-  "review.pending": "Pending reviews",
-  "review.history": "History",
-  "review.none": "No pending reviews",
-  "review.historyNone": "No review history",
+  "reviews.title": "Reviews",
+  "reviews.pending": "Pending",
+  "reviews.history": "History",
+  "reviews.none": "No pending reviews",
+  "reviews.historyNone": "No review history",
+  "reviews.kind.taskChange": "Task changes",
+  "reviews.kind.sourceCandidate": "Source candidates",
+  "reviews.openAria": "Open {kind} review {id}",
+  "reviews.notOpen": "No review is open.",
+  "reviews.invalidTitle": "Files that could not be read",
+  "reviews.invalid.unreadableJson": "not valid review JSON",
+  "reviews.invalid.unknownType": "unknown review type",
+  "reviews.invalid.unsupportedVersion": "unsupported format version",
+  "reviews.invalid.mismatchedId": "the file name does not match the review ID",
+  "reviews.invalid.unreadableReview": "its review could not read it",
   "review.summary": "{tasks} Tasks, {changes} changes",
   "review.historyCounts": "{succeeded} applied \xB7 {failed} failed",
   "review.status.applied": "Applied",
@@ -984,10 +994,6 @@ var en = {
   "review.invalid": "This proposal is missing or invalid",
   "review.invalidLink": "The TaskMate review link is invalid",
   "sourceReview.title": "Review Source candidates",
-  "sourceReview.pending": "Pending reviews",
-  "sourceReview.history": "History",
-  "sourceReview.none": "No pending Source candidate reviews",
-  "sourceReview.historyNone": "No Source candidate review history",
   "sourceReview.summary": "{candidates} candidates, {applied} applied",
   "sourceReview.status.pending": "Pending",
   "sourceReview.status.ready": "Ready to apply",
@@ -1273,13 +1279,23 @@ var ja = {
   "common.save": "\u4FDD\u5B58",
   "common.back": "\u623B\u308B",
   "common.clear": "\u6D88\u53BB",
-  "command.openReviews": "Task\u5909\u66F4\u30EC\u30D3\u30E5\u30FC\u3092\u958B\u304F",
-  "command.openSourceReviews": "Source\u5019\u88DC\u30EC\u30D3\u30E5\u30FC\u3092\u958B\u304F",
+  "command.openReviews": "\u30EC\u30D3\u30E5\u30FC\u3092\u958B\u304F",
   "review.title": "Task\u5909\u66F4\u3092\u30EC\u30D3\u30E5\u30FC",
-  "review.pending": "\u672A\u30EC\u30D3\u30E5\u30FC",
-  "review.history": "\u5C65\u6B74",
-  "review.none": "\u672A\u30EC\u30D3\u30E5\u30FC\u306EProposal\u306F\u3042\u308A\u307E\u305B\u3093",
-  "review.historyNone": "\u30EC\u30D3\u30E5\u30FC\u5C65\u6B74\u306F\u3042\u308A\u307E\u305B\u3093",
+  "reviews.title": "\u30EC\u30D3\u30E5\u30FC",
+  "reviews.pending": "\u672A\u30EC\u30D3\u30E5\u30FC",
+  "reviews.history": "\u5C65\u6B74",
+  "reviews.none": "\u672A\u30EC\u30D3\u30E5\u30FC\u306E\u3082\u306E\u306F\u3042\u308A\u307E\u305B\u3093",
+  "reviews.historyNone": "\u30EC\u30D3\u30E5\u30FC\u306E\u5C65\u6B74\u306F\u3042\u308A\u307E\u305B\u3093",
+  "reviews.kind.taskChange": "Task\u5909\u66F4",
+  "reviews.kind.sourceCandidate": "Source\u5019\u88DC",
+  "reviews.openAria": "{kind}\u306E\u30EC\u30D3\u30E5\u30FC{id}\u3092\u958B\u304F",
+  "reviews.notOpen": "\u958B\u3044\u3066\u3044\u308B\u30EC\u30D3\u30E5\u30FC\u306F\u3042\u308A\u307E\u305B\u3093\u3002",
+  "reviews.invalidTitle": "\u8AAD\u3081\u306A\u3044\u30D5\u30A1\u30A4\u30EB",
+  "reviews.invalid.unreadableJson": "\u30EC\u30D3\u30E5\u30FC\u306EJSON\u3068\u3057\u3066\u8AAD\u3081\u307E\u305B\u3093",
+  "reviews.invalid.unknownType": "\u77E5\u3089\u306A\u3044\u7A2E\u985E\u306E\u30EC\u30D3\u30E5\u30FC\u3067\u3059",
+  "reviews.invalid.unsupportedVersion": "\u5BFE\u5FDC\u3057\u3066\u3044\u306A\u3044\u5F62\u5F0F\u306E\u7248\u3067\u3059",
+  "reviews.invalid.mismatchedId": "\u30D5\u30A1\u30A4\u30EB\u540D\u3068\u30EC\u30D3\u30E5\u30FCID\u304C\u4E00\u81F4\u3057\u307E\u305B\u3093",
+  "reviews.invalid.unreadableReview": "\u30EC\u30D3\u30E5\u30FC\u3068\u3057\u3066\u8AAD\u307F\u8FBC\u3081\u307E\u305B\u3093",
   "review.summary": "{tasks}\u4EF6\u306ETask\u3001{changes}\u4EF6\u306E\u5909\u66F4",
   "review.historyCounts": "\u6210\u529F{succeeded}\u4EF6\u30FB\u5931\u6557{failed}\u4EF6",
   "review.status.applied": "\u9069\u7528\u6E08\u307F",
@@ -1308,10 +1324,6 @@ var ja = {
   "review.invalid": "Proposal\u304C\u898B\u3064\u304B\u3089\u306A\u3044\u304B\u3001\u5F62\u5F0F\u304C\u6B63\u3057\u304F\u3042\u308A\u307E\u305B\u3093",
   "review.invalidLink": "TaskMate\u306E\u30EC\u30D3\u30E5\u30FC\u30EA\u30F3\u30AF\u304C\u6B63\u3057\u304F\u3042\u308A\u307E\u305B\u3093",
   "sourceReview.title": "Source\u5019\u88DC\u3092\u30EC\u30D3\u30E5\u30FC",
-  "sourceReview.pending": "\u672A\u30EC\u30D3\u30E5\u30FC",
-  "sourceReview.history": "\u5C65\u6B74",
-  "sourceReview.none": "\u672A\u30EC\u30D3\u30E5\u30FC\u306ESource\u5019\u88DC\u30EC\u30D3\u30E5\u30FC\u306F\u3042\u308A\u307E\u305B\u3093",
-  "sourceReview.historyNone": "Source\u5019\u88DC\u30EC\u30D3\u30E5\u30FC\u306E\u5C65\u6B74\u306F\u3042\u308A\u307E\u305B\u3093",
   "sourceReview.summary": "\u5019\u88DC{candidates}\u4EF6\u3001\u53CD\u6620\u6E08\u307F{applied}\u4EF6",
   "sourceReview.status.pending": "\u672A\u6C7A\u3042\u308A",
   "sourceReview.status.ready": "\u53CD\u6620\u3067\u304D\u307E\u3059",
@@ -2126,12 +2138,12 @@ var BulkTaskModal = class extends import_obsidian5.Modal {
       button3.addEventListener("click", () => selectDate(suggestion.date));
       dateButtons.push(button3);
     }
-    dateSetting.addText((text2) => {
-      text2.inputEl.type = "date";
-      text2.inputEl.addClass("taskmate-date-input");
-      text2.inputEl.setAttribute("aria-label", t("taskModal.date"));
-      dateInput = text2.inputEl;
-      text2.onChange((value) => selectDate(value || null));
+    dateSetting.addText((text3) => {
+      text3.inputEl.type = "date";
+      text3.inputEl.addClass("taskmate-date-input");
+      text3.inputEl.setAttribute("aria-label", t("taskModal.date"));
+      dateInput = text3.inputEl;
+      text3.onChange((value) => selectDate(value || null));
     });
     const projectSetting = new import_obsidian5.Setting(fields).setName(t("taskModal.project"));
     decorateField(projectSetting, "folder", t("taskModal.project"));
@@ -2175,7 +2187,7 @@ var BulkTaskModal = class extends import_obsidian5.Modal {
       if (this.initialLabels.includes(label) && !this.changes.removeLabels.includes(label)) this.changes.removeLabels = [...this.changes.removeLabels, label];
     };
     const refresh = () => {
-      editor.querySelectorAll("[data-taskmate-label-chip], .taskmate-label-overflow-toggle").forEach((element3) => element3.remove());
+      editor.querySelectorAll("[data-taskmate-label-chip], .taskmate-label-overflow-toggle").forEach((element4) => element4.remove());
       const labels2 = labelsNow();
       const summary = summarizeLabels(labels2);
       for (const label of expanded ? labels2 : summary.visible) {
@@ -2406,11 +2418,11 @@ var ProjectModal = class extends import_obsidian7.Modal {
   name = "";
   onOpen() {
     const { t } = this.i18n;
-    new import_obsidian7.Setting(this.contentEl).setName(t("projectModal.name")).addText((text2) => {
-      text2.setPlaceholder(t("projectModal.namePlaceholder")).onChange((value) => {
+    new import_obsidian7.Setting(this.contentEl).setName(t("projectModal.name")).addText((text3) => {
+      text3.setPlaceholder(t("projectModal.namePlaceholder")).onChange((value) => {
         this.name = value;
       });
-      window.setTimeout(() => text2.inputEl.focus(), 0);
+      window.setTimeout(() => text3.inputEl.focus(), 0);
     });
     const actions = this.contentEl.createDiv({ cls: "taskmate-modal-actions" });
     actions.createEl("button", { text: t("common.cancel") }).addEventListener("click", () => this.close());
@@ -4562,8 +4574,8 @@ Sortable.utils = {
   getChild,
   expando
 };
-Sortable.get = function(element3) {
-  return element3[expando];
+Sortable.get = function(element4) {
+  return element4[expando];
 };
 Sortable.mount = function() {
   for (var _len = arguments.length, plugins2 = new Array(_len), _key = 0; _key < _len; _key++) {
@@ -4833,12 +4845,12 @@ function taskListTitleText(title, limit = TASK_LIST_TITLE_CHARACTER_LIMIT) {
   return title;
 }
 function appendElement(parent, tag, options = {}) {
-  const element3 = parent.ownerDocument.createElement(tag);
-  if (options.className) element3.className = options.className;
-  if (options.text !== void 0) element3.textContent = options.text;
-  Object.entries(options.attributes ?? {}).forEach(([name, value]) => element3.setAttribute(name, value));
-  parent.append(element3);
-  return element3;
+  const element4 = parent.ownerDocument.createElement(tag);
+  if (options.className) element4.className = options.className;
+  if (options.text !== void 0) element4.textContent = options.text;
+  Object.entries(options.attributes ?? {}).forEach(([name, value]) => element4.setAttribute(name, value));
+  parent.append(element4);
+  return element4;
 }
 function renderRow(list, row, selectionMode, copy, signal, dispatch) {
   const task = appendElement(list, "div", {
@@ -4945,7 +4957,7 @@ function renderTaskList(container, model, copy, dispatch) {
     touchStartThreshold: 4,
     onEnd: (event) => {
       if (event.oldIndex === event.newIndex) return;
-      const orderedIds = Array.from(list.querySelectorAll(".taskmate-task")).map((element3) => element3.dataset.taskId ?? "");
+      const orderedIds = Array.from(list.querySelectorAll(".taskmate-task")).map((element4) => element4.dataset.taskId ?? "");
       const taskId = event.item.dataset.taskId ?? "";
       const newIndex2 = orderedIds.indexOf(taskId);
       if (!taskId || newIndex2 < 0) return;
@@ -5042,9 +5054,9 @@ var TaskConflictModal = class extends import_obsidian9.Modal {
     radio.addEventListener("change", () => {
       if (radio.checked) this.choices[field] = choice;
     });
-    const text2 = label.createDiv();
-    text2.createDiv({ text: heading, cls: "taskmate-conflict-choice-heading" });
-    text2.createDiv({ text: value, cls: "taskmate-conflict-choice-value" });
+    const text3 = label.createDiv();
+    text3.createDiv({ text: heading, cls: "taskmate-conflict-choice-heading" });
+    text3.createDiv({ text: value, cls: "taskmate-conflict-choice-value" });
   }
   formatValue(field, value) {
     if (field === "projectId" && typeof value === "string") {
@@ -5109,18 +5121,18 @@ var StepModal = class extends import_obsidian10.Modal {
     this.modalEl.addClass("taskmate-step-modal");
     const fields = this.contentEl.createDiv({ cls: "taskmate-step-modal-fields" });
     const titleSetting = new import_obsidian10.Setting(fields).setName(t("stepModal.title"));
-    titleSetting.addText((text2) => {
-      text2.inputEl.setAttribute("aria-label", t("stepModal.title"));
-      text2.setPlaceholder(t("stepModal.titlePlaceholder")).setValue(this.draft.text).onChange((value) => {
+    titleSetting.addText((text3) => {
+      text3.inputEl.setAttribute("aria-label", t("stepModal.title"));
+      text3.setPlaceholder(t("stepModal.titlePlaceholder")).setValue(this.draft.text).onChange((value) => {
         this.draft.text = value;
       });
-      window.setTimeout(() => text2.inputEl.focus(), 0);
+      window.setTimeout(() => text3.inputEl.focus(), 0);
     });
     const dateSetting = new import_obsidian10.Setting(fields).setName(t("stepModal.date"));
-    dateSetting.addText((text2) => {
-      text2.inputEl.type = "date";
-      text2.inputEl.setAttribute("aria-label", t("stepModal.date"));
-      text2.setValue(this.draft.date ?? "").onChange((value) => {
+    dateSetting.addText((text3) => {
+      text3.inputEl.type = "date";
+      text3.inputEl.setAttribute("aria-label", t("stepModal.date"));
+      text3.setValue(this.draft.date ?? "").onChange((value) => {
         this.draft.date = value || null;
       });
     });
@@ -5221,8 +5233,8 @@ var TaskModal = class extends import_obsidian11.Modal {
     const titleSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.title"));
     titleSetting.settingEl.addClass("taskmate-title-setting");
     decorateField2(titleSetting, "circle-check", t("taskModal.title"));
-    titleSetting.addTextArea((text2) => {
-      const titleInput = text2.inputEl;
+    titleSetting.addTextArea((text3) => {
+      const titleInput = text3.inputEl;
       titleInput.rows = 3;
       titleInput.wrap = "soft";
       titleInput.setAttribute("aria-label", t("taskModal.title"));
@@ -5230,7 +5242,7 @@ var TaskModal = class extends import_obsidian11.Modal {
         titleInput.style.height = "auto";
         titleInput.style.height = `${titleInput.scrollHeight}px`;
       };
-      text2.setPlaceholder(t("taskModal.titlePlaceholder")).setValue(this.draft.title).onChange((value) => {
+      text3.setPlaceholder(t("taskModal.titlePlaceholder")).setValue(this.draft.title).onChange((value) => {
         const normalized = normalizeTaskTitleInput(value);
         if (normalized !== value) titleInput.value = normalized;
         this.draft.title = normalized;
@@ -5271,12 +5283,12 @@ var TaskModal = class extends import_obsidian11.Modal {
       });
       dateButtons.push(button3);
     }
-    dateSetting.addText((text2) => {
-      text2.inputEl.type = "date";
-      text2.inputEl.addClass("taskmate-date-input");
-      text2.inputEl.setAttribute("aria-label", t("taskModal.date"));
-      dateInput = text2.inputEl;
-      text2.setValue(this.draft.date ?? "").onChange((value) => {
+    dateSetting.addText((text3) => {
+      text3.inputEl.type = "date";
+      text3.inputEl.addClass("taskmate-date-input");
+      text3.inputEl.setAttribute("aria-label", t("taskModal.date"));
+      dateInput = text3.inputEl;
+      text3.setValue(this.draft.date ?? "").onChange((value) => {
         this.draft.date = value || null;
         refreshDateSelection();
       });
@@ -5330,7 +5342,7 @@ var TaskModal = class extends import_obsidian11.Modal {
     let labelInputComposing = false;
     let labelsExpanded = false;
     const refreshLabelEditor = () => {
-      labelEditor.querySelectorAll("[data-taskmate-label-chip], .taskmate-label-overflow-toggle").forEach((element3) => element3.remove());
+      labelEditor.querySelectorAll("[data-taskmate-label-chip], .taskmate-label-overflow-toggle").forEach((element4) => element4.remove());
       const summary = summarizeLabels(this.draft.labels);
       const visible = labelsExpanded ? this.draft.labels : summary.visible;
       for (const label of visible) {
@@ -6182,11 +6194,11 @@ var TodoListView = class extends import_obsidian13.ItemView {
     if (!query) return [];
     const projectNames = new Map(projects.map((project) => [project.id, project.name.toLocaleLowerCase()]));
     const matches2 = tasks.filter((task) => {
-      const text2 = `${task.title}
+      const text3 = `${task.title}
 ${task.notes}
 ${task.labels.join(" ")}
 ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
-      return text2.includes(query);
+      return text3.includes(query);
     });
     return filterTasks(matches2, "all", this.filterState.value());
   }
@@ -7092,9 +7104,9 @@ function structuredPatch(oldFileName, newFileName, oldStr, newStr, oldHeader, ne
     };
   }
 }
-function splitLines(text2) {
-  const hasTrailingNl = text2.endsWith("\n");
-  const result = text2.split("\n").map((line) => line + "\n");
+function splitLines(text3) {
+  const hasTrailingNl = text3.endsWith("\n");
+  const result = text3.split("\n").map((line) => line + "\n");
   if (hasTrailingNl) {
     result.pop();
   } else {
@@ -7576,6 +7588,79 @@ function summarize(proposal) {
 // src/reviews/task-change/review-view.ts
 var import_obsidian16 = require("obsidian");
 
+// src/reviews/shared/review-index.ts
+function buildReviewIndex(entries, details) {
+  const reviews = [];
+  const invalid2 = [];
+  for (const entry of entries) {
+    if (entry.type === "invalid") {
+      invalid2.push({ type: "invalid", path: entry.path, reason: entry.reason });
+      continue;
+    }
+    const found = details(entry.ref);
+    if (found) reviews.push({ type: "review", ref: entry.ref, details: found });
+    else invalid2.push({ type: "invalid", path: entry.ref.path, reason: "unreadable-review" });
+  }
+  reviews.sort((left, right) => right.details.sortKey.localeCompare(left.details.sortKey) || left.ref.id.localeCompare(right.ref.id));
+  invalid2.sort((left, right) => left.path.localeCompare(right.path));
+  return [...reviews, ...invalid2];
+}
+function renderReviewIndex(container, items, location, copy, actions) {
+  container.replaceChildren();
+  container.classList.add("taskmate-review-index");
+  text(container, "h2", copy.title);
+  const tabs = element("div", "taskmate-review-index-tabs", container);
+  for (const value of ["pending", "history"]) {
+    const tab = element("button", value === location ? "is-active" : "", tabs);
+    tab.type = "button";
+    tab.textContent = copy.location[value];
+    tab.setAttribute("aria-pressed", String(value === location));
+    tab.addEventListener("click", () => actions.showLocation(value));
+  }
+  const reviews = items.filter((item) => item.type === "review");
+  if (reviews.length === 0) text(container, "div", copy.empty[location], "taskmate-empty");
+  for (const item of reviews) {
+    const open = element("button", "taskmate-review-index-item", container);
+    open.type = "button";
+    open.setAttribute("aria-label", copy.openAria(copy.kind[item.ref.kind], item.ref.id));
+    const identity = element("span", "taskmate-review-index-identity", open);
+    text(identity, "span", copy.kind[item.ref.kind], "taskmate-review-index-kind");
+    text(identity, "span", item.ref.id);
+    for (const line of item.details.lines) text(open, "span", line, "taskmate-review-index-summary");
+    open.addEventListener("click", () => actions.open(item.ref));
+  }
+  const invalid2 = items.filter((item) => item.type === "invalid");
+  if (invalid2.length === 0) return;
+  const section = element("section", "taskmate-review-index-invalid", container);
+  const heading = text(section, "h3", copy.invalidTitle);
+  heading.id = "taskmate-review-index-invalid-title";
+  section.setAttribute("aria-labelledby", heading.id);
+  const list = element("ul", "", section);
+  for (const item of invalid2) {
+    const entry = element("li", "", list);
+    text(entry, "code", item.path);
+    entry.append(document.createTextNode(`: ${copy.invalidReason[item.reason]}`));
+  }
+}
+function renderNoOpenReview(container, message, openList) {
+  const empty = text(container, "div", message, "taskmate-empty");
+  const open = element("button", "", empty);
+  open.type = "button";
+  open.textContent = openList.label;
+  open.addEventListener("click", openList.onClick);
+}
+function element(tag, className, parent) {
+  const value = document.createElement(tag);
+  if (className) value.className = className;
+  parent.append(value);
+  return value;
+}
+function text(parent, tag, content, className = "") {
+  const value = element(tag, className, parent);
+  value.textContent = content;
+  return value;
+}
+
 // src/reviews/task-change/review-renderer.ts
 function createTaskChangeReviewState() {
   return { mode: "semantic", approvedChangeIds: /* @__PURE__ */ new Set() };
@@ -7597,44 +7682,44 @@ function reduceTaskChangeReviewState(state, action) {
 function renderTaskChangeReview(container, review, state, copy, dispatch, options = {}) {
   container.replaceChildren();
   container.classList.add("taskmate-review");
-  const header = element("header", "taskmate-review-header", container);
+  const header = element2("header", "taskmate-review-header", container);
   appendTextElement(header, "h2", copy.title);
   if (options.back) {
     const back = button(options.back.label, options.back.onClick);
     back.classList.add("taskmate-review-back");
     header.append(back);
   }
-  const controls = element("div", "taskmate-review-controls", container);
+  const controls = element2("div", "taskmate-review-controls", container);
   const allIds = review.tasks.flatMap((task) => task.changes.map((change) => change.id));
   const selectedAllCount = selectedCount(allIds, state.approvedChangeIds);
   if (!options.readOnly) {
-    const selection = element("div", "taskmate-review-selection-actions", controls);
+    const selection = element2("div", "taskmate-review-selection-actions", controls);
     selection.append(responsiveBulkButton(copy.selectAll, copy.selectAllShort, "taskmate-review-select-all", selectedAllCount === allIds.length, () => dispatch({ type: "set-many-approved", changeIds: allIds, approved: true })));
     selection.append(responsiveBulkButton(copy.clearAll, copy.clearAllShort, "taskmate-review-clear-all", selectedAllCount === 0, () => dispatch({ type: "set-many-approved", changeIds: allIds, approved: false })));
   }
-  const displaySwitch = element("div", "taskmate-review-display-switch", controls);
+  const displaySwitch = element2("div", "taskmate-review-display-switch", controls);
   displaySwitch.setAttribute("role", "group");
   displaySwitch.setAttribute("aria-label", copy.comparisonAria);
   displaySwitch.append(modeButton(copy.semantic, copy.semanticAria, "taskmate-review-mode-semantic", state.mode === "semantic", () => dispatch({ type: "set-mode", mode: "semantic" })));
   displaySwitch.append(modeButton(copy.markdown, copy.markdownAria, "taskmate-review-mode-raw", state.mode === "raw", () => dispatch({ type: "set-mode", mode: "raw" })));
-  const list = element("div", "taskmate-review-files", container);
+  const list = element2("div", "taskmate-review-files", container);
   for (const task of review.tasks) {
-    const section = element("section", "taskmate-review-file", list);
+    const section = element2("section", "taskmate-review-file", list);
     section.id = `taskmate-review-${task.taskId}`;
     section.dataset.reviewAnchor = task.taskId;
-    const fileHeader = element("div", "taskmate-review-file-header", section);
-    const identity = element("div", "taskmate-review-file-identity", fileHeader);
+    const fileHeader = element2("div", "taskmate-review-file-header", section);
+    const identity = element2("div", "taskmate-review-file-identity", fileHeader);
     appendTextElement(identity, "h3", task.title);
     const taskIds = task.changes.map((change) => change.id);
     if (!options.readOnly && taskIds.length > 1) {
       const selectedTaskCount = selectedCount(taskIds, state.approvedChangeIds);
-      const taskActions = element("div", "taskmate-review-file-actions", fileHeader);
+      const taskActions = element2("div", "taskmate-review-file-actions", fileHeader);
       taskActions.append(bulkButton(copy.selectTask, "taskmate-review-select-task", selectedTaskCount === taskIds.length, () => dispatch({ type: "set-many-approved", changeIds: taskIds, approved: true })));
       taskActions.append(bulkButton(copy.clearTask, "taskmate-review-clear-task", selectedTaskCount === 0, () => dispatch({ type: "set-many-approved", changeIds: taskIds, approved: false })));
     }
     if (state.mode === "semantic") {
       for (const change of task.changes) {
-        const row = element(options.readOnly ? "div" : "label", "taskmate-review-change", section);
+        const row = element2(options.readOnly ? "div" : "label", "taskmate-review-change", section);
         if (options.readOnly) row.classList.add("is-read-only");
         row.dataset.reviewAnchor = change.id;
         if (!options.readOnly) {
@@ -7645,13 +7730,13 @@ function renderTaskChangeReview(container, review, state, copy, dispatch, option
           row.append(checkbox);
         }
         appendTextElement(row, "span", change.id, "taskmate-review-id");
-        const details = element("span", "taskmate-review-change-details", row);
+        const details = element2("span", "taskmate-review-change-details", row);
         appendTextElement(details, "strong", change.field);
         appendTextElement(details, "span", `${formatValue(change.before)} \u2192 ${formatValue(change.after)}`, "taskmate-review-values");
         appendTextElement(details, "span", change.reason, "taskmate-review-reason");
       }
     } else {
-      const raw = element("pre", "taskmate-review-diff", section);
+      const raw = element2("pre", "taskmate-review-diff", section);
       for (const hunk of task.rawHunks) {
         appendTextElement(raw, "span", `@@ -${hunk.oldStart},${hunk.oldLines} +${hunk.newStart},${hunk.newLines} @@
 `, "taskmate-diff-header");
@@ -7664,7 +7749,7 @@ function renderTaskChangeReview(container, review, state, copy, dispatch, option
     }
   }
   if (!options.readOnly) {
-    const footer = element("footer", "taskmate-review-footer", container);
+    const footer = element2("footer", "taskmate-review-footer", container);
     const apply = button(copy.apply, () => dispatch({
       type: "apply",
       approvedChangeIds: allIds.filter((id) => state.approvedChangeIds.has(id))
@@ -7678,29 +7763,29 @@ function renderTaskChangeReview(container, review, state, copy, dispatch, option
     footer.append(reject);
   }
 }
-function element(tag, className, parent) {
+function element2(tag, className, parent) {
   const value = document.createElement(tag);
   value.className = className;
   parent?.append(value);
   return value;
 }
-function appendTextElement(parent, tag, text2, className) {
+function appendTextElement(parent, tag, text3, className) {
   const value = document.createElement(tag);
   if (className) value.className = className;
-  value.textContent = text2;
+  value.textContent = text3;
   parent.append(value);
   return value;
 }
-function button(text2, activate, active = false) {
+function button(text3, activate, active = false) {
   const value = document.createElement("button");
   value.type = "button";
-  value.textContent = text2;
+  value.textContent = text3;
   if (active) value.classList.add("is-active");
   value.addEventListener("click", activate);
   return value;
 }
-function bulkButton(text2, className, disabled, activate) {
-  const value = button(text2, activate);
+function bulkButton(text3, className, disabled, activate) {
+  const value = button(text3, activate);
   value.classList.add(className);
   value.disabled = disabled;
   return value;
@@ -7712,8 +7797,8 @@ function responsiveBulkButton(longText, shortText, className, disabled, activate
   appendTextElement(value, "span", shortText, "taskmate-review-compact-label");
   return value;
 }
-function modeButton(text2, accessibleName, className, active, activate) {
-  const value = button(text2, activate, active);
+function modeButton(text3, accessibleName, className, active, activate) {
+  const value = button(text3, activate, active);
   value.classList.add(className);
   value.setAttribute("aria-label", accessibleName);
   value.setAttribute("aria-pressed", String(active));
@@ -7761,6 +7846,15 @@ async function openProposalInReviewView(activate, proposalId, taskId, changeId) 
   const view = await activate();
   await view.openProposal(proposalId, taskId, changeId);
 }
+function taskChangeIndexDetails(summary, i18n) {
+  const { t } = i18n;
+  const counts = t("review.summary", { tasks: summary.taskCount, changes: summary.changeCount });
+  if (summary.status === "pending") return { sortKey: summary.createdAt, lines: [counts] };
+  return {
+    sortKey: summary.resultAt ?? summary.createdAt,
+    lines: [t(`review.status.${summary.status}`), t("review.historyCounts", { succeeded: summary.succeededCount, failed: summary.failedCount }), counts]
+  };
+}
 var TaskChangeReviewView = class extends import_obsidian16.ItemView {
   constructor(leaf, plugin) {
     super(leaf);
@@ -7770,7 +7864,6 @@ var TaskChangeReviewView = class extends import_obsidian16.ItemView {
   targetTaskId = null;
   targetChangeId = null;
   review = null;
-  indexMode = "pending";
   proposalSource = "pending";
   state = createTaskChangeReviewState();
   getViewType() {
@@ -7787,16 +7880,6 @@ var TaskChangeReviewView = class extends import_obsidian16.ItemView {
   }
   requestRender() {
     void this.render("scroll");
-  }
-  async openIndex(mode = "pending") {
-    this.proposalId = null;
-    this.targetTaskId = null;
-    this.targetChangeId = null;
-    this.review = null;
-    this.indexMode = mode;
-    this.proposalSource = mode;
-    this.state = createTaskChangeReviewState();
-    await this.render();
   }
   async openProposal(proposalId, taskId, changeId) {
     this.proposalId = proposalId;
@@ -7816,40 +7899,8 @@ var TaskChangeReviewView = class extends import_obsidian16.ItemView {
     const position = preserve ? captureReviewPosition(this.contentEl, preserve) : null;
     this.contentEl.empty();
     if (!this.proposalId) {
-      const proposals = this.indexMode === "pending" ? await this.plugin.proposals.listPending() : await this.plugin.proposals.listHistory();
-      const root = this.contentEl.createDiv({ cls: "taskmate-review-index" });
-      const tabs = root.createDiv({ cls: "taskmate-review-index-tabs" });
-      for (const mode of ["pending", "history"]) {
-        const tab = tabs.createEl("button", {
-          text: this.plugin.i18n().t(mode === "pending" ? "review.pending" : "review.history"),
-          cls: this.indexMode === mode ? "is-active" : ""
-        });
-        tab.addEventListener("click", () => {
-          this.indexMode = mode;
-          void this.render();
-        });
-      }
-      if (proposals.length === 0) root.createDiv({ cls: "taskmate-empty", text: this.plugin.i18n().t(this.indexMode === "pending" ? "review.none" : "review.historyNone") });
-      for (const proposal of proposals) {
-        const open = root.createEl("button", { cls: "taskmate-review-index-item" });
-        const identity = open.createSpan({ cls: "taskmate-review-index-identity" });
-        identity.createSpan({ text: proposal.id });
-        if (this.indexMode === "history") {
-          identity.createSpan({
-            cls: "taskmate-review-history-status",
-            text: this.plugin.i18n().t(`review.status.${proposal.status}`)
-          });
-          identity.createSpan({
-            cls: "taskmate-review-history-counts",
-            text: this.plugin.i18n().t("review.historyCounts", {
-              succeeded: proposal.succeededCount,
-              failed: proposal.failedCount
-            })
-          });
-        }
-        open.createSpan({ cls: "taskmate-review-index-summary", text: this.plugin.i18n().t("review.summary", { tasks: proposal.taskCount, changes: proposal.changeCount }) });
-        open.addEventListener("click", () => void (this.indexMode === "pending" ? this.openProposal(proposal.id) : this.openHistoryProposal(proposal.id)));
-      }
+      const { t } = this.plugin.i18n();
+      renderNoOpenReview(this.contentEl, t("reviews.notOpen"), { label: t("command.openReviews"), onClick: () => void this.plugin.openReviewIndex("pending", this.leaf) });
       return;
     }
     try {
@@ -7858,7 +7909,7 @@ var TaskChangeReviewView = class extends import_obsidian16.ItemView {
         readOnly: this.proposalSource === "history",
         back: {
           label: this.plugin.i18n().t("common.back"),
-          onClick: () => void this.openIndex(this.proposalSource)
+          onClick: () => void this.plugin.openReviewIndex(this.proposalSource, this.leaf)
         }
       });
       if (position) restoreReviewPosition(this.contentEl, position);
@@ -7880,13 +7931,18 @@ var TaskChangeReviewView = class extends import_obsidian16.ItemView {
       this.proposalId = result.followUp?.id ?? null;
       this.state = createTaskChangeReviewState();
       preserve = void 0;
+      if (!this.proposalId) {
+        await this.plugin.openReviewIndex("pending", this.leaf);
+        return;
+      }
     }
     if (action.type === "reject" && this.proposalId) {
       if (!window.confirm(this.plugin.i18n().t("review.rejectConfirm"))) return;
       await this.plugin.proposals.reject(this.proposalId);
       this.proposalId = null;
       new import_obsidian16.Notice(this.plugin.i18n().t("review.rejected"));
-      preserve = void 0;
+      await this.plugin.openReviewIndex("pending", this.leaf);
+      return;
     }
     await this.render(preserve);
   }
@@ -8399,20 +8455,20 @@ function invalid(path, message) {
 var FRONTMATTER3 = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
 var LINE_BREAK = /\r\n|[\n\r\v\f\x1c\x1d\x1e\x85\u2028\u2029]/;
 var IMPORT_KEYS = /* @__PURE__ */ new Set(["taskmate-import-status", "taskmate-imported-at", "taskmate-imported-hash", "taskmate-task-ids"]);
-async function sourceNoteHash(text2) {
-  const { lines, body } = splitDocument(universalNewlines(text2));
+async function sourceNoteHash(text3) {
+  const { lines, body } = splitDocument(universalNewlines(text3));
   const stable = withoutImportKeys(lines);
   return sha256(stable.length > 0 ? `---
 ${stable.join("\n")}
 ---
 ${body}` : body);
 }
-function importedHash(text2) {
-  const value = topLevelValue(splitDocument(universalNewlines(text2)).lines, "taskmate-imported-hash");
+function importedHash(text3) {
+  const value = topLevelValue(splitDocument(universalNewlines(text3)).lines, "taskmate-imported-hash");
   return typeof value === "string" ? value : null;
 }
-function withSourceNoteProvenance(text2, provenance) {
-  const { lines, body } = splitDocument(universalNewlines(text2));
+function withSourceNoteProvenance(text3, provenance) {
+  const { lines, body } = splitDocument(universalNewlines(text3));
   const taskIds = [.../* @__PURE__ */ new Set([...yamlList(lines, "taskmate-task-ids"), ...provenance.taskIds])];
   const next = [
     ...withoutImportKeys(lines),
@@ -8427,18 +8483,18 @@ ${next.join("\n")}
 ---
 ${body}`;
 }
-function universalNewlines(text2) {
-  return text2.replace(/\r\n?/g, "\n");
+function universalNewlines(text3) {
+  return text3.replace(/\r\n?/g, "\n");
 }
-function splitDocument(text2) {
-  const match = FRONTMATTER3.exec(text2);
-  if (!match) return { lines: [], body: text2 };
-  return { lines: splitLines2(match[1]), body: text2.slice(match[0].length) };
+function splitDocument(text3) {
+  const match = FRONTMATTER3.exec(text3);
+  if (!match) return { lines: [], body: text3 };
+  return { lines: splitLines2(match[1]), body: text3.slice(match[0].length) };
 }
-function splitLines2(text2) {
-  if (!text2) return [];
-  const lines = text2.split(LINE_BREAK);
-  if (lines.at(-1) === "" && LINE_BREAK.test(text2.slice(-1))) lines.pop();
+function splitLines2(text3) {
+  if (!text3) return [];
+  const lines = text3.split(LINE_BREAK);
+  if (lines.at(-1) === "" && LINE_BREAK.test(text3.slice(-1))) lines.pop();
   return lines;
 }
 function isTopLevelKey(line) {
@@ -8805,9 +8861,9 @@ function labels(value) {
 }
 function steps(value, previous) {
   const unused = [...previous];
-  return value.split("\n").map((line) => line.trim()).filter(Boolean).map((text2) => {
-    const index2 = unused.findIndex((step2) => step2.text === text2);
-    if (index2 < 0) return { text: text2, completed: false, date: null };
+  return value.split("\n").map((line) => line.trim()).filter(Boolean).map((text3) => {
+    const index2 = unused.findIndex((step2) => step2.text === text3);
+    if (index2 < 0) return { text: text3, completed: false, date: null };
     const [step] = unused.splice(index2, 1);
     return { ...step };
   });
@@ -8883,45 +8939,45 @@ function withField(form, field, value) {
 function renderSourceCandidateReview(container, review, plan, state, copy, dispatch, options = {}) {
   container.replaceChildren();
   container.classList.add("taskmate-review", "taskmate-source-review");
-  const header = element2("header", "taskmate-review-header", container);
-  text(header, "h2", copy.title);
+  const header = element3("header", "taskmate-review-header", container);
+  text2(header, "h2", copy.title);
   if (options.onBack) {
     const back = button2(copy.back, options.onBack);
     back.classList.add("taskmate-review-back");
     header.append(back);
   }
-  const summary = element2("p", "taskmate-source-review-summary", container);
+  const summary = element3("p", "taskmate-source-review-summary", container);
   summary.textContent = [review.reviewId, copy.status[review.status], review.health === "ok" ? "" : copy.health[review.health]].filter(Boolean).join(" \xB7 ");
-  const list = element2("div", "taskmate-review-files", container);
+  const list = element3("div", "taskmate-review-files", container);
   const projects = options.projects ?? [];
   for (const candidate of review.candidates) renderCard(list, review, candidate, state, copy, dispatch, Boolean(options.readOnly), projects);
   if (!options.readOnly) renderApply(container, plan, state, copy, dispatch);
   if (state.focus) container.querySelector(`[id="${state.focus}"]`)?.focus();
 }
 function renderCard(parent, review, candidate, state, copy, dispatch, readOnly, projects) {
-  const card = element2("section", "taskmate-review-file taskmate-source-candidate", parent);
+  const card = element3("section", "taskmate-review-file taskmate-source-candidate", parent);
   card.id = `taskmate-source-candidate-${candidate.id}`;
   card.dataset.operation = candidate.operation;
-  const head = element2("div", "taskmate-review-file-header", card);
-  const identity = element2("div", "taskmate-review-file-identity", head);
-  text(identity, "span", candidate.id, "taskmate-review-id");
-  text(identity, "span", copy.operation[candidate.operation], "taskmate-source-candidate-operation");
-  text(identity, "h3", candidate.title);
-  const status = element2("p", "taskmate-source-candidate-status", card);
+  const head = element3("div", "taskmate-review-file-header", card);
+  const identity = element3("div", "taskmate-review-file-identity", head);
+  text2(identity, "span", candidate.id, "taskmate-review-id");
+  text2(identity, "span", copy.operation[candidate.operation], "taskmate-source-candidate-operation");
+  text2(identity, "h3", candidate.title);
+  const status = element3("p", "taskmate-source-candidate-status", card);
   const applied = candidate.application.status === "applied";
   status.textContent = [
     applied ? copy.applied : copy.decision[candidate.decision],
     candidate.health === "ok" ? "" : `${copy.health[candidate.health]}${candidate.healthReason ? `: ${candidate.healthReason}` : ""}`
   ].filter(Boolean).join(" \xB7 ");
   if (candidate.health !== "ok") status.classList.add(`is-${candidate.health}`);
-  const sources = element2("div", "taskmate-source-candidate-sources", card);
-  text(sources, "h4", copy.sources);
+  const sources = element3("div", "taskmate-source-candidate-sources", card);
+  text2(sources, "h4", copy.sources);
   for (const ref of candidate.sourceRefs) {
     const source = review.sources.find((item) => item.id === ref.sourceId);
     const label = !source ? ref.sourceId : source.type === "note" ? source.path : copy.conversation(source.localSourceId);
-    const quote = element2("blockquote", "taskmate-source-candidate-statement", sources);
-    text(quote, "cite", `${ref.sourceId} \xB7 ${label}`);
-    text(quote, "p", ref.statement);
+    const quote = element3("blockquote", "taskmate-source-candidate-statement", sources);
+    text2(quote, "cite", `${ref.sourceId} \xB7 ${label}`);
+    text2(quote, "p", ref.statement);
   }
   const editing = state.editing?.candidateId === candidate.id ? state.editing : null;
   if (editing) {
@@ -8931,13 +8987,13 @@ function renderCard(parent, review, candidate, state, copy, dispatch, readOnly, 
   if (candidate.operation === "create") renderDraft(card, candidate.taskDraft, copy, projects);
   else if (candidate.operation === "merge") renderMerge(card, candidate, state, copy, dispatch, projects);
   else {
-    const reason = element2("p", "taskmate-source-candidate-reason", card);
-    text(reason, "strong", `${copy.exclusionReason}: `);
+    const reason = element3("p", "taskmate-source-candidate-reason", card);
+    text2(reason, "strong", `${copy.exclusionReason}: `);
     reason.append(candidate.exclusionReason);
   }
   if (!readOnly && !applied) {
-    const actions = element2("div", "taskmate-source-candidate-actions", card);
-    const decisions = element2("div", "taskmate-source-candidate-decisions", actions);
+    const actions = element3("div", "taskmate-source-candidate-actions", card);
+    const decisions = element3("div", "taskmate-source-candidate-decisions", actions);
     decisions.setAttribute("role", "group");
     decisions.setAttribute("aria-label", copy.decisionGroupAria(candidate.id));
     const choices = [["approved", copy.decide[candidate.operation]], ["hold", copy.decide.hold], ["pending", copy.decide.pending]];
@@ -8957,7 +9013,7 @@ function renderCard(parent, review, candidate, state, copy, dispatch, readOnly, 
   }
 }
 function renderDraft(card, draft, copy, projects) {
-  const fields = element2("dl", "taskmate-source-candidate-fields", card);
+  const fields = element3("dl", "taskmate-source-candidate-fields", card);
   const rows = [
     ["date", draft.date ?? copy.empty],
     ["priority", draft.priority === null ? copy.empty : copy.priorityValue(draft.priority)],
@@ -8966,27 +9022,27 @@ function renderDraft(card, draft, copy, projects) {
     ["notes", draft.notes || copy.empty]
   ];
   for (const [field, value] of rows) {
-    text(fields, "dt", copy.fields[field]);
-    text(fields, "dd", value);
+    text2(fields, "dt", copy.fields[field]);
+    text2(fields, "dd", value);
   }
   if (draft.steps.length > 0) {
-    text(fields, "dt", copy.fields.steps);
-    const steps2 = element2("dd", "", fields);
-    const listEl = element2("ul", "taskmate-source-candidate-steps", steps2);
-    for (const step of draft.steps) text(listEl, "li", step.date ? `${step.text} (${step.date})` : step.text);
+    text2(fields, "dt", copy.fields.steps);
+    const steps2 = element3("dd", "", fields);
+    const listEl = element3("ul", "taskmate-source-candidate-steps", steps2);
+    for (const step of draft.steps) text2(listEl, "li", step.date ? `${step.text} (${step.date})` : step.text);
   }
 }
 function renderMerge(card, candidate, state, copy, dispatch, projects) {
   const target = candidate.mergeTarget;
-  const block = element2("div", "taskmate-source-candidate-merge", card);
-  text(block, "p", copy.mergeTarget(target.title), "taskmate-source-candidate-target");
+  const block = element3("div", "taskmate-source-candidate-merge", card);
+  text2(block, "p", copy.mergeTarget(target.title), "taskmate-source-candidate-target");
   for (const change of target.changes) {
-    const row = element2("div", "taskmate-review-change is-read-only", block);
-    text(row, "strong", copy.fields[change.field]);
-    const details = element2("span", "taskmate-review-change-details", row);
+    const row = element3("div", "taskmate-review-change is-read-only", block);
+    text2(row, "strong", copy.fields[change.field]);
+    const details = element3("span", "taskmate-review-change-details", row);
     const format = (value) => change.field === "project" && typeof value === "string" ? projectName(value, projects) : formatValue2(value);
-    text(details, "span", `${format(change.before)} \u2192 ${format(change.after)}`, "taskmate-review-values");
-    text(details, "span", change.reason, "taskmate-review-reason");
+    text2(details, "span", `${format(change.before)} \u2192 ${format(change.after)}`, "taskmate-review-values");
+    text2(details, "span", change.reason, "taskmate-review-reason");
   }
   const expanded = state.expandedDiffs.has(candidate.id);
   const diffId = `taskmate-source-candidate-diff-${candidate.id}`;
@@ -8996,21 +9052,21 @@ function renderMerge(card, candidate, state, copy, dispatch, projects) {
   toggle.setAttribute("aria-controls", diffId);
   block.append(toggle);
   if (!expanded) return;
-  const diff = element2("pre", "taskmate-review-diff", block);
+  const diff = element3("pre", "taskmate-review-diff", block);
   diff.id = diffId;
   diff.setAttribute("aria-label", copy.diffAria(candidate.id));
   const patch = structuredPatch(target.path, target.path, target.beforeMarkdown, target.afterMarkdown, "before", "after", { context: 3 });
   for (const hunk of patch.hunks) {
-    text(diff, "span", `@@ -${hunk.oldStart},${hunk.oldLines} +${hunk.newStart},${hunk.newLines} @@
+    text2(diff, "span", `@@ -${hunk.oldStart},${hunk.oldLines} +${hunk.newStart},${hunk.newLines} @@
 `, "taskmate-diff-header");
     for (const line of hunk.lines) {
-      text(diff, "span", `${line}
+      text2(diff, "span", `${line}
 `, line.startsWith("+") ? "taskmate-diff-add" : line.startsWith("-") ? "taskmate-diff-delete" : "taskmate-diff-context");
     }
   }
 }
 function renderApply(container, plan, state, copy, dispatch) {
-  const footer = element2("footer", "taskmate-review-footer taskmate-source-review-apply", container);
+  const footer = element3("footer", "taskmate-review-footer taskmate-source-review-apply", container);
   if (!state.applyOpen) {
     const open = button2(copy.openApply, () => dispatch({ type: "open-apply" }));
     open.id = OPEN_APPLY_ID;
@@ -9022,29 +9078,29 @@ function renderApply(container, plan, state, copy, dispatch) {
     return;
   }
   footer.classList.add("is-open");
-  const panel = element2("section", "taskmate-source-review-apply-panel", footer);
+  const panel = element3("section", "taskmate-source-review-apply-panel", footer);
   panel.setAttribute("aria-labelledby", APPLY_TITLE_ID);
-  const title = text(panel, "h3", copy.applyTitle);
+  const title = text2(panel, "h3", copy.applyTitle);
   title.id = APPLY_TITLE_ID;
   title.tabIndex = -1;
-  text(panel, "p", copy.applyCounts(plan.counts));
+  text2(panel, "p", copy.applyCounts(plan.counts));
   if (plan.blocked.length > 0) {
-    text(panel, "h4", copy.blockedTitle);
-    const blocked = element2("ul", "taskmate-source-review-blocked", panel);
-    for (const item of plan.blocked) text(blocked, "li", `${item.candidateId}: ${copy.blocked[item.reason]}`);
+    text2(panel, "h4", copy.blockedTitle);
+    const blocked = element3("ul", "taskmate-source-review-blocked", panel);
+    for (const item of plan.blocked) text2(blocked, "li", `${item.candidateId}: ${copy.blocked[item.reason]}`);
   }
   if (plan.requiresAcknowledgement) {
-    text(panel, "h4", copy.unviewedTitle);
-    const unviewed = element2("ul", "taskmate-source-review-unviewed", panel);
-    for (const item of plan.unviewedMerges) text(unviewed, "li", `${item.candidateId}: ${item.targetTitle}`);
-    const label = element2("label", "taskmate-source-review-acknowledge", panel);
+    text2(panel, "h4", copy.unviewedTitle);
+    const unviewed = element3("ul", "taskmate-source-review-unviewed", panel);
+    for (const item of plan.unviewedMerges) text2(unviewed, "li", `${item.candidateId}: ${item.targetTitle}`);
+    const label = element3("label", "taskmate-source-review-acknowledge", panel);
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.checked = state.acknowledged;
     checkbox.addEventListener("change", () => dispatch({ type: "set-acknowledged", acknowledged: checkbox.checked }));
     label.append(checkbox, document.createTextNode(copy.acknowledge(plan.unviewedMerges.length)));
   }
-  const actions = element2("div", "taskmate-source-review-apply-actions", panel);
+  const actions = element3("div", "taskmate-source-review-apply-actions", panel);
   const confirm = button2(copy.confirm, () => dispatch({ type: "confirm-apply" }));
   confirm.classList.add("mod-cta");
   confirm.disabled = plan.eligible.length === 0 || plan.requiresAcknowledgement && !state.acknowledged;
@@ -9052,7 +9108,7 @@ function renderApply(container, plan, state, copy, dispatch) {
   actions.append(confirm, cancel);
 }
 function renderEditForm(card, candidate, editing, copy, dispatch, projects) {
-  const form = element2("form", "taskmate-source-candidate-edit", card);
+  const form = element3("form", "taskmate-source-candidate-edit", card);
   form.noValidate = true;
   form.setAttribute("aria-label", copy.editAria(candidate.id));
   form.addEventListener("submit", (event) => {
@@ -9060,7 +9116,7 @@ function renderEditForm(card, candidate, editing, copy, dispatch, projects) {
     dispatch({ type: "save-edit" });
   });
   if (editing.errors.form) {
-    const error = text(form, "p", copy.editErrors[editing.errors.form], "taskmate-source-candidate-edit-error");
+    const error = text2(form, "p", copy.editErrors[editing.errors.form], "taskmate-source-candidate-edit-error");
     error.id = FORM_ERROR_ID;
     error.tabIndex = -1;
     error.setAttribute("role", "alert");
@@ -9090,27 +9146,27 @@ function renderEditForm(card, candidate, editing, copy, dispatch, projects) {
     control("notes", copy.fields.notes, textArea(values.notes));
     if (operation === "merge") control("reason", copy.changeReason, textArea(editing.form.reason), copy.editHelp.changeReason);
   }
-  const actions = element2("div", "taskmate-source-candidate-edit-actions", form);
-  const save2 = element2("button", "mod-cta", actions);
+  const actions = element3("div", "taskmate-source-candidate-edit-actions", form);
+  const save2 = element3("button", "mod-cta", actions);
   save2.type = "submit";
   save2.textContent = copy.save;
   actions.append(button2(copy.cancel, () => dispatch({ type: "cancel-edit" })));
 }
 function editField(form, id, label, control, help, error) {
-  const wrapper = element2("div", "taskmate-source-candidate-edit-field", form);
-  const caption = element2("label", "", wrapper);
+  const wrapper = element3("div", "taskmate-source-candidate-edit-field", form);
+  const caption = element3("label", "", wrapper);
   caption.htmlFor = id;
   caption.textContent = label;
   control.id = id;
   wrapper.append(control);
   const describedBy = [];
   if (help) {
-    const note = text(wrapper, "p", help, "taskmate-source-candidate-edit-help");
+    const note = text2(wrapper, "p", help, "taskmate-source-candidate-edit-help");
     note.id = `${id}-help`;
     describedBy.push(note.id);
   }
   if (error) {
-    const message = text(wrapper, "p", error, "taskmate-source-candidate-edit-error");
+    const message = text2(wrapper, "p", error, "taskmate-source-candidate-edit-error");
     message.id = `${id}-error`;
     describedBy.push(message.id);
     control.setAttribute("aria-invalid", "true");
@@ -9132,7 +9188,7 @@ function textArea(value) {
 function select(options, value) {
   const control = document.createElement("select");
   for (const [optionValue, label] of options) {
-    const option2 = element2("option", "", control);
+    const option2 = element3("option", "", control);
     option2.value = optionValue;
     option2.textContent = label;
   }
@@ -9146,14 +9202,14 @@ function required(control) {
 function projectName(id, projects) {
   return projects.find((project) => project.id === id)?.name ?? id;
 }
-function element2(tag, className, parent) {
+function element3(tag, className, parent) {
   const value = document.createElement(tag);
   if (className) value.className = className;
   parent?.append(value);
   return value;
 }
-function text(parent, tag, content, className) {
-  const value = element2(tag, className ?? "", parent);
+function text2(parent, tag, content, className) {
+  const value = element3(tag, className ?? "", parent);
   value.textContent = content;
   return value;
 }
@@ -9186,13 +9242,18 @@ function formalApplyMessage(result, i18n) {
   if (result.archived) parts.push(t("sourceReview.archived"));
   return parts.join(" ");
 }
+function sourceReviewIndexDetails(summary, i18n) {
+  return {
+    sortKey: summary.updatedAt,
+    lines: [statusText(summary.status, i18n), i18n.t("sourceReview.summary", { candidates: summary.candidateCount, applied: summary.appliedCount })]
+  };
+}
 var SourceCandidateReviewView = class extends import_obsidian18.ItemView {
   constructor(leaf, plugin) {
     super(leaf);
     this.plugin = plugin;
   }
   reviewId = null;
-  indexMode = "pending";
   state = createSourceReviewUiState();
   getViewType() {
     return SOURCE_CANDIDATE_REVIEW_VIEW_TYPE;
@@ -9209,12 +9270,6 @@ var SourceCandidateReviewView = class extends import_obsidian18.ItemView {
   requestRender() {
     void this.render(true);
   }
-  async openIndex(mode = "pending") {
-    this.reviewId = null;
-    this.indexMode = mode;
-    this.state = createSourceReviewUiState();
-    await this.render();
-  }
   async openReview(reviewId) {
     this.reviewId = reviewId;
     this.state = createSourceReviewUiState();
@@ -9227,7 +9282,7 @@ var SourceCandidateReviewView = class extends import_obsidian18.ItemView {
     this.contentEl.empty();
     const i18n = this.plugin.i18n();
     if (!this.reviewId) {
-      await this.renderIndex(i18n);
+      renderNoOpenReview(this.contentEl, i18n.t("reviews.notOpen"), { label: i18n.t("command.openReviews"), onClick: () => void this.plugin.openReviewIndex("pending", this.leaf) });
       return;
     }
     try {
@@ -9236,7 +9291,7 @@ var SourceCandidateReviewView = class extends import_obsidian18.ItemView {
       const state = !this.state.focus && focused ? { ...this.state, focus: focused } : this.state;
       renderSourceCandidateReview(this.contentEl, review, planFormalApply(review), state, sourceReviewCopy(i18n), (action) => void this.handle(action), {
         readOnly: review.status === "history",
-        onBack: () => void this.openIndex(review.status === "history" ? "history" : "pending"),
+        onBack: () => void this.plugin.openReviewIndex(review.status === "history" ? "history" : "pending", this.leaf),
         projects
       });
       this.state = { ...this.state, focus: null };
@@ -9245,29 +9300,6 @@ var SourceCandidateReviewView = class extends import_obsidian18.ItemView {
       this.contentEl.createDiv({ cls: "taskmate-empty", text: i18n.t("sourceReview.invalid") });
     }
     this.contentEl.scrollTop = scrollTop;
-  }
-  async renderIndex(i18n) {
-    const reviews = this.indexMode === "pending" ? await this.plugin.sourceReviews.listPending() : await this.plugin.sourceReviews.listHistory();
-    const root = this.contentEl.createDiv({ cls: "taskmate-review-index" });
-    root.createEl("h2", { text: i18n.t("sourceReview.title") });
-    const tabs = root.createDiv({ cls: "taskmate-review-index-tabs" });
-    for (const mode of ["pending", "history"]) {
-      const tab = tabs.createEl("button", {
-        text: i18n.t(mode === "pending" ? "sourceReview.pending" : "sourceReview.history"),
-        cls: this.indexMode === mode ? "is-active" : "",
-        attr: { "aria-pressed": String(this.indexMode === mode) }
-      });
-      tab.addEventListener("click", () => void this.openIndex(mode));
-    }
-    if (reviews.length === 0) root.createDiv({ cls: "taskmate-empty", text: i18n.t(this.indexMode === "pending" ? "sourceReview.none" : "sourceReview.historyNone") });
-    for (const summary of reviews) {
-      const open = root.createEl("button", { cls: "taskmate-review-index-item" });
-      const identity = open.createSpan({ cls: "taskmate-review-index-identity" });
-      identity.createSpan({ text: summary.reviewId });
-      identity.createSpan({ cls: "taskmate-review-history-status", text: statusText(summary.status, i18n) });
-      open.createSpan({ cls: "taskmate-review-index-summary", text: i18n.t("sourceReview.summary", { candidates: summary.candidateCount, applied: summary.appliedCount }) });
-      open.addEventListener("click", () => void this.openReview(summary.reviewId));
-    }
   }
   async handle(action) {
     const reviewId = this.reviewId;
@@ -9399,13 +9431,122 @@ function sourceReviewCopy(i18n) {
   };
 }
 
+// src/reviews/shared/review-catalog.ts
+var import_obsidian19 = require("obsidian");
+var TASK_CHANGE_ID = /^proposal-[A-Za-z0-9._-]+$/;
+var SOURCE_REVIEW_ID = /^source-review-[A-Za-z0-9._-]+$/;
+function classifyReviewFile(path, location, content) {
+  const invalid2 = (reason) => ({ type: "invalid", path, location, reason });
+  const review = (kind, id2) => ({ type: "review", ref: { kind, id: id2, location, path } });
+  const name = path.slice(path.lastIndexOf("/") + 1).replace(/\.json$/, "");
+  let envelope;
+  try {
+    envelope = JSON.parse(content);
+  } catch {
+    return invalid2("unreadable-json");
+  }
+  if (typeof envelope !== "object" || envelope === null || Array.isArray(envelope)) return invalid2("unreadable-json");
+  const { reviewType, schemaVersion, reviewId, id } = envelope;
+  if (reviewType === "source-candidate") {
+    if (!SOURCE_REVIEW_ID.test(name) || reviewId !== name) return invalid2("mismatched-id");
+    return schemaVersion === 1 ? review("source-candidate", name) : invalid2("unsupported-version");
+  }
+  if (reviewType !== void 0) return invalid2("unknown-type");
+  if (TASK_CHANGE_ID.test(name)) {
+    if (id !== name) return invalid2("mismatched-id");
+    return schemaVersion === 1 ? review("task-change", name) : invalid2("unsupported-version");
+  }
+  return invalid2(SOURCE_REVIEW_ID.test(name) ? "mismatched-id" : "unknown-type");
+}
+var ReviewCatalog = class {
+  constructor(app, proposalFolder) {
+    this.app = app;
+    this.proposalFolder = proposalFolder;
+  }
+  async list(location) {
+    const prefix = `${location === "pending" ? this.folder() : this.historyFolder()}/`;
+    const files = this.app.vault.getFiles().filter((file) => file.extension === "json" && file.path.startsWith(prefix) && !file.path.slice(prefix.length).includes("/"));
+    const entries = [];
+    for (const file of files) {
+      const entry = classifyReviewFile(file.path, location, await this.app.vault.cachedRead(file));
+      if (entry.type === "invalid") console.warn(`TaskMate could not classify review file ${entry.path}: ${entry.reason}`);
+      entries.push(entry);
+    }
+    return entries;
+  }
+  folder() {
+    return (0, import_obsidian19.normalizePath)(this.proposalFolder().trim() || "TaskMate/Proposals");
+  }
+  historyFolder() {
+    return (0, import_obsidian19.normalizePath)(`${this.folder()}/History`);
+  }
+};
+
+// src/reviews/shared/review-index-view.ts
+var import_obsidian20 = require("obsidian");
+var REVIEW_INDEX_VIEW_TYPE = "taskmate-reviews";
+var ReviewIndexView = class extends import_obsidian20.ItemView {
+  constructor(leaf, plugin) {
+    super(leaf);
+    this.plugin = plugin;
+  }
+  location = "pending";
+  getViewType() {
+    return REVIEW_INDEX_VIEW_TYPE;
+  }
+  getDisplayText() {
+    return this.plugin.i18n().t("reviews.title");
+  }
+  getIcon() {
+    return "inbox";
+  }
+  async onOpen() {
+    await this.render();
+  }
+  requestRender() {
+    void this.render(true);
+  }
+  async show(location) {
+    this.location = location;
+    await this.render();
+  }
+  async render(preserveScroll = false) {
+    const scrollTop = preserveScroll ? this.contentEl.scrollTop : 0;
+    const items = await this.plugin.reviewIndex(this.location);
+    renderReviewIndex(this.contentEl, items, this.location, reviewIndexCopy(this.plugin.i18n()), {
+      open: (ref) => void this.plugin.openReview(ref, this.leaf),
+      showLocation: (location) => void this.show(location)
+    });
+    this.contentEl.scrollTop = scrollTop;
+  }
+};
+function reviewIndexCopy(i18n) {
+  const { t } = i18n;
+  return {
+    title: t("reviews.title"),
+    location: { pending: t("reviews.pending"), history: t("reviews.history") },
+    empty: { pending: t("reviews.none"), history: t("reviews.historyNone") },
+    kind: { "task-change": t("reviews.kind.taskChange"), "source-candidate": t("reviews.kind.sourceCandidate") },
+    openAria: (kind, id) => t("reviews.openAria", { kind, id }),
+    invalidTitle: t("reviews.invalidTitle"),
+    invalidReason: {
+      "unreadable-json": t("reviews.invalid.unreadableJson"),
+      "unknown-type": t("reviews.invalid.unknownType"),
+      "unsupported-version": t("reviews.invalid.unsupportedVersion"),
+      "mismatched-id": t("reviews.invalid.mismatchedId"),
+      "unreadable-review": t("reviews.invalid.unreadableReview")
+    }
+  };
+}
+
 // src/main.ts
-var TaskMatePlugin = class extends import_obsidian19.Plugin {
+var TaskMatePlugin = class extends import_obsidian21.Plugin {
   settings = DEFAULT_SETTINGS;
   repository;
   projects;
   proposals;
   sourceReviews;
+  reviewCatalog;
   refreshTimer = null;
   async onload() {
     await this.loadSettings();
@@ -9414,35 +9555,36 @@ var TaskMatePlugin = class extends import_obsidian19.Plugin {
     this.projects = new ProjectRepository(this.app, () => this.settings.projectFolder);
     this.proposals = new TaskChangeProposalRepository(this.app, () => this.settings.proposalFolder, this.repository);
     this.sourceReviews = new SourceCandidateReviewRepository(this.app, () => this.settings.proposalFolder, this.repository);
+    this.reviewCatalog = new ReviewCatalog(this.app, () => this.settings.proposalFolder);
     try {
       const migrated = await this.repository.migrateLegacyFileNames();
-      if (migrated > 0) new import_obsidian19.Notice(t("notice.migratedTaskNames", { count: migrated }));
+      if (migrated > 0) new import_obsidian21.Notice(t("notice.migratedTaskNames", { count: migrated }));
     } catch (error) {
       console.error("TaskMate could not migrate legacy task filenames", error);
-      new import_obsidian19.Notice(t("notice.migrationFailed"));
+      new import_obsidian21.Notice(t("notice.migrationFailed"));
     }
     this.registerView(TODO_VIEW_TYPE, (leaf) => new TodoListView(leaf, this));
     this.registerView(TASK_CHANGE_REVIEW_VIEW_TYPE, (leaf) => new TaskChangeReviewView(leaf, this));
     this.registerView(SOURCE_CANDIDATE_REVIEW_VIEW_TYPE, (leaf) => new SourceCandidateReviewView(leaf, this));
+    this.registerView(REVIEW_INDEX_VIEW_TYPE, (leaf) => new ReviewIndexView(leaf, this));
     this.addSettingTab(new TaskMateSettingTab(this.app, this));
     this.addRibbonIcon("circle-check-big", t("command.openRibbon"), () => void this.activateView());
     this.addCommand({ id: "open-todo-list", name: t("command.openList"), callback: () => void this.activateView() });
-    this.addCommand({ id: "open-task-change-reviews", name: t("command.openReviews"), callback: () => void this.openReviewIndex() });
+    this.addCommand({ id: "open-reviews", name: t("command.openReviews"), callback: () => void this.openReviewIndex() });
     this.registerObsidianProtocolHandler("taskmate-review", async (params) => {
       const proposalId = params.proposal;
       if (!proposalId || !/^proposal-[A-Za-z0-9._-]+$/.test(proposalId)) {
-        new import_obsidian19.Notice(this.i18n().t("review.invalidLink"));
+        new import_obsidian21.Notice(this.i18n().t("review.invalidLink"));
         return;
       }
       const taskId = typeof params.task === "string" && /^[A-Za-z0-9._-]+$/.test(params.task) ? params.task : void 0;
       const changeId = typeof params.change === "string" && /^C-[0-9]{2,}$/.test(params.change) ? params.change : void 0;
       await this.openProposalReview(proposalId, taskId, changeId);
     });
-    this.addCommand({ id: "open-source-candidate-reviews", name: t("command.openSourceReviews"), callback: () => void this.openSourceReviewIndex() });
     this.registerObsidianProtocolHandler("taskmate-source-review", async (params) => {
       const reviewId = sourceReviewIdFromLink(params);
       if (!reviewId) {
-        new import_obsidian19.Notice(this.i18n().t("sourceReview.invalidLink"));
+        new import_obsidian21.Notice(this.i18n().t("sourceReview.invalidLink"));
         return;
       }
       await this.openSourceReview(reviewId);
@@ -9463,9 +9605,9 @@ var TaskMatePlugin = class extends import_obsidian19.Plugin {
       checkCallback: (checking) => this.includeCurrentFolder(checking)
     });
     const scheduleRefresh = (file) => {
-      const taskPrefix = `${(0, import_obsidian19.normalizePath)(this.settings.taskFolder)}/`;
-      const projectPrefix = `${(0, import_obsidian19.normalizePath)(this.settings.projectFolder)}/`;
-      const proposalPrefix = `${(0, import_obsidian19.normalizePath)(this.settings.proposalFolder)}/`;
+      const taskPrefix = `${(0, import_obsidian21.normalizePath)(this.settings.taskFolder)}/`;
+      const projectPrefix = `${(0, import_obsidian21.normalizePath)(this.settings.projectFolder)}/`;
+      const proposalPrefix = `${(0, import_obsidian21.normalizePath)(this.settings.proposalFolder)}/`;
       if (!file.path.startsWith(taskPrefix) && !file.path.startsWith(projectPrefix) && !file.path.startsWith(proposalPrefix)) return;
       if (this.refreshTimer !== null) window.clearTimeout(this.refreshTimer);
       this.refreshTimer = window.setTimeout(() => {
@@ -9476,19 +9618,22 @@ var TaskMatePlugin = class extends import_obsidian19.Plugin {
         for (const leaf of this.app.workspace.getLeavesOfType(SOURCE_CANDIDATE_REVIEW_VIEW_TYPE)) {
           if (leaf.view instanceof SourceCandidateReviewView) leaf.view.requestRender();
         }
+        for (const leaf of this.app.workspace.getLeavesOfType(REVIEW_INDEX_VIEW_TYPE)) {
+          if (leaf.view instanceof ReviewIndexView) leaf.view.requestRender();
+        }
       }, 100);
     };
     this.registerEvent(this.app.vault.on("create", (file) => {
-      if (file instanceof import_obsidian19.TFile) scheduleRefresh(file);
+      if (file instanceof import_obsidian21.TFile) scheduleRefresh(file);
     }));
     this.registerEvent(this.app.vault.on("modify", (file) => {
-      if (file instanceof import_obsidian19.TFile) scheduleRefresh(file);
+      if (file instanceof import_obsidian21.TFile) scheduleRefresh(file);
     }));
     this.registerEvent(this.app.vault.on("delete", (file) => {
-      if (file instanceof import_obsidian19.TFile) scheduleRefresh(file);
+      if (file instanceof import_obsidian21.TFile) scheduleRefresh(file);
     }));
     this.registerEvent(this.app.vault.on("rename", (file) => {
-      if (file instanceof import_obsidian19.TFile) scheduleRefresh(file);
+      if (file instanceof import_obsidian21.TFile) scheduleRefresh(file);
     }));
   }
   onunload() {
@@ -9511,9 +9656,35 @@ var TaskMatePlugin = class extends import_obsidian19.Plugin {
     await this.app.workspace.revealLeaf(leaf);
     return leaf.view;
   }
-  async openReviewIndex() {
-    const view = await this.activateReviewView();
-    await view.openIndex();
+  // Shows the shared review list, in the given leaf when a review view returns to it.
+  async openReviewIndex(location = "pending", leaf) {
+    const target = leaf ?? this.app.workspace.getLeavesOfType(REVIEW_INDEX_VIEW_TYPE)[0] ?? this.app.workspace.getLeaf(false);
+    const view = await this.showViewInLeaf(target, REVIEW_INDEX_VIEW_TYPE);
+    await view.show(location);
+  }
+  // Routes a catalog entry to the review view that owns its kind, in the same leaf as the list.
+  async openReview(ref, leaf) {
+    if (ref.kind === "task-change") {
+      const view2 = await this.showViewInLeaf(leaf, TASK_CHANGE_REVIEW_VIEW_TYPE);
+      await (ref.location === "history" ? view2.openHistoryProposal(ref.id) : view2.openProposal(ref.id));
+      return;
+    }
+    const view = await this.showViewInLeaf(leaf, SOURCE_CANDIDATE_REVIEW_VIEW_TYPE);
+    await view.openReview(ref.id);
+  }
+  // Lists every review kind together: the catalog classifies the files and each owning Module describes its own reviews.
+  async reviewIndex(location) {
+    const i18n = this.i18n();
+    const [entries, taskChanges, sourceReviews] = await Promise.all([
+      this.reviewCatalog.list(location),
+      location === "pending" ? this.proposals.listPending() : this.proposals.listHistory(),
+      location === "pending" ? this.sourceReviews.listPending() : this.sourceReviews.listHistory()
+    ]);
+    const details = new Map([
+      ...taskChanges.map((summary) => [`task-change:${summary.id}`, taskChangeIndexDetails(summary, i18n)]),
+      ...sourceReviews.map((summary) => [`source-candidate:${summary.reviewId}`, sourceReviewIndexDetails(summary, i18n)])
+    ]);
+    return buildReviewIndex(entries, (ref) => details.get(`${ref.kind}:${ref.id}`) ?? null);
   }
   async openProposalReview(proposalId, taskId, changeId) {
     await openProposalInReviewView(() => this.activateReviewView(), proposalId, taskId, changeId);
@@ -9527,13 +9698,14 @@ var TaskMatePlugin = class extends import_obsidian19.Plugin {
     await this.app.workspace.revealLeaf(leaf);
     return leaf.view;
   }
-  async openSourceReviewIndex() {
-    const view = await this.activateSourceReviewView();
-    await view.openIndex();
-  }
   async openSourceReview(reviewId) {
     const view = await this.activateSourceReviewView();
     await view.openReview(reviewId);
+  }
+  async showViewInLeaf(leaf, type) {
+    if (leaf.view.getViewType() !== type) await leaf.setViewState({ type, active: true });
+    await this.app.workspace.revealLeaf(leaf);
+    return leaf.view;
   }
   refreshViews() {
     for (const leaf of this.app.workspace.getLeavesOfType(TODO_VIEW_TYPE)) {
@@ -9562,7 +9734,7 @@ var TaskMatePlugin = class extends import_obsidian19.Plugin {
         frontmatter["taskmate-source"] = value;
       }).then(() => {
         const { t } = this.i18n();
-        new import_obsidian19.Notice(value ? t("notice.noteIncluded") : t("notice.noteExcluded"));
+        new import_obsidian21.Notice(value ? t("notice.noteIncluded") : t("notice.noteExcluded"));
       });
     }
     return true;
@@ -9572,9 +9744,9 @@ var TaskMatePlugin = class extends import_obsidian19.Plugin {
     const folder = file?.parent?.path;
     if (!file || !folder || folder === "/") return false;
     if (!checking) {
-      const normalized = (0, import_obsidian19.normalizePath)(folder);
+      const normalized = (0, import_obsidian21.normalizePath)(folder);
       if (!this.settings.sourceFolders.includes(normalized)) this.settings.sourceFolders.push(normalized);
-      void this.saveSettings().then(() => new import_obsidian19.Notice(this.i18n().t("notice.folderIncluded", { folder: normalized })));
+      void this.saveSettings().then(() => new import_obsidian21.Notice(this.i18n().t("notice.folderIncluded", { folder: normalized })));
     }
     return true;
   }

@@ -1,4 +1,5 @@
 import { Notice, Plugin, TFile, normalizePath } from "obsidian";
+import type { WorkspaceLeaf } from "obsidian";
 import { TaskRepository } from "./tasks/repository";
 import { ProjectRepository } from "./projects/project-repository";
 import { DEFAULT_SETTINGS, TaskMateSettingTab } from "./settings";
@@ -8,9 +9,14 @@ import { createI18n, isLanguagePreference } from "./i18n";
 import type { I18n } from "./i18n";
 import { detectObsidianLanguage } from "./i18n/obsidian-locale";
 import { TaskChangeProposalRepository } from "./reviews/task-change/proposal-repository";
-import { openProposalInReviewView, TASK_CHANGE_REVIEW_VIEW_TYPE, TaskChangeReviewView } from "./reviews/task-change/review-view";
+import { openProposalInReviewView, TASK_CHANGE_REVIEW_VIEW_TYPE, TaskChangeReviewView, taskChangeIndexDetails } from "./reviews/task-change/review-view";
 import { SourceCandidateReviewRepository } from "./reviews/source-candidate/review-repository";
-import { SOURCE_CANDIDATE_REVIEW_VIEW_TYPE, SourceCandidateReviewView, sourceReviewIdFromLink } from "./reviews/source-candidate/review-view";
+import { SOURCE_CANDIDATE_REVIEW_VIEW_TYPE, SourceCandidateReviewView, sourceReviewIdFromLink, sourceReviewIndexDetails } from "./reviews/source-candidate/review-view";
+import { ReviewCatalog } from "./reviews/shared/review-catalog";
+import type { ReviewLocation, ReviewReference } from "./reviews/shared/review-catalog";
+import { buildReviewIndex } from "./reviews/shared/review-index";
+import type { ReviewIndexDetails, ReviewIndexItem } from "./reviews/shared/review-index";
+import { REVIEW_INDEX_VIEW_TYPE, ReviewIndexView } from "./reviews/shared/review-index-view";
 
 export default class TaskMatePlugin extends Plugin {
   settings: TaskMateSettings = DEFAULT_SETTINGS;
@@ -18,6 +24,7 @@ export default class TaskMatePlugin extends Plugin {
   projects!: ProjectRepository;
   proposals!: TaskChangeProposalRepository;
   sourceReviews!: SourceCandidateReviewRepository;
+  reviewCatalog!: ReviewCatalog;
   private refreshTimer: number | null = null;
 
   async onload(): Promise<void> {
@@ -27,6 +34,7 @@ export default class TaskMatePlugin extends Plugin {
     this.projects = new ProjectRepository(this.app, () => this.settings.projectFolder);
     this.proposals = new TaskChangeProposalRepository(this.app, () => this.settings.proposalFolder, this.repository);
     this.sourceReviews = new SourceCandidateReviewRepository(this.app, () => this.settings.proposalFolder, this.repository);
+    this.reviewCatalog = new ReviewCatalog(this.app, () => this.settings.proposalFolder);
     try {
       const migrated = await this.repository.migrateLegacyFileNames();
       if (migrated > 0) new Notice(t("notice.migratedTaskNames", { count: migrated }));
@@ -37,11 +45,12 @@ export default class TaskMatePlugin extends Plugin {
     this.registerView(TODO_VIEW_TYPE, (leaf) => new TodoListView(leaf, this));
     this.registerView(TASK_CHANGE_REVIEW_VIEW_TYPE, (leaf) => new TaskChangeReviewView(leaf, this));
     this.registerView(SOURCE_CANDIDATE_REVIEW_VIEW_TYPE, (leaf) => new SourceCandidateReviewView(leaf, this));
+    this.registerView(REVIEW_INDEX_VIEW_TYPE, (leaf) => new ReviewIndexView(leaf, this));
     this.addSettingTab(new TaskMateSettingTab(this.app, this));
 
     this.addRibbonIcon("circle-check-big", t("command.openRibbon"), () => void this.activateView());
     this.addCommand({ id: "open-todo-list", name: t("command.openList"), callback: () => void this.activateView() });
-    this.addCommand({ id: "open-task-change-reviews", name: t("command.openReviews"), callback: () => void this.openReviewIndex() });
+    this.addCommand({ id: "open-reviews", name: t("command.openReviews"), callback: () => void this.openReviewIndex() });
     this.registerObsidianProtocolHandler("taskmate-review", async (params) => {
       const proposalId = params.proposal;
       if (!proposalId || !/^proposal-[A-Za-z0-9._-]+$/.test(proposalId)) {
@@ -52,7 +61,6 @@ export default class TaskMatePlugin extends Plugin {
       const changeId = typeof params.change === "string" && /^C-[0-9]{2,}$/.test(params.change) ? params.change : undefined;
       await this.openProposalReview(proposalId, taskId, changeId);
     });
-    this.addCommand({ id: "open-source-candidate-reviews", name: t("command.openSourceReviews"), callback: () => void this.openSourceReviewIndex() });
     this.registerObsidianProtocolHandler("taskmate-source-review", async (params) => {
       const reviewId = sourceReviewIdFromLink(params);
       if (!reviewId) {
@@ -91,6 +99,9 @@ export default class TaskMatePlugin extends Plugin {
         for (const leaf of this.app.workspace.getLeavesOfType(SOURCE_CANDIDATE_REVIEW_VIEW_TYPE)) {
           if (leaf.view instanceof SourceCandidateReviewView) leaf.view.requestRender();
         }
+        for (const leaf of this.app.workspace.getLeavesOfType(REVIEW_INDEX_VIEW_TYPE)) {
+          if (leaf.view instanceof ReviewIndexView) leaf.view.requestRender();
+        }
       }, 100);
     };
     this.registerEvent(this.app.vault.on("create", (file) => { if (file instanceof TFile) scheduleRefresh(file); }));
@@ -122,9 +133,37 @@ export default class TaskMatePlugin extends Plugin {
     return leaf.view as TaskChangeReviewView;
   }
 
-  async openReviewIndex(): Promise<void> {
-    const view = await this.activateReviewView();
-    await view.openIndex();
+  // Shows the shared review list, in the given leaf when a review view returns to it.
+  async openReviewIndex(location: ReviewLocation = "pending", leaf?: WorkspaceLeaf): Promise<void> {
+    const target = leaf ?? this.app.workspace.getLeavesOfType(REVIEW_INDEX_VIEW_TYPE)[0] ?? this.app.workspace.getLeaf(false);
+    const view = await this.showViewInLeaf(target, REVIEW_INDEX_VIEW_TYPE) as ReviewIndexView;
+    await view.show(location);
+  }
+
+  // Routes a catalog entry to the review view that owns its kind, in the same leaf as the list.
+  async openReview(ref: ReviewReference, leaf: WorkspaceLeaf): Promise<void> {
+    if (ref.kind === "task-change") {
+      const view = await this.showViewInLeaf(leaf, TASK_CHANGE_REVIEW_VIEW_TYPE) as TaskChangeReviewView;
+      await (ref.location === "history" ? view.openHistoryProposal(ref.id) : view.openProposal(ref.id));
+      return;
+    }
+    const view = await this.showViewInLeaf(leaf, SOURCE_CANDIDATE_REVIEW_VIEW_TYPE) as SourceCandidateReviewView;
+    await view.openReview(ref.id);
+  }
+
+  // Lists every review kind together: the catalog classifies the files and each owning Module describes its own reviews.
+  async reviewIndex(location: ReviewLocation): Promise<ReviewIndexItem[]> {
+    const i18n = this.i18n();
+    const [entries, taskChanges, sourceReviews] = await Promise.all([
+      this.reviewCatalog.list(location),
+      location === "pending" ? this.proposals.listPending() : this.proposals.listHistory(),
+      location === "pending" ? this.sourceReviews.listPending() : this.sourceReviews.listHistory()
+    ]);
+    const details = new Map<string, ReviewIndexDetails>([
+      ...taskChanges.map((summary): [string, ReviewIndexDetails] => [`task-change:${summary.id}`, taskChangeIndexDetails(summary, i18n)]),
+      ...sourceReviews.map((summary): [string, ReviewIndexDetails] => [`source-candidate:${summary.reviewId}`, sourceReviewIndexDetails(summary, i18n)])
+    ]);
+    return buildReviewIndex(entries, (ref) => details.get(`${ref.kind}:${ref.id}`) ?? null);
   }
 
   async openProposalReview(proposalId: string, taskId?: string, changeId?: string): Promise<void> {
@@ -141,14 +180,15 @@ export default class TaskMatePlugin extends Plugin {
     return leaf.view as SourceCandidateReviewView;
   }
 
-  async openSourceReviewIndex(): Promise<void> {
-    const view = await this.activateSourceReviewView();
-    await view.openIndex();
-  }
-
   async openSourceReview(reviewId: string): Promise<void> {
     const view = await this.activateSourceReviewView();
     await view.openReview(reviewId);
+  }
+
+  private async showViewInLeaf(leaf: WorkspaceLeaf, type: string): Promise<WorkspaceLeaf["view"]> {
+    if (leaf.view.getViewType() !== type) await leaf.setViewState({ type, active: true });
+    await this.app.workspace.revealLeaf(leaf);
+    return leaf.view;
   }
 
   refreshViews(): void {

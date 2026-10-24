@@ -17,7 +17,7 @@ import { importedHash, sourceNoteHash, withSourceNoteProvenance } from "./source
 
 const REVIEW_ID = /^source-review-[A-Za-z0-9._-]+$/;
 
-interface ReviewSummary {
+export interface SourceReviewSummary {
   reviewId: string;
   status: SourceCandidateProposal["status"];
   health: SourceCandidateProposal["health"];
@@ -47,11 +47,11 @@ export class SourceCandidateReviewRepository {
     private readonly tasks: TaskRepository
   ) {}
 
-  async listPending(): Promise<ReviewSummary[]> {
+  async listPending(): Promise<SourceReviewSummary[]> {
     return this.list(this.pendingFiles(), (review) => review.status !== "history");
   }
 
-  async listHistory(): Promise<ReviewSummary[]> {
+  async listHistory(): Promise<SourceReviewSummary[]> {
     return this.list(this.historyFiles(), (review) => review.status === "history");
   }
 
@@ -194,8 +194,8 @@ export class SourceCandidateReviewRepository {
     }
   }
 
-  private async list(files: TFile[], keep: (review: SourceCandidateProposal) => boolean): Promise<ReviewSummary[]> {
-    const summaries: ReviewSummary[] = [];
+  private async list(files: TFile[], keep: (review: SourceCandidateProposal) => boolean): Promise<SourceReviewSummary[]> {
+    const summaries: SourceReviewSummary[] = [];
     for (const file of files) {
       try {
         const review = parseSourceCandidateProposal(await this.app.vault.read(file));
@@ -263,7 +263,7 @@ function serialize(review: SourceCandidateProposal): string {
   return `${JSON.stringify(parseSourceCandidateProposal(JSON.stringify(review)), null, 2)}\n`;
 }
 
-function summarize(review: SourceCandidateProposal): ReviewSummary {
+function summarize(review: SourceCandidateProposal): SourceReviewSummary {
   return {
     reviewId: review.reviewId,
     status: review.status,

@@ -12,7 +12,7 @@ import type {
   TaskChangeProposal
 } from "./proposal";
 
-interface ProposalSummary {
+export interface ProposalSummary {
   id: string;
   createdAt: string;
   resultAt?: string;

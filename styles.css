@@ -41,6 +41,10 @@
 .taskmate-review-history-counts,
 .taskmate-review-index-summary { color: var(--text-muted); font-size: var(--font-ui-smaller); }
 .taskmate-review-index-summary { align-self: start; white-space: normal; text-align: start; }
+.taskmate-review-index-kind { justify-self: start; padding: 0.05rem 0.45rem; border-radius: 999px; background: var(--background-modifier-hover); color: var(--text-muted); font-size: var(--font-ui-smaller); }
+.taskmate-review-index-invalid { margin-top: 1rem; color: var(--text-muted); }
+.taskmate-review-index-invalid h3 { margin: 0 0 0.3rem; font-size: var(--font-ui-small); }
+.taskmate-review-index-invalid ul { margin: 0; padding-left: 1.1rem; overflow-wrap: anywhere; }
 /* Sticky boxes stop at the scroll container's padding edge, so the toolbar and footer move past the padding to
    meet the visible edge and hide the content behind them. File headers stick directly under the toolbar. */
 .taskmate-review-controls {
