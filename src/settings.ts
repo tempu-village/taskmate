@@ -1,6 +1,6 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import type TaskMatePlugin from "./main";
-import type { LanguagePreference } from "./i18n";
+import type { LanguagePreference, SupportedLocale } from "./i18n";
 
 export interface TaskMateSettings {
   language: LanguagePreference;
@@ -12,6 +12,8 @@ export interface TaskMateSettings {
   recentSearches: string[];
   recentLabels: string[];
   favoriteLabels: string[];
+  // The language Auto resolves to in the desktop Obsidian app, recorded for Task Pilot. Only the desktop app writes it.
+  desktopLanguage?: SupportedLocale;
 }
 
 export const DEFAULT_SETTINGS: TaskMateSettings = {

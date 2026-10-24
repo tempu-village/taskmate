@@ -1,4 +1,4 @@
-import { getLanguage } from "obsidian";
+import { getLanguage, Platform } from "obsidian";
 
 export function detectObsidianLanguage(): string | undefined {
   try {
@@ -6,4 +6,9 @@ export function detectObsidianLanguage(): string | undefined {
   } catch {
     return undefined;
   }
+}
+
+// The desktop app records Obsidian's language for Task Pilot; the mobile app does not.
+export function isDesktopObsidian(): boolean {
+  return Platform.isDesktopApp;
 }

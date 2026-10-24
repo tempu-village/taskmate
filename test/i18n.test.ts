@@ -9,6 +9,7 @@ import {
   createI18n,
   isLanguagePreference,
   messagePlaceholders,
+  desktopLanguageToRecord,
   resolveLocale,
   selectLocalizedMessage
 } from "../src/i18n";
@@ -63,6 +64,17 @@ describe("locale resolution", () => {
     expect(resolveLocale("invalid", "ja-JP")).toBe("en");
     expect(resolveLocale("en", "ja-JP")).toBe("en");
     expect(resolveLocale("ja", "en-US")).toBe("ja");
+  });
+
+  it("records the desktop app's Auto language for Task Pilot only when it changes", () => {
+    expect(desktopLanguageToRecord(undefined, true, "ja")).toBe("ja");
+    expect(desktopLanguageToRecord("ja", true, "ja-JP")).toBeNull();
+    expect(desktopLanguageToRecord("ja", true, "en")).toBe("en");
+    expect(desktopLanguageToRecord("en", true, "fr")).toBeNull();
+    expect(desktopLanguageToRecord("fr", true, "fr")).toBe("en");
+    // The mobile app never records, so a phone in another language cannot overwrite the desktop's value.
+    expect(desktopLanguageToRecord("ja", false, "en")).toBeNull();
+    expect(desktopLanguageToRecord(undefined, false, "ja")).toBeNull();
   });
 
   it("uses the resolved locale for display-only comparisons", () => {

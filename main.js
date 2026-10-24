@@ -1596,6 +1596,11 @@ function resolveLocale(preference, detectedLanguage) {
   if (normalized === "ja" || normalized.startsWith("ja-")) return "ja";
   return "en";
 }
+function desktopLanguageToRecord(recorded, isDesktop, detectedLanguage) {
+  if (!isDesktop) return null;
+  const language = resolveLocale("auto", detectedLanguage);
+  return recorded === language ? null : language;
+}
 function compareDisplayText(a, b, locale) {
   return new Intl.Collator(locale).compare(a, b);
 }
@@ -6420,6 +6425,9 @@ function detectObsidianLanguage() {
     return void 0;
   }
 }
+function isDesktopObsidian() {
+  return import_obsidian14.Platform.isDesktopApp;
+}
 
 // src/reviews/task-change/proposal-repository.ts
 var import_obsidian15 = require("obsidian");
@@ -9550,6 +9558,7 @@ var TaskMatePlugin = class extends import_obsidian21.Plugin {
   refreshTimer = null;
   async onload() {
     await this.loadSettings();
+    await this.recordDesktopLanguage();
     const { t } = this.i18n();
     this.repository = new TaskRepository(this.app, () => this.settings.taskFolder);
     this.projects = new ProjectRepository(this.app, () => this.settings.projectFolder);
@@ -9725,6 +9734,18 @@ var TaskMatePlugin = class extends import_obsidian21.Plugin {
   }
   async saveSettings() {
     await this.saveData(this.settings);
+  }
+  // Obsidian applies a language change by reloading its window, which loads this plugin again, so reading the language
+  // once at load is enough.
+  async recordDesktopLanguage() {
+    const language = desktopLanguageToRecord(this.settings.desktopLanguage, isDesktopObsidian(), detectObsidianLanguage());
+    if (!language) return;
+    this.settings.desktopLanguage = language;
+    try {
+      await this.saveSettings();
+    } catch (error) {
+      console.error("TaskMate could not record the desktop language for Task Pilot", error);
+    }
   }
   setCurrentNoteSource(value, checking) {
     const file = this.app.workspace.getActiveFile();

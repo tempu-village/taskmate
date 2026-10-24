@@ -5,9 +5,9 @@ import { ProjectRepository } from "./projects/project-repository";
 import { DEFAULT_SETTINGS, TaskMateSettingTab } from "./settings";
 import type { TaskMateSettings } from "./settings";
 import { TODO_VIEW_TYPE, TodoListView } from "./task-list/view";
-import { createI18n, isLanguagePreference } from "./i18n";
+import { createI18n, desktopLanguageToRecord, isLanguagePreference } from "./i18n";
 import type { I18n } from "./i18n";
-import { detectObsidianLanguage } from "./i18n/obsidian-locale";
+import { detectObsidianLanguage, isDesktopObsidian } from "./i18n/obsidian-locale";
 import { TaskChangeProposalRepository } from "./reviews/task-change/proposal-repository";
 import { openProposalInReviewView, TASK_CHANGE_REVIEW_VIEW_TYPE, TaskChangeReviewView, taskChangeIndexDetails } from "./reviews/task-change/review-view";
 import { SourceCandidateReviewRepository } from "./reviews/source-candidate/review-repository";
@@ -29,6 +29,7 @@ export default class TaskMatePlugin extends Plugin {
 
   async onload(): Promise<void> {
     await this.loadSettings();
+    await this.recordDesktopLanguage();
     const { t } = this.i18n();
     this.repository = new TaskRepository(this.app, () => this.settings.taskFolder);
     this.projects = new ProjectRepository(this.app, () => this.settings.projectFolder);
@@ -214,6 +215,19 @@ export default class TaskMatePlugin extends Plugin {
 
   async saveSettings(): Promise<void> {
     await this.saveData(this.settings);
+  }
+
+  // Obsidian applies a language change by reloading its window, which loads this plugin again, so reading the language
+  // once at load is enough.
+  private async recordDesktopLanguage(): Promise<void> {
+    const language = desktopLanguageToRecord(this.settings.desktopLanguage, isDesktopObsidian(), detectObsidianLanguage());
+    if (!language) return;
+    this.settings.desktopLanguage = language;
+    try {
+      await this.saveSettings();
+    } catch (error) {
+      console.error("TaskMate could not record the desktop language for Task Pilot", error);
+    }
   }
 
   private setCurrentNoteSource(value: boolean, checking: boolean): boolean {

@@ -30,7 +30,7 @@ git diff --check
 | [LABEL-01/02/03](../features/labels.md) | picker, chip input, label management/maintenance/summary/suggestion tests | Japanese IME and mobile picker cancellation |
 | [LIST-01/02/03](../features/filtering-and-sorting.md) | domain, filter-state and list-model tests | Navigation retains filters; changing sort retains global rank |
 | [MOBILE-01/02](../features/mobile-layout.md) | static layout and keyboard calculation tests | Real keyboard and touch checks; DOM tests do not emulate WebView |
-| [I18N-01/02](../features/localization.md) | dictionary/fallback tests | Command/ribbon reload and narrow translated controls |
+| [I18N-01/02/03](../features/localization.md) | dictionary/fallback tests; desktop-language recording and Task Pilot language tests | Command/ribbon reload, narrow translated controls, and recording after Obsidian's language Relaunch |
 | [CONFLICT-01/02/03/04](../features/edit-conflicts.md) | merge, repository and editing flow tests, including Step value equality | Two-device synchronization |
 | [IMPORT-01/02/03/04](../features/source-import.md) | Python proposal/store tests | Actual agent's coverage inventory versus all source statements |
 | [PLAN-01 through PLAN-23](../features/task-pilot-planning.md) | Python planning, rolling-plan, proposal and store tests | Actual agent estimate quality, explanation usefulness and conversation review; a Codex-created multi-day rolling plan revised in a disposable Vault and its generated Proposal approved in TaskMate |

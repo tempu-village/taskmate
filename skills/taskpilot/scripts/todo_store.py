@@ -272,7 +272,7 @@ def available_task_path(folder: Path, title: str, current: Optional[Path] = None
 def plugin_settings(vault: Path) -> Dict[str, Any]:
     path = vault / ".obsidian" / "plugins" / "taskmate" / "data.json"
     if not path.exists():
-        return {"taskFolder": "TaskMate/Tasks", "projectFolder": "TaskMate/Projects", "proposalFolder": "TaskMate/Proposals", "planFolder": "TaskMate/Plans", "sourceFolders": [], "includeSourceSubfolders": True}
+        return {"taskFolder": "TaskMate/Tasks", "projectFolder": "TaskMate/Projects", "proposalFolder": "TaskMate/Proposals", "planFolder": "TaskMate/Plans", "sourceFolders": [], "includeSourceSubfolders": True, "language": "auto", "desktopLanguage": None}
     try:
         loaded = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError) as error:
@@ -284,7 +284,23 @@ def plugin_settings(vault: Path) -> Dict[str, Any]:
         "planFolder": loaded.get("planFolder") or "TaskMate/Plans",
         "sourceFolders": loaded.get("sourceFolders") or [],
         "includeSourceSubfolders": loaded.get("includeSourceSubfolders", True),
+        "language": loaded.get("language") or "auto",
+        "desktopLanguage": loaded.get("desktopLanguage"),
     }
+
+
+def output_language(vault: Path) -> Dict[str, str]:
+    """Language for text Task Pilot writes into the vault, following TaskMate's setting.
+
+    An explicit English or Japanese setting wins. Under Auto, Task Pilot cannot ask Obsidian, so it uses the language the
+    desktop Obsidian app recorded as desktopLanguage; without one it falls back to English.
+    """
+    settings = plugin_settings(vault)
+    if settings["language"] in ("en", "ja"):
+        return {"language": settings["language"], "source": "setting"}
+    if settings["desktopLanguage"] in ("en", "ja"):
+        return {"language": settings["desktopLanguage"], "source": "desktop"}
+    return {"language": "en", "source": "default"}
 
 
 def task_folder(vault: Path, override: Optional[str]) -> Path:
@@ -524,6 +540,10 @@ def command_mark_source(args: argparse.Namespace) -> None:
     print(json.dumps(mark_source(args.vault, args.source, args.status, args.task_id), ensure_ascii=False, indent=2))
 
 
+def command_language(args: argparse.Namespace) -> None:
+    print(json.dumps(output_language(args.vault), ensure_ascii=False, indent=2))
+
+
 def command_validate(args: argparse.Namespace) -> None:
     folder = task_folder(args.vault, args.task_folder)
     errors: List[str] = []
@@ -595,6 +615,8 @@ def parser() -> argparse.ArgumentParser:
     mark_source.add_argument("--task-id", action="append", default=[])
     mark_source.set_defaults(run=command_mark_source)
 
+    language = commands.add_parser("language")
+    language.set_defaults(run=command_language)
     validate = commands.add_parser("validate")
     validate.set_defaults(run=command_validate)
     return result
