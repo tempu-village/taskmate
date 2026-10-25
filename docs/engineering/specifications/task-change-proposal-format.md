@@ -40,6 +40,26 @@ A pending Task change Proposal MUST be UTF-8 JSON at `<proposalFolder>/<proposal
 }
 ```
 
+A Proposal MAY contain a top-level `summary` and each Task MAY contain a `summary`. Task Pilot writes them when it generates a Proposal from a rolling plan: the top-level `summary` is the plan's short report of what it changes, and a Task `summary` is one line about that Task's changes. When present, each MUST be a non-blank string. They only explain: readers MUST NOT derive approval, application, stale detection or follow-up changes from them, and a Proposal without them MUST remain valid and render as before. A follow-up Proposal MUST omit the top-level `summary`, because it described the original set of changes, and MAY keep each regenerated Task's `summary`.
+
+```json
+{
+  "schemaVersion": 1,
+  "id": "proposal-plan-week",
+  "status": "pending",
+  "createdAt": "2026-10-23T00:00:00.000Z",
+  "summary": "Move the overdue invoice check to today and date three undated Tasks next week.",
+  "tasks": [
+    {
+      "taskId": "canonical-task-uuid",
+      "summary": "Overdue, so it goes first today."
+    }
+  ]
+}
+```
+
+The example shows only the summary fields; each Task still needs every field of the version 1 shape above.
+
 `status` MUST be `pending`, `applied`, `partially-applied`, `rejected`, or `stale`. A change `field` MUST be `title`, `date`, `priority`, `labels`, `steps`, or `notes`. Values MUST use the corresponding canonical Task value shape. `reason` MUST be non-empty.
 
 The Proposal MUST store complete `beforeMarkdown` and `afterMarkdown` for every affected Task. These strings are immutable review evidence, not Task master data. `beforeSha256` MUST equal SHA-256 over the UTF-8 bytes of `beforeMarkdown`. Raw diff hunks MUST be regenerated from these two strings through the TaskMate diff-engine adapter and MUST NOT be accepted from AI output as authoritative facts.
@@ -50,7 +70,7 @@ Opening or rendering a Proposal MUST NOT modify a Task. Before writing an approv
 
 The Full text view is a unified diff of the stored complete `beforeMarkdown` and `afterMarkdown`, not a live comparison with the current Task. It shows changed lines with `-` and `+` prefixes and unchanged surrounding context without a prefix. Serialization-maintained lines such as `updated-at`, and formatting normalizations such as a numeric spelling change, can therefore appear in Full text even though they are not separately approvable ChangeSet fields.
 
-The Review View MUST show every affected Task as an always-expanded section in one continuous vertical list. Each section header MUST show only the Task title and any applicable Task-level selection controls. The Review View MUST NOT add a separate Task index, collapse control, file path, per-Task change count, or overall Task count. Section spacing and header padding MUST stay compact so metadata does not displace review content vertically. Desktop and mobile review surfaces MUST use the same state-transition logic and localization mapping so selection and display-mode behavior do not diverge.
+The Review View MUST show every affected Task as an always-expanded section in one continuous vertical list. Each section header MUST show only the Task title and any applicable Task-level selection controls. The Review View MUST NOT add a separate Task index, collapse control, file path, per-Task change count, or overall Task count. When the Proposal carries summaries, the Review View MUST show them above the changes: the top-level `summary` and a list of each described Task's title and line, with the Task's line repeated below its section header rather than inside it. Section spacing and header padding MUST stay compact so metadata does not displace review content vertically. Desktop and mobile review surfaces MUST use the same state-transition logic and localization mapping so selection and display-mode behavior do not diverge.
 
 Only selected `C-xx` changes may be applied. Applying a subset MUST close the original Proposal with its exact decision and result, then create a new pending Proposal for unapplied changes. If an existing Task is stale before application, or becomes stale during the guarded write, TaskMate MUST NOT write it from the old snapshot; it MUST regenerate every still-relevant proposed change against the current complete Markdown and include those changes in the follow-up Proposal. A proposed field that already equals its desired value is no longer relevant and MUST be omitted. A missing Task cannot be regenerated. A missing, stale, or failed Task MUST NOT suppress the follow-up changes of another Task. The closed Proposal MUST record the affected change IDs and failure reason. Follow-up changes MUST receive new `C-xx` identifiers and MUST retain `{proposalId, changeId}` origin references. An explicit rejection is a decision to discard every change: it archives the Proposal as rejected without rechecking Tasks or creating a follow-up.
 

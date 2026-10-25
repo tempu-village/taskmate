@@ -106,6 +106,14 @@
 .taskmate-review-change.is-target { outline: 2px solid var(--interactive-accent); outline-offset: -2px; }
 .taskmate-review-change-details { display: grid; gap: 0.25rem; min-width: 0; }
 .taskmate-review-values { overflow-wrap: anywhere; }
+.taskmate-review-summary { display: grid; gap: 0.4rem; min-width: 0; margin-bottom: 0.6rem; padding: 0.7rem 0.8rem; border-radius: 8px; background: var(--background-secondary); overflow-wrap: anywhere; }
+.taskmate-review-summary h3 { margin: 0; font-size: var(--font-ui-medium); }
+.taskmate-review-summary p { margin: 0; }
+.taskmate-review-summary-tasks { display: grid; gap: 0.3rem; margin: 0; padding-left: 1.3rem; }
+.taskmate-review-summary-tasks li > * + * { margin-left: 0.5rem; }
+.taskmate-review .taskmate-review-summary-jump { display: inline; height: auto; padding: 0; border: 0; background: none; box-shadow: none; color: var(--text-accent); text-decoration: underline; text-align: start; white-space: normal; cursor: pointer; }
+.taskmate-review-summary-line { color: var(--text-muted); }
+.taskmate-review-task-summary { margin: 0; padding: 0.45rem 0.55rem 0; color: var(--text-muted); font-size: var(--font-ui-small); overflow-wrap: anywhere; }
 .taskmate-review-reason { color: var(--text-muted); font-size: var(--font-ui-smaller); overflow-wrap: anywhere; }
 .taskmate-review-diff { max-width: 100%; margin: 0; padding: 0.7rem; overflow-x: scroll; overscroll-behavior-inline: contain; scrollbar-gutter: stable; white-space: pre; font-size: var(--font-monospace-small); }
 .taskmate-review-diff span { display: block; }

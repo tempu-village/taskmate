@@ -1,6 +1,6 @@
 # Task change review
 
-Approval: Accepted — [RFC 0032](../../rfcs/0032-use-jsdiff-for-task-change-preview.md), tracked by [Issue #52](https://github.com/tempu-village/taskmate/issues/52); rolling-plan Proposals and the shared review list follow [RFC 0033](../../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md).
+Approval: Accepted — [RFC 0032](../../rfcs/0032-use-jsdiff-for-task-change-preview.md), tracked by [Issue #52](https://github.com/tempu-village/taskmate/issues/52); rolling-plan Proposals and the shared review list follow [RFC 0033](../../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md); plan summaries follow [Show what plans and reviews change](../../rfcs/show-plan-and-review-changes.md), tracked by [Issue #82](https://github.com/tempu-village/taskmate/issues/82).
 
 Implementation: Implemented in the current branch. Task Pilot persists version 1 Proposals, TaskMate provides the Review View and approval flow, and macOS, Windows, and Linux use platform adapters to invoke the TaskMate URI. Pending-review discovery remains the fallback when automatic launch fails.
 
@@ -22,6 +22,8 @@ The initial scope covers scheduled date, Priority, Labels, title, Steps, and Not
 8. Pending and history details both provide an in-view back action to the shared list in the same tab; returning discards any unapplied selection state. Applying a Proposal without a follow-up, or rejecting it, also returns to the list.
 
 Affected Tasks appear directly as always-expanded sections; there is no separate Task index or collapse interaction. A section header shows the Task title but omits the stored file path and change counts. Compact section gaps and header padding prioritize the change content vertically. The review toolbar separates selection from display. Selection uses persistent select-all and clear-all buttons whose unavailable action remains visible but disabled. Display uses an `Items / Full text` segmented control. Task-level bulk controls appear only when a Task has more than one change. Selection redraws preserve numeric scroll position; switching between Items and Full text restores the nearest stable Task UUID or `C-xx` anchor.
+
+A Proposal generated from a rolling plan carries Task Pilot's explanation, written in TaskMate's language setting. Above the toolbar, a "What this plan changes" box shows the plan's summary and a numbered list of each Task's title and one-line summary; selecting a title scrolls to that Task's section. The same line appears again below the Task's section header. The box and lines appear only when the Proposal carries them, so older Proposals and backlog-review Proposals look as before. They only explain: selection, approval and application use the typed changes alone.
 
 Full text is a unified diff of the Proposal's recorded before/after Markdown: `-` lines are removed, `+` lines are added, and unprefixed lines are unchanged context around a change. It does not compare the live Task while the review is open. The serializer updates `updated-at` when it creates proposed Markdown and can normalize Markdown formatting, so Full text can include those generated differences in addition to the visible ChangeSet fields.
 
@@ -107,6 +109,7 @@ The strict persisted format, lifecycle and URI security contract are defined by 
 - REVIEW-15: A stale Task reappears in the follow-up Proposal with its current Markdown as the new baseline; it also does not suppress another Task's unapplied changes.
 - REVIEW-16: macOS, Windows, and Linux launch the review URI without shell interpolation; launch failure preserves pending-review discovery.
 - REVIEW-17: Review history is discoverable inside TaskMate without opening JSON files or Finder and is displayed read-only with its recorded result.
+- REVIEW-18: A Proposal generated from a plan shows its summary and per-Task lines above the changes; a Proposal without them opens unchanged, and approving a Proposal with summaries writes only the selected typed changes.
 
 ## Rolling plans and the shared review list
 
@@ -119,6 +122,7 @@ The shared review list classifies minimal envelopes through the Review Catalog a
 - [Task Pilot review and capacity planning](../task-pilot-planning.md)
 - [RFC 0032: Use jsdiff for Task change preview](../../rfcs/0032-use-jsdiff-for-task-change-preview.md)
 - [RFC 0033: Reviewable rolling plans and Source candidate reviews](../../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md)
+- [RFC: Show what plans and reviews change](../../rfcs/show-plan-and-review-changes.md)
 - [Issue #52](https://github.com/tempu-village/taskmate/issues/52)
 - [Task change Proposal format](../../specifications/task-change-proposal-format.md)
 

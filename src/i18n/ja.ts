@@ -33,6 +33,7 @@ export const ja = {
   "common.clear": "消去",
   "command.openReviews": "レビューを開く",
   "review.title": "Task変更をレビュー",
+  "review.summaryTitle": "この計画で変わること",
   "reviews.title": "レビュー",
   "reviews.pending": "未レビュー",
   "reviews.history": "履歴",

@@ -26,6 +26,8 @@ export interface ProposalTask {
   afterMarkdown: string;
   beforeSha256: string;
   changes: ProposalChange[];
+  // One line written by Task Pilot about this Task's changes. It only explains; approval uses the typed changes.
+  summary?: string;
 }
 
 interface ProposalDecision {
@@ -46,6 +48,8 @@ export interface TaskChangeProposal {
   id: string;
   status: ProposalStatus;
   createdAt: string;
+  // Task Pilot's short report of what the originating plan changes. It only explains, and follow-ups omit it.
+  summary?: string;
   tasks: ProposalTask[];
   decision?: ProposalDecision;
   result?: ProposalApplyResult;
@@ -67,6 +71,7 @@ interface ProposalTaskReview extends ProposalTask {
 export interface ProposalReview {
   proposalId: string;
   status: ProposalStatus;
+  summary?: string;
   tasks: ProposalTaskReview[];
 }
 
@@ -108,7 +113,7 @@ export async function buildProposalReview(proposal: TaskChangeProposal): Promise
       }))
     });
   }
-  return { proposalId: proposal.id, status: proposal.status, tasks };
+  return { proposalId: proposal.id, status: proposal.status, ...(proposal.summary ? { summary: proposal.summary } : {}), tasks };
 }
 
 export function parseTaskChangeProposal(content: string): TaskChangeProposal {
@@ -321,6 +326,7 @@ function validateProposalShape(value: unknown): asserts value is TaskChangePropo
   if (!isIdentifier(value.id, /^proposal-[A-Za-z0-9._-]+$/)) throw new Error("Invalid Proposal id");
   if (!isStatus(value.status)) throw new Error("Invalid Proposal status");
   if (typeof value.createdAt !== "string" || !value.createdAt) throw new Error("Invalid Proposal createdAt");
+  if (!isOptionalSummary(value.summary)) throw new Error("Invalid Proposal summary");
   if (!Array.isArray(value.tasks) || value.tasks.length === 0) throw new Error("Proposal requires tasks");
   const taskIds = new Set<string>();
   const changeIds = new Set<string>();
@@ -330,6 +336,7 @@ function validateProposalShape(value: unknown): asserts value is TaskChangePropo
     if (typeof task.path !== "string" || !task.path || task.path.startsWith("/") || task.path.includes("..")) throw new Error("Invalid Task path");
     if (typeof task.title !== "string" || typeof task.beforeMarkdown !== "string" || typeof task.afterMarkdown !== "string") throw new Error("Invalid Proposal Markdown evidence");
     if (typeof task.beforeSha256 !== "string" || !/^[a-f0-9]{64}$/.test(task.beforeSha256)) throw new Error("Invalid beforeSha256");
+    if (!isOptionalSummary(task.summary)) throw new Error("Invalid Proposal task summary");
     if (!Array.isArray(task.changes) || task.changes.length === 0) throw new Error("Proposal task requires changes");
     taskIds.add(task.taskId);
     const taskFields = new Set<unknown>();
@@ -342,6 +349,10 @@ function validateProposalShape(value: unknown): asserts value is TaskChangePropo
       taskFields.add(change.field);
     }
   }
+}
+
+function isOptionalSummary(value: unknown): boolean {
+  return value === undefined || (typeof value === "string" && value.trim().length > 0);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

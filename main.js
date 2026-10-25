@@ -951,6 +951,7 @@ var en = {
   "common.clear": "Clear",
   "command.openReviews": "Open reviews",
   "review.title": "Review Task changes",
+  "review.summaryTitle": "What this plan changes",
   "reviews.title": "Reviews",
   "reviews.pending": "Pending",
   "reviews.history": "History",
@@ -1281,6 +1282,7 @@ var ja = {
   "common.clear": "\u6D88\u53BB",
   "command.openReviews": "\u30EC\u30D3\u30E5\u30FC\u3092\u958B\u304F",
   "review.title": "Task\u5909\u66F4\u3092\u30EC\u30D3\u30E5\u30FC",
+  "review.summaryTitle": "\u3053\u306E\u8A08\u753B\u3067\u5909\u308F\u308B\u3053\u3068",
   "reviews.title": "\u30EC\u30D3\u30E5\u30FC",
   "reviews.pending": "\u672A\u30EC\u30D3\u30E5\u30FC",
   "reviews.history": "\u5C65\u6B74",
@@ -7155,7 +7157,7 @@ async function buildProposalReview(proposal) {
       }))
     });
   }
-  return { proposalId: proposal.id, status: proposal.status, tasks };
+  return { proposalId: proposal.id, status: proposal.status, ...proposal.summary ? { summary: proposal.summary } : {}, tasks };
 }
 function parseTaskChangeProposal(content) {
   const value = JSON.parse(content);
@@ -7360,6 +7362,7 @@ function validateProposalShape(value) {
   if (!isIdentifier(value.id, /^proposal-[A-Za-z0-9._-]+$/)) throw new Error("Invalid Proposal id");
   if (!isStatus(value.status)) throw new Error("Invalid Proposal status");
   if (typeof value.createdAt !== "string" || !value.createdAt) throw new Error("Invalid Proposal createdAt");
+  if (!isOptionalSummary(value.summary)) throw new Error("Invalid Proposal summary");
   if (!Array.isArray(value.tasks) || value.tasks.length === 0) throw new Error("Proposal requires tasks");
   const taskIds = /* @__PURE__ */ new Set();
   const changeIds = /* @__PURE__ */ new Set();
@@ -7369,6 +7372,7 @@ function validateProposalShape(value) {
     if (typeof task.path !== "string" || !task.path || task.path.startsWith("/") || task.path.includes("..")) throw new Error("Invalid Task path");
     if (typeof task.title !== "string" || typeof task.beforeMarkdown !== "string" || typeof task.afterMarkdown !== "string") throw new Error("Invalid Proposal Markdown evidence");
     if (typeof task.beforeSha256 !== "string" || !/^[a-f0-9]{64}$/.test(task.beforeSha256)) throw new Error("Invalid beforeSha256");
+    if (!isOptionalSummary(task.summary)) throw new Error("Invalid Proposal task summary");
     if (!Array.isArray(task.changes) || task.changes.length === 0) throw new Error("Proposal task requires changes");
     taskIds.add(task.taskId);
     const taskFields2 = /* @__PURE__ */ new Set();
@@ -7381,6 +7385,9 @@ function validateProposalShape(value) {
       taskFields2.add(change.field);
     }
   }
+}
+function isOptionalSummary(value) {
+  return value === void 0 || typeof value === "string" && value.trim().length > 0;
 }
 function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -7697,6 +7704,8 @@ function renderTaskChangeReview(container, review, state, copy, dispatch, option
     back.classList.add("taskmate-review-back");
     header.append(back);
   }
+  const sections = /* @__PURE__ */ new Map();
+  renderSummary(container, review, copy, sections);
   const controls = element2("div", "taskmate-review-controls", container);
   const allIds = review.tasks.flatMap((task) => task.changes.map((change) => change.id));
   const selectedAllCount = selectedCount(allIds, state.approvedChangeIds);
@@ -7715,6 +7724,7 @@ function renderTaskChangeReview(container, review, state, copy, dispatch, option
     const section = element2("section", "taskmate-review-file", list);
     section.id = `taskmate-review-${task.taskId}`;
     section.dataset.reviewAnchor = task.taskId;
+    sections.set(task.taskId, section);
     const fileHeader = element2("div", "taskmate-review-file-header", section);
     const identity = element2("div", "taskmate-review-file-identity", fileHeader);
     appendTextElement(identity, "h3", task.title);
@@ -7725,6 +7735,7 @@ function renderTaskChangeReview(container, review, state, copy, dispatch, option
       taskActions.append(bulkButton(copy.selectTask, "taskmate-review-select-task", selectedTaskCount === taskIds.length, () => dispatch({ type: "set-many-approved", changeIds: taskIds, approved: true })));
       taskActions.append(bulkButton(copy.clearTask, "taskmate-review-clear-task", selectedTaskCount === 0, () => dispatch({ type: "set-many-approved", changeIds: taskIds, approved: false })));
     }
+    if (task.summary) appendTextElement(section, "p", task.summary, "taskmate-review-task-summary");
     if (state.mode === "semantic") {
       for (const change of task.changes) {
         const row = element2(options.readOnly ? "div" : "label", "taskmate-review-change", section);
@@ -7769,6 +7780,22 @@ function renderTaskChangeReview(container, review, state, copy, dispatch, option
     const reject = button(copy.reject, () => dispatch({ type: "reject" }));
     reject.classList.add("taskmate-review-reject", "mod-warning");
     footer.append(reject);
+  }
+}
+function renderSummary(container, review, copy, sections) {
+  const described = review.tasks.filter((task) => task.summary);
+  if (!review.summary && described.length === 0) return;
+  const summary = element2("section", "taskmate-review-summary", container);
+  appendTextElement(summary, "h3", copy.summaryTitle);
+  if (review.summary) appendTextElement(summary, "p", review.summary);
+  if (described.length === 0) return;
+  const list = element2("ol", "taskmate-review-summary-tasks", summary);
+  for (const task of described) {
+    const item = element2("li", "", list);
+    const jump = button(task.title, () => sections.get(task.taskId)?.scrollIntoView({ block: "start" }));
+    jump.classList.add("taskmate-review-summary-jump");
+    item.append(jump);
+    appendTextElement(item, "span", task.summary ?? "", "taskmate-review-summary-line");
   }
 }
 function element2(tag, className, parent) {
@@ -7971,6 +7998,7 @@ function reviewCopy(plugin) {
   const { t } = plugin.i18n();
   return {
     title: t("review.title"),
+    summaryTitle: t("review.summaryTitle"),
     apply: t("review.apply"),
     reject: t("review.reject"),
     selectAll: t("review.selectAll"),
