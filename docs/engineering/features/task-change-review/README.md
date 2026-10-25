@@ -1,6 +1,6 @@
 # Task change review
 
-Approval: Accepted — [RFC 0032](../../rfcs/0032-use-jsdiff-for-task-change-preview.md), tracked by [Issue #52](https://github.com/tempu-village/taskmate/issues/52).
+Approval: Accepted — [RFC 0032](../../rfcs/0032-use-jsdiff-for-task-change-preview.md), tracked by [Issue #52](https://github.com/tempu-village/taskmate/issues/52); rolling-plan Proposals and the shared review list follow [RFC 0033](../../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md).
 
 Implementation: Implemented in the current branch. Task Pilot persists version 1 Proposals, TaskMate provides the Review View and approval flow, and macOS, Windows, and Linux use platform adapters to invoke the TaskMate URI. Pending-review discovery remains the fallback when automatic launch fails.
 
@@ -108,11 +108,11 @@ The strict persisted format, lifecycle and URI security contract are defined by 
 - REVIEW-16: macOS, Windows, and Linux launch the review URI without shell interpolation; launch failure preserves pending-review discovery.
 - REVIEW-17: Review history is discoverable inside TaskMate without opening JSON files or Finder and is displayed read-only with its recorded result.
 
-## Pending changes
+## Rolling plans and the shared review list
 
-[RFC 0033](../../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md), tracked by [Issue #62](https://github.com/tempu-village/taskmate/issues/62), is accepted but not implemented. It keeps this Review View as the only approval surface for changes to already-canonical Tasks that originate from a rolling plan. Plan creation and editing remain non-mutating; Codex must create a normal Task change Proposal before this view can approve anything.
+Following [RFC 0033](../../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md), this Review View is the only approval surface for changes to already-canonical Tasks that originate from a rolling plan. Creating and editing a plan never writes Tasks; Codex must create a normal Task change Proposal before this view can approve anything.
 
-The RFC also adds a sibling Source candidate Review Module and a thin Review Catalog for pending/history discovery. The catalog now classifies minimal envelopes for the shared list, while Task change and Source candidate schemas, decisions, stale recovery, application, and UI state remain separate. Task change Proposal version 1 is still recognized by its `proposal-*` name, so its behavior and compatibility are unchanged.
+The shared review list classifies minimal envelopes through the Review Catalog and opens each review in its own view. Task change and Source candidate schemas, decisions, stale recovery, application and UI state remain separate. Task change Proposal version 1 is still recognized by its `proposal-*` name, so its behavior and compatibility are unchanged.
 
 ## Related documents
 

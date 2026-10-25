@@ -236,9 +236,9 @@ Automated evidence: [planning behavior tests](../../../skills/taskpilot/tests/te
 - changing the user's Manual order;
 - a second database or non-Markdown source of truth.
 
-## Pending changes
+## Implemented RFC
 
-The rolling-plan slice of [RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md), [Issue #60](https://github.com/tempu-village/taskmate/issues/60), is implemented as described in [Maintaining a rolling plan](#maintaining-a-rolling-plan); the conversation capacity plan above remains available for a single bounded window. The rest of RFC 0033, Source candidate review and the Review Catalog, is tracked by [Issue #61](https://github.com/tempu-village/taskmate/issues/61) and [Issue #62](https://github.com/tempu-village/taskmate/issues/62) and described as pending in the Source-note import and Task change review Features.
+The rolling-plan part of [RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md), [Issue #60](https://github.com/tempu-village/taskmate/issues/60), is implemented as described in [Maintaining a rolling plan](#maintaining-a-rolling-plan); the conversation capacity plan above remains available for a single bounded window. The rest of the RFC, the Source candidate review and the shared review list, is described in the [Source-note import](source-import.md) and [Task change review](task-change-review/README.md) Features.
 
 ## Related specifications and features
 
@@ -466,9 +466,9 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 - Manual orderの変更
 - 第二のデータベースやMarkdown以外の正本
 
-### 保留中の変更
+### 実装済みのRFC
 
-[RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md)のうち計画部分（[Issue #60](https://github.com/tempu-village/taskmate/issues/60)）は、上の「見直せる計画を保つ」のとおり実装済みです。1回分の時間に合わせる会話での計画も引き続き使えます。RFC 0033の残り（Source候補レビューとReview Catalog）は[Issue #61](https://github.com/tempu-village/taskmate/issues/61)と[Issue #62](https://github.com/tempu-village/taskmate/issues/62)で追跡し、Source-note importとTask change reviewのFeatureで保留中の変更として扱います。
+[RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md)のうち計画部分（[Issue #60](https://github.com/tempu-village/taskmate/issues/60)）は、上の「見直せる計画を保つ」のとおり実装済みです。1回分の時間に合わせる会話での計画も引き続き使えます。RFCの残り（Source候補レビューと共通のレビュー一覧）は、[Source-note import](source-import.md)と[Task change review](task-change-review/README.md)のFeatureに記載しています。
 
 ### 関連仕様と機能
 

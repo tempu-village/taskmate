@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "reviewId": "source-review-20261017T101500-demo",
+  "reviewType": "source-candidate",
+  "status": "ready-to-apply",
+  "health": "ok",
+  "revision": 3,
+  "createdAt": "2026-10-17T10:15:00+09:00",
+  "updatedAt": "2026-10-17T10:28:00+09:00",
+  "archivedAt": null,
+  "sources": [
+    {
+      "id": "SRC-01",
+      "type": "note",
+      "path": "Notes/2026-10-17 顧客定例.md",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "capturedAt": "2026-10-17T10:15:00+09:00"
+    },
+    {
+      "id": "SRC-02",
+      "type": "conversation",
+      "localSourceId": "conversation-20261017-01",
+      "threadId": null,
+      "turnRefs": [],
+      "snapshot": "デモ環境の検索フィルターを明日確認する。",
+      "sha256": "83633bc31cd01dbf5c0cc75241deabfbdd498f363baf4b5ac67e8353006f35f5",
+      "capturedAt": "2026-10-17T10:16:00+09:00",
+      "selectionInstruction": "この発言をソースノート候補レビューへ含める"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "SC-01",
+      "revision": 1,
+      "originalOperation": "create",
+      "operation": "create",
+      "title": "顧客Aへ修正版の契約書を送る",
+      "sourceRefs": [
+        {
+          "sourceId": "SRC-01",
+          "statement": "佐藤さんへ契約書の修正版を今日中に送る。"
+        }
+      ],
+      "taskDraft": {
+        "title": "顧客Aへ修正版の契約書を送る",
+        "date": "2026-10-17",
+        "priority": 2,
+        "labels": ["context/pc"],
+        "project": null,
+        "steps": [
+          {
+            "text": "修正版PDFを最終確認する",
+            "completed": false,
+            "date": null
+          },
+          {
+            "text": "佐藤さんへメールで送る",
+            "completed": false,
+            "date": null
+          }
+        ],
+        "notes": "顧客定例で合意した修正内容を反映した版を送る。"
+      },
+      "decision": "approved",
+      "decisionRevision": 1,
+      "decidedAt": "2026-10-17T10:25:00+09:00",
+      "diffViewedRevision": null,
+      "health": "ok",
+      "healthReason": null,
+      "application": {
+        "status": "not-applied",
+        "appliedAt": null,
+        "promotedTaskId": null,
+        "error": null
+      }
+    },
+    {
+      "id": "SC-02",
+      "revision": 2,
+      "originalOperation": "merge",
+      "operation": "merge",
+      "title": "検索フィルター確認を既存デモ準備Taskへ統合する",
+      "sourceRefs": [
+        {
+          "sourceId": "SRC-02",
+          "statement": "デモ環境の検索フィルターを明日確認する。"
+        }
+      ],
+      "mergeTarget": {
+        "taskId": "44444444-4444-4444-8444-444444444444",
+        "path": "TaskMate/Tasks/明日のデモを準備する.md",
+        "title": "明日のデモを準備する",
+        "beforeMarkdown": "---\ntype: todo\nid: \"44444444-4444-4444-8444-444444444444\"\ncompleted: false\ndate: \"2026-10-18\"\npriority: 2\nlabels: [\"context/pc\"]\nproject: null\nrank: 1024\ncreated-at: \"2026-10-16T09:00:00+09:00\"\nupdated-at: \"2026-10-16T09:00:00+09:00\"\ncompleted-at: null\n---\n\n# 明日のデモを準備する\n\n## Steps\n\n- [ ] デモデータを準備する\n\n## Notes\n",
+        "afterMarkdown": "---\ntype: todo\nid: \"44444444-4444-4444-8444-444444444444\"\ncompleted: false\ndate: \"2026-10-18\"\npriority: 2\nlabels: [\"context/pc\"]\nproject: null\nrank: 1024\ncreated-at: \"2026-10-16T09:00:00+09:00\"\nupdated-at: \"2026-10-17T10:20:00+09:00\"\ncompleted-at: null\n---\n\n# 明日のデモを準備する\n\n## Steps\n\n- [ ] デモデータを準備する\n- [ ] 検索フィルターを確認する\n\n## Notes\n",
+        "beforeSha256": "43e1d2eeac9e3798b92ccf6b387e3bd2881d8839c35aef0851cd34d99bfb549c",
+        "changes": [
+          {
+            "field": "steps",
+            "before": [
+              {
+                "text": "デモデータを準備する",
+                "completed": false,
+                "date": null
+              }
+            ],
+            "after": [
+              {
+                "text": "デモデータを準備する",
+                "completed": false,
+                "date": null
+              },
+              {
+                "text": "検索フィルターを確認する",
+                "completed": false,
+                "date": null
+              }
+            ],
+            "reason": "会話で明示されたデモ準備の次の行動を同じ完了条件へ統合する"
+          }
+        ]
+      },
+      "decision": "approved",
+      "decisionRevision": 2,
+      "decidedAt": "2026-10-17T10:27:00+09:00",
+      "diffViewedRevision": null,
+      "health": "ok",
+      "healthReason": null,
+      "application": {
+        "status": "not-applied",
+        "appliedAt": null,
+        "promotedTaskId": null,
+        "error": null
+      }
+    },
+    {
+      "id": "SC-03",
+      "revision": 1,
+      "originalOperation": "exclude",
+      "operation": "exclude",
+      "title": "次回会議の候補時間はTask化しない",
+      "sourceRefs": [
+        {
+          "sourceId": "SRC-01",
+          "statement": "次回会議は金曜午後を候補にする。"
+        }
+      ],
+      "exclusionReason": "候補日時であり、利用者が実行する独立した行動ではない",
+      "decision": "approved",
+      "decisionRevision": 1,
+      "decidedAt": "2026-10-17T10:28:00+09:00",
+      "diffViewedRevision": null,
+      "health": "ok",
+      "healthReason": null,
+      "application": {
+        "status": "not-applied",
+        "appliedAt": null,
+        "promotedTaskId": null,
+        "error": null
+      }
+    }
+  ]
+}

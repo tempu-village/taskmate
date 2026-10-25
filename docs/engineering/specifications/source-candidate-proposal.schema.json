@@ -1,0 +1,232 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:taskmate:schema:source-candidate-proposal:v1",
+  "title": "TaskMate Source candidate Proposal",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "reviewId",
+    "reviewType",
+    "status",
+    "health",
+    "revision",
+    "createdAt",
+    "updatedAt",
+    "sources",
+    "candidates"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "reviewId": {
+      "type": "string",
+      "pattern": "^source-review-[A-Za-z0-9._-]+$"
+    },
+    "reviewType": { "const": "source-candidate" },
+    "status": {
+      "enum": ["pending", "ready-to-apply", "partially-applied", "applied", "history"]
+    },
+    "health": { "enum": ["ok", "stale", "failed"] },
+    "revision": { "type": "integer", "minimum": 1 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "archivedAt": { "type": ["string", "null"], "format": "date-time" },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/source" }
+    },
+    "candidates": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/candidate" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "source": {
+      "oneOf": [
+        { "$ref": "#/$defs/noteSource" },
+        { "$ref": "#/$defs/conversationSource" }
+      ]
+    },
+    "noteSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "path", "sha256", "capturedAt"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^SRC-[0-9]{2,}$" },
+        "type": { "const": "note" },
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "capturedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "conversationSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "localSourceId", "turnRefs", "snapshot", "sha256", "capturedAt", "selectionInstruction"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^SRC-[0-9]{2,}$" },
+        "type": { "const": "conversation" },
+        "localSourceId": { "type": "string", "minLength": 1 },
+        "threadId": { "type": ["string", "null"] },
+        "turnRefs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "snapshot": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "capturedAt": { "type": "string", "format": "date-time" },
+        "selectionInstruction": { "type": "string", "minLength": 1 }
+      }
+    },
+    "sourceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceId", "statement"],
+      "properties": {
+        "sourceId": { "type": "string", "pattern": "^SRC-[0-9]{2,}$" },
+        "statement": { "type": "string", "minLength": 1 }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "completed", "date"],
+      "properties": {
+        "text": { "type": "string", "minLength": 1 },
+        "completed": { "type": "boolean" },
+        "date": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        }
+      }
+    },
+    "taskDraft": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "date", "priority", "labels", "project", "steps", "notes"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "date": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        },
+        "priority": { "type": ["integer", "null"], "enum": [1, 2, 3, null] },
+        "labels": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "project": { "type": ["string", "null"] },
+        "steps": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/step" }
+        },
+        "notes": { "type": "string" }
+      }
+    },
+    "fieldChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "before", "after", "reason"],
+      "properties": {
+        "field": {
+          "enum": ["title", "date", "priority", "labels", "project", "steps", "notes"]
+        },
+        "before": {},
+        "after": {},
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    },
+    "mergeTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["taskId", "path", "title", "beforeMarkdown", "afterMarkdown", "beforeSha256", "changes"],
+      "properties": {
+        "taskId": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "beforeMarkdown": { "type": "string", "minLength": 1 },
+        "afterMarkdown": { "type": "string", "minLength": 1 },
+        "beforeSha256": { "$ref": "#/$defs/sha256" },
+        "changes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/fieldChange" }
+        }
+      }
+    },
+    "application": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "appliedAt", "promotedTaskId", "error"],
+      "properties": {
+        "status": { "enum": ["not-applied", "applied", "failed"] },
+        "appliedAt": { "type": ["string", "null"], "format": "date-time" },
+        "promotedTaskId": { "type": ["string", "null"] },
+        "error": { "type": ["string", "null"] }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "revision",
+        "originalOperation",
+        "operation",
+        "title",
+        "sourceRefs",
+        "decision",
+        "decisionRevision",
+        "decidedAt",
+        "diffViewedRevision",
+        "health",
+        "healthReason",
+        "application"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^SC-[0-9]{2,}$" },
+        "revision": { "type": "integer", "minimum": 1 },
+        "originalOperation": { "enum": ["create", "merge", "exclude"] },
+        "operation": { "enum": ["create", "merge", "exclude"] },
+        "title": { "type": "string", "minLength": 1 },
+        "sourceRefs": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/sourceRef" }
+        },
+        "taskDraft": { "$ref": "#/$defs/taskDraft" },
+        "mergeTarget": { "$ref": "#/$defs/mergeTarget" },
+        "exclusionReason": { "type": "string", "minLength": 1 },
+        "decision": { "enum": ["pending", "approved", "hold"] },
+        "decisionRevision": { "type": ["integer", "null"], "minimum": 1 },
+        "decidedAt": { "type": ["string", "null"], "format": "date-time" },
+        "diffViewedRevision": { "type": ["integer", "null"], "minimum": 1 },
+        "health": { "enum": ["ok", "stale", "failed"] },
+        "healthReason": { "type": ["string", "null"] },
+        "application": { "$ref": "#/$defs/application" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "operation": { "const": "create" } }, "required": ["operation"] },
+          "then": { "required": ["taskDraft"] }
+        },
+        {
+          "if": { "properties": { "operation": { "const": "merge" } }, "required": ["operation"] },
+          "then": { "required": ["mergeTarget"] }
+        },
+        {
+          "if": { "properties": { "operation": { "const": "exclude" } }, "required": ["operation"] },
+          "then": { "required": ["exclusionReason"] }
+        }
+      ]
+    }
+  }
+}
