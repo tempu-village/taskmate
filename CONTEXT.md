@@ -37,7 +37,7 @@ The accounting in which every statement from a source note that could imply foll
 _Avoid_: Import preview, AI summary
 
 **Import review**:
-One staged review of explicitly selected Sources and every candidate derived from them, kept separate from canonical Tasks until the user applies decisions in TaskMate. Markdown Proposal sessions from earlier versions are retired.
+One staged review of explicitly selected Sources and every candidate derived from them, kept separate from canonical Tasks until the user applies decisions in TaskMate.
 _Avoid_: Source candidate review, Proposal session, Sandbox, draft import
 
 **Import candidate**:

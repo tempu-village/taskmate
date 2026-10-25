@@ -39,7 +39,3 @@ taskmate-task-ids:
 ```
 
 Do not write these properties yourself for a staged review. The content hash excludes these processing fields, so recording the import does not make the note appear changed. When a processed note changes later, its current hash differs from `taskmate-imported-hash`; stage a new review for it and leave existing tasks unchanged until the user applies the new candidates.
-
-## Reviews from earlier versions
-
-Earlier versions staged reviews as Markdown under `<proposal folder>/Active/<session>/` and moved finished ones to `Archive`. Those files are no longer read or written. Never move, edit, promote or delete them. If the user asks about one, explain that it can be read as an ordinary note. To finish its remaining candidates, stage a new review from its source notes and treat tasks it already created as merge targets or exclusions.
