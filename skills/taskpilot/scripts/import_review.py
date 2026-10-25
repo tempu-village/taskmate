@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stage Source candidate Proposal JSON for TaskMate's Source candidate review.
+"""Stage Import review JSON for TaskMate's Import review.
 
 Staging writes one versioned JSON review and never creates, changes, or
 deletes canonical Tasks, Source notes, candidate Markdown, or Review.md.
@@ -21,13 +21,13 @@ from planning_store import fail
 
 
 SCHEMA_VERSION = 1
-REVIEW_ID_RE = re.compile(r"source-review-[A-Za-z0-9._-]+")
+REVIEW_ID_RE = re.compile(r"import-review-[A-Za-z0-9._-]+")
 MERGE_FIELDS = ("title", "date", "priority", "labels", "project", "steps", "notes")
 
 
 def validated_review_id(value: str) -> str:
     if not REVIEW_ID_RE.fullmatch(value):
-        fail("review-id must start with source-review- and contain only safe identifier characters")
+        fail("review-id must start with import-review- and contain only safe identifier characters")
     return value
 
 
@@ -57,12 +57,12 @@ def statements_of(raw: Dict[str, Any], name: str) -> List[str]:
 def pending_review_paths(vault: Path) -> Dict[str, str]:
     folder = todo_store.safe_path(vault, str(todo_store.plugin_settings(vault)["proposalFolder"]))
     claimed: Dict[str, str] = {}
-    for path in sorted(folder.glob("source-review-*.json")) if folder.exists() else []:
+    for path in sorted(folder.glob("import-review-*.json")) if folder.exists() else []:
         try:
             review = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             continue
-        if review.get("reviewType") != "source-candidate" or review.get("status") == "history":
+        if review.get("reviewType") != "import" or review.get("status") == "history":
             continue
         for source in review.get("sources") or []:
             if isinstance(source, dict) and source.get("type") == "note":
@@ -88,7 +88,7 @@ def validated_sources(vault: Path, raw_sources: Any, captured_at: str) -> Tuple[
             if record["state"] == "processed":
                 fail(f"note was already imported and has not changed: {path}")
             if path in claimed:
-                fail(f"note is already in pending Source candidate review {claimed[path]}: {path}")
+                fail(f"note is already in pending Import review {claimed[path]}: {path}")
             text = todo_store.safe_path(vault, path).read_text(encoding="utf-8")
             _, body = todo_store.split_document(text)
             key, searchable = path, body
@@ -212,7 +212,7 @@ def staged_candidates(args: argparse.Namespace, raw_candidates: Any, keys: Dict[
     for index, raw in enumerate(raw_candidates, 1):
         if not isinstance(raw, dict):
             fail("each candidate must be an object")
-        candidate_id = f"SC-{index:02d}"
+        candidate_id = f"IC-{index:02d}"
         operation = raw.get("operation")
         if operation not in ("create", "merge", "exclude"):
             fail(f"{candidate_id} operation must be create, merge, or exclude")
@@ -255,18 +255,18 @@ def command_stage(args: argparse.Namespace) -> None:
     folder = todo_store.safe_path(args.vault, str(todo_store.plugin_settings(args.vault)["proposalFolder"]))
     destination = folder / f"{args.review_id}.json"
     if destination.exists() or (folder / "History" / f"{args.review_id}.json").exists():
-        fail(f"Source candidate review already exists: {args.review_id}")
+        fail(f"Import review already exists: {args.review_id}")
     now = todo_store.now_iso()
     sources, keys, inventories, names = validated_sources(args.vault, request.get("sources"), now)
     candidates = staged_candidates(args, request.get("candidates"), keys, inventories, now)
     check_coverage(candidates, inventories, names)
     review = {
-        "schemaVersion": SCHEMA_VERSION, "reviewId": args.review_id, "reviewType": "source-candidate",
+        "schemaVersion": SCHEMA_VERSION, "reviewId": args.review_id, "reviewType": "import",
         "status": "pending", "health": "ok", "revision": 1, "createdAt": now, "updatedAt": now, "archivedAt": None,
         "sources": sources, "candidates": candidates,
     }
     todo_store.atomic_write(destination, json.dumps(review, ensure_ascii=False, indent=2) + "\n")
-    uri = "obsidian://taskmate-source-review?" + urllib.parse.urlencode({"vault": args.vault.name, "review": args.review_id})
+    uri = "obsidian://taskmate-import-review?" + urllib.parse.urlencode({"vault": args.vault.name, "review": args.review_id})
     opened, open_error = False, None
     if args.open_review:
         try:

@@ -432,17 +432,17 @@ describe("mobile layout", () => {
     expect(phoneFooter).toContain("--mobile-toolbar-height");
   });
 
-  it("keeps Source candidate review controls touch-sized and full width on phones", () => {
+  it("keeps Import review controls touch-sized and full width on phones", () => {
     const phone = stylesheet.slice(stylesheet.indexOf("@media (max-width: 600px)"), stylesheet.indexOf("@media (max-width: 360px)"));
 
-    expect(phone).toMatch(/\.taskmate-source-candidate-decisions,\s*\.taskmate-source-candidate-edit-button\s*\{\s*flex:\s*1 1 100%;/);
-    expect(phone).toMatch(/\.taskmate-source-candidate-edit-actions button,\s*\.taskmate-source-review-apply-actions button\s*\{[^}]*min-height:\s*36px/);
-    expect(phone).toMatch(/\.taskmate-source-candidate-edit-field select\s*\{\s*min-height:\s*36px;/);
+    expect(phone).toMatch(/\.taskmate-import-candidate-decisions,\s*\.taskmate-import-candidate-edit-button\s*\{\s*flex:\s*1 1 100%;/);
+    expect(phone).toMatch(/\.taskmate-import-candidate-edit-actions button,\s*\.taskmate-import-review-apply-actions button\s*\{[^}]*min-height:\s*36px/);
+    expect(phone).toMatch(/\.taskmate-import-candidate-edit-field select\s*\{\s*min-height:\s*36px;/);
   });
 
-  it("keeps Source candidate headers at the top and the open confirmation below the cards", () => {
-    expect(declarations(".taskmate-source-candidate .taskmate-review-file-header")).toMatch(/top\s*:\s*calc\(-1 \* var\(--taskmate-review-padding\)\)/);
-    expect(declarations(".taskmate-source-review-apply.is-open")).toMatch(/position\s*:\s*static\s*;/);
+  it("keeps Import candidate headers at the top and the open confirmation below the cards", () => {
+    expect(declarations(".taskmate-import-candidate .taskmate-review-file-header")).toMatch(/top\s*:\s*calc\(-1 \* var\(--taskmate-review-padding\)\)/);
+    expect(declarations(".taskmate-import-review-apply.is-open")).toMatch(/position\s*:\s*static\s*;/);
   });
 
   it("keeps Task change review sticky boxes at the visible edges and headers under the toolbar", () => {

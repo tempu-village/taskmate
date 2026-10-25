@@ -6,10 +6,10 @@ import {
   editCandidate,
   markDiffViewed,
   markSourceStale,
-  parseSourceCandidateProposal,
+  parseImportReview,
   recordApplication
-} from "../../../src/reviews/source-candidate/proposal";
-import type { SourceCandidateProposal } from "../../../src/reviews/source-candidate/proposal";
+} from "../../../src/reviews/import/proposal";
+import type { ImportReview } from "../../../src/reviews/import/proposal";
 import { NOW, exampleJson, exampleText, schemaJson } from "./fixture";
 
 const ajv = new Ajv2020({ allErrors: true });
@@ -20,37 +20,37 @@ function errors(value: unknown): string {
   return validate(value) ? "" : ajv.errorsText(validate.errors);
 }
 
-describe("Source candidate JSON Schema (Draft 2020-12)", () => {
+describe("Import review JSON Schema (Draft 2020-12)", () => {
   it("accepts the RFC example", () => {
     expect(errors(exampleJson())).toBe("");
   });
 
   it("accepts every state the Domain transitions can write", () => {
-    const states: SourceCandidateProposal[] = [];
-    let proposal = parseSourceCandidateProposal(exampleText());
-    const record = (next: SourceCandidateProposal) => {
+    const states: ImportReview[] = [];
+    let proposal = parseImportReview(exampleText());
+    const record = (next: ImportReview) => {
       states.push(next);
       proposal = next;
     };
-    record(editCandidate(proposal, "SC-02", { operation: "merge", values: { date: "2026-10-19" }, reason: "The demo moved." }, NOW));
-    record(markDiffViewed(proposal, "SC-02", NOW));
-    record(decideCandidate(proposal, "SC-02", "approved", NOW));
-    record(editCandidate(proposal, "SC-03", { operation: "exclude", exclusionReason: "Only a proposed meeting time." }, NOW));
-    record(decideCandidate(proposal, "SC-03", "hold", NOW));
-    record(decideCandidate(proposal, "SC-03", "approved", NOW));
-    record(recordApplication(proposal, "SC-01", { kind: "failed", error: "Disk full" }, NOW));
-    record(recordApplication(proposal, "SC-01", { kind: "applied", promotedTaskId: "55555555-5555-4555-8555-555555555555" }, NOW));
+    record(editCandidate(proposal, "IC-02", { operation: "merge", values: { date: "2026-10-19" }, reason: "The demo moved." }, NOW));
+    record(markDiffViewed(proposal, "IC-02", NOW));
+    record(decideCandidate(proposal, "IC-02", "approved", NOW));
+    record(editCandidate(proposal, "IC-03", { operation: "exclude", exclusionReason: "Only a proposed meeting time." }, NOW));
+    record(decideCandidate(proposal, "IC-03", "hold", NOW));
+    record(decideCandidate(proposal, "IC-03", "approved", NOW));
+    record(recordApplication(proposal, "IC-01", { kind: "failed", error: "Disk full" }, NOW));
+    record(recordApplication(proposal, "IC-01", { kind: "applied", promotedTaskId: "55555555-5555-4555-8555-555555555555" }, NOW));
     record(markSourceStale(proposal, "SRC-02", "The snapshot changed.", NOW));
-    record(editCandidate(proposal, "SC-02", { operation: "merge", values: {}, reason: "Renewed after review." }, NOW));
-    record(decideCandidate(proposal, "SC-02", "approved", NOW));
-    record(recordApplication(proposal, "SC-02", { kind: "applied", promotedTaskId: "44444444-4444-4444-8444-444444444444" }, NOW));
-    record(recordApplication(proposal, "SC-03", { kind: "applied", promotedTaskId: null }, NOW));
+    record(editCandidate(proposal, "IC-02", { operation: "merge", values: {}, reason: "Renewed after review." }, NOW));
+    record(decideCandidate(proposal, "IC-02", "approved", NOW));
+    record(recordApplication(proposal, "IC-02", { kind: "applied", promotedTaskId: "44444444-4444-4444-8444-444444444444" }, NOW));
+    record(recordApplication(proposal, "IC-03", { kind: "applied", promotedTaskId: null }, NOW));
     record(archiveReview(proposal, NOW));
 
     for (const state of states) {
       const json = JSON.parse(JSON.stringify(state));
       expect(errors(json), `${state.status} revision ${state.revision}`).toBe("");
-      expect(() => parseSourceCandidateProposal(JSON.stringify(json))).not.toThrow();
+      expect(() => parseImportReview(JSON.stringify(json))).not.toThrow();
     }
     expect(states.at(-1)?.status).toBe("history");
   });
@@ -67,6 +67,6 @@ describe("Source candidate JSON Schema (Draft 2020-12)", () => {
     mutate(value);
 
     expect(errors(value)).not.toBe("");
-    expect(() => parseSourceCandidateProposal(JSON.stringify(value))).toThrow();
+    expect(() => parseImportReview(JSON.stringify(value))).toThrow();
   });
 });

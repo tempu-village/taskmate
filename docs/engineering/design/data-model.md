@@ -6,7 +6,7 @@ Status: Current. Domain vocabulary is defined in [CONTEXT.md](../../../CONTEXT.m
 | --- | --- | --- |
 | Task Markdown and Steps syntax | [Task file format](../specifications/task-file-format.md), mirrored by Task Pilot's [Task schema](../../../skills/taskpilot/references/task-schema.md) | Plugin repository and Python todo store |
 | Project Markdown | [Project schema](../../../skills/taskpilot/references/project-schema.md) | Plugin project repository and Python todo store |
-| Source candidate review, decisions and provenance | [Source candidate Proposal format](../specifications/source-candidate-proposal-format.md), mirrored by Task Pilot's [Source candidate review](../../../skills/taskpilot/references/source-review-workflow.md) | Python Source review stager; plugin Source candidate review |
+| Import review, decisions and provenance | [Import review format](../specifications/import-review-format.md), mirrored by Task Pilot's [Import review](../../../skills/taskpilot/references/import-review-workflow.md) | Python Import review stager; plugin Import review |
 | Plugin settings | [settings.ts](../../../src/settings.ts) | Obsidian plugin settings |
 
 Schema references remain inside Task Pilot so an installed skill works without this repository's docs. The normative repository contract is [Task file format](../specifications/task-file-format.md); this page explains concepts and ownership without duplicating its field catalogue. TypeScript types and parsers implement those contracts; a parser discrepancy is not permission to redefine the format silently.
@@ -23,6 +23,6 @@ Format changes require compatibility/migration decisions, TypeScript and Python 
 
 > 翻訳状態：`ai-translated`。英語版が正本です。
 
-用語は[CONTEXT.md](../../../CONTEXT.md)、Task形式は[Task file format](../specifications/task-file-format.md)とTask Pilotの[task schema](../../../skills/taskpilot/references/task-schema.md)、Project形式は[project schema](../../../skills/taskpilot/references/project-schema.md)、Source候補レビューの形式は[Source candidate Proposal format](../specifications/source-candidate-proposal-format.md)を正本にし、Task Pilotの[Source candidate review](../../../skills/taskpilot/references/source-review-workflow.md)がそれに合わせます。Task Pilotを単独配布できるようschemaの配置を維持し、この文書でフィールド一覧を複製しません。
+用語は[CONTEXT.md](../../../CONTEXT.md)、Task形式は[Task file format](../specifications/task-file-format.md)とTask Pilotの[task schema](../../../skills/taskpilot/references/task-schema.md)、Project形式は[project schema](../../../skills/taskpilot/references/project-schema.md)、取り込みレビューの形式は[Import review format](../specifications/import-review-format.md)を正本にし、Task Pilotの[Import review](../../../skills/taskpilot/references/import-review-workflow.md)がそれに合わせます。Task Pilotを単独配布できるようschemaの配置を維持し、この文書でフィールド一覧を複製しません。
 
 IDは改名で変えず、Project参照はID、手動順位は全体で一つです。Stepsは親の中の順序付き値です。Taskの未知のfrontmatter、Sourceの無関係なPropertyと本文を保ちます。設定変更は自動移行ではありません。Vault登録とSource索引は将来仕様です。形式変更時は移行と互換性を明記し、TypeScript・Python双方を検証します。

@@ -1,7 +1,7 @@
 import { editCandidate, mergeTargetFields } from "./proposal";
-import type { CandidateEdit, CandidateTaskDraft, SourceCandidate, SourceCandidateProposal } from "./proposal";
+import type { CandidateEdit, CandidateTaskDraft, ImportCandidate, ImportReview } from "./proposal";
 
-type Operation = SourceCandidate["operation"];
+type Operation = ImportCandidate["operation"];
 type TaskField = keyof CandidateTaskDraft;
 
 const TASK_FIELDS: readonly TaskField[] = ["title", "date", "priority", "labels", "project", "steps", "notes"];
@@ -29,7 +29,7 @@ export type CandidateEditResult =
   | { kind: "invalid"; errors: CandidateEditErrors };
 
 export type CandidateEditSave =
-  | { kind: "saved"; review: SourceCandidateProposal }
+  | { kind: "saved"; review: ImportReview }
   | { kind: "unchanged" }
   | { kind: "invalid"; errors: CandidateEditErrors }
   | { kind: "conflict" };
@@ -37,7 +37,7 @@ export type CandidateEditSave =
 // Field order in the form, used to focus the first invalid field.
 export const CANDIDATE_EDIT_FIELDS: readonly CandidateEditField[] = [...TASK_FIELDS, "reason", "exclusionReason"];
 
-export function candidateEditForm(candidate: SourceCandidate): CandidateEditForm {
+export function candidateEditForm(candidate: ImportCandidate): CandidateEditForm {
   const merge = mergeTargetFields(candidate);
   return {
     operation: candidate.operation,
@@ -49,7 +49,7 @@ export function candidateEditForm(candidate: SourceCandidate): CandidateEditForm
 }
 
 // `editedReason` is recorded for changed merge fields when the user gives no reason of their own.
-export function candidateEditFromForm(candidate: SourceCandidate, form: CandidateEditForm, editedReason: string): CandidateEditResult {
+export function candidateEditFromForm(candidate: ImportCandidate, form: CandidateEditForm, editedReason: string): CandidateEditResult {
   if (form.operation === "exclude") {
     const exclusionReason = form.exclusionReason.trim();
     if (!exclusionReason) return { kind: "invalid", errors: { exclusionReason: "required" } };
@@ -81,7 +81,7 @@ export function candidateEditFromForm(candidate: SourceCandidate, form: Candidat
 
 // Applies a submitted form to the latest stored review. The form is refused if the candidate changed after editing began.
 export function saveCandidateEdit(
-  review: SourceCandidateProposal,
+  review: ImportReview,
   editing: { candidateId: string; revision: number; form: CandidateEditForm },
   now: string,
   editedReason: string

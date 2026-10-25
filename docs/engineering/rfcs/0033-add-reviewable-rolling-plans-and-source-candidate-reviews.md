@@ -1,7 +1,7 @@
 ---
 status: implemented
 tracking-issue: 62
-current-authority: [../features/source-import.md, ../features/task-pilot-planning.md, ../features/task-change-review/README.md, ../specifications/source-candidate-proposal-format.md]
+current-authority: [../features/source-import.md, ../features/task-pilot-planning.md, ../features/task-change-review/README.md, ../specifications/import-review-format.md]
 related-features:
   - ../features/task-pilot-planning.md
   - ../features/source-import.md
@@ -11,9 +11,10 @@ related-features:
 # RFC: Add reviewable rolling plans and Source candidate reviews
 
 > Record status: Historical — implemented through [#60](https://github.com/tempu-village/taskmate/issues/60), [#61](https://github.com/tempu-village/taskmate/issues/61) and [#62](https://github.com/tempu-village/taskmate/issues/62).
-> Current authority: [Source-note import](../features/source-import.md), [Task Pilot review and capacity planning](../features/task-pilot-planning.md), [Task change review](../features/task-change-review/README.md) and [Source candidate Proposal format](../specifications/source-candidate-proposal-format.md). The proposal below preserves the decision history; its statements that behavior is pending describe the time of acceptance.
+> Current authority: [Source-note import](../features/source-import.md), [Task Pilot review and capacity planning](../features/task-pilot-planning.md), [Task change review](../features/task-change-review/README.md) and [Import review format](../specifications/import-review-format.md). The proposal below preserves the decision history; its statements that behavior is pending describe the time of acceptance.
+> Renamed after implementation: the Source candidate review is now the Import review (取り込みレビュー). Its files use `import-review-*`, `reviewType: import`, candidate IDs `IC-xx` and the `obsidian://taskmate-import-review` URI; this record keeps the names used when it was decided.
 >
-> 記録の状態：#60、#61、#62で実装済みです。現在の正本は上記のFeatureとSpecificationで、以下は検討当時の記録として残します。「未実装」とする記述は承認時点のものです。
+> 記録の状態：#60、#61、#62で実装済みです。現在の正本は上記のFeatureとSpecificationで、以下は検討当時の記録として残します。「未実装」とする記述は承認時点のものです。実装後、Source候補レビューは取り込みレビュー（Import review）に改名しました。ファイルは`import-review-*`、`reviewType: import`、候補IDは`IC-xx`、URIは`obsidian://taskmate-import-review`です。以下は検討当時の名前のままです。
 
 ## Summary
 
@@ -384,14 +385,14 @@ None block implementation. The Source-note provenance timing, raised after the S
 
 Accepted on 2026-10-17 after product review of A-D01–05, B-D01–07, C-D01–04, F-D01–07, N-D01–10, and T-D01–04. B-D08 was added on 2026-10-18. Accepted means the direction is authorized for implementation; none of the proposed behavior is claimed as shipped.
 
-Implemented on 2026-10-24. The implementation needed no material departure from the accepted decisions. Contract details settled during implementation are recorded in the [Source candidate Proposal format](../specifications/source-candidate-proposal-format.md), including retry-safe Task IDs, stopping on a failed save, retrying provenance, and keeping the staged merge target when a candidate is edited.
+Implemented on 2026-10-24. The implementation needed no material departure from the accepted decisions. Contract details settled during implementation are recorded in the [Import review format](../specifications/import-review-format.md), including retry-safe Task IDs, stopping on a failed save, retrying provenance, and keeping the staged merge target when a candidate is edited. On 2026-10-25 the review was renamed to Import review without changing its behavior: its files, `reviewType`, candidate IDs and URI changed to the names above, and no file was migrated because none had been released.
 
 ## Links
 
 - Tracking Issue: [#62](https://github.com/tempu-village/taskmate/issues/62)
 - Implementation Issues: [#60](https://github.com/tempu-village/taskmate/issues/60), [#61](https://github.com/tempu-village/taskmate/issues/61), [#62](https://github.com/tempu-village/taskmate/issues/62)
 - Current features: [Task Pilot planning](../features/task-pilot-planning.md), [Source-note import](../features/source-import.md), [Task change review](../features/task-change-review/README.md)
-- Current specifications: [Source candidate Proposal format](../specifications/source-candidate-proposal-format.md), [Task change Proposal format](../specifications/task-change-proposal-format.md), [Source note property format](../specifications/source-note-properties.md); the accepted draft [Schema](0033-source-candidate-proposal.schema.json) and [example](0033-source-candidate-proposal-example.json) stay here as history
+- Current specifications: [Import review format](../specifications/import-review-format.md), [Task change Proposal format](../specifications/task-change-proposal-format.md), [Source note property format](../specifications/source-note-properties.md); the accepted draft [Schema](0033-source-candidate-proposal.schema.json) and [example](0033-source-candidate-proposal-example.json) stay here as history
 - Current design: [Module boundaries](../design/module-boundaries.md), [Architecture](../design/architecture.md)
 - Current user guide: [Import Source notes](../../user/how-to/import-source-notes.md)
 - ADRs: [opt-in Source notes](../adr/0004-opt-in-source-notes.md), [stage imports before promotion](../adr/0011-stage-source-imports-before-promotion.md), [candidate coverage](../adr/0017-require-a-candidate-manifest-for-coverage-review.md)
@@ -432,4 +433,4 @@ Source noteへの取り込み履歴（`taskmate-import-*`）は、そのノー�
 
 ### 状態
 
-利用者との設計レビューで全決定IDを採用済みです。Source note property formatの公開後に残った取り込み履歴の時期は、2026-10-18にB-D08として決めました。未決の製品判断はありません。新しい流れがstaged reviewを置き換えるときは、同じ変更でそのSpecificationの書く時期の記述と[Source noteの取り込み手順](../../user/how-to/import-source-notes.md)を更新します。2026-10-24に、#60、#61、#62で実装しました。承認した決定から大きく外れた点はなく、実装中に決めた契約の細部は[Source candidate Proposal format](../specifications/source-candidate-proposal-format.md)に記録しています。
+利用者との設計レビューで全決定IDを採用済みです。Source note property formatの公開後に残った取り込み履歴の時期は、2026-10-18にB-D08として決めました。未決の製品判断はありません。新しい流れがstaged reviewを置き換えるときは、同じ変更でそのSpecificationの書く時期の記述と[Source noteの取り込み手順](../../user/how-to/import-source-notes.md)を更新します。2026-10-24に、#60、#61、#62で実装しました。承認した決定から大きく外れた点はなく、実装中に決めた契約の細部は[Import review format](../specifications/import-review-format.md)に記録しています。

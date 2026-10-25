@@ -68,15 +68,15 @@ One Adapter normally means the seam is hypothetical. Keep the concrete type unle
 
 ## Review Modules
 
-Each review kind owns its Domain schema, decisions, persistence lifecycle, and UI details. Task change Proposals and future Source candidate Proposals must remain separate persisted schemas and separate feature Modules.
+Each review kind owns its Domain schema, decisions, persistence lifecycle, and UI details. Task change Proposals and future Import reviews must remain separate persisted schemas and separate feature Modules.
 
 Place a contract under `src/reviews/shared/` only after at least two review kinds use it with the same meaning. Shared review code must not import a feature-specific review Module. Feature-specific Modules may depend on shared review contracts, but review kinds must not depend on one another.
 
-Potentially shareable concepts include a stable review-kind discriminator, pending/history placement, or a minimal list summary, but only after the implemented callers prove the common semantics. Task change IDs and field approval, stale regeneration, Source candidate provenance and `create / merge / exclude / pending` decisions, screen state, rendering details, and persisted Proposal schemas remain feature-specific.
+Potentially shareable concepts include a stable review-kind discriminator, pending/history placement, or a minimal list summary, but only after the implemented callers prove the common semantics. Task change IDs and field approval, stale regeneration, Import review provenance and `create / merge / exclude / pending` decisions, screen state, rendering details, and persisted Proposal schemas remain feature-specific.
 
 Do not combine opening a review, making an in-memory decision, and persisting an application result into one Interface merely because they occur in one workflow. Navigation, UI state, Domain decisions, and persistence change for different reasons.
 
-Task change review lives in `src/reviews/task-change/`. Source candidate review is the sibling `src/reviews/source-candidate/` ([#61](https://github.com/tempu-village/taskmate/issues/61)); it has its Domain, Persistence Adapter and Review View, and it neither imports nor changes the Task change Proposal Domain. `src/reviews/shared/` holds the Review Catalog ([#62](https://github.com/tempu-village/taskmate/issues/62)), whose review-kind discriminator, pending/history placement and list entry both kinds now use with the same meaning. It classifies envelopes and lists entries only; `main.ts` routes an entry to the owning review view, so the catalog imports no review kind. The SHA-256 helper both review kinds use is a generic utility in `src/shared/`, not a review contract.
+Task change review lives in `src/reviews/task-change/`. Import review is the sibling `src/reviews/import/` ([#61](https://github.com/tempu-village/taskmate/issues/61)); it has its Domain, Persistence Adapter and Review View, and it neither imports nor changes the Task change Proposal Domain. `src/reviews/shared/` holds the Review Catalog ([#62](https://github.com/tempu-village/taskmate/issues/62)), whose review-kind discriminator, pending/history placement and list entry both kinds now use with the same meaning. It classifies envelopes and lists entries only; `main.ts` routes an entry to the owning review view, so the catalog imports no review kind. The SHA-256 helper both review kinds use is a generic utility in `src/shared/`, not a review contract.
 
 ## Verification
 
@@ -100,7 +100,7 @@ For a Module-structure change:
 - [Task change review](../features/task-change-review/README.md) owns current review behavior.
 - [Task change Proposal format](../specifications/task-change-proposal-format.md) owns the persisted schema and lifecycle contract.
 - [RFC 0032](../rfcs/0032-use-jsdiff-for-task-change-preview.md) preserves the implemented diff-engine decision history.
-- [RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md) records why the sibling Source candidate Module and the thin Review Catalog were chosen; both are implemented.
+- [RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md) records why the sibling Import review Module and the thin Review Catalog were chosen; both are implemented.
 - [ADRs](../adr/README.md) preserve hard-to-reverse accepted trade-offs. Record a Module decision there only when it meets that bar; this policy links to it rather than restating its rationale.
 
 ## 日本語参考
@@ -117,7 +117,7 @@ For a Module-structure change:
 
 interfaceまたはportは、呼び出し側、隠す知識、同じ意味を持つ複数Adapter、削除時に複数callerへ漏れる複雑さを説明できる実在のseamにだけ置きます。Adapterが一つだけなら通常は具象型を保ち、テスト用の内部seamを外部Interfaceへ広げません。
 
-各Review種別はDomain schema、判断、永続化、UI詳細を所有します。`src/reviews/shared/`は、実装済みの複数Reviewが同じ意味で使う契約が現れた場合だけ作ります。`shared`から機能固有Reviewへの依存、Review種別間の依存、異なるProposal schemaの統合は禁止します。Task変更Reviewは`src/reviews/task-change/`にあります。Source候補Reviewは兄弟Moduleの`src/reviews/source-candidate/`で（[#61](https://github.com/tempu-village/taskmate/issues/61)）、Domain、Persistence Adapter、Review Viewがあり、Task変更Proposal Domainをimportも変更もしません。`src/reviews/shared/`には、Review種別の判別、未レビューと履歴の置き場所、一覧の項目という、両方のReviewが同じ意味で使うようになった契約としてReview Catalogを置きます（[#62](https://github.com/tempu-village/taskmate/issues/62)）。Catalogは「封筒」の分類と一覧だけを担い、どのReview画面で開くかは`main.ts`が決めるため、CatalogはどのReview種別もimportしません。両方のReviewが使うSHA-256の計算は、Review契約ではなく汎用の道具として`src/shared/`に置きます。
+各Review種別はDomain schema、判断、永続化、UI詳細を所有します。`src/reviews/shared/`は、実装済みの複数Reviewが同じ意味で使う契約が現れた場合だけ作ります。`shared`から機能固有Reviewへの依存、Review種別間の依存、異なるProposal schemaの統合は禁止します。Task変更Reviewは`src/reviews/task-change/`にあります。取り込みレビューは兄弟Moduleの`src/reviews/import/`で（[#61](https://github.com/tempu-village/taskmate/issues/61)）、Domain、Persistence Adapter、Review Viewがあり、Task変更Proposal Domainをimportも変更もしません。`src/reviews/shared/`には、Review種別の判別、未レビューと履歴の置き場所、一覧の項目という、両方のReviewが同じ意味で使うようになった契約としてReview Catalogを置きます（[#62](https://github.com/tempu-village/taskmate/issues/62)）。Catalogは「封筒」の分類と一覧だけを担い、どのReview画面で開くかは`main.ts`が決めるため、CatalogはどのReview種別もimportしません。両方のReviewが使うSHA-256の計算は、Review契約ではなく汎用の道具として`src/shared/`に置きます。
 
 構造変更後はrepository指定の全検証に加え、exportのcaller、Domainの依存、`import type`、Review間の依存方向、import cycleを確認します。Module boundary testは`npm test`の一部として、実行時の循環依存、全ソースの既知フォルダーへの所属、Architectureに記録したフォルダー間の依存方向、指定したAdapterから`main.ts`への`import type`だけの参照、`src/tasks/`のrepository以外がObsidianへ依存しないことを自動確認します。Review Module boundary testは、`reviews/shared`からReview種別への依存、Review種別同士の依存、Task変更Proposal DomainからObsidianとReview Adapterへの依存を自動確認します。export、`main.ts`参照以外の`import type`、`src/tasks/`とTask変更Proposal Domain以外のDomainファイルの依存は自動確認の対象外なので、レビューで確認します。新しいフォルダーやReview種別を追加するときは、Module boundary testのフォルダー規則とArchitectureを一緒に更新します。
 

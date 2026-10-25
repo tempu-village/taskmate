@@ -29,13 +29,13 @@ flowchart TB
     settings[("Plugin settings<br/>data.json")]
     sources[("Source notes<br/>allowlisted ordinary notes")]
     canonical[("TaskMate/Tasks and TaskMate/Projects<br/>one Markdown file each")]
-    proposals[("TaskMate/Proposals<br/>proposal-ID.json<br/>source-review-ID.json<br/>Active · Archive · History")]
+    proposals[("TaskMate/Proposals<br/>proposal-ID.json<br/>import-review-ID.json<br/>Active · Archive · History")]
     plans[("TaskMate/Plans<br/>rolling plans")]
   end
 
   user -->|"browse, edit, approve"| plugin
   user -->|"ask to import, review, plan"| helpers
-  helpers -.->|"obsidian://taskmate-review<br/>obsidian://taskmate-source-review"| plugin
+  helpers -.->|"obsidian://taskmate-review<br/>obsidian://taskmate-import-review"| plugin
 
   plugin <-->|"load / save"| settings
   plugin -->|"mark taskmate-source;<br/>write import provenance"| sources
@@ -49,10 +49,10 @@ flowchart TB
   helpers -->|"write"| plans
 ```
 
-- Task Pilot's helpers are `todo_store` (direct Task and Project operations), `planning_store` (backlog review, Task change Proposals and capacity plans), `rolling_plan` (rolling plans) and `source_review` (Source candidate Proposals).
-- The plugin and Task Pilot never call each other's code. They share the file formats in [Specifications](../specifications/README.md) and Task Pilot's [Task schema](../../../skills/taskpilot/references/task-schema.md). The only direct handoffs are the URIs that open a Task change review or a Source candidate review.
+- Task Pilot's helpers are `todo_store` (direct Task and Project operations), `planning_store` (backlog review, Task change Proposals and capacity plans), `rolling_plan` (rolling plans) and `import_review` (Import reviews).
+- The plugin and Task Pilot never call each other's code. They share the file formats in [Specifications](../specifications/README.md) and Task Pilot's [Task schema](../../../skills/taskpilot/references/task-schema.md). The only direct handoffs are the URIs that open a Task change review or an Import review.
 - Task Pilot reads the plugin's `data.json` to find the managed folders, so both sides agree on where Tasks live.
-- The plugin's Source candidate review also writes import provenance on a Source note once all of that note's candidates are applied.
+- The plugin's Import review also writes import provenance on a Source note once all of that note's candidates are applied.
 
 ## 2. Module map
 
@@ -67,7 +67,7 @@ flowchart TB
 
   subgraph reviews["reviews/"]
     tcr["task-change/<br/>Task change review<br/>Domain, storage and UI"]
-    scr["source-candidate/<br/>Source candidate review<br/>Domain, storage and UI"]
+    scr["import/<br/>Import review<br/>Domain, storage and UI"]
     rsh["shared/<br/>Review Catalog and<br/>the shared review list"]
   end
 
@@ -108,7 +108,7 @@ flowchart TB
 
 - Dependencies only point downward: `task-list → task-editor → labels / projects → tasks`, plus `reviews → tasks`. `tasks/` depends on no other feature folder. The [Module boundary test](../../../test/module-boundaries.test.ts) enforces this.
 - `reviews/` holds one sibling Module per review kind, and review kinds never import each other. `reviews/shared/` holds the Review Catalog that both kinds use; it imports neither kind, and `main.ts` routes each list entry to the owning review view.
-- `task-list/view.ts`, `reviews/task-change/review-view.ts`, `reviews/source-candidate/review-view.ts`, `reviews/shared/review-index-view.ts` and `settings.ts` refer back to `main.ts` with type-only imports. Those references are erased at runtime and are omitted from the diagram.
+- `task-list/view.ts`, `reviews/task-change/review-view.ts`, `reviews/import/review-view.ts`, `reviews/shared/review-index-view.ts` and `settings.ts` refer back to `main.ts` with type-only imports. Those references are erased at runtime and are omitted from the diagram.
 
 ## 3. Layers inside the folders
 
@@ -233,7 +233,7 @@ classDiagram
   class TaskMatePlugin {
     <<composition root>>
     taskmate-review URI handler
-    taskmate-source-review URI handler
+    taskmate-import-review URI handler
     +openReview() route by kind
   }
 
@@ -257,12 +257,12 @@ classDiagram
     approve selection
   }
 
-  class SourceCandidateReviewView {
+  class ImportReviewView {
     <<UI Adapter>>
     pending and history lists
     +openReview()
   }
-  class SourceReviewRenderer {
+  class ImportReviewRenderer {
     <<UI Adapter>>
     candidate cards, edit form
     formal-apply confirmation
@@ -278,7 +278,7 @@ classDiagram
     +buildProposalReview() hash check, jsdiff
     +applyProposalDecision() stale check, follow-up
   }
-  class SourceCandidateDomain {
+  class ImportReviewDomain {
     <<Domain>>
     +editCandidate() +decideCandidate()
     +planFormalApply()
@@ -290,7 +290,7 @@ classDiagram
     +listPending() +listHistory()
     +review() +apply() +reject()
   }
-  class SourceCandidateReviewRepository {
+  class ImportReviewRepository {
     <<Persistence Adapter>>
     +listPending() +listHistory()
     +load() +save() +formalApply()
@@ -317,15 +317,15 @@ classDiagram
   TaskChangeProposalRepository --> TaskChangeProposalDomain : validate and decide
   TaskChangeProposalRepository --> TaskRepository : guarded write
 
-  TaskMatePlugin --> SourceCandidateReviewView : registers and opens
-  TaskMatePlugin --> SourceCandidateReviewRepository : creates
-  SourceCandidateReviewView --> SourceReviewRenderer : renders
-  SourceCandidateReviewView --> CandidateEditForm : save edits
-  SourceCandidateReviewView --> SourceCandidateReviewRepository : load, save, formalApply
-  CandidateEditForm --> SourceCandidateDomain : editCandidate
-  SourceCandidateReviewRepository --> SourceCandidateDomain : validate and plan
-  SourceCandidateReviewRepository --> SourceNoteProvenance : mark completed notes
-  SourceCandidateReviewRepository --> TaskRepository : create or merge Tasks
+  TaskMatePlugin --> ImportReviewView : registers and opens
+  TaskMatePlugin --> ImportReviewRepository : creates
+  ImportReviewView --> ImportReviewRenderer : renders
+  ImportReviewView --> CandidateEditForm : save edits
+  ImportReviewView --> ImportReviewRepository : load, save, formalApply
+  CandidateEditForm --> ImportReviewDomain : editCandidate
+  ImportReviewRepository --> ImportReviewDomain : validate and plan
+  ImportReviewRepository --> SourceNoteProvenance : mark completed notes
+  ImportReviewRepository --> TaskRepository : create or merge Tasks
 ```
 
 Both review kinds follow the same shape (Domain decides, Persistence Adapter writes) but keep separate schemas and code. They share only the Review Catalog: it classifies each file from its envelope, each owning Module describes its own reviews for the list, and the plugin opens an entry in the owning view.
@@ -419,8 +419,8 @@ classDiagram
     before, after, reason
   }
 
-  class SourceCandidateProposal {
-    <<source-review-*.json>>
+  class ImportReview {
+    <<import-review-*.json>>
     reviewId
     status, health, revision
   }
@@ -428,7 +428,7 @@ classDiagram
     note or conversation
     sha256 snapshot
   }
-  class SourceCandidate {
+  class ImportCandidate {
     operation create, merge or exclude
     decision pending, approved or hold
     application result
@@ -442,14 +442,14 @@ classDiagram
   ProposalTask "1" *-- "1..*" ProposalChange
   ProposalTask ..> Task : changes one existing Task
 
-  SourceCandidateProposal "1" *-- "1..*" ReviewSource
-  SourceCandidateProposal "1" *-- "1..*" SourceCandidate
-  SourceCandidate --> ReviewSource : sourceRefs
-  SourceCandidate ..> Task : creates or merges into
+  ImportReview "1" *-- "1..*" ReviewSource
+  ImportReview "1" *-- "1..*" ImportCandidate
+  ImportCandidate --> ReviewSource : sourceRefs
+  ImportCandidate ..> Task : creates or merges into
 ```
 
 - A Task change Proposal edits existing Tasks only. It stores complete before/after Markdown so the diff can be regenerated and a stale Task can be detected. When some writes fail or go stale, apply produces a follow-up Proposal linked by `originProposalId`. See [Task change Proposal format](../specifications/task-change-proposal-format.md).
-- A Source candidate Proposal accounts for every candidate found in its sources as create, merge or exclude. Its contract is the [Source candidate Proposal format](../specifications/source-candidate-proposal-format.md), and the user reviews it in the Source candidate Review View.
+- An Import review accounts for every candidate found in its sources as create, merge or exclude. Its contract is the [Import review format](../specifications/import-review-format.md), and the user reviews it in the Import Review View.
 
 ## 5. Key flows
 
@@ -537,8 +537,8 @@ sequenceDiagram
   User->>Agent: turn my notes into Tasks
   Agent->>Vault: todo_store finds eligible Source notes
   Agent->>Agent: map every statement to a create, merge or exclude candidate
-  Agent->>Vault: source_review stage writes source-review-ID.json
-  Agent-->>Plugin: obsidian://taskmate-source-review
+  Agent->>Vault: import_review stage writes import-review-ID.json
+  Agent-->>Plugin: obsidian://taskmate-import-review
   Note right of Vault: No canonical Task exists yet
   User->>Plugin: edit, decide, then confirm formal apply
   Plugin->>Vault: create or merge Tasks, one candidate at a time
@@ -561,7 +561,7 @@ Reviews that earlier versions staged as Markdown under `Active` and `Archive` ar
 | [Localization](../features/localization.md) | English and Japanese UI | `i18n/` |
 | [Storage and privacy](../features/storage-and-privacy.md) | Plain Markdown in the user's Vault | `tasks/repository.ts`, `projects/project-repository.ts` |
 | [Task change review](../features/task-change-review/README.md) | Approve AI-suggested changes field by field | `reviews/task-change/`, Task Pilot `planning_store.py` |
-| [Source-note import](../features/source-import.md) | Turn selected notes into Tasks with nothing silently dropped | Task Pilot `todo_store.py`, `source_review.py`; `reviews/source-candidate/` |
+| [Source-note import](../features/source-import.md) | Turn selected notes into Tasks with nothing silently dropped | Task Pilot `todo_store.py`, `import_review.py`; `reviews/import/` |
 | [Task Pilot review and capacity planning](../features/task-pilot-planning.md) | Backlog review and plans sized to available time | Task Pilot `planning_store.py`, `rolling_plan.py` |
 
 ## 日本語参考
@@ -581,9 +581,9 @@ TaskMateを説明するための図をまとめたページです。正本は[Ar
 
 ### 図の読み方
 
-- **1. System context**：誰がどのファイルに触るかを示します。プラグインとTask Pilotはお互いのコードを呼ばず、同じファイル形式を共有して連携します。直接の受け渡しは、Task変更レビューを開く`obsidian://taskmate-review`と、Source候補レビューを開く`obsidian://taskmate-source-review`のURIだけです。Task Pilotはプラグインの`data.json`を読み、管理フォルダーの場所を合わせます。
+- **1. System context**：誰がどのファイルに触るかを示します。プラグインとTask Pilotはお互いのコードを呼ばず、同じファイル形式を共有して連携します。直接の受け渡しは、Task変更レビューを開く`obsidian://taskmate-review`と、取り込みレビューを開く`obsidian://taskmate-import-review`のURIだけです。Task Pilotはプラグインの`data.json`を読み、管理フォルダーの場所を合わせます。
 - **2. Module map**：`src/`のフォルダーを依存の段ごとに並べた図です。矢印は実際のimportから描いています。依存は下向きだけで、`task-list → task-editor → labels / projects → tasks`、`reviews → tasks`です。`tasks/`はほかの機能フォルダーに依存しません。この規則はModule boundary testで自動確認しています。`i18n/`と`shared/`はどこからでも使えます。
 - **3. Layers**：各フォルダーの中身を4つの役割で示します。UI Adapterは画面、Applicationは操作の段取り、Domainは純粋なルール（Obsidianに依存しない）、Persistence Adapterはファイルの読み書きです。3aは一覧と編集、3bはレビューの主要クラスです。2種類のレビューは同じ形をしていますが、スキーマとコードは別々に保っています。共通なのはReview Catalogだけで、ファイルを「封筒」で分類し、一覧の説明は各Review Moduleが作り、プラグインが持ち主の画面で開きます。
-- **4. Data model**：4aは正本のデータです。TaskはStepを中に持ち、IDでProjectを参照し、Labelは文字列です。`rank`は全体で一つの手動順です。4bはレビュー用のデータです。Task変更Proposalは既存Taskの変更前後のMarkdownを丸ごと持ち、Source候補Proposalは元ノートから見つけた候補をすべて作成・統合・除外のいずれかに振り分けます。
-- **5. Key flows**：5aは編集保存の流れです。開いたときの内容・自分の編集・今のファイルを3方向で比べ、同じ項目が両方で変わっていれば項目ごとに選んでもらいます。5bはTask Pilotの変更提案を承認する流れです。承認した変更だけを、元の内容から変わっていない場合に書き込みます。5cはメモからTaskを作る流れです。Task Pilotがノートを読んでレビューをステージし、判断と書き込みはすべてプラグインのSource候補レビューで行います。以前の`Active`と`Archive`のMarkdownのレビューは廃止し、どちらも読み書きせず、移動や削除もしません。
+- **4. Data model**：4aは正本のデータです。TaskはStepを中に持ち、IDでProjectを参照し、Labelは文字列です。`rank`は全体で一つの手動順です。4bはレビュー用のデータです。Task変更Proposalは既存Taskの変更前後のMarkdownを丸ごと持ち、取り込みレビューは元ノートから見つけた候補をすべて作成・統合・除外のいずれかに振り分けます。
+- **5. Key flows**：5aは編集保存の流れです。開いたときの内容・自分の編集・今のファイルを3方向で比べ、同じ項目が両方で変わっていれば項目ごとに選んでもらいます。5bはTask Pilotの変更提案を承認する流れです。承認した変更だけを、元の内容から変わっていない場合に書き込みます。5cはメモからTaskを作る流れです。Task Pilotがノートを読んでレビューをステージし、判断と書き込みはすべてプラグインの取り込みレビューで行います。以前の`Active`と`Archive`のMarkdownのレビューは廃止し、どちらも読み書きせず、移動や削除もしません。
 - **6. Where each feature lives**：機能ごとに、利用者が得られることと主なコードの場所を対応させた表です。

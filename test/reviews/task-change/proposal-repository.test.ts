@@ -44,7 +44,7 @@ function baseTask(overrides: Partial<Task> = {}): Task {
 }
 
 describe("TaskChangeProposalRepository", () => {
-  it("lists only Task change Proposal files, not Source candidate reviews", async () => {
+  it("lists only Task change Proposal files, not Import reviews", async () => {
     const vault = new MemoryVault();
     const proposal: TaskChangeProposal = {
       schemaVersion: 1, id: "proposal-only", status: "pending", createdAt: "2026-10-12T00:00:00.000Z",
@@ -52,8 +52,8 @@ describe("TaskChangeProposalRepository", () => {
         beforeSha256: await sha256("x"), changes: [{ id: "C-01", field: "notes", before: "x", after: "y", reason: "r" }] }]
     };
     vault.put("TaskMate/Proposals/proposal-only.json", JSON.stringify(proposal));
-    vault.put("TaskMate/Proposals/source-review-other.json", JSON.stringify({ reviewType: "source-candidate" }));
-    vault.put("TaskMate/Proposals/History/source-review-old.json", JSON.stringify({ reviewType: "source-candidate" }));
+    vault.put("TaskMate/Proposals/import-review-other.json", JSON.stringify({ reviewType: "import" }));
+    vault.put("TaskMate/Proposals/History/import-review-old.json", JSON.stringify({ reviewType: "import" }));
     const app = { vault, fileManager: { renameFile: async () => undefined } } as unknown as App;
     const proposals = new TaskChangeProposalRepository(app, () => "TaskMate/Proposals", new TaskRepository(app, () => "TaskMate/Tasks"));
     const errors: unknown[] = [];

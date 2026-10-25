@@ -6,21 +6,21 @@ import {
   archiveReview,
   markSourceStale,
   noteSourceCompletion,
-  parseSourceCandidateProposal,
+  parseImportReview,
   planFormalApply,
   promotedTaskId,
   recordApplication,
   verifyMergeEvidence
 } from "./proposal";
-import type { ApplicationOutcome, SourceCandidate, SourceCandidateProposal } from "./proposal";
+import type { ApplicationOutcome, ImportCandidate, ImportReview } from "./proposal";
 import { importedHash, sourceNoteHash, withSourceNoteProvenance } from "./source-note-provenance";
 
-const REVIEW_ID = /^source-review-[A-Za-z0-9._-]+$/;
+const REVIEW_ID = /^import-review-[A-Za-z0-9._-]+$/;
 
-export interface SourceReviewSummary {
+export interface ImportReviewSummary {
   reviewId: string;
-  status: SourceCandidateProposal["status"];
-  health: SourceCandidateProposal["health"];
+  status: ImportReview["status"];
+  health: ImportReview["health"];
   createdAt: string;
   updatedAt: string;
   candidateCount: number;
@@ -28,7 +28,7 @@ export interface SourceReviewSummary {
 }
 
 export interface FormalApplyResult {
-  review: SourceCandidateProposal;
+  review: ImportReview;
   applied: string[];
   failed: Array<{ candidateId: string; error: string }>;
   stale: Array<{ candidateId: string; reason: string }>;
@@ -40,28 +40,28 @@ export interface FormalApplyResult {
   archived: boolean;
 }
 
-export class SourceCandidateReviewRepository {
+export class ImportReviewRepository {
   constructor(
     private readonly app: App,
     private readonly proposalFolder: () => string,
     private readonly tasks: TaskRepository
   ) {}
 
-  async listPending(): Promise<SourceReviewSummary[]> {
+  async listPending(): Promise<ImportReviewSummary[]> {
     return this.list(this.pendingFiles(), (review) => review.status !== "history");
   }
 
-  async listHistory(): Promise<SourceReviewSummary[]> {
+  async listHistory(): Promise<ImportReviewSummary[]> {
     return this.list(this.historyFiles(), (review) => review.status === "history");
   }
 
-  async load(reviewId: string): Promise<SourceCandidateProposal> {
+  async load(reviewId: string): Promise<ImportReview> {
     const file = this.reviewFile(reviewId) ?? this.historyFile(reviewId);
-    if (!file) throw new Error(`Source candidate review not found: ${reviewId}`);
-    return parseSourceCandidateProposal(await this.app.vault.read(file));
+    if (!file) throw new Error(`Import review not found: ${reviewId}`);
+    return parseImportReview(await this.app.vault.read(file));
   }
 
-  async save(review: SourceCandidateProposal): Promise<void> {
+  async save(review: ImportReview): Promise<void> {
     if (review.status === "history") throw new Error(`Review ${review.reviewId} is archived`);
     const content = serialize(review);
     const file = this.reviewFile(review.reviewId);
@@ -77,7 +77,7 @@ export class SourceCandidateReviewRepository {
     options: { acknowledgeUnviewedMerges: boolean; now?: () => string }
   ): Promise<FormalApplyResult> {
     const now = options.now ?? (() => new Date().toISOString());
-    if (!this.reviewFile(reviewId)) throw new Error(`Pending Source candidate review not found: ${reviewId}`);
+    if (!this.reviewFile(reviewId)) throw new Error(`Pending Import review not found: ${reviewId}`);
     let review = await this.load(reviewId);
     const result: FormalApplyResult = {
       review, applied: [], failed: [], stale: [], provenance: { written: [], changed: [], failed: [] }, archived: false
@@ -122,7 +122,7 @@ export class SourceCandidateReviewRepository {
     return result;
   }
 
-  private async applyCandidate(review: SourceCandidateProposal, candidate: SourceCandidate): Promise<ApplicationOutcome> {
+  private async applyCandidate(review: ImportReview, candidate: ImportCandidate): Promise<ApplicationOutcome> {
     if (candidate.operation === "exclude") return { kind: "applied", promotedTaskId: null };
     if (candidate.operation === "merge") {
       const target = candidate.mergeTarget;
@@ -155,7 +155,7 @@ export class SourceCandidateReviewRepository {
     return { kind: "applied", promotedTaskId: taskId };
   }
 
-  private async sourceChange(source: SourceCandidateProposal["sources"][number]): Promise<string | null> {
+  private async sourceChange(source: ImportReview["sources"][number]): Promise<string | null> {
     if (source.type === "conversation") {
       return await sha256(source.snapshot) === source.sha256 ? null : `Conversation Source ${source.localSourceId} does not match its recorded hash`;
     }
@@ -164,7 +164,7 @@ export class SourceCandidateReviewRepository {
     return await sourceNoteHash(await this.app.vault.read(file)) === source.sha256 ? null : `Source note ${source.path} changed after staging`;
   }
 
-  private async writeProvenance(review: SourceCandidateProposal, now: () => string, result: FormalApplyResult): Promise<void> {
+  private async writeProvenance(review: ImportReview, now: () => string, result: FormalApplyResult): Promise<void> {
     for (const completion of noteSourceCompletion(review)) {
       if (!completion.complete) continue;
       const file = this.app.vault.getAbstractFileByPath(normalizePath(completion.path));
@@ -194,45 +194,45 @@ export class SourceCandidateReviewRepository {
     }
   }
 
-  private async list(files: TFile[], keep: (review: SourceCandidateProposal) => boolean): Promise<SourceReviewSummary[]> {
-    const summaries: SourceReviewSummary[] = [];
+  private async list(files: TFile[], keep: (review: ImportReview) => boolean): Promise<ImportReviewSummary[]> {
+    const summaries: ImportReviewSummary[] = [];
     for (const file of files) {
       try {
-        const review = parseSourceCandidateProposal(await this.app.vault.read(file));
+        const review = parseImportReview(await this.app.vault.read(file));
         if (keep(review)) summaries.push(summarize(review));
       } catch (error) {
-        console.error(`TaskMate ignored malformed Source candidate review ${file.path}`, error);
+        console.error(`TaskMate ignored malformed Import review ${file.path}`, error);
       }
     }
     return summaries.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
   }
 
-  private async archive(review: SourceCandidateProposal): Promise<void> {
+  private async archive(review: ImportReview): Promise<void> {
     const source = this.reviewFile(review.reviewId);
-    if (!source) throw new Error(`Source candidate review not found: ${review.reviewId}`);
+    if (!source) throw new Error(`Import review not found: ${review.reviewId}`);
     await this.app.vault.modify(source, serialize(review));
     await this.ensureFolder(this.historyFolder());
     await this.app.fileManager.renameFile(source, normalizePath(`${this.historyFolder()}/${review.reviewId}.json`));
   }
 
   private pendingFiles(): TFile[] {
-    const prefix = `${this.folder()}/source-review-`;
+    const prefix = `${this.folder()}/import-review-`;
     return this.app.vault.getFiles().filter((file) => file.path.startsWith(prefix) && file.extension === "json");
   }
 
   private historyFiles(): TFile[] {
-    const prefix = `${this.historyFolder()}/source-review-`;
+    const prefix = `${this.historyFolder()}/import-review-`;
     return this.app.vault.getFiles().filter((file) => file.path.startsWith(prefix) && file.extension === "json");
   }
 
   private reviewFile(reviewId: string): TFile | null {
-    if (!REVIEW_ID.test(reviewId)) throw new Error("Invalid Source candidate review id");
+    if (!REVIEW_ID.test(reviewId)) throw new Error("Invalid Import review id");
     const file = this.app.vault.getAbstractFileByPath(normalizePath(`${this.folder()}/${reviewId}.json`));
     return file instanceof TFile ? file : null;
   }
 
   private historyFile(reviewId: string): TFile | null {
-    if (!REVIEW_ID.test(reviewId)) throw new Error("Invalid Source candidate review id");
+    if (!REVIEW_ID.test(reviewId)) throw new Error("Invalid Import review id");
     const file = this.app.vault.getAbstractFileByPath(normalizePath(`${this.historyFolder()}/${reviewId}.json`));
     return file instanceof TFile ? file : null;
   }
@@ -255,15 +255,15 @@ export class SourceCandidateReviewRepository {
   }
 }
 
-function referencesSource(candidate: SourceCandidate, sourceId: string): boolean {
+function referencesSource(candidate: ImportCandidate, sourceId: string): boolean {
   return candidate.sourceRefs.some((ref) => ref.sourceId === sourceId);
 }
 
-function serialize(review: SourceCandidateProposal): string {
-  return `${JSON.stringify(parseSourceCandidateProposal(JSON.stringify(review)), null, 2)}\n`;
+function serialize(review: ImportReview): string {
+  return `${JSON.stringify(parseImportReview(JSON.stringify(review)), null, 2)}\n`;
 }
 
-function summarize(review: SourceCandidateProposal): SourceReviewSummary {
+function summarize(review: ImportReview): ImportReviewSummary {
   return {
     reviewId: review.reviewId,
     status: review.status,

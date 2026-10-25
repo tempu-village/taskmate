@@ -1,10 +1,10 @@
 import { structuredPatch } from "diff";
 import { CANDIDATE_EDIT_FIELDS, candidateEditForm } from "./candidate-edit-form";
 import type { CandidateEditError, CandidateEditErrors, CandidateEditField, CandidateEditForm } from "./candidate-edit-form";
-import type { FormalApplyPlan, SourceCandidate, SourceCandidateProposal } from "./proposal";
+import type { FormalApplyPlan, ImportCandidate, ImportReview } from "./proposal";
 
-type Operation = SourceCandidate["operation"];
-type Decision = SourceCandidate["decision"];
+type Operation = ImportCandidate["operation"];
+type Decision = ImportCandidate["decision"];
 type BlockReason = FormalApplyPlan["blocked"][number]["reason"];
 
 export interface CandidateEditState {
@@ -15,7 +15,7 @@ export interface CandidateEditState {
   errors: CandidateEditErrors;
 }
 
-export interface SourceReviewUiState {
+export interface ImportReviewUiState {
   expandedDiffs: ReadonlySet<string>;
   applyOpen: boolean;
   acknowledged: boolean;
@@ -24,15 +24,15 @@ export interface SourceReviewUiState {
   focus: string | null;
 }
 
-export interface SourceReviewProject {
+export interface ImportReviewProject {
   id: string;
   name: string;
 }
 
-export interface SourceReviewCopy {
+export interface ImportReviewCopy {
   title: string;
   back: string;
-  status: Record<SourceCandidateProposal["status"], string>;
+  status: Record<ImportReview["status"], string>;
   health: Record<"stale" | "failed", string>;
   operation: Record<Operation, string>;
   decision: Record<Decision, string>;
@@ -72,7 +72,7 @@ export interface SourceReviewCopy {
   save: string;
 }
 
-export type SourceReviewAction =
+export type ImportReviewAction =
   | { type: "decide"; candidateId: string; decision: Decision }
   | { type: "toggle-diff"; candidateId: string }
   | { type: "open-apply" }
@@ -86,24 +86,24 @@ export type SourceReviewAction =
   | { type: "cancel-edit" }
   | { type: "save-edit" };
 
-const OPERATION_ID = "taskmate-source-edit-operation";
-const FORM_ERROR_ID = "taskmate-source-edit-form-error";
-const OPEN_APPLY_ID = "taskmate-source-review-open-apply";
-const APPLY_TITLE_ID = "taskmate-source-review-apply-title";
+const OPERATION_ID = "taskmate-import-edit-operation";
+const FORM_ERROR_ID = "taskmate-import-edit-form-error";
+const OPEN_APPLY_ID = "taskmate-import-review-open-apply";
+const APPLY_TITLE_ID = "taskmate-import-review-apply-title";
 
 export function editFieldId(field: CandidateEditField): string {
-  return `taskmate-source-edit-${field}`;
+  return `taskmate-import-edit-${field}`;
 }
 
 export function editButtonId(candidateId: string): string {
-  return `taskmate-source-candidate-edit-${candidateId}`;
+  return `taskmate-import-candidate-edit-${candidateId}`;
 }
 
-export function createSourceReviewUiState(): SourceReviewUiState {
+export function createImportReviewUiState(): ImportReviewUiState {
   return { expandedDiffs: new Set(), applyOpen: false, acknowledged: false, editing: null, focus: null };
 }
 
-export function reduceSourceReviewUiState(state: SourceReviewUiState, action: SourceReviewAction): SourceReviewUiState {
+export function reduceImportReviewUiState(state: ImportReviewUiState, action: ImportReviewAction): ImportReviewUiState {
   switch (action.type) {
     case "toggle-diff": {
       const expandedDiffs = new Set(state.expandedDiffs);
@@ -142,17 +142,17 @@ function withField(form: CandidateEditForm, field: CandidateEditField, value: st
   return { ...form, draft: { ...form.draft, [field]: value } };
 }
 
-export function renderSourceCandidateReview(
+export function renderImportReview(
   container: HTMLElement,
-  review: SourceCandidateProposal,
+  review: ImportReview,
   plan: FormalApplyPlan,
-  state: SourceReviewUiState,
-  copy: SourceReviewCopy,
-  dispatch: (action: SourceReviewAction) => void,
-  options: { readOnly?: boolean; onBack?: () => void; projects?: readonly SourceReviewProject[] } = {}
+  state: ImportReviewUiState,
+  copy: ImportReviewCopy,
+  dispatch: (action: ImportReviewAction) => void,
+  options: { readOnly?: boolean; onBack?: () => void; projects?: readonly ImportReviewProject[] } = {}
 ): void {
   container.replaceChildren();
-  container.classList.add("taskmate-review", "taskmate-source-review");
+  container.classList.add("taskmate-review", "taskmate-import-review");
   const header = element("header", "taskmate-review-header", container);
   text(header, "h2", copy.title);
   if (options.onBack) {
@@ -160,7 +160,7 @@ export function renderSourceCandidateReview(
     back.classList.add("taskmate-review-back");
     header.append(back);
   }
-  const summary = element("p", "taskmate-source-review-summary", container);
+  const summary = element("p", "taskmate-import-review-summary", container);
   summary.textContent = [review.reviewId, copy.status[review.status], review.health === "ok" ? "" : copy.health[review.health]].filter(Boolean).join(" · ");
 
   const list = element("div", "taskmate-review-files", container);
@@ -173,24 +173,24 @@ export function renderSourceCandidateReview(
 
 function renderCard(
   parent: HTMLElement,
-  review: SourceCandidateProposal,
-  candidate: SourceCandidate,
-  state: SourceReviewUiState,
-  copy: SourceReviewCopy,
-  dispatch: (action: SourceReviewAction) => void,
+  review: ImportReview,
+  candidate: ImportCandidate,
+  state: ImportReviewUiState,
+  copy: ImportReviewCopy,
+  dispatch: (action: ImportReviewAction) => void,
   readOnly: boolean,
-  projects: readonly SourceReviewProject[]
+  projects: readonly ImportReviewProject[]
 ): void {
-  const card = element("section", "taskmate-review-file taskmate-source-candidate", parent);
-  card.id = `taskmate-source-candidate-${candidate.id}`;
+  const card = element("section", "taskmate-review-file taskmate-import-candidate", parent);
+  card.id = `taskmate-import-candidate-${candidate.id}`;
   card.dataset.operation = candidate.operation;
   const head = element("div", "taskmate-review-file-header", card);
   const identity = element("div", "taskmate-review-file-identity", head);
   text(identity, "span", candidate.id, "taskmate-review-id");
-  text(identity, "span", copy.operation[candidate.operation], "taskmate-source-candidate-operation");
+  text(identity, "span", copy.operation[candidate.operation], "taskmate-import-candidate-operation");
   text(identity, "h3", candidate.title);
 
-  const status = element("p", "taskmate-source-candidate-status", card);
+  const status = element("p", "taskmate-import-candidate-status", card);
   const applied = candidate.application.status === "applied";
   status.textContent = [
     applied ? copy.applied : copy.decision[candidate.decision],
@@ -198,12 +198,12 @@ function renderCard(
   ].filter(Boolean).join(" · ");
   if (candidate.health !== "ok") status.classList.add(`is-${candidate.health}`);
 
-  const sources = element("div", "taskmate-source-candidate-sources", card);
+  const sources = element("div", "taskmate-import-candidate-sources", card);
   text(sources, "h4", copy.sources);
   for (const ref of candidate.sourceRefs) {
     const source = review.sources.find((item) => item.id === ref.sourceId);
     const label = !source ? ref.sourceId : source.type === "note" ? source.path : copy.conversation(source.localSourceId);
-    const quote = element("blockquote", "taskmate-source-candidate-statement", sources);
+    const quote = element("blockquote", "taskmate-import-candidate-statement", sources);
     text(quote, "cite", `${ref.sourceId} · ${label}`);
     text(quote, "p", ref.statement);
   }
@@ -217,14 +217,14 @@ function renderCard(
   if (candidate.operation === "create") renderDraft(card, candidate.taskDraft, copy, projects);
   else if (candidate.operation === "merge") renderMerge(card, candidate, state, copy, dispatch, projects);
   else {
-    const reason = element("p", "taskmate-source-candidate-reason", card);
+    const reason = element("p", "taskmate-import-candidate-reason", card);
     text(reason, "strong", `${copy.exclusionReason}: `);
     reason.append(candidate.exclusionReason);
   }
 
   if (!readOnly && !applied) {
-    const actions = element("div", "taskmate-source-candidate-actions", card);
-    const decisions = element("div", "taskmate-source-candidate-decisions", actions);
+    const actions = element("div", "taskmate-import-candidate-actions", card);
+    const decisions = element("div", "taskmate-import-candidate-decisions", actions);
     decisions.setAttribute("role", "group");
     decisions.setAttribute("aria-label", copy.decisionGroupAria(candidate.id));
     const choices: Array<[Decision, string]> = [["approved", copy.decide[candidate.operation]], ["hold", copy.decide.hold], ["pending", copy.decide.pending]];
@@ -237,7 +237,7 @@ function renderCard(
     }
     const edit = button(copy.edit, () => dispatch({ type: "start-edit", candidateId: candidate.id, revision: candidate.revision, form: candidateEditForm(candidate) }));
     edit.id = editButtonId(candidate.id);
-    edit.classList.add("taskmate-source-candidate-edit-button");
+    edit.classList.add("taskmate-import-candidate-edit-button");
     edit.setAttribute("aria-label", copy.editAria(candidate.id));
     edit.disabled = state.editing !== null;
     actions.append(edit);
@@ -246,12 +246,12 @@ function renderCard(
 
 function renderDraft(
   card: HTMLElement,
-  draft: Extract<SourceCandidate, { operation: "create" }>["taskDraft"],
-  copy: SourceReviewCopy,
-  projects: readonly SourceReviewProject[]
+  draft: Extract<ImportCandidate, { operation: "create" }>["taskDraft"],
+  copy: ImportReviewCopy,
+  projects: readonly ImportReviewProject[]
 ): void {
-  const fields = element("dl", "taskmate-source-candidate-fields", card);
-  const rows: Array<[keyof SourceReviewCopy["fields"], string]> = [
+  const fields = element("dl", "taskmate-import-candidate-fields", card);
+  const rows: Array<[keyof ImportReviewCopy["fields"], string]> = [
     ["date", draft.date ?? copy.empty],
     ["priority", draft.priority === null ? copy.empty : copy.priorityValue(draft.priority)],
     ["labels", draft.labels.length ? draft.labels.join(", ") : copy.empty],
@@ -265,22 +265,22 @@ function renderDraft(
   if (draft.steps.length > 0) {
     text(fields, "dt", copy.fields.steps);
     const steps = element("dd", "", fields);
-    const listEl = element("ul", "taskmate-source-candidate-steps", steps);
+    const listEl = element("ul", "taskmate-import-candidate-steps", steps);
     for (const step of draft.steps) text(listEl, "li", step.date ? `${step.text} (${step.date})` : step.text);
   }
 }
 
 function renderMerge(
   card: HTMLElement,
-  candidate: Extract<SourceCandidate, { operation: "merge" }>,
-  state: SourceReviewUiState,
-  copy: SourceReviewCopy,
-  dispatch: (action: SourceReviewAction) => void,
-  projects: readonly SourceReviewProject[]
+  candidate: Extract<ImportCandidate, { operation: "merge" }>,
+  state: ImportReviewUiState,
+  copy: ImportReviewCopy,
+  dispatch: (action: ImportReviewAction) => void,
+  projects: readonly ImportReviewProject[]
 ): void {
   const target = candidate.mergeTarget;
-  const block = element("div", "taskmate-source-candidate-merge", card);
-  text(block, "p", copy.mergeTarget(target.title), "taskmate-source-candidate-target");
+  const block = element("div", "taskmate-import-candidate-merge", card);
+  text(block, "p", copy.mergeTarget(target.title), "taskmate-import-candidate-target");
   for (const change of target.changes) {
     const row = element("div", "taskmate-review-change is-read-only", block);
     text(row, "strong", copy.fields[change.field]);
@@ -290,9 +290,9 @@ function renderMerge(
     text(details, "span", change.reason, "taskmate-review-reason");
   }
   const expanded = state.expandedDiffs.has(candidate.id);
-  const diffId = `taskmate-source-candidate-diff-${candidate.id}`;
+  const diffId = `taskmate-import-candidate-diff-${candidate.id}`;
   const toggle = button(expanded ? copy.hideDiff : copy.showDiff, () => dispatch({ type: "toggle-diff", candidateId: candidate.id }));
-  toggle.classList.add("taskmate-source-candidate-diff-toggle");
+  toggle.classList.add("taskmate-import-candidate-diff-toggle");
   toggle.setAttribute("aria-expanded", String(expanded));
   toggle.setAttribute("aria-controls", diffId);
   block.append(toggle);
@@ -312,11 +312,11 @@ function renderMerge(
 function renderApply(
   container: HTMLElement,
   plan: FormalApplyPlan,
-  state: SourceReviewUiState,
-  copy: SourceReviewCopy,
-  dispatch: (action: SourceReviewAction) => void
+  state: ImportReviewUiState,
+  copy: ImportReviewCopy,
+  dispatch: (action: ImportReviewAction) => void
 ): void {
-  const footer = element("footer", "taskmate-review-footer taskmate-source-review-apply", container);
+  const footer = element("footer", "taskmate-review-footer taskmate-import-review-apply", container);
   if (!state.applyOpen) {
     const open = button(copy.openApply, () => dispatch({ type: "open-apply" }));
     open.id = OPEN_APPLY_ID;
@@ -328,7 +328,7 @@ function renderApply(
     return;
   }
   footer.classList.add("is-open");
-  const panel = element("section", "taskmate-source-review-apply-panel", footer);
+  const panel = element("section", "taskmate-import-review-apply-panel", footer);
   panel.setAttribute("aria-labelledby", APPLY_TITLE_ID);
   const title = text(panel, "h3", copy.applyTitle);
   title.id = APPLY_TITLE_ID;
@@ -337,21 +337,21 @@ function renderApply(
   text(panel, "p", copy.applyCounts(plan.counts));
   if (plan.blocked.length > 0) {
     text(panel, "h4", copy.blockedTitle);
-    const blocked = element("ul", "taskmate-source-review-blocked", panel);
+    const blocked = element("ul", "taskmate-import-review-blocked", panel);
     for (const item of plan.blocked) text(blocked, "li", `${item.candidateId}: ${copy.blocked[item.reason]}`);
   }
   if (plan.requiresAcknowledgement) {
     text(panel, "h4", copy.unviewedTitle);
-    const unviewed = element("ul", "taskmate-source-review-unviewed", panel);
+    const unviewed = element("ul", "taskmate-import-review-unviewed", panel);
     for (const item of plan.unviewedMerges) text(unviewed, "li", `${item.candidateId}: ${item.targetTitle}`);
-    const label = element("label", "taskmate-source-review-acknowledge", panel);
+    const label = element("label", "taskmate-import-review-acknowledge", panel);
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.checked = state.acknowledged;
     checkbox.addEventListener("change", () => dispatch({ type: "set-acknowledged", acknowledged: checkbox.checked }));
     label.append(checkbox, document.createTextNode(copy.acknowledge(plan.unviewedMerges.length)));
   }
-  const actions = element("div", "taskmate-source-review-apply-actions", panel);
+  const actions = element("div", "taskmate-import-review-apply-actions", panel);
   const confirm = button(copy.confirm, () => dispatch({ type: "confirm-apply" }));
   confirm.classList.add("mod-cta");
   confirm.disabled = plan.eligible.length === 0 || (plan.requiresAcknowledgement && !state.acknowledged);
@@ -361,13 +361,13 @@ function renderApply(
 
 function renderEditForm(
   card: HTMLElement,
-  candidate: SourceCandidate,
+  candidate: ImportCandidate,
   editing: CandidateEditState,
-  copy: SourceReviewCopy,
-  dispatch: (action: SourceReviewAction) => void,
-  projects: readonly SourceReviewProject[]
+  copy: ImportReviewCopy,
+  dispatch: (action: ImportReviewAction) => void,
+  projects: readonly ImportReviewProject[]
 ): void {
-  const form = element("form", "taskmate-source-candidate-edit", card);
+  const form = element("form", "taskmate-import-candidate-edit", card);
   form.noValidate = true;
   form.setAttribute("aria-label", copy.editAria(candidate.id));
   form.addEventListener("submit", (event) => {
@@ -375,7 +375,7 @@ function renderEditForm(
     dispatch({ type: "save-edit" });
   });
   if (editing.errors.form) {
-    const error = text(form, "p", copy.editErrors[editing.errors.form], "taskmate-source-candidate-edit-error");
+    const error = text(form, "p", copy.editErrors[editing.errors.form], "taskmate-import-candidate-edit-error");
     error.id = FORM_ERROR_ID;
     error.tabIndex = -1;
     error.setAttribute("role", "alert");
@@ -409,7 +409,7 @@ function renderEditForm(
     if (operation === "merge") control("reason", copy.changeReason, textArea(editing.form.reason), copy.editHelp.changeReason);
   }
 
-  const actions = element("div", "taskmate-source-candidate-edit-actions", form);
+  const actions = element("div", "taskmate-import-candidate-edit-actions", form);
   const save = element("button", "mod-cta", actions);
   save.type = "submit";
   save.textContent = copy.save;
@@ -417,7 +417,7 @@ function renderEditForm(
 }
 
 function editField(form: HTMLElement, id: string, label: string, control: HTMLElement, help?: string, error?: string): void {
-  const wrapper = element("div", "taskmate-source-candidate-edit-field", form);
+  const wrapper = element("div", "taskmate-import-candidate-edit-field", form);
   const caption = element("label", "", wrapper);
   caption.htmlFor = id;
   caption.textContent = label;
@@ -425,12 +425,12 @@ function editField(form: HTMLElement, id: string, label: string, control: HTMLEl
   wrapper.append(control);
   const describedBy: string[] = [];
   if (help) {
-    const note = text(wrapper, "p", help, "taskmate-source-candidate-edit-help");
+    const note = text(wrapper, "p", help, "taskmate-import-candidate-edit-help");
     note.id = `${id}-help`;
     describedBy.push(note.id);
   }
   if (error) {
-    const message = text(wrapper, "p", error, "taskmate-source-candidate-edit-error");
+    const message = text(wrapper, "p", error, "taskmate-import-candidate-edit-error");
     message.id = `${id}-error`;
     describedBy.push(message.id);
     control.setAttribute("aria-invalid", "true");
@@ -468,7 +468,7 @@ function required<Control extends HTMLElement>(control: Control): Control {
   return control;
 }
 
-function projectName(id: string, projects: readonly SourceReviewProject[]): string {
+function projectName(id: string, projects: readonly ImportReviewProject[]): string {
   return projects.find((project) => project.id === id)?.name ?? id;
 }
 

@@ -957,8 +957,8 @@ var en = {
   "reviews.none": "No pending reviews",
   "reviews.historyNone": "No review history",
   "reviews.kind.taskChange": "Task changes",
-  "reviews.kind.sourceCandidate": "Source candidates",
-  "reviews.openAria": "Open {kind} review {id}",
+  "reviews.kind.import": "Imports",
+  "reviews.openAria": "Open {id} ({kind})",
   "reviews.notOpen": "No review is open.",
   "reviews.invalidTitle": "Files that could not be read",
   "reviews.invalid.unreadableJson": "not valid review JSON",
@@ -993,79 +993,79 @@ var en = {
   "review.noSelection": "Select at least one change",
   "review.invalid": "This proposal is missing or invalid",
   "review.invalidLink": "The TaskMate review link is invalid",
-  "sourceReview.title": "Review Source candidates",
-  "sourceReview.summary": "{candidates} candidates, {applied} applied",
-  "sourceReview.status.pending": "Pending",
-  "sourceReview.status.ready": "Ready to apply",
-  "sourceReview.status.partial": "Partially applied",
-  "sourceReview.status.applied": "Applied",
-  "sourceReview.status.history": "In history",
-  "sourceReview.health.stale": "Stale",
-  "sourceReview.health.failed": "Failed",
-  "sourceReview.operation.create": "Create Task",
-  "sourceReview.operation.merge": "Merge into Task",
-  "sourceReview.operation.exclude": "Exclude",
-  "sourceReview.decision.approved": "Approved",
-  "sourceReview.decision.hold": "On hold",
-  "sourceReview.decision.pending": "Undecided",
-  "sourceReview.decide.create": "Create",
-  "sourceReview.decide.merge": "Merge",
-  "sourceReview.decide.exclude": "Exclude",
-  "sourceReview.decide.hold": "Hold",
-  "sourceReview.decide.pending": "Undecide",
-  "sourceReview.decideAria": "{action} {candidate}",
-  "sourceReview.decisionGroupAria": "Decision for {candidate}",
-  "sourceReview.sources": "Sources",
-  "sourceReview.conversation": "Conversation {id}",
-  "sourceReview.field.title": "Title",
-  "sourceReview.field.date": "Date",
-  "sourceReview.field.priority": "Priority",
-  "sourceReview.field.labels": "Labels",
-  "sourceReview.field.project": "Project",
-  "sourceReview.field.steps": "Steps",
-  "sourceReview.field.notes": "Notes",
-  "sourceReview.empty": "None",
-  "sourceReview.mergeTarget": "Merge into {title}",
-  "sourceReview.showDiff": "Show diff",
-  "sourceReview.hideDiff": "Hide diff",
-  "sourceReview.diffAria": "Unified diff for {candidate}",
-  "sourceReview.exclusionReason": "Reason",
-  "sourceReview.applied": "Applied",
-  "sourceReview.openApply": "Apply decisions\u2026",
-  "sourceReview.applyTitle": "Apply approved candidates",
-  "sourceReview.applyCounts": "{create} create, {merge} merge, {exclude} exclude",
-  "sourceReview.nothingToApply": "Approve at least one candidate first",
-  "sourceReview.blockedTitle": "Not applied now",
-  "sourceReview.blocked.stale": "its Source or target changed",
-  "sourceReview.blocked.held": "on hold",
-  "sourceReview.blocked.undecided": "undecided",
-  "sourceReview.blocked.outdated": "edited after its decision",
-  "sourceReview.unviewedTitle": "Merges whose diff you have not opened",
-  "sourceReview.acknowledge": "Apply these {count} merges without viewing their diffs",
-  "sourceReview.confirm": "Apply",
-  "sourceReview.cancel": "Cancel",
-  "sourceReview.edit": "Edit",
-  "sourceReview.editAria": "Edit {candidate}",
-  "sourceReview.finishEditFirst": "Save or cancel the open edit first",
-  "sourceReview.editOperation": "Operation",
-  "sourceReview.changeReason": "Reason for the change (optional)",
-  "sourceReview.editHelp.labels": "Separate labels with commas",
-  "sourceReview.editHelp.steps": "One Step per line",
-  "sourceReview.editHelp.changeReason": "Shown with each field you changed. If left empty, \u201CEdited in TaskMate\u201D is recorded.",
-  "sourceReview.editedReason": "Edited in TaskMate",
-  "sourceReview.editHelp.noMergeTarget": "Merging into another Task needs a new review from Task Pilot",
-  "sourceReview.editError.required": "Enter a value",
-  "sourceReview.editError.invalidDate": "Enter a date as YYYY-MM-DD",
-  "sourceReview.editError.noChange": "This merge would not change the Task. Change a field or exclude the candidate.",
-  "sourceReview.editConflict": "This candidate changed after you started editing. Cancel and edit it again.",
-  "sourceReview.save": "Save",
-  "sourceReview.result": "Applied {applied}, failed {failed}, stale {stale}.",
-  "sourceReview.provenanceChanged": "{count} notes changed after review, so their import record was not written.",
-  "sourceReview.provenanceFailed": "Could not record the import on {count} notes; it will be retried on the next apply.",
-  "sourceReview.archived": "The review is complete and moved to history.",
-  "sourceReview.actionFailed": "Could not update the Source candidate review: {error}",
-  "sourceReview.invalid": "This Source candidate review is missing or invalid",
-  "sourceReview.invalidLink": "The Source candidate review link is invalid",
+  "importReview.title": "Import review",
+  "importReview.summary": "{candidates} candidates, {applied} applied",
+  "importReview.status.pending": "Pending",
+  "importReview.status.ready": "Ready to apply",
+  "importReview.status.partial": "Partially applied",
+  "importReview.status.applied": "Applied",
+  "importReview.status.history": "In history",
+  "importReview.health.stale": "Stale",
+  "importReview.health.failed": "Failed",
+  "importReview.operation.create": "Create Task",
+  "importReview.operation.merge": "Merge into Task",
+  "importReview.operation.exclude": "Exclude",
+  "importReview.decision.approved": "Approved",
+  "importReview.decision.hold": "On hold",
+  "importReview.decision.pending": "Undecided",
+  "importReview.decide.create": "Create",
+  "importReview.decide.merge": "Merge",
+  "importReview.decide.exclude": "Exclude",
+  "importReview.decide.hold": "Hold",
+  "importReview.decide.pending": "Undecide",
+  "importReview.decideAria": "{action} {candidate}",
+  "importReview.decisionGroupAria": "Decision for {candidate}",
+  "importReview.sources": "Sources",
+  "importReview.conversation": "Conversation {id}",
+  "importReview.field.title": "Title",
+  "importReview.field.date": "Date",
+  "importReview.field.priority": "Priority",
+  "importReview.field.labels": "Labels",
+  "importReview.field.project": "Project",
+  "importReview.field.steps": "Steps",
+  "importReview.field.notes": "Notes",
+  "importReview.empty": "None",
+  "importReview.mergeTarget": "Merge into {title}",
+  "importReview.showDiff": "Show diff",
+  "importReview.hideDiff": "Hide diff",
+  "importReview.diffAria": "Unified diff for {candidate}",
+  "importReview.exclusionReason": "Reason",
+  "importReview.applied": "Applied",
+  "importReview.openApply": "Apply decisions\u2026",
+  "importReview.applyTitle": "Apply approved candidates",
+  "importReview.applyCounts": "{create} create, {merge} merge, {exclude} exclude",
+  "importReview.nothingToApply": "Approve at least one candidate first",
+  "importReview.blockedTitle": "Not applied now",
+  "importReview.blocked.stale": "its Source or target changed",
+  "importReview.blocked.held": "on hold",
+  "importReview.blocked.undecided": "undecided",
+  "importReview.blocked.outdated": "edited after its decision",
+  "importReview.unviewedTitle": "Merges whose diff you have not opened",
+  "importReview.acknowledge": "Apply these {count} merges without viewing their diffs",
+  "importReview.confirm": "Apply",
+  "importReview.cancel": "Cancel",
+  "importReview.edit": "Edit",
+  "importReview.editAria": "Edit {candidate}",
+  "importReview.finishEditFirst": "Save or cancel the open edit first",
+  "importReview.editOperation": "Operation",
+  "importReview.changeReason": "Reason for the change (optional)",
+  "importReview.editHelp.labels": "Separate labels with commas",
+  "importReview.editHelp.steps": "One Step per line",
+  "importReview.editHelp.changeReason": "Shown with each field you changed. If left empty, \u201CEdited in TaskMate\u201D is recorded.",
+  "importReview.editedReason": "Edited in TaskMate",
+  "importReview.editHelp.noMergeTarget": "Merging into another Task needs a new review from Task Pilot",
+  "importReview.editError.required": "Enter a value",
+  "importReview.editError.invalidDate": "Enter a date as YYYY-MM-DD",
+  "importReview.editError.noChange": "This merge would not change the Task. Change a field or exclude the candidate.",
+  "importReview.editConflict": "This candidate changed after you started editing. Cancel and edit it again.",
+  "importReview.save": "Save",
+  "importReview.result": "Applied {applied}, failed {failed}, stale {stale}.",
+  "importReview.provenanceChanged": "{count} notes changed after review, so their import record was not written.",
+  "importReview.provenanceFailed": "Could not record the import on {count} notes; it will be retried on the next apply.",
+  "importReview.archived": "The review is complete and moved to history.",
+  "importReview.actionFailed": "Could not update the import review: {error}",
+  "importReview.invalid": "This import review is missing or invalid",
+  "importReview.invalidLink": "The import review link is invalid",
   "search.title": "Search",
   "search.placeholder": "Search tasks, labels, and projects",
   "search.ariaLabel": "Search tasks",
@@ -1287,8 +1287,8 @@ var ja = {
   "reviews.none": "\u672A\u30EC\u30D3\u30E5\u30FC\u306E\u3082\u306E\u306F\u3042\u308A\u307E\u305B\u3093",
   "reviews.historyNone": "\u30EC\u30D3\u30E5\u30FC\u306E\u5C65\u6B74\u306F\u3042\u308A\u307E\u305B\u3093",
   "reviews.kind.taskChange": "Task\u5909\u66F4",
-  "reviews.kind.sourceCandidate": "Source\u5019\u88DC",
-  "reviews.openAria": "{kind}\u306E\u30EC\u30D3\u30E5\u30FC{id}\u3092\u958B\u304F",
+  "reviews.kind.import": "\u53D6\u308A\u8FBC\u307F",
+  "reviews.openAria": "{id}\uFF08{kind}\uFF09\u3092\u958B\u304F",
   "reviews.notOpen": "\u958B\u3044\u3066\u3044\u308B\u30EC\u30D3\u30E5\u30FC\u306F\u3042\u308A\u307E\u305B\u3093\u3002",
   "reviews.invalidTitle": "\u8AAD\u3081\u306A\u3044\u30D5\u30A1\u30A4\u30EB",
   "reviews.invalid.unreadableJson": "\u30EC\u30D3\u30E5\u30FC\u306EJSON\u3068\u3057\u3066\u8AAD\u3081\u307E\u305B\u3093",
@@ -1323,79 +1323,79 @@ var ja = {
   "review.noSelection": "\u5909\u66F4\u30921\u4EF6\u4EE5\u4E0A\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044",
   "review.invalid": "Proposal\u304C\u898B\u3064\u304B\u3089\u306A\u3044\u304B\u3001\u5F62\u5F0F\u304C\u6B63\u3057\u304F\u3042\u308A\u307E\u305B\u3093",
   "review.invalidLink": "TaskMate\u306E\u30EC\u30D3\u30E5\u30FC\u30EA\u30F3\u30AF\u304C\u6B63\u3057\u304F\u3042\u308A\u307E\u305B\u3093",
-  "sourceReview.title": "Source\u5019\u88DC\u3092\u30EC\u30D3\u30E5\u30FC",
-  "sourceReview.summary": "\u5019\u88DC{candidates}\u4EF6\u3001\u53CD\u6620\u6E08\u307F{applied}\u4EF6",
-  "sourceReview.status.pending": "\u672A\u6C7A\u3042\u308A",
-  "sourceReview.status.ready": "\u53CD\u6620\u3067\u304D\u307E\u3059",
-  "sourceReview.status.partial": "\u4E00\u90E8\u53CD\u6620\u6E08\u307F",
-  "sourceReview.status.applied": "\u53CD\u6620\u6E08\u307F",
-  "sourceReview.status.history": "\u5C65\u6B74",
-  "sourceReview.health.stale": "\u53E4\u304F\u306A\u3063\u3066\u3044\u307E\u3059",
-  "sourceReview.health.failed": "\u5931\u6557",
-  "sourceReview.operation.create": "Task\u3092\u4F5C\u6210",
-  "sourceReview.operation.merge": "Task\u3078\u7D71\u5408",
-  "sourceReview.operation.exclude": "\u9664\u5916",
-  "sourceReview.decision.approved": "\u627F\u8A8D\u6E08\u307F",
-  "sourceReview.decision.hold": "\u4FDD\u7559",
-  "sourceReview.decision.pending": "\u672A\u6C7A",
-  "sourceReview.decide.create": "\u4F5C\u6210\u3059\u308B",
-  "sourceReview.decide.merge": "\u7D71\u5408\u3059\u308B",
-  "sourceReview.decide.exclude": "\u9664\u5916\u3059\u308B",
-  "sourceReview.decide.hold": "\u4FDD\u7559\u3059\u308B",
-  "sourceReview.decide.pending": "\u672A\u6C7A\u306B\u623B\u3059",
-  "sourceReview.decideAria": "{candidate}\u3092{action}",
-  "sourceReview.decisionGroupAria": "{candidate}\u306E\u5224\u65AD",
-  "sourceReview.sources": "Source",
-  "sourceReview.conversation": "\u4F1A\u8A71 {id}",
-  "sourceReview.field.title": "\u30BF\u30A4\u30C8\u30EB",
-  "sourceReview.field.date": "\u65E5\u4ED8",
-  "sourceReview.field.priority": "\u512A\u5148\u5EA6",
-  "sourceReview.field.labels": "\u30E9\u30D9\u30EB",
-  "sourceReview.field.project": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8",
-  "sourceReview.field.steps": "Steps",
-  "sourceReview.field.notes": "Notes",
-  "sourceReview.empty": "\u306A\u3057",
-  "sourceReview.mergeTarget": "{title}\u3078\u7D71\u5408",
-  "sourceReview.showDiff": "\u5DEE\u5206\u3092\u8868\u793A",
-  "sourceReview.hideDiff": "\u5DEE\u5206\u3092\u96A0\u3059",
-  "sourceReview.diffAria": "{candidate}\u306E\u5DEE\u5206",
-  "sourceReview.exclusionReason": "\u7406\u7531",
-  "sourceReview.applied": "\u53CD\u6620\u6E08\u307F",
-  "sourceReview.openApply": "\u5224\u65AD\u3092\u53CD\u6620\u2026",
-  "sourceReview.applyTitle": "\u627F\u8A8D\u3057\u305F\u5019\u88DC\u3092\u53CD\u6620",
-  "sourceReview.applyCounts": "\u4F5C\u6210{create}\u4EF6\u3001\u7D71\u5408{merge}\u4EF6\u3001\u9664\u5916{exclude}\u4EF6",
-  "sourceReview.nothingToApply": "\u5148\u306B1\u4EF6\u4EE5\u4E0A\u306E\u5019\u88DC\u3092\u627F\u8A8D\u3057\u3066\u304F\u3060\u3055\u3044",
-  "sourceReview.blockedTitle": "\u4ECA\u56DE\u306F\u53CD\u6620\u3057\u306A\u3044\u3082\u306E",
-  "sourceReview.blocked.stale": "Source\u307E\u305F\u306F\u7D71\u5408\u5148\u304C\u5909\u308F\u308A\u307E\u3057\u305F",
-  "sourceReview.blocked.held": "\u4FDD\u7559\u4E2D",
-  "sourceReview.blocked.undecided": "\u672A\u6C7A",
-  "sourceReview.blocked.outdated": "\u5224\u65AD\u306E\u5F8C\u306B\u7DE8\u96C6\u3055\u308C\u307E\u3057\u305F",
-  "sourceReview.unviewedTitle": "\u5DEE\u5206\u3092\u958B\u3044\u3066\u3044\u306A\u3044\u7D71\u5408",
-  "sourceReview.acknowledge": "\u5DEE\u5206\u3092\u898B\u305A\u306B\u3053\u306E{count}\u4EF6\u306E\u7D71\u5408\u3092\u53CD\u6620\u3059\u308B",
-  "sourceReview.confirm": "\u53CD\u6620\u3059\u308B",
-  "sourceReview.cancel": "\u30AD\u30E3\u30F3\u30BB\u30EB",
-  "sourceReview.edit": "\u7DE8\u96C6",
-  "sourceReview.editAria": "{candidate}\u3092\u7DE8\u96C6",
-  "sourceReview.finishEditFirst": "\u5148\u306B\u958B\u3044\u3066\u3044\u308B\u7DE8\u96C6\u3092\u4FDD\u5B58\u3059\u308B\u304B\u30AD\u30E3\u30F3\u30BB\u30EB\u3057\u3066\u304F\u3060\u3055\u3044",
-  "sourceReview.editOperation": "\u64CD\u4F5C",
-  "sourceReview.changeReason": "\u5909\u66F4\u306E\u7406\u7531\uFF08\u4EFB\u610F\uFF09",
-  "sourceReview.editHelp.labels": "\u30E9\u30D9\u30EB\u306F\u30AB\u30F3\u30DE\u3067\u533A\u5207\u308A\u307E\u3059",
-  "sourceReview.editHelp.steps": "1\u884C\u306B1\u3064\u306EStep",
-  "sourceReview.editHelp.changeReason": "\u5909\u3048\u305F\u9805\u76EE\u3054\u3068\u306B\u8868\u793A\u3055\u308C\u307E\u3059\u3002\u7A7A\u6B04\u306A\u3089\u300CTaskMate\u3067\u7DE8\u96C6\u300D\u3068\u8A18\u9332\u3057\u307E\u3059\u3002",
-  "sourceReview.editedReason": "TaskMate\u3067\u7DE8\u96C6",
-  "sourceReview.editHelp.noMergeTarget": "\u5225\u306ETask\u3078\u7D71\u5408\u3059\u308B\u306B\u306F\u3001Task Pilot\u3067\u30EC\u30D3\u30E5\u30FC\u3092\u4F5C\u308A\u76F4\u3057\u3066\u304F\u3060\u3055\u3044",
-  "sourceReview.editError.required": "\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044",
-  "sourceReview.editError.invalidDate": "\u65E5\u4ED8\u306FYYYY-MM-DD\u3067\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044",
-  "sourceReview.editError.noChange": "\u3053\u306E\u7D71\u5408\u3067\u306FTask\u304C\u5909\u308F\u308A\u307E\u305B\u3093\u3002\u9805\u76EE\u3092\u5909\u3048\u308B\u304B\u3001\u5019\u88DC\u3092\u9664\u5916\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
-  "sourceReview.editConflict": "\u7DE8\u96C6\u3092\u59CB\u3081\u305F\u5F8C\u306B\u3053\u306E\u5019\u88DC\u304C\u5909\u308F\u308A\u307E\u3057\u305F\u3002\u30AD\u30E3\u30F3\u30BB\u30EB\u3057\u3066\u3001\u3082\u3046\u4E00\u5EA6\u7DE8\u96C6\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
-  "sourceReview.save": "\u4FDD\u5B58",
-  "sourceReview.result": "\u53CD\u6620{applied}\u4EF6\u3001\u5931\u6557{failed}\u4EF6\u3001\u53E4\u304F\u306A\u3063\u305F\u3082\u306E{stale}\u4EF6\u3002",
-  "sourceReview.provenanceChanged": "{count}\u4EF6\u306E\u30CE\u30FC\u30C8\u306F\u30EC\u30D3\u30E5\u30FC\u5F8C\u306B\u5909\u66F4\u3055\u308C\u305F\u305F\u3081\u3001\u53D6\u308A\u8FBC\u307F\u5C65\u6B74\u3092\u66F8\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002",
-  "sourceReview.provenanceFailed": "{count}\u4EF6\u306E\u30CE\u30FC\u30C8\u306B\u53D6\u308A\u8FBC\u307F\u5C65\u6B74\u3092\u66F8\u3051\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u6B21\u306E\u53CD\u6620\u3067\u3082\u3046\u4E00\u5EA6\u66F8\u304D\u307E\u3059\u3002",
-  "sourceReview.archived": "\u30EC\u30D3\u30E5\u30FC\u304C\u5B8C\u4E86\u3057\u3001\u5C65\u6B74\u3078\u79FB\u3057\u307E\u3057\u305F\u3002",
-  "sourceReview.actionFailed": "Source\u5019\u88DC\u30EC\u30D3\u30E5\u30FC\u3092\u66F4\u65B0\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\uFF1A{error}",
-  "sourceReview.invalid": "\u3053\u306ESource\u5019\u88DC\u30EC\u30D3\u30E5\u30FC\u306F\u898B\u3064\u304B\u3089\u306A\u3044\u304B\u6B63\u3057\u304F\u3042\u308A\u307E\u305B\u3093",
-  "sourceReview.invalidLink": "Source\u5019\u88DC\u30EC\u30D3\u30E5\u30FC\u306E\u30EA\u30F3\u30AF\u304C\u6B63\u3057\u304F\u3042\u308A\u307E\u305B\u3093",
+  "importReview.title": "\u53D6\u308A\u8FBC\u307F\u30EC\u30D3\u30E5\u30FC",
+  "importReview.summary": "\u5019\u88DC{candidates}\u4EF6\u3001\u53CD\u6620\u6E08\u307F{applied}\u4EF6",
+  "importReview.status.pending": "\u672A\u6C7A\u3042\u308A",
+  "importReview.status.ready": "\u53CD\u6620\u3067\u304D\u307E\u3059",
+  "importReview.status.partial": "\u4E00\u90E8\u53CD\u6620\u6E08\u307F",
+  "importReview.status.applied": "\u53CD\u6620\u6E08\u307F",
+  "importReview.status.history": "\u5C65\u6B74",
+  "importReview.health.stale": "\u53E4\u304F\u306A\u3063\u3066\u3044\u307E\u3059",
+  "importReview.health.failed": "\u5931\u6557",
+  "importReview.operation.create": "Task\u3092\u4F5C\u6210",
+  "importReview.operation.merge": "Task\u3078\u7D71\u5408",
+  "importReview.operation.exclude": "\u9664\u5916",
+  "importReview.decision.approved": "\u627F\u8A8D\u6E08\u307F",
+  "importReview.decision.hold": "\u4FDD\u7559",
+  "importReview.decision.pending": "\u672A\u6C7A",
+  "importReview.decide.create": "\u4F5C\u6210\u3059\u308B",
+  "importReview.decide.merge": "\u7D71\u5408\u3059\u308B",
+  "importReview.decide.exclude": "\u9664\u5916\u3059\u308B",
+  "importReview.decide.hold": "\u4FDD\u7559\u3059\u308B",
+  "importReview.decide.pending": "\u672A\u6C7A\u306B\u623B\u3059",
+  "importReview.decideAria": "{candidate}\u3092{action}",
+  "importReview.decisionGroupAria": "{candidate}\u306E\u5224\u65AD",
+  "importReview.sources": "Source",
+  "importReview.conversation": "\u4F1A\u8A71 {id}",
+  "importReview.field.title": "\u30BF\u30A4\u30C8\u30EB",
+  "importReview.field.date": "\u65E5\u4ED8",
+  "importReview.field.priority": "\u512A\u5148\u5EA6",
+  "importReview.field.labels": "\u30E9\u30D9\u30EB",
+  "importReview.field.project": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8",
+  "importReview.field.steps": "Steps",
+  "importReview.field.notes": "Notes",
+  "importReview.empty": "\u306A\u3057",
+  "importReview.mergeTarget": "{title}\u3078\u7D71\u5408",
+  "importReview.showDiff": "\u5DEE\u5206\u3092\u8868\u793A",
+  "importReview.hideDiff": "\u5DEE\u5206\u3092\u96A0\u3059",
+  "importReview.diffAria": "{candidate}\u306E\u5DEE\u5206",
+  "importReview.exclusionReason": "\u7406\u7531",
+  "importReview.applied": "\u53CD\u6620\u6E08\u307F",
+  "importReview.openApply": "\u5224\u65AD\u3092\u53CD\u6620\u2026",
+  "importReview.applyTitle": "\u627F\u8A8D\u3057\u305F\u5019\u88DC\u3092\u53CD\u6620",
+  "importReview.applyCounts": "\u4F5C\u6210{create}\u4EF6\u3001\u7D71\u5408{merge}\u4EF6\u3001\u9664\u5916{exclude}\u4EF6",
+  "importReview.nothingToApply": "\u5148\u306B1\u4EF6\u4EE5\u4E0A\u306E\u5019\u88DC\u3092\u627F\u8A8D\u3057\u3066\u304F\u3060\u3055\u3044",
+  "importReview.blockedTitle": "\u4ECA\u56DE\u306F\u53CD\u6620\u3057\u306A\u3044\u3082\u306E",
+  "importReview.blocked.stale": "Source\u307E\u305F\u306F\u7D71\u5408\u5148\u304C\u5909\u308F\u308A\u307E\u3057\u305F",
+  "importReview.blocked.held": "\u4FDD\u7559\u4E2D",
+  "importReview.blocked.undecided": "\u672A\u6C7A",
+  "importReview.blocked.outdated": "\u5224\u65AD\u306E\u5F8C\u306B\u7DE8\u96C6\u3055\u308C\u307E\u3057\u305F",
+  "importReview.unviewedTitle": "\u5DEE\u5206\u3092\u958B\u3044\u3066\u3044\u306A\u3044\u7D71\u5408",
+  "importReview.acknowledge": "\u5DEE\u5206\u3092\u898B\u305A\u306B\u3053\u306E{count}\u4EF6\u306E\u7D71\u5408\u3092\u53CD\u6620\u3059\u308B",
+  "importReview.confirm": "\u53CD\u6620\u3059\u308B",
+  "importReview.cancel": "\u30AD\u30E3\u30F3\u30BB\u30EB",
+  "importReview.edit": "\u7DE8\u96C6",
+  "importReview.editAria": "{candidate}\u3092\u7DE8\u96C6",
+  "importReview.finishEditFirst": "\u5148\u306B\u958B\u3044\u3066\u3044\u308B\u7DE8\u96C6\u3092\u4FDD\u5B58\u3059\u308B\u304B\u30AD\u30E3\u30F3\u30BB\u30EB\u3057\u3066\u304F\u3060\u3055\u3044",
+  "importReview.editOperation": "\u64CD\u4F5C",
+  "importReview.changeReason": "\u5909\u66F4\u306E\u7406\u7531\uFF08\u4EFB\u610F\uFF09",
+  "importReview.editHelp.labels": "\u30E9\u30D9\u30EB\u306F\u30AB\u30F3\u30DE\u3067\u533A\u5207\u308A\u307E\u3059",
+  "importReview.editHelp.steps": "1\u884C\u306B1\u3064\u306EStep",
+  "importReview.editHelp.changeReason": "\u5909\u3048\u305F\u9805\u76EE\u3054\u3068\u306B\u8868\u793A\u3055\u308C\u307E\u3059\u3002\u7A7A\u6B04\u306A\u3089\u300CTaskMate\u3067\u7DE8\u96C6\u300D\u3068\u8A18\u9332\u3057\u307E\u3059\u3002",
+  "importReview.editedReason": "TaskMate\u3067\u7DE8\u96C6",
+  "importReview.editHelp.noMergeTarget": "\u5225\u306ETask\u3078\u7D71\u5408\u3059\u308B\u306B\u306F\u3001Task Pilot\u3067\u30EC\u30D3\u30E5\u30FC\u3092\u4F5C\u308A\u76F4\u3057\u3066\u304F\u3060\u3055\u3044",
+  "importReview.editError.required": "\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044",
+  "importReview.editError.invalidDate": "\u65E5\u4ED8\u306FYYYY-MM-DD\u3067\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044",
+  "importReview.editError.noChange": "\u3053\u306E\u7D71\u5408\u3067\u306FTask\u304C\u5909\u308F\u308A\u307E\u305B\u3093\u3002\u9805\u76EE\u3092\u5909\u3048\u308B\u304B\u3001\u5019\u88DC\u3092\u9664\u5916\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
+  "importReview.editConflict": "\u7DE8\u96C6\u3092\u59CB\u3081\u305F\u5F8C\u306B\u3053\u306E\u5019\u88DC\u304C\u5909\u308F\u308A\u307E\u3057\u305F\u3002\u30AD\u30E3\u30F3\u30BB\u30EB\u3057\u3066\u3001\u3082\u3046\u4E00\u5EA6\u7DE8\u96C6\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
+  "importReview.save": "\u4FDD\u5B58",
+  "importReview.result": "\u53CD\u6620{applied}\u4EF6\u3001\u5931\u6557{failed}\u4EF6\u3001\u53E4\u304F\u306A\u3063\u305F\u3082\u306E{stale}\u4EF6\u3002",
+  "importReview.provenanceChanged": "{count}\u4EF6\u306E\u30CE\u30FC\u30C8\u306F\u30EC\u30D3\u30E5\u30FC\u5F8C\u306B\u5909\u66F4\u3055\u308C\u305F\u305F\u3081\u3001\u53D6\u308A\u8FBC\u307F\u5C65\u6B74\u3092\u66F8\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002",
+  "importReview.provenanceFailed": "{count}\u4EF6\u306E\u30CE\u30FC\u30C8\u306B\u53D6\u308A\u8FBC\u307F\u5C65\u6B74\u3092\u66F8\u3051\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u6B21\u306E\u53CD\u6620\u3067\u3082\u3046\u4E00\u5EA6\u66F8\u304D\u307E\u3059\u3002",
+  "importReview.archived": "\u30EC\u30D3\u30E5\u30FC\u304C\u5B8C\u4E86\u3057\u3001\u5C65\u6B74\u3078\u79FB\u3057\u307E\u3057\u305F\u3002",
+  "importReview.actionFailed": "\u53D6\u308A\u8FBC\u307F\u30EC\u30D3\u30E5\u30FC\u3092\u66F4\u65B0\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\uFF1A{error}",
+  "importReview.invalid": "\u3053\u306E\u53D6\u308A\u8FBC\u307F\u30EC\u30D3\u30E5\u30FC\u306F\u898B\u3064\u304B\u3089\u306A\u3044\u304B\u6B63\u3057\u304F\u3042\u308A\u307E\u305B\u3093",
+  "importReview.invalidLink": "\u53D6\u308A\u8FBC\u307F\u30EC\u30D3\u30E5\u30FC\u306E\u30EA\u30F3\u30AF\u304C\u6B63\u3057\u304F\u3042\u308A\u307E\u305B\u3093",
   "search.title": "\u691C\u7D22",
   "search.placeholder": "\u30BF\u30B9\u30AF\u3001\u30E9\u30D9\u30EB\u3001\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3092\u691C\u7D22",
   "search.ariaLabel": "\u30BF\u30B9\u30AF\u3092\u691C\u7D22",
@@ -7988,17 +7988,17 @@ function reviewCopy(plugin) {
   };
 }
 
-// src/reviews/source-candidate/review-repository.ts
+// src/reviews/import/review-repository.ts
 var import_obsidian17 = require("obsidian");
 
-// src/reviews/source-candidate/proposal.ts
+// src/reviews/import/proposal.ts
 var SCHEMA_VERSION = 1;
 var DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 var DATE = /^\d{4}-\d{2}-\d{2}$/;
 var SHA256 = /^[a-f0-9]{64}$/;
 var MERGE_FIELDS = ["title", "date", "priority", "labels", "project", "steps", "notes"];
 var IMMUTABLE_TASK_FIELDS = ["id", "completed", "rank", "createdAt", "completedAt", "sourceNote", "stepSectionRemainder"];
-function parseSourceCandidateProposal(content) {
+function parseImportReview(content) {
   const value = JSON.parse(content);
   validateProposal(value);
   return value;
@@ -8271,8 +8271,8 @@ function validateProposal(value) {
   const proposal = record(value, "Proposal");
   allowOnly(proposal, ["schemaVersion", "reviewId", "reviewType", "status", "health", "revision", "createdAt", "updatedAt", "archivedAt", "sources", "candidates"], "Proposal");
   if (proposal.schemaVersion !== SCHEMA_VERSION) invalid("schemaVersion", "must be 1");
-  if (typeof proposal.reviewId !== "string" || !/^source-review-[A-Za-z0-9._-]+$/.test(proposal.reviewId)) invalid("reviewId", "must start with source-review-");
-  if (proposal.reviewType !== "source-candidate") invalid("reviewType", "must be source-candidate");
+  if (typeof proposal.reviewId !== "string" || !/^import-review-[A-Za-z0-9._-]+$/.test(proposal.reviewId)) invalid("reviewId", "must start with import-review-");
+  if (proposal.reviewType !== "import") invalid("reviewType", "must be import");
   oneOf(proposal.status, ["pending", "ready-to-apply", "partially-applied", "applied", "history"], "status");
   oneOf(proposal.health, ["ok", "stale", "failed"], "health");
   positiveInteger(proposal.revision, "revision");
@@ -8334,7 +8334,7 @@ function validateSource(value, path) {
 function validateCandidate(value, path) {
   const candidate = record(value, path);
   allowOnly(candidate, ["id", "revision", "originalOperation", "operation", "title", "sourceRefs", "taskDraft", "mergeTarget", "exclusionReason", "decision", "decisionRevision", "decidedAt", "diffViewedRevision", "health", "healthReason", "application"], path);
-  pattern(candidate.id, /^SC-[0-9]{2,}$/, `${path}.id`);
+  pattern(candidate.id, /^IC-[0-9]{2,}$/, `${path}.id`);
   positiveInteger(candidate.revision, `${path}.revision`);
   oneOf(candidate.originalOperation, ["create", "merge", "exclude"], `${path}.originalOperation`);
   oneOf(candidate.operation, ["create", "merge", "exclude"], `${path}.operation`);
@@ -8456,10 +8456,10 @@ function isStringArray(value) {
   return Array.isArray(value) && value.every((item) => typeof item === "string");
 }
 function invalid(path, message) {
-  throw new Error(`Source candidate Proposal ${path} ${message}`);
+  throw new Error(`Import review ${path} ${message}`);
 }
 
-// src/reviews/source-candidate/source-note-provenance.ts
+// src/reviews/import/source-note-provenance.ts
 var FRONTMATTER3 = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
 var LINE_BREAK = /\r\n|[\n\r\v\f\x1c\x1d\x1e\x85\u2028\u2029]/;
 var IMPORT_KEYS = /* @__PURE__ */ new Set(["taskmate-import-status", "taskmate-imported-at", "taskmate-imported-hash", "taskmate-task-ids"]);
@@ -8563,9 +8563,9 @@ function scalar2(raw) {
   return value;
 }
 
-// src/reviews/source-candidate/review-repository.ts
-var REVIEW_ID = /^source-review-[A-Za-z0-9._-]+$/;
-var SourceCandidateReviewRepository = class {
+// src/reviews/import/review-repository.ts
+var REVIEW_ID = /^import-review-[A-Za-z0-9._-]+$/;
+var ImportReviewRepository = class {
   constructor(app, proposalFolder, tasks) {
     this.app = app;
     this.proposalFolder = proposalFolder;
@@ -8579,8 +8579,8 @@ var SourceCandidateReviewRepository = class {
   }
   async load(reviewId) {
     const file = this.reviewFile(reviewId) ?? this.historyFile(reviewId);
-    if (!file) throw new Error(`Source candidate review not found: ${reviewId}`);
-    return parseSourceCandidateProposal(await this.app.vault.read(file));
+    if (!file) throw new Error(`Import review not found: ${reviewId}`);
+    return parseImportReview(await this.app.vault.read(file));
   }
   async save(review) {
     if (review.status === "history") throw new Error(`Review ${review.reviewId} is archived`);
@@ -8594,7 +8594,7 @@ var SourceCandidateReviewRepository = class {
   }
   async formalApply(reviewId, options) {
     const now = options.now ?? (() => (/* @__PURE__ */ new Date()).toISOString());
-    if (!this.reviewFile(reviewId)) throw new Error(`Pending Source candidate review not found: ${reviewId}`);
+    if (!this.reviewFile(reviewId)) throw new Error(`Pending Import review not found: ${reviewId}`);
     let review = await this.load(reviewId);
     const result = {
       review,
@@ -8711,36 +8711,36 @@ var SourceCandidateReviewRepository = class {
     const summaries = [];
     for (const file of files) {
       try {
-        const review = parseSourceCandidateProposal(await this.app.vault.read(file));
+        const review = parseImportReview(await this.app.vault.read(file));
         if (keep(review)) summaries.push(summarize2(review));
       } catch (error) {
-        console.error(`TaskMate ignored malformed Source candidate review ${file.path}`, error);
+        console.error(`TaskMate ignored malformed Import review ${file.path}`, error);
       }
     }
     return summaries.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
   }
   async archive(review) {
     const source = this.reviewFile(review.reviewId);
-    if (!source) throw new Error(`Source candidate review not found: ${review.reviewId}`);
+    if (!source) throw new Error(`Import review not found: ${review.reviewId}`);
     await this.app.vault.modify(source, serialize(review));
     await this.ensureFolder(this.historyFolder());
     await this.app.fileManager.renameFile(source, (0, import_obsidian17.normalizePath)(`${this.historyFolder()}/${review.reviewId}.json`));
   }
   pendingFiles() {
-    const prefix = `${this.folder()}/source-review-`;
+    const prefix = `${this.folder()}/import-review-`;
     return this.app.vault.getFiles().filter((file) => file.path.startsWith(prefix) && file.extension === "json");
   }
   historyFiles() {
-    const prefix = `${this.historyFolder()}/source-review-`;
+    const prefix = `${this.historyFolder()}/import-review-`;
     return this.app.vault.getFiles().filter((file) => file.path.startsWith(prefix) && file.extension === "json");
   }
   reviewFile(reviewId) {
-    if (!REVIEW_ID.test(reviewId)) throw new Error("Invalid Source candidate review id");
+    if (!REVIEW_ID.test(reviewId)) throw new Error("Invalid Import review id");
     const file = this.app.vault.getAbstractFileByPath((0, import_obsidian17.normalizePath)(`${this.folder()}/${reviewId}.json`));
     return file instanceof import_obsidian17.TFile ? file : null;
   }
   historyFile(reviewId) {
-    if (!REVIEW_ID.test(reviewId)) throw new Error("Invalid Source candidate review id");
+    if (!REVIEW_ID.test(reviewId)) throw new Error("Invalid Import review id");
     const file = this.app.vault.getAbstractFileByPath((0, import_obsidian17.normalizePath)(`${this.historyFolder()}/${reviewId}.json`));
     return file instanceof import_obsidian17.TFile ? file : null;
   }
@@ -8763,7 +8763,7 @@ function referencesSource(candidate, sourceId) {
   return candidate.sourceRefs.some((ref) => ref.sourceId === sourceId);
 }
 function serialize(review) {
-  return `${JSON.stringify(parseSourceCandidateProposal(JSON.stringify(review)), null, 2)}
+  return `${JSON.stringify(parseImportReview(JSON.stringify(review)), null, 2)}
 `;
 }
 function summarize2(review) {
@@ -8778,10 +8778,10 @@ function summarize2(review) {
   };
 }
 
-// src/reviews/source-candidate/review-view.ts
+// src/reviews/import/review-view.ts
 var import_obsidian18 = require("obsidian");
 
-// src/reviews/source-candidate/candidate-edit-form.ts
+// src/reviews/import/candidate-edit-form.ts
 var TASK_FIELDS = ["title", "date", "priority", "labels", "project", "steps", "notes"];
 var DATE2 = /^\d{4}-\d{2}-\d{2}$/;
 var CANDIDATE_EDIT_FIELDS = [...TASK_FIELDS, "reason", "exclusionReason"];
@@ -8888,21 +8888,21 @@ function sameValue3(left, right) {
   return JSON.stringify(left) === JSON.stringify(right);
 }
 
-// src/reviews/source-candidate/review-renderer.ts
-var OPERATION_ID = "taskmate-source-edit-operation";
-var FORM_ERROR_ID = "taskmate-source-edit-form-error";
-var OPEN_APPLY_ID = "taskmate-source-review-open-apply";
-var APPLY_TITLE_ID = "taskmate-source-review-apply-title";
+// src/reviews/import/review-renderer.ts
+var OPERATION_ID = "taskmate-import-edit-operation";
+var FORM_ERROR_ID = "taskmate-import-edit-form-error";
+var OPEN_APPLY_ID = "taskmate-import-review-open-apply";
+var APPLY_TITLE_ID = "taskmate-import-review-apply-title";
 function editFieldId(field) {
-  return `taskmate-source-edit-${field}`;
+  return `taskmate-import-edit-${field}`;
 }
 function editButtonId(candidateId) {
-  return `taskmate-source-candidate-edit-${candidateId}`;
+  return `taskmate-import-candidate-edit-${candidateId}`;
 }
-function createSourceReviewUiState() {
+function createImportReviewUiState() {
   return { expandedDiffs: /* @__PURE__ */ new Set(), applyOpen: false, acknowledged: false, editing: null, focus: null };
 }
-function reduceSourceReviewUiState(state, action) {
+function reduceImportReviewUiState(state, action) {
   switch (action.type) {
     case "toggle-diff": {
       const expandedDiffs = new Set(state.expandedDiffs);
@@ -8944,9 +8944,9 @@ function withField(form, field, value) {
   if (form.operation === "merge" && form.merge) return { ...form, merge: { ...form.merge, [field]: value } };
   return { ...form, draft: { ...form.draft, [field]: value } };
 }
-function renderSourceCandidateReview(container, review, plan, state, copy, dispatch, options = {}) {
+function renderImportReview(container, review, plan, state, copy, dispatch, options = {}) {
   container.replaceChildren();
-  container.classList.add("taskmate-review", "taskmate-source-review");
+  container.classList.add("taskmate-review", "taskmate-import-review");
   const header = element3("header", "taskmate-review-header", container);
   text2(header, "h2", copy.title);
   if (options.onBack) {
@@ -8954,7 +8954,7 @@ function renderSourceCandidateReview(container, review, plan, state, copy, dispa
     back.classList.add("taskmate-review-back");
     header.append(back);
   }
-  const summary = element3("p", "taskmate-source-review-summary", container);
+  const summary = element3("p", "taskmate-import-review-summary", container);
   summary.textContent = [review.reviewId, copy.status[review.status], review.health === "ok" ? "" : copy.health[review.health]].filter(Boolean).join(" \xB7 ");
   const list = element3("div", "taskmate-review-files", container);
   const projects = options.projects ?? [];
@@ -8963,27 +8963,27 @@ function renderSourceCandidateReview(container, review, plan, state, copy, dispa
   if (state.focus) container.querySelector(`[id="${state.focus}"]`)?.focus();
 }
 function renderCard(parent, review, candidate, state, copy, dispatch, readOnly, projects) {
-  const card = element3("section", "taskmate-review-file taskmate-source-candidate", parent);
-  card.id = `taskmate-source-candidate-${candidate.id}`;
+  const card = element3("section", "taskmate-review-file taskmate-import-candidate", parent);
+  card.id = `taskmate-import-candidate-${candidate.id}`;
   card.dataset.operation = candidate.operation;
   const head = element3("div", "taskmate-review-file-header", card);
   const identity = element3("div", "taskmate-review-file-identity", head);
   text2(identity, "span", candidate.id, "taskmate-review-id");
-  text2(identity, "span", copy.operation[candidate.operation], "taskmate-source-candidate-operation");
+  text2(identity, "span", copy.operation[candidate.operation], "taskmate-import-candidate-operation");
   text2(identity, "h3", candidate.title);
-  const status = element3("p", "taskmate-source-candidate-status", card);
+  const status = element3("p", "taskmate-import-candidate-status", card);
   const applied = candidate.application.status === "applied";
   status.textContent = [
     applied ? copy.applied : copy.decision[candidate.decision],
     candidate.health === "ok" ? "" : `${copy.health[candidate.health]}${candidate.healthReason ? `: ${candidate.healthReason}` : ""}`
   ].filter(Boolean).join(" \xB7 ");
   if (candidate.health !== "ok") status.classList.add(`is-${candidate.health}`);
-  const sources = element3("div", "taskmate-source-candidate-sources", card);
+  const sources = element3("div", "taskmate-import-candidate-sources", card);
   text2(sources, "h4", copy.sources);
   for (const ref of candidate.sourceRefs) {
     const source = review.sources.find((item) => item.id === ref.sourceId);
     const label = !source ? ref.sourceId : source.type === "note" ? source.path : copy.conversation(source.localSourceId);
-    const quote = element3("blockquote", "taskmate-source-candidate-statement", sources);
+    const quote = element3("blockquote", "taskmate-import-candidate-statement", sources);
     text2(quote, "cite", `${ref.sourceId} \xB7 ${label}`);
     text2(quote, "p", ref.statement);
   }
@@ -8995,13 +8995,13 @@ function renderCard(parent, review, candidate, state, copy, dispatch, readOnly, 
   if (candidate.operation === "create") renderDraft(card, candidate.taskDraft, copy, projects);
   else if (candidate.operation === "merge") renderMerge(card, candidate, state, copy, dispatch, projects);
   else {
-    const reason = element3("p", "taskmate-source-candidate-reason", card);
+    const reason = element3("p", "taskmate-import-candidate-reason", card);
     text2(reason, "strong", `${copy.exclusionReason}: `);
     reason.append(candidate.exclusionReason);
   }
   if (!readOnly && !applied) {
-    const actions = element3("div", "taskmate-source-candidate-actions", card);
-    const decisions = element3("div", "taskmate-source-candidate-decisions", actions);
+    const actions = element3("div", "taskmate-import-candidate-actions", card);
+    const decisions = element3("div", "taskmate-import-candidate-decisions", actions);
     decisions.setAttribute("role", "group");
     decisions.setAttribute("aria-label", copy.decisionGroupAria(candidate.id));
     const choices = [["approved", copy.decide[candidate.operation]], ["hold", copy.decide.hold], ["pending", copy.decide.pending]];
@@ -9014,14 +9014,14 @@ function renderCard(parent, review, candidate, state, copy, dispatch, readOnly, 
     }
     const edit = button2(copy.edit, () => dispatch({ type: "start-edit", candidateId: candidate.id, revision: candidate.revision, form: candidateEditForm(candidate) }));
     edit.id = editButtonId(candidate.id);
-    edit.classList.add("taskmate-source-candidate-edit-button");
+    edit.classList.add("taskmate-import-candidate-edit-button");
     edit.setAttribute("aria-label", copy.editAria(candidate.id));
     edit.disabled = state.editing !== null;
     actions.append(edit);
   }
 }
 function renderDraft(card, draft, copy, projects) {
-  const fields = element3("dl", "taskmate-source-candidate-fields", card);
+  const fields = element3("dl", "taskmate-import-candidate-fields", card);
   const rows = [
     ["date", draft.date ?? copy.empty],
     ["priority", draft.priority === null ? copy.empty : copy.priorityValue(draft.priority)],
@@ -9036,14 +9036,14 @@ function renderDraft(card, draft, copy, projects) {
   if (draft.steps.length > 0) {
     text2(fields, "dt", copy.fields.steps);
     const steps2 = element3("dd", "", fields);
-    const listEl = element3("ul", "taskmate-source-candidate-steps", steps2);
+    const listEl = element3("ul", "taskmate-import-candidate-steps", steps2);
     for (const step of draft.steps) text2(listEl, "li", step.date ? `${step.text} (${step.date})` : step.text);
   }
 }
 function renderMerge(card, candidate, state, copy, dispatch, projects) {
   const target = candidate.mergeTarget;
-  const block = element3("div", "taskmate-source-candidate-merge", card);
-  text2(block, "p", copy.mergeTarget(target.title), "taskmate-source-candidate-target");
+  const block = element3("div", "taskmate-import-candidate-merge", card);
+  text2(block, "p", copy.mergeTarget(target.title), "taskmate-import-candidate-target");
   for (const change of target.changes) {
     const row = element3("div", "taskmate-review-change is-read-only", block);
     text2(row, "strong", copy.fields[change.field]);
@@ -9053,9 +9053,9 @@ function renderMerge(card, candidate, state, copy, dispatch, projects) {
     text2(details, "span", change.reason, "taskmate-review-reason");
   }
   const expanded = state.expandedDiffs.has(candidate.id);
-  const diffId = `taskmate-source-candidate-diff-${candidate.id}`;
+  const diffId = `taskmate-import-candidate-diff-${candidate.id}`;
   const toggle = button2(expanded ? copy.hideDiff : copy.showDiff, () => dispatch({ type: "toggle-diff", candidateId: candidate.id }));
-  toggle.classList.add("taskmate-source-candidate-diff-toggle");
+  toggle.classList.add("taskmate-import-candidate-diff-toggle");
   toggle.setAttribute("aria-expanded", String(expanded));
   toggle.setAttribute("aria-controls", diffId);
   block.append(toggle);
@@ -9074,7 +9074,7 @@ function renderMerge(card, candidate, state, copy, dispatch, projects) {
   }
 }
 function renderApply(container, plan, state, copy, dispatch) {
-  const footer = element3("footer", "taskmate-review-footer taskmate-source-review-apply", container);
+  const footer = element3("footer", "taskmate-review-footer taskmate-import-review-apply", container);
   if (!state.applyOpen) {
     const open = button2(copy.openApply, () => dispatch({ type: "open-apply" }));
     open.id = OPEN_APPLY_ID;
@@ -9086,7 +9086,7 @@ function renderApply(container, plan, state, copy, dispatch) {
     return;
   }
   footer.classList.add("is-open");
-  const panel = element3("section", "taskmate-source-review-apply-panel", footer);
+  const panel = element3("section", "taskmate-import-review-apply-panel", footer);
   panel.setAttribute("aria-labelledby", APPLY_TITLE_ID);
   const title = text2(panel, "h3", copy.applyTitle);
   title.id = APPLY_TITLE_ID;
@@ -9094,21 +9094,21 @@ function renderApply(container, plan, state, copy, dispatch) {
   text2(panel, "p", copy.applyCounts(plan.counts));
   if (plan.blocked.length > 0) {
     text2(panel, "h4", copy.blockedTitle);
-    const blocked = element3("ul", "taskmate-source-review-blocked", panel);
+    const blocked = element3("ul", "taskmate-import-review-blocked", panel);
     for (const item of plan.blocked) text2(blocked, "li", `${item.candidateId}: ${copy.blocked[item.reason]}`);
   }
   if (plan.requiresAcknowledgement) {
     text2(panel, "h4", copy.unviewedTitle);
-    const unviewed = element3("ul", "taskmate-source-review-unviewed", panel);
+    const unviewed = element3("ul", "taskmate-import-review-unviewed", panel);
     for (const item of plan.unviewedMerges) text2(unviewed, "li", `${item.candidateId}: ${item.targetTitle}`);
-    const label = element3("label", "taskmate-source-review-acknowledge", panel);
+    const label = element3("label", "taskmate-import-review-acknowledge", panel);
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.checked = state.acknowledged;
     checkbox.addEventListener("change", () => dispatch({ type: "set-acknowledged", acknowledged: checkbox.checked }));
     label.append(checkbox, document.createTextNode(copy.acknowledge(plan.unviewedMerges.length)));
   }
-  const actions = element3("div", "taskmate-source-review-apply-actions", panel);
+  const actions = element3("div", "taskmate-import-review-apply-actions", panel);
   const confirm = button2(copy.confirm, () => dispatch({ type: "confirm-apply" }));
   confirm.classList.add("mod-cta");
   confirm.disabled = plan.eligible.length === 0 || plan.requiresAcknowledgement && !state.acknowledged;
@@ -9116,7 +9116,7 @@ function renderApply(container, plan, state, copy, dispatch) {
   actions.append(confirm, cancel);
 }
 function renderEditForm(card, candidate, editing, copy, dispatch, projects) {
-  const form = element3("form", "taskmate-source-candidate-edit", card);
+  const form = element3("form", "taskmate-import-candidate-edit", card);
   form.noValidate = true;
   form.setAttribute("aria-label", copy.editAria(candidate.id));
   form.addEventListener("submit", (event) => {
@@ -9124,7 +9124,7 @@ function renderEditForm(card, candidate, editing, copy, dispatch, projects) {
     dispatch({ type: "save-edit" });
   });
   if (editing.errors.form) {
-    const error = text2(form, "p", copy.editErrors[editing.errors.form], "taskmate-source-candidate-edit-error");
+    const error = text2(form, "p", copy.editErrors[editing.errors.form], "taskmate-import-candidate-edit-error");
     error.id = FORM_ERROR_ID;
     error.tabIndex = -1;
     error.setAttribute("role", "alert");
@@ -9154,14 +9154,14 @@ function renderEditForm(card, candidate, editing, copy, dispatch, projects) {
     control("notes", copy.fields.notes, textArea(values.notes));
     if (operation === "merge") control("reason", copy.changeReason, textArea(editing.form.reason), copy.editHelp.changeReason);
   }
-  const actions = element3("div", "taskmate-source-candidate-edit-actions", form);
+  const actions = element3("div", "taskmate-import-candidate-edit-actions", form);
   const save2 = element3("button", "mod-cta", actions);
   save2.type = "submit";
   save2.textContent = copy.save;
   actions.append(button2(copy.cancel, () => dispatch({ type: "cancel-edit" })));
 }
 function editField(form, id, label, control, help, error) {
-  const wrapper = element3("div", "taskmate-source-candidate-edit-field", form);
+  const wrapper = element3("div", "taskmate-import-candidate-edit-field", form);
   const caption = element3("label", "", wrapper);
   caption.htmlFor = id;
   caption.textContent = label;
@@ -9169,12 +9169,12 @@ function editField(form, id, label, control, help, error) {
   wrapper.append(control);
   const describedBy = [];
   if (help) {
-    const note = text2(wrapper, "p", help, "taskmate-source-candidate-edit-help");
+    const note = text2(wrapper, "p", help, "taskmate-import-candidate-edit-help");
     note.id = `${id}-help`;
     describedBy.push(note.id);
   }
   if (error) {
-    const message = text2(wrapper, "p", error, "taskmate-source-candidate-edit-error");
+    const message = text2(wrapper, "p", error, "taskmate-import-candidate-edit-error");
     message.id = `${id}-error`;
     describedBy.push(message.id);
     control.setAttribute("aria-invalid", "true");
@@ -9235,39 +9235,39 @@ function formatValue2(value) {
   return String(value);
 }
 
-// src/reviews/source-candidate/review-view.ts
-var SOURCE_CANDIDATE_REVIEW_VIEW_TYPE = "taskmate-source-review";
-var REVIEW_ID2 = /^source-review-[A-Za-z0-9._-]+$/;
-function sourceReviewIdFromLink(params) {
+// src/reviews/import/review-view.ts
+var IMPORT_REVIEW_VIEW_TYPE = "taskmate-import-review";
+var REVIEW_ID2 = /^import-review-[A-Za-z0-9._-]+$/;
+function importReviewIdFromLink(params) {
   const reviewId = params.review;
   return typeof reviewId === "string" && REVIEW_ID2.test(reviewId) ? reviewId : null;
 }
 function formalApplyMessage(result, i18n) {
   const { t } = i18n;
-  const parts = [t("sourceReview.result", { applied: result.applied.length, failed: result.failed.length, stale: result.stale.length })];
-  if (result.provenance.changed.length > 0) parts.push(t("sourceReview.provenanceChanged", { count: result.provenance.changed.length }));
-  if (result.provenance.failed.length > 0) parts.push(t("sourceReview.provenanceFailed", { count: result.provenance.failed.length }));
-  if (result.archived) parts.push(t("sourceReview.archived"));
+  const parts = [t("importReview.result", { applied: result.applied.length, failed: result.failed.length, stale: result.stale.length })];
+  if (result.provenance.changed.length > 0) parts.push(t("importReview.provenanceChanged", { count: result.provenance.changed.length }));
+  if (result.provenance.failed.length > 0) parts.push(t("importReview.provenanceFailed", { count: result.provenance.failed.length }));
+  if (result.archived) parts.push(t("importReview.archived"));
   return parts.join(" ");
 }
-function sourceReviewIndexDetails(summary, i18n) {
+function importReviewIndexDetails(summary, i18n) {
   return {
     sortKey: summary.updatedAt,
-    lines: [statusText(summary.status, i18n), i18n.t("sourceReview.summary", { candidates: summary.candidateCount, applied: summary.appliedCount })]
+    lines: [statusText(summary.status, i18n), i18n.t("importReview.summary", { candidates: summary.candidateCount, applied: summary.appliedCount })]
   };
 }
-var SourceCandidateReviewView = class extends import_obsidian18.ItemView {
+var ImportReviewView = class extends import_obsidian18.ItemView {
   constructor(leaf, plugin) {
     super(leaf);
     this.plugin = plugin;
   }
   reviewId = null;
-  state = createSourceReviewUiState();
+  state = createImportReviewUiState();
   getViewType() {
-    return SOURCE_CANDIDATE_REVIEW_VIEW_TYPE;
+    return IMPORT_REVIEW_VIEW_TYPE;
   }
   getDisplayText() {
-    return this.plugin.i18n().t("sourceReview.title");
+    return this.plugin.i18n().t("importReview.title");
   }
   getIcon() {
     return "inbox";
@@ -9280,7 +9280,7 @@ var SourceCandidateReviewView = class extends import_obsidian18.ItemView {
   }
   async openReview(reviewId) {
     this.reviewId = reviewId;
-    this.state = createSourceReviewUiState();
+    this.state = createImportReviewUiState();
     await this.render();
   }
   async render(preserveScroll = false) {
@@ -9294,18 +9294,18 @@ var SourceCandidateReviewView = class extends import_obsidian18.ItemView {
       return;
     }
     try {
-      const review = await this.plugin.sourceReviews.load(this.reviewId);
+      const review = await this.plugin.importReviews.load(this.reviewId);
       const projects = (await this.plugin.projects.list()).map((project) => ({ id: project.id, name: project.name }));
       const state = !this.state.focus && focused ? { ...this.state, focus: focused } : this.state;
-      renderSourceCandidateReview(this.contentEl, review, planFormalApply(review), state, sourceReviewCopy(i18n), (action) => void this.handle(action), {
+      renderImportReview(this.contentEl, review, planFormalApply(review), state, importReviewCopy(i18n), (action) => void this.handle(action), {
         readOnly: review.status === "history",
         onBack: () => void this.plugin.openReviewIndex(review.status === "history" ? "history" : "pending", this.leaf),
         projects
       });
       this.state = { ...this.state, focus: null };
     } catch (error) {
-      console.error("TaskMate could not open Source candidate review", error);
-      this.contentEl.createDiv({ cls: "taskmate-empty", text: i18n.t("sourceReview.invalid") });
+      console.error("TaskMate could not open Import review", error);
+      this.contentEl.createDiv({ cls: "taskmate-empty", text: i18n.t("importReview.invalid") });
     }
     this.contentEl.scrollTop = scrollTop;
   }
@@ -9313,43 +9313,43 @@ var SourceCandidateReviewView = class extends import_obsidian18.ItemView {
     const reviewId = this.reviewId;
     if (!reviewId) return;
     const previous = this.state;
-    this.state = reduceSourceReviewUiState(this.state, action);
+    this.state = reduceImportReviewUiState(this.state, action);
     if (action.type === "edit-input") return;
     try {
       if (action.type === "decide") {
-        const review = await this.plugin.sourceReviews.load(reviewId);
-        await this.plugin.sourceReviews.save(decideCandidate(review, action.candidateId, action.decision, (/* @__PURE__ */ new Date()).toISOString()));
+        const review = await this.plugin.importReviews.load(reviewId);
+        await this.plugin.importReviews.save(decideCandidate(review, action.candidateId, action.decision, (/* @__PURE__ */ new Date()).toISOString()));
       } else if (action.type === "toggle-diff" && !previous.expandedDiffs.has(action.candidateId)) {
-        const review = await this.plugin.sourceReviews.load(reviewId);
+        const review = await this.plugin.importReviews.load(reviewId);
         if (needsDiffViewed(review, action.candidateId)) {
-          await this.plugin.sourceReviews.save(markDiffViewed(review, action.candidateId, (/* @__PURE__ */ new Date()).toISOString()));
+          await this.plugin.importReviews.save(markDiffViewed(review, action.candidateId, (/* @__PURE__ */ new Date()).toISOString()));
         }
       } else if (action.type === "save-edit" && previous.editing) {
         await this.saveEdit(reviewId, previous.editing);
       } else if (action.type === "confirm-apply") {
-        const result = await this.plugin.sourceReviews.formalApply(reviewId, { acknowledgeUnviewedMerges: previous.acknowledged });
-        this.state = createSourceReviewUiState();
+        const result = await this.plugin.importReviews.formalApply(reviewId, { acknowledgeUnviewedMerges: previous.acknowledged });
+        this.state = createImportReviewUiState();
         new import_obsidian18.Notice(formalApplyMessage(result, this.plugin.i18n()), 1e4);
       }
     } catch (error) {
-      console.error("TaskMate could not update Source candidate review", error);
-      new import_obsidian18.Notice(this.plugin.i18n().t("sourceReview.actionFailed", { error: error instanceof Error ? error.message : String(error) }), 0);
+      console.error("TaskMate could not update Import review", error);
+      new import_obsidian18.Notice(this.plugin.i18n().t("importReview.actionFailed", { error: error instanceof Error ? error.message : String(error) }), 0);
     }
     await this.render(true);
   }
   async saveEdit(reviewId, editing) {
     const i18n = this.plugin.i18n();
-    const result = saveCandidateEdit(await this.plugin.sourceReviews.load(reviewId), editing, (/* @__PURE__ */ new Date()).toISOString(), i18n.t("sourceReview.editedReason"));
+    const result = saveCandidateEdit(await this.plugin.importReviews.load(reviewId), editing, (/* @__PURE__ */ new Date()).toISOString(), i18n.t("importReview.editedReason"));
     if (result.kind === "conflict") {
-      new import_obsidian18.Notice(i18n.t("sourceReview.editConflict"), 1e4);
+      new import_obsidian18.Notice(i18n.t("importReview.editConflict"), 1e4);
       return;
     }
     if (result.kind === "invalid") {
-      this.state = reduceSourceReviewUiState(this.state, { type: "edit-invalid", errors: result.errors });
+      this.state = reduceImportReviewUiState(this.state, { type: "edit-invalid", errors: result.errors });
       return;
     }
-    if (result.kind === "saved") await this.plugin.sourceReviews.save(result.review);
-    this.state = reduceSourceReviewUiState(this.state, { type: "cancel-edit" });
+    if (result.kind === "saved") await this.plugin.importReviews.save(result.review);
+    this.state = reduceImportReviewUiState(this.state, { type: "cancel-edit" });
   }
 };
 function needsDiffViewed(review, candidateId) {
@@ -9357,92 +9357,92 @@ function needsDiffViewed(review, candidateId) {
   return candidate?.operation === "merge" && candidate.application.status !== "applied" && candidate.diffViewedRevision !== candidate.revision && review.status !== "history";
 }
 function statusText(status, i18n) {
-  return sourceReviewCopy(i18n).status[status];
+  return importReviewCopy(i18n).status[status];
 }
-function sourceReviewCopy(i18n) {
+function importReviewCopy(i18n) {
   const { t } = i18n;
   return {
-    title: t("sourceReview.title"),
+    title: t("importReview.title"),
     back: t("common.back"),
     status: {
-      "pending": t("sourceReview.status.pending"),
-      "ready-to-apply": t("sourceReview.status.ready"),
-      "partially-applied": t("sourceReview.status.partial"),
-      "applied": t("sourceReview.status.applied"),
-      "history": t("sourceReview.status.history")
+      "pending": t("importReview.status.pending"),
+      "ready-to-apply": t("importReview.status.ready"),
+      "partially-applied": t("importReview.status.partial"),
+      "applied": t("importReview.status.applied"),
+      "history": t("importReview.status.history")
     },
-    health: { stale: t("sourceReview.health.stale"), failed: t("sourceReview.health.failed") },
-    operation: { create: t("sourceReview.operation.create"), merge: t("sourceReview.operation.merge"), exclude: t("sourceReview.operation.exclude") },
-    decision: { approved: t("sourceReview.decision.approved"), hold: t("sourceReview.decision.hold"), pending: t("sourceReview.decision.pending") },
+    health: { stale: t("importReview.health.stale"), failed: t("importReview.health.failed") },
+    operation: { create: t("importReview.operation.create"), merge: t("importReview.operation.merge"), exclude: t("importReview.operation.exclude") },
+    decision: { approved: t("importReview.decision.approved"), hold: t("importReview.decision.hold"), pending: t("importReview.decision.pending") },
     decide: {
-      create: t("sourceReview.decide.create"),
-      merge: t("sourceReview.decide.merge"),
-      exclude: t("sourceReview.decide.exclude"),
-      hold: t("sourceReview.decide.hold"),
-      pending: t("sourceReview.decide.pending")
+      create: t("importReview.decide.create"),
+      merge: t("importReview.decide.merge"),
+      exclude: t("importReview.decide.exclude"),
+      hold: t("importReview.decide.hold"),
+      pending: t("importReview.decide.pending")
     },
-    decideAria: (action, candidate) => t("sourceReview.decideAria", { action, candidate }),
-    decisionGroupAria: (candidate) => t("sourceReview.decisionGroupAria", { candidate }),
-    sources: t("sourceReview.sources"),
-    conversation: (id) => t("sourceReview.conversation", { id }),
+    decideAria: (action, candidate) => t("importReview.decideAria", { action, candidate }),
+    decisionGroupAria: (candidate) => t("importReview.decisionGroupAria", { candidate }),
+    sources: t("importReview.sources"),
+    conversation: (id) => t("importReview.conversation", { id }),
     fields: {
-      title: t("sourceReview.field.title"),
-      date: t("sourceReview.field.date"),
-      priority: t("sourceReview.field.priority"),
-      labels: t("sourceReview.field.labels"),
-      project: t("sourceReview.field.project"),
-      steps: t("sourceReview.field.steps"),
-      notes: t("sourceReview.field.notes")
+      title: t("importReview.field.title"),
+      date: t("importReview.field.date"),
+      priority: t("importReview.field.priority"),
+      labels: t("importReview.field.labels"),
+      project: t("importReview.field.project"),
+      steps: t("importReview.field.steps"),
+      notes: t("importReview.field.notes")
     },
-    empty: t("sourceReview.empty"),
+    empty: t("importReview.empty"),
     unassigned: t("taskModal.unassigned"),
     noPriority: t("taskModal.noPriority"),
     priorityValue: (priority) => t("filter.priorityValue", { priority }),
-    mergeTarget: (title) => t("sourceReview.mergeTarget", { title }),
-    showDiff: t("sourceReview.showDiff"),
-    hideDiff: t("sourceReview.hideDiff"),
-    diffAria: (candidate) => t("sourceReview.diffAria", { candidate }),
-    exclusionReason: t("sourceReview.exclusionReason"),
-    applied: t("sourceReview.applied"),
-    openApply: t("sourceReview.openApply"),
-    applyTitle: t("sourceReview.applyTitle"),
-    applyCounts: (counts) => t("sourceReview.applyCounts", counts),
-    nothingToApply: t("sourceReview.nothingToApply"),
-    blockedTitle: t("sourceReview.blockedTitle"),
+    mergeTarget: (title) => t("importReview.mergeTarget", { title }),
+    showDiff: t("importReview.showDiff"),
+    hideDiff: t("importReview.hideDiff"),
+    diffAria: (candidate) => t("importReview.diffAria", { candidate }),
+    exclusionReason: t("importReview.exclusionReason"),
+    applied: t("importReview.applied"),
+    openApply: t("importReview.openApply"),
+    applyTitle: t("importReview.applyTitle"),
+    applyCounts: (counts) => t("importReview.applyCounts", counts),
+    nothingToApply: t("importReview.nothingToApply"),
+    blockedTitle: t("importReview.blockedTitle"),
     blocked: {
-      "stale": t("sourceReview.blocked.stale"),
-      "held": t("sourceReview.blocked.held"),
-      "undecided": t("sourceReview.blocked.undecided"),
-      "outdated-decision": t("sourceReview.blocked.outdated")
+      "stale": t("importReview.blocked.stale"),
+      "held": t("importReview.blocked.held"),
+      "undecided": t("importReview.blocked.undecided"),
+      "outdated-decision": t("importReview.blocked.outdated")
     },
-    unviewedTitle: t("sourceReview.unviewedTitle"),
-    acknowledge: (count) => t("sourceReview.acknowledge", { count }),
-    confirm: t("sourceReview.confirm"),
-    cancel: t("sourceReview.cancel"),
-    edit: t("sourceReview.edit"),
-    editAria: (candidate) => t("sourceReview.editAria", { candidate }),
-    finishEditFirst: t("sourceReview.finishEditFirst"),
-    editOperation: t("sourceReview.editOperation"),
-    changeReason: t("sourceReview.changeReason"),
+    unviewedTitle: t("importReview.unviewedTitle"),
+    acknowledge: (count) => t("importReview.acknowledge", { count }),
+    confirm: t("importReview.confirm"),
+    cancel: t("importReview.cancel"),
+    edit: t("importReview.edit"),
+    editAria: (candidate) => t("importReview.editAria", { candidate }),
+    finishEditFirst: t("importReview.finishEditFirst"),
+    editOperation: t("importReview.editOperation"),
+    changeReason: t("importReview.changeReason"),
     editHelp: {
-      labels: t("sourceReview.editHelp.labels"),
-      steps: t("sourceReview.editHelp.steps"),
-      changeReason: t("sourceReview.editHelp.changeReason"),
-      noMergeTarget: t("sourceReview.editHelp.noMergeTarget")
+      labels: t("importReview.editHelp.labels"),
+      steps: t("importReview.editHelp.steps"),
+      changeReason: t("importReview.editHelp.changeReason"),
+      noMergeTarget: t("importReview.editHelp.noMergeTarget")
     },
     editErrors: {
-      "required": t("sourceReview.editError.required"),
-      "invalid-date": t("sourceReview.editError.invalidDate"),
-      "no-change": t("sourceReview.editError.noChange")
+      "required": t("importReview.editError.required"),
+      "invalid-date": t("importReview.editError.invalidDate"),
+      "no-change": t("importReview.editError.noChange")
     },
-    save: t("sourceReview.save")
+    save: t("importReview.save")
   };
 }
 
 // src/reviews/shared/review-catalog.ts
 var import_obsidian19 = require("obsidian");
 var TASK_CHANGE_ID = /^proposal-[A-Za-z0-9._-]+$/;
-var SOURCE_REVIEW_ID = /^source-review-[A-Za-z0-9._-]+$/;
+var IMPORT_REVIEW_ID = /^import-review-[A-Za-z0-9._-]+$/;
 function classifyReviewFile(path, location, content) {
   const invalid2 = (reason) => ({ type: "invalid", path, location, reason });
   const review = (kind, id2) => ({ type: "review", ref: { kind, id: id2, location, path } });
@@ -9455,16 +9455,16 @@ function classifyReviewFile(path, location, content) {
   }
   if (typeof envelope !== "object" || envelope === null || Array.isArray(envelope)) return invalid2("unreadable-json");
   const { reviewType, schemaVersion, reviewId, id } = envelope;
-  if (reviewType === "source-candidate") {
-    if (!SOURCE_REVIEW_ID.test(name) || reviewId !== name) return invalid2("mismatched-id");
-    return schemaVersion === 1 ? review("source-candidate", name) : invalid2("unsupported-version");
+  if (reviewType === "import") {
+    if (!IMPORT_REVIEW_ID.test(name) || reviewId !== name) return invalid2("mismatched-id");
+    return schemaVersion === 1 ? review("import", name) : invalid2("unsupported-version");
   }
   if (reviewType !== void 0) return invalid2("unknown-type");
   if (TASK_CHANGE_ID.test(name)) {
     if (id !== name) return invalid2("mismatched-id");
     return schemaVersion === 1 ? review("task-change", name) : invalid2("unsupported-version");
   }
-  return invalid2(SOURCE_REVIEW_ID.test(name) ? "mismatched-id" : "unknown-type");
+  return invalid2(IMPORT_REVIEW_ID.test(name) ? "mismatched-id" : "unknown-type");
 }
 var ReviewCatalog = class {
   constructor(app, proposalFolder) {
@@ -9534,7 +9534,7 @@ function reviewIndexCopy(i18n) {
     title: t("reviews.title"),
     location: { pending: t("reviews.pending"), history: t("reviews.history") },
     empty: { pending: t("reviews.none"), history: t("reviews.historyNone") },
-    kind: { "task-change": t("reviews.kind.taskChange"), "source-candidate": t("reviews.kind.sourceCandidate") },
+    kind: { "task-change": t("reviews.kind.taskChange"), "import": t("reviews.kind.import") },
     openAria: (kind, id) => t("reviews.openAria", { kind, id }),
     invalidTitle: t("reviews.invalidTitle"),
     invalidReason: {
@@ -9553,7 +9553,7 @@ var TaskMatePlugin = class extends import_obsidian21.Plugin {
   repository;
   projects;
   proposals;
-  sourceReviews;
+  importReviews;
   reviewCatalog;
   refreshTimer = null;
   async onload() {
@@ -9563,7 +9563,7 @@ var TaskMatePlugin = class extends import_obsidian21.Plugin {
     this.repository = new TaskRepository(this.app, () => this.settings.taskFolder);
     this.projects = new ProjectRepository(this.app, () => this.settings.projectFolder);
     this.proposals = new TaskChangeProposalRepository(this.app, () => this.settings.proposalFolder, this.repository);
-    this.sourceReviews = new SourceCandidateReviewRepository(this.app, () => this.settings.proposalFolder, this.repository);
+    this.importReviews = new ImportReviewRepository(this.app, () => this.settings.proposalFolder, this.repository);
     this.reviewCatalog = new ReviewCatalog(this.app, () => this.settings.proposalFolder);
     try {
       const migrated = await this.repository.migrateLegacyFileNames();
@@ -9574,7 +9574,7 @@ var TaskMatePlugin = class extends import_obsidian21.Plugin {
     }
     this.registerView(TODO_VIEW_TYPE, (leaf) => new TodoListView(leaf, this));
     this.registerView(TASK_CHANGE_REVIEW_VIEW_TYPE, (leaf) => new TaskChangeReviewView(leaf, this));
-    this.registerView(SOURCE_CANDIDATE_REVIEW_VIEW_TYPE, (leaf) => new SourceCandidateReviewView(leaf, this));
+    this.registerView(IMPORT_REVIEW_VIEW_TYPE, (leaf) => new ImportReviewView(leaf, this));
     this.registerView(REVIEW_INDEX_VIEW_TYPE, (leaf) => new ReviewIndexView(leaf, this));
     this.addSettingTab(new TaskMateSettingTab(this.app, this));
     this.addRibbonIcon("circle-check-big", t("command.openRibbon"), () => void this.activateView());
@@ -9590,13 +9590,13 @@ var TaskMatePlugin = class extends import_obsidian21.Plugin {
       const changeId = typeof params.change === "string" && /^C-[0-9]{2,}$/.test(params.change) ? params.change : void 0;
       await this.openProposalReview(proposalId, taskId, changeId);
     });
-    this.registerObsidianProtocolHandler("taskmate-source-review", async (params) => {
-      const reviewId = sourceReviewIdFromLink(params);
+    this.registerObsidianProtocolHandler("taskmate-import-review", async (params) => {
+      const reviewId = importReviewIdFromLink(params);
       if (!reviewId) {
-        new import_obsidian21.Notice(this.i18n().t("sourceReview.invalidLink"));
+        new import_obsidian21.Notice(this.i18n().t("importReview.invalidLink"));
         return;
       }
-      await this.openSourceReview(reviewId);
+      await this.openImportReview(reviewId);
     });
     this.addCommand({
       id: "include-current-note-as-ai-source",
@@ -9624,8 +9624,8 @@ var TaskMatePlugin = class extends import_obsidian21.Plugin {
         for (const leaf of this.app.workspace.getLeavesOfType(TASK_CHANGE_REVIEW_VIEW_TYPE)) {
           if (leaf.view instanceof TaskChangeReviewView) leaf.view.requestRender();
         }
-        for (const leaf of this.app.workspace.getLeavesOfType(SOURCE_CANDIDATE_REVIEW_VIEW_TYPE)) {
-          if (leaf.view instanceof SourceCandidateReviewView) leaf.view.requestRender();
+        for (const leaf of this.app.workspace.getLeavesOfType(IMPORT_REVIEW_VIEW_TYPE)) {
+          if (leaf.view instanceof ImportReviewView) leaf.view.requestRender();
         }
         for (const leaf of this.app.workspace.getLeavesOfType(REVIEW_INDEX_VIEW_TYPE)) {
           if (leaf.view instanceof ReviewIndexView) leaf.view.requestRender();
@@ -9678,37 +9678,37 @@ var TaskMatePlugin = class extends import_obsidian21.Plugin {
       await (ref.location === "history" ? view2.openHistoryProposal(ref.id) : view2.openProposal(ref.id));
       return;
     }
-    const view = await this.showViewInLeaf(leaf, SOURCE_CANDIDATE_REVIEW_VIEW_TYPE);
+    const view = await this.showViewInLeaf(leaf, IMPORT_REVIEW_VIEW_TYPE);
     await view.openReview(ref.id);
   }
   // Lists every review kind together: the catalog classifies the files and each owning Module describes its own reviews.
   async reviewIndex(location) {
     const i18n = this.i18n();
-    const [entries, taskChanges, sourceReviews] = await Promise.all([
+    const [entries, taskChanges, importReviews] = await Promise.all([
       this.reviewCatalog.list(location),
       location === "pending" ? this.proposals.listPending() : this.proposals.listHistory(),
-      location === "pending" ? this.sourceReviews.listPending() : this.sourceReviews.listHistory()
+      location === "pending" ? this.importReviews.listPending() : this.importReviews.listHistory()
     ]);
     const details = new Map([
       ...taskChanges.map((summary) => [`task-change:${summary.id}`, taskChangeIndexDetails(summary, i18n)]),
-      ...sourceReviews.map((summary) => [`source-candidate:${summary.reviewId}`, sourceReviewIndexDetails(summary, i18n)])
+      ...importReviews.map((summary) => [`import:${summary.reviewId}`, importReviewIndexDetails(summary, i18n)])
     ]);
     return buildReviewIndex(entries, (ref) => details.get(`${ref.kind}:${ref.id}`) ?? null);
   }
   async openProposalReview(proposalId, taskId, changeId) {
     await openProposalInReviewView(() => this.activateReviewView(), proposalId, taskId, changeId);
   }
-  async activateSourceReviewView() {
-    let leaf = this.app.workspace.getLeavesOfType(SOURCE_CANDIDATE_REVIEW_VIEW_TYPE)[0];
+  async activateImportReviewView() {
+    let leaf = this.app.workspace.getLeavesOfType(IMPORT_REVIEW_VIEW_TYPE)[0];
     if (!leaf) {
       leaf = this.app.workspace.getLeaf(false);
-      await leaf.setViewState({ type: SOURCE_CANDIDATE_REVIEW_VIEW_TYPE, active: true });
+      await leaf.setViewState({ type: IMPORT_REVIEW_VIEW_TYPE, active: true });
     }
     await this.app.workspace.revealLeaf(leaf);
     return leaf.view;
   }
-  async openSourceReview(reviewId) {
-    const view = await this.activateSourceReviewView();
+  async openImportReview(reviewId) {
+    const view = await this.activateImportReviewView();
     await view.openReview(reviewId);
   }
   async showViewInLeaf(leaf, type) {

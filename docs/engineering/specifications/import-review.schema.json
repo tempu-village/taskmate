@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:taskmate:schema:source-candidate-proposal:v1",
-  "title": "TaskMate Source candidate Proposal",
+  "$id": "urn:taskmate:schema:import-review:v1",
+  "title": "TaskMate Import review",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -20,9 +20,9 @@
     "schemaVersion": { "const": 1 },
     "reviewId": {
       "type": "string",
-      "pattern": "^source-review-[A-Za-z0-9._-]+$"
+      "pattern": "^import-review-[A-Za-z0-9._-]+$"
     },
-    "reviewType": { "const": "source-candidate" },
+    "reviewType": { "const": "import" },
     "status": {
       "enum": ["pending", "ready-to-apply", "partially-applied", "applied", "history"]
     },
@@ -192,7 +192,7 @@
         "application"
       ],
       "properties": {
-        "id": { "type": "string", "pattern": "^SC-[0-9]{2,}$" },
+        "id": { "type": "string", "pattern": "^IC-[0-9]{2,}$" },
         "revision": { "type": "integer", "minimum": 1 },
         "originalOperation": { "enum": ["create", "merge", "exclude"] },
         "operation": { "enum": ["create", "merge", "exclude"] },

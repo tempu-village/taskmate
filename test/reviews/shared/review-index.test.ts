@@ -9,8 +9,8 @@ const copy: ReviewIndexCopy = {
   title: "Reviews",
   location: { pending: "Pending", history: "History" },
   empty: { pending: "No pending reviews", history: "No review history" },
-  kind: { "task-change": "Task changes", "source-candidate": "Source candidates" },
-  openAria: (kind, id) => `Open ${kind} review ${id}`,
+  kind: { "task-change": "Task changes", "import": "Imports" },
+  openAria: (kind, id) => `Open ${id} (${kind})`,
   invalidTitle: "Files that could not be read",
   invalidReason: {
     "unreadable-json": "not JSON", "unknown-type": "unknown type", "unsupported-version": "unsupported version",
@@ -22,18 +22,18 @@ const ref = (kind: ReviewReference["kind"], id: string): ReviewReference => ({ k
 const entries: ReviewCatalogEntry[] = [
   { type: "review", ref: ref("task-change", "proposal-old") },
   { type: "invalid", path: "TaskMate/Proposals/zz.json", location: "pending", reason: "unknown-type" },
-  { type: "review", ref: ref("source-candidate", "source-review-new") },
+  { type: "review", ref: ref("import", "import-review-new") },
   { type: "review", ref: ref("task-change", "proposal-unreadable") }
 ];
 const details: Record<string, ReviewIndexDetails> = {
   "proposal-old": { sortKey: "2026-10-20T09:00:00Z", lines: ["2 Tasks, 3 changes"] },
-  "source-review-new": { sortKey: "2026-10-22T09:00:00Z", lines: ["Pending", "3 candidates, 0 applied"] }
+  "import-review-new": { sortKey: "2026-10-22T09:00:00Z", lines: ["Pending", "3 candidates, 0 applied"] }
 };
 
 describe("shared review index", () => {
   it("lists every kind newest first and keeps files its Module cannot read visible as unreadable", () => {
     expect(buildReviewIndex(entries, (value) => details[value.id] ?? null)).toEqual([
-      { type: "review", ref: ref("source-candidate", "source-review-new"), details: details["source-review-new"] },
+      { type: "review", ref: ref("import", "import-review-new"), details: details["import-review-new"] },
       { type: "review", ref: ref("task-change", "proposal-old"), details: details["proposal-old"] },
       { type: "invalid", path: "TaskMate/Proposals/proposal-unreadable.json", reason: "unreadable-review" },
       { type: "invalid", path: "TaskMate/Proposals/zz.json", reason: "unknown-type" }
@@ -48,8 +48,8 @@ describe("shared review index", () => {
     expect(container.querySelector("h2")?.textContent).toBe("Reviews");
     const items = Array.from(container.querySelectorAll<HTMLButtonElement>(".taskmate-review-index-item"));
     expect(items.map((item) => [item.getAttribute("aria-label"), item.querySelector(".taskmate-review-index-kind")?.textContent, Array.from(item.querySelectorAll(".taskmate-review-index-summary")).map((line) => line.textContent)])).toEqual([
-      ["Open Source candidates review source-review-new", "Source candidates", ["Pending", "3 candidates, 0 applied"]],
-      ["Open Task changes review proposal-old", "Task changes", ["2 Tasks, 3 changes"]]
+      ["Open import-review-new (Imports)", "Imports", ["Pending", "3 candidates, 0 applied"]],
+      ["Open proposal-old (Task changes)", "Task changes", ["2 Tasks, 3 changes"]]
     ]);
     items[1].click();
     expect(actions.open).toHaveBeenCalledWith(ref("task-change", "proposal-old"));

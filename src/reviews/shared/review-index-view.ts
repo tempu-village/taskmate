@@ -45,7 +45,7 @@ function reviewIndexCopy(i18n: I18n): ReviewIndexCopy {
     title: t("reviews.title"),
     location: { pending: t("reviews.pending"), history: t("reviews.history") },
     empty: { pending: t("reviews.none"), history: t("reviews.historyNone") },
-    kind: { "task-change": t("reviews.kind.taskChange"), "source-candidate": t("reviews.kind.sourceCandidate") },
+    kind: { "task-change": t("reviews.kind.taskChange"), "import": t("reviews.kind.import") },
     openAria: (kind, id) => t("reviews.openAria", { kind, id }),
     invalidTitle: t("reviews.invalidTitle"),
     invalidReason: {
