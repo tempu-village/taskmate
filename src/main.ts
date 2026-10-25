@@ -11,6 +11,7 @@ import { detectObsidianLanguage, isDesktopObsidian } from "./i18n/obsidian-local
 import { TaskChangeProposalRepository } from "./reviews/task-change/proposal-repository";
 import { openProposalInReviewView, TASK_CHANGE_REVIEW_VIEW_TYPE, TaskChangeReviewView, taskChangeIndexDetails } from "./reviews/task-change/review-view";
 import { ImportReviewRepository } from "./reviews/import/review-repository";
+import { importReviewCompatibility } from "./reviews/import/proposal";
 import { IMPORT_REVIEW_VIEW_TYPE, ImportReviewView, importReviewIdFromLink, importReviewIndexDetails } from "./reviews/import/review-view";
 import { ReviewCatalog } from "./reviews/shared/review-catalog";
 import type { ReviewLocation, ReviewReference } from "./reviews/shared/review-catalog";
@@ -29,7 +30,7 @@ export default class TaskMatePlugin extends Plugin {
 
   async onload(): Promise<void> {
     await this.loadSettings();
-    await this.recordDesktopLanguage();
+    await this.recordAgentContext();
     const { t } = this.i18n();
     this.repository = new TaskRepository(this.app, () => this.settings.taskFolder);
     this.projects = new ProjectRepository(this.app, () => this.settings.projectFolder);
@@ -217,16 +218,20 @@ export default class TaskMatePlugin extends Plugin {
     await this.saveData(this.settings);
   }
 
-  // Obsidian applies a language change by reloading its window, which loads this plugin again, so reading the language
-  // once at load is enough.
-  private async recordDesktopLanguage(): Promise<void> {
+  // Records what Task Pilot needs to know about the loaded plugin: the desktop language, and the plugin version with the
+  // Import review schema versions it reads. Obsidian applies a language change or a plugin update by loading this plugin
+  // again, so recording once at load is enough.
+  private async recordAgentContext(): Promise<void> {
     const language = desktopLanguageToRecord(this.settings.desktopLanguage, isDesktopObsidian(), detectObsidianLanguage());
-    if (!language) return;
-    this.settings.desktopLanguage = language;
+    const compatibility = importReviewCompatibility(this.manifest.version);
+    const compatibilityChanged = JSON.stringify(this.settings.agentCompatibility) !== JSON.stringify(compatibility);
+    if (!language && !compatibilityChanged) return;
+    if (language) this.settings.desktopLanguage = language;
+    this.settings.agentCompatibility = compatibility;
     try {
       await this.saveSettings();
     } catch (error) {
-      console.error("TaskMate could not record the desktop language for Task Pilot", error);
+      console.error("TaskMate could not record its compatibility and desktop language for Task Pilot", error);
     }
   }
 

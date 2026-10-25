@@ -293,14 +293,15 @@ def output_language(vault: Path) -> Dict[str, str]:
     """Language for text Task Pilot writes into the vault, following TaskMate's setting.
 
     An explicit English or Japanese setting wins. Under Auto, Task Pilot cannot ask Obsidian, so it uses the language the
-    desktop Obsidian app recorded as desktopLanguage; without one it falls back to English.
+    desktop Obsidian app recorded as desktopLanguage. Without either the language is unknown: Task Pilot then decides
+    from clearly single-language Source notes or asks the user, and never falls back to English silently.
     """
     settings = plugin_settings(vault)
     if settings["language"] in ("en", "ja"):
         return {"language": settings["language"], "source": "setting"}
     if settings["desktopLanguage"] in ("en", "ja"):
         return {"language": settings["desktopLanguage"], "source": "desktop"}
-    return {"language": "en", "source": "default"}
+    return {"language": "unknown", "source": "unknown"}
 
 
 def task_folder(vault: Path, override: Optional[str]) -> Path:

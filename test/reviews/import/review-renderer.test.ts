@@ -18,8 +18,15 @@ const copy: ImportReviewCopy = {
   decide: { create: "Create", merge: "Merge", exclude: "Exclude", hold: "Hold", pending: "Undecide" },
   decideAria: (action, candidate) => `${action} ${candidate}`,
   decisionGroupAria: (candidate) => `Decision for ${candidate}`,
-  sources: "Sources",
+  evidenceTitle: "Evidence for this candidate",
+  sourceKind: { note: "Obsidian note", conversation: "Conversation" },
   conversation: (id) => `Conversation ${id}`,
+  summaryLabel: { note: "What this note says", conversation: "What this conversation says" },
+  noSummary: "No summary",
+  showStatements: (count) => `Show ${count} statements`,
+  hideStatements: (count) => `Hide ${count} statements`,
+  statementsAria: (candidate, source) => `Statements from ${source} for ${candidate}`,
+  legacyFormat: "Earlier format",
   fields: { title: "Title", date: "Date", priority: "Priority", labels: "Labels", project: "Project", steps: "Steps", notes: "Notes" },
   empty: "None",
   unassigned: "Unassigned",
@@ -76,8 +83,9 @@ describe("Import review renderer", () => {
 
     const cards = Array.from(container.querySelectorAll<HTMLElement>(".taskmate-import-candidate"));
     expect(cards.map((card) => card.id)).toEqual(["taskmate-import-candidate-IC-01", "taskmate-import-candidate-IC-02", "taskmate-import-candidate-IC-03"]);
-    expect(cards[0].textContent).toContain("佐藤さんへ契約書の修正版を今日中に送る。");
+    expect(cards[0].textContent).not.toContain("佐藤さんへ契約書の修正版を今日中に送る。");
     expect(cards[0].textContent).toContain("Notes/2026-10-17 顧客定例.md");
+    expect(cards[0].textContent).toContain("顧客Aの佐藤さんへ、修正版の契約書を今日中に送る必要がある。");
     expect(cards[0].querySelector(".taskmate-import-candidate-steps")?.textContent).toContain("修正版PDFを最終確認する");
     expect(cards[1].textContent).toContain("Conversation conversation-20261017-01");
     expect(cards[1].textContent).toContain("Merge into 明日のデモを準備する");
@@ -163,7 +171,73 @@ describe("Import review renderer", () => {
     const { container } = render(example());
 
     const order = Array.from(container.querySelector("#taskmate-import-candidate-IC-02")!.querySelectorAll("button")).map((button) => button.textContent);
-    expect(order).toEqual(["Show diff", "Merge", "Hold", "Undecide", "Edit"]);
+    expect(order).toEqual(["Show diff", "Merge", "Hold", "Undecide", "Edit", "Show 1 statements"]);
+  });
+
+  it("puts the Task first and the evidence last, naming each Source once with its summary", () => {
+    const review = example();
+    const candidate = review.candidates[0];
+    candidate.sourceRefs = [
+      { sourceId: "SRC-01", statement: "佐藤さんへ契約書の修正版を今日中に送る。" },
+      { sourceId: "SRC-02", statement: "デモ環境の検索フィルターを明日確認する。" },
+      { sourceId: "SRC-01", statement: "二つ目の引用。" }
+    ];
+    candidate.sourceSummaries = [{ sourceId: "SRC-01", summary: "契約書を送る。" }, { sourceId: "SRC-02", summary: "会話の要約。" }];
+    const { container } = render(review);
+    const card = container.querySelector<HTMLElement>("#taskmate-import-candidate-IC-01")!;
+
+    const children = Array.from(card.children).map((child) => child.className);
+    expect(children.indexOf("taskmate-import-candidate-fields")).toBeLessThan(children.indexOf("taskmate-import-candidate-actions"));
+    expect(children.at(-1)).toBe("taskmate-import-candidate-evidence");
+    const sources = Array.from(card.querySelectorAll<HTMLElement>(".taskmate-import-evidence-source"));
+    expect(sources.map((source) => source.dataset.sourceId)).toEqual(["SRC-01", "SRC-02"]);
+    expect(card.textContent?.split("Notes/2026-10-17 顧客定例.md").length).toBe(2);
+    expect(sources.map((source) => [
+      source.querySelector(".taskmate-import-evidence-kind")?.textContent,
+      source.querySelector(".taskmate-import-evidence-summary-label")?.textContent,
+      source.querySelector(".taskmate-import-evidence-summary")?.textContent,
+      source.querySelector("button")?.textContent
+    ])).toEqual([
+      ["Obsidian note", "What this note says", "契約書を送る。", "Show 2 statements"],
+      ["Conversation", "What this conversation says", "会話の要約。", "Show 1 statements"]
+    ]);
+    expect(card.querySelector(".taskmate-import-candidate-statement")).toBeNull();
+    expect(card.querySelector("h3")?.textContent).toBe("顧客Aへ修正版の契約書を送る");
+  });
+
+  it("expands one Source's exact statements in order and keeps focus on its toggle", () => {
+    const review = example();
+    review.candidates[0].sourceRefs.push({ sourceId: "SRC-01", statement: "二つ目の引用。" });
+    const collapsed = render(review);
+    const toggle = buttons(collapsed.container, "Show 2 statements")[0];
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    toggle.click();
+    expect(collapsed.dispatch).toHaveBeenCalledWith({ type: "toggle-evidence", candidateId: "IC-01", sourceId: "SRC-01" });
+
+    const state = reduceImportReviewUiState(createImportReviewUiState(), { type: "toggle-evidence", candidateId: "IC-01", sourceId: "SRC-01" });
+    const expanded = render(review, state);
+    const hide = buttons(expanded.container, "Hide 2 statements")[0];
+    const list = expanded.container.querySelector<HTMLElement>(`[id="${hide.getAttribute("aria-controls")}"]`)!;
+    expect([hide.getAttribute("aria-expanded"), document.activeElement]).toEqual(["true", hide]);
+    expect(Array.from(list.querySelectorAll("blockquote")).map((quote) => quote.textContent)).toEqual(["佐藤さんへ契約書の修正版を今日中に送る。", "二つ目の引用。"]);
+    expect(list.getAttribute("aria-label")).toBe("Statements from Notes/2026-10-17 顧客定例.md for IC-01");
+    expect(expanded.container.querySelector("#taskmate-import-candidate-IC-01 .taskmate-import-evidence-summary")?.textContent).toBe("顧客Aの佐藤さんへ、修正版の契約書を今日中に送る必要がある。");
+    expect(reduceImportReviewUiState(state, { type: "toggle-evidence", candidateId: "IC-01", sourceId: "SRC-01" }).expandedEvidence.size).toBe(0);
+  });
+
+  it("marks earlier formats and explains their missing summaries", () => {
+    const review = example();
+    const legacy = JSON.parse(JSON.stringify(review).replaceAll("import-review-", "source-review-").replaceAll("\"IC-", "\"SC-"));
+    legacy.reviewType = "source-candidate";
+    legacy.schemaVersion = 1;
+    delete legacy.contentLanguage;
+    delete legacy.languageSource;
+    for (const candidate of legacy.candidates) delete candidate.sourceSummaries;
+    const { container } = render(parseImportReview(JSON.stringify(legacy)));
+
+    expect(container.querySelector(".taskmate-import-review-legacy")?.textContent).toBe("Earlier format");
+    expect(container.querySelector("#taskmate-import-candidate-SC-01 .taskmate-import-evidence-summary")?.textContent).toBe("No summary");
+    expect(render(review).container.querySelector(".taskmate-import-review-legacy")).toBeNull();
   });
 
   it("starts editing a candidate from its Edit button", () => {

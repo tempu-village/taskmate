@@ -19,6 +19,8 @@ export type ReviewCatalogEntry =
 
 const TASK_CHANGE_ID = /^proposal-[A-Za-z0-9._-]+$/;
 const IMPORT_REVIEW_ID = /^import-review-[A-Za-z0-9._-]+$/;
+const LEGACY_IMPORT_REVIEW_ID = /^source-review-[A-Za-z0-9._-]+$/;
+const IMPORT_SCHEMA_VERSIONS: unknown[] = [1, 2];
 
 // Classifies one review file from its envelope only. Complete parsing, validation and application stay in the owning
 // review Module, so a file classified here can still be rejected by that Module.
@@ -38,6 +40,11 @@ export function classifyReviewFile(path: string, location: ReviewLocation, conte
   if (reviewType === "import") {
     // Both the discriminator and the import-review-* name must agree, and the name must match the stored ID.
     if (!IMPORT_REVIEW_ID.test(name) || reviewId !== name) return invalid("mismatched-id");
+    return IMPORT_SCHEMA_VERSIONS.includes(schemaVersion) ? review("import", name) : invalid("unsupported-version");
+  }
+  // The Source candidate review was the Import review's name before its first release; it is read as an Import review.
+  if (reviewType === "source-candidate") {
+    if (!LEGACY_IMPORT_REVIEW_ID.test(name) || reviewId !== name) return invalid("mismatched-id");
     return schemaVersion === 1 ? review("import", name) : invalid("unsupported-version");
   }
   if (reviewType !== undefined) return invalid("unknown-type");
@@ -46,7 +53,7 @@ export function classifyReviewFile(path: string, location: ReviewLocation, conte
     if (id !== name) return invalid("mismatched-id");
     return schemaVersion === 1 ? review("task-change", name) : invalid("unsupported-version");
   }
-  return invalid(IMPORT_REVIEW_ID.test(name) ? "mismatched-id" : "unknown-type");
+  return invalid(IMPORT_REVIEW_ID.test(name) || LEGACY_IMPORT_REVIEW_ID.test(name) ? "mismatched-id" : "unknown-type");
 }
 
 // Lists the review files directly inside the Proposal folder (pending) or its History folder. It only reads files.

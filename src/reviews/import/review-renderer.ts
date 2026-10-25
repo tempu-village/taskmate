@@ -1,6 +1,7 @@
 import { structuredPatch } from "diff";
 import { CANDIDATE_EDIT_FIELDS, candidateEditForm } from "./candidate-edit-form";
 import type { CandidateEditError, CandidateEditErrors, CandidateEditField, CandidateEditForm } from "./candidate-edit-form";
+import { candidateEvidence, importReviewFormat } from "./proposal";
 import type { FormalApplyPlan, ImportCandidate, ImportReview } from "./proposal";
 
 type Operation = ImportCandidate["operation"];
@@ -17,6 +18,8 @@ export interface CandidateEditState {
 
 export interface ImportReviewUiState {
   expandedDiffs: ReadonlySet<string>;
+  // Keys from evidenceKey(): the Sources whose statements are shown in full.
+  expandedEvidence: ReadonlySet<string>;
   applyOpen: boolean;
   acknowledged: boolean;
   editing: CandidateEditState | null;
@@ -39,8 +42,15 @@ export interface ImportReviewCopy {
   decide: Record<Operation | "hold" | "pending", string>;
   decideAria: (action: string, candidateId: string) => string;
   decisionGroupAria: (candidateId: string) => string;
-  sources: string;
+  evidenceTitle: string;
+  sourceKind: Record<"note" | "conversation", string>;
   conversation: (id: string) => string;
+  summaryLabel: Record<"note" | "conversation", string>;
+  noSummary: string;
+  showStatements: (count: number) => string;
+  hideStatements: (count: number) => string;
+  statementsAria: (candidateId: string, source: string) => string;
+  legacyFormat: string;
   fields: Record<"title" | "date" | "priority" | "labels" | "project" | "steps" | "notes", string>;
   empty: string;
   unassigned: string;
@@ -75,6 +85,7 @@ export interface ImportReviewCopy {
 export type ImportReviewAction =
   | { type: "decide"; candidateId: string; decision: Decision }
   | { type: "toggle-diff"; candidateId: string }
+  | { type: "toggle-evidence"; candidateId: string; sourceId: string }
   | { type: "open-apply" }
   | { type: "cancel-apply" }
   | { type: "set-acknowledged"; acknowledged: boolean }
@@ -99,8 +110,16 @@ export function editButtonId(candidateId: string): string {
   return `taskmate-import-candidate-edit-${candidateId}`;
 }
 
+export function evidenceKey(candidateId: string, sourceId: string): string {
+  return `${candidateId}:${sourceId}`;
+}
+
+function evidenceToggleId(candidateId: string, sourceId: string): string {
+  return `taskmate-import-evidence-toggle-${candidateId}-${sourceId}`;
+}
+
 export function createImportReviewUiState(): ImportReviewUiState {
-  return { expandedDiffs: new Set(), applyOpen: false, acknowledged: false, editing: null, focus: null };
+  return { expandedDiffs: new Set(), expandedEvidence: new Set(), applyOpen: false, acknowledged: false, editing: null, focus: null };
 }
 
 export function reduceImportReviewUiState(state: ImportReviewUiState, action: ImportReviewAction): ImportReviewUiState {
@@ -110,6 +129,13 @@ export function reduceImportReviewUiState(state: ImportReviewUiState, action: Im
       if (expandedDiffs.has(action.candidateId)) expandedDiffs.delete(action.candidateId);
       else expandedDiffs.add(action.candidateId);
       return { ...state, expandedDiffs };
+    }
+    case "toggle-evidence": {
+      const key = evidenceKey(action.candidateId, action.sourceId);
+      const expandedEvidence = new Set(state.expandedEvidence);
+      if (expandedEvidence.has(key)) expandedEvidence.delete(key);
+      else expandedEvidence.add(key);
+      return { ...state, expandedEvidence, focus: evidenceToggleId(action.candidateId, action.sourceId) };
     }
     case "open-apply": return { ...state, applyOpen: true, acknowledged: false, focus: APPLY_TITLE_ID };
     case "cancel-apply": return { ...state, applyOpen: false, acknowledged: false, focus: OPEN_APPLY_ID };
@@ -162,6 +188,7 @@ export function renderImportReview(
   }
   const summary = element("p", "taskmate-import-review-summary", container);
   summary.textContent = [review.reviewId, copy.status[review.status], review.health === "ok" ? "" : copy.health[review.health]].filter(Boolean).join(" · ");
+  if (importReviewFormat(review) !== "v2") text(container, "p", copy.legacyFormat, "taskmate-import-review-legacy");
 
   const list = element("div", "taskmate-review-files", container);
   const projects = options.projects ?? [];
@@ -188,7 +215,8 @@ function renderCard(
   const identity = element("div", "taskmate-review-file-identity", head);
   text(identity, "span", candidate.id, "taskmate-review-id");
   text(identity, "span", copy.operation[candidate.operation], "taskmate-import-candidate-operation");
-  text(identity, "h3", candidate.title);
+  // A create shows the title of the Task it would produce; merges and exclusions keep the candidate's own title.
+  text(identity, "h3", candidate.operation === "create" ? candidate.taskDraft.title : candidate.title);
 
   const status = element("p", "taskmate-import-candidate-status", card);
   const applied = candidate.application.status === "applied";
@@ -198,19 +226,10 @@ function renderCard(
   ].filter(Boolean).join(" · ");
   if (candidate.health !== "ok") status.classList.add(`is-${candidate.health}`);
 
-  const sources = element("div", "taskmate-import-candidate-sources", card);
-  text(sources, "h4", copy.sources);
-  for (const ref of candidate.sourceRefs) {
-    const source = review.sources.find((item) => item.id === ref.sourceId);
-    const label = !source ? ref.sourceId : source.type === "note" ? source.path : copy.conversation(source.localSourceId);
-    const quote = element("blockquote", "taskmate-import-candidate-statement", sources);
-    text(quote, "cite", `${ref.sourceId} · ${label}`);
-    text(quote, "p", ref.statement);
-  }
-
   const editing = state.editing?.candidateId === candidate.id ? state.editing : null;
   if (editing) {
     renderEditForm(card, candidate, editing, copy, dispatch, projects);
+    renderEvidence(card, review, candidate, state, copy, dispatch);
     return;
   }
 
@@ -241,6 +260,51 @@ function renderCard(
     edit.setAttribute("aria-label", copy.editAria(candidate.id));
     edit.disabled = state.editing !== null;
     actions.append(edit);
+  }
+  renderEvidence(card, review, candidate, state, copy, dispatch);
+}
+
+// The Sources behind a candidate, after the Task it would produce: each Source once, with the summary Task Pilot wrote
+// for this candidate, and the exact statements collapsed until asked for.
+function renderEvidence(
+  card: HTMLElement,
+  review: ImportReview,
+  candidate: ImportCandidate,
+  state: ImportReviewUiState,
+  copy: ImportReviewCopy,
+  dispatch: (action: ImportReviewAction) => void
+): void {
+  const section = element("div", "taskmate-import-candidate-evidence", card);
+  text(section, "h4", copy.evidenceTitle);
+  for (const group of candidateEvidence(candidate)) {
+    const source = review.sources.find((item) => item.id === group.sourceId);
+    const kind = source?.type ?? "note";
+    const name = !source ? group.sourceId : source.type === "note" ? source.path : copy.conversation(source.localSourceId);
+    const block = element("section", "taskmate-import-evidence-source", section);
+    block.dataset.sourceId = group.sourceId;
+    text(block, "p", copy.sourceKind[kind], "taskmate-import-evidence-kind");
+    text(block, "p", name, "taskmate-import-evidence-name");
+    text(block, "p", copy.summaryLabel[kind], "taskmate-import-evidence-summary-label");
+    const summary = text(block, "p", group.summary ?? copy.noSummary, "taskmate-import-evidence-summary");
+    if (group.summary === null) summary.classList.add("is-missing");
+
+    const expanded = state.expandedEvidence.has(evidenceKey(candidate.id, group.sourceId));
+    const count = group.statements.length;
+    const listId = `taskmate-import-evidence-${candidate.id}-${group.sourceId}`;
+    const toggle = button(expanded ? copy.hideStatements(count) : copy.showStatements(count), () => (
+      dispatch({ type: "toggle-evidence", candidateId: candidate.id, sourceId: group.sourceId })
+    ));
+    toggle.id = evidenceToggleId(candidate.id, group.sourceId);
+    toggle.classList.add("taskmate-import-evidence-toggle");
+    toggle.setAttribute("aria-expanded", String(expanded));
+    toggle.setAttribute("aria-controls", listId);
+    block.append(toggle);
+    if (!expanded) continue;
+    const statements = element("div", "taskmate-import-evidence-statements", block);
+    statements.id = listId;
+    statements.setAttribute("role", "group");
+    statements.setAttribute("aria-label", copy.statementsAria(candidate.id, name));
+    for (const statement of group.statements) text(statements, "blockquote", statement, "taskmate-import-candidate-statement");
   }
 }
 

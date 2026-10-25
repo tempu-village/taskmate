@@ -5,10 +5,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import { parseImportReview, planFormalApply, verifyMergeEvidence } from "../../../src/reviews/import/proposal";
+import { importReviewCompatibility, parseImportReview, planFormalApply, verifyMergeEvidence } from "../../../src/reviews/import/proposal";
 import { schemaJson } from "./fixture";
 
 const SCRIPTS = fileURLToPath(new URL("../../../skills/taskpilot/scripts/", import.meta.url));
+const MANIFEST = fileURLToPath(new URL("../../../manifest.json", import.meta.url));
 const ajv = new Ajv2020({ allErrors: true });
 ajv.addFormat("date-time", /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/);
 const validate = ajv.compile(schemaJson());
@@ -24,7 +25,12 @@ function stagedVault(): { vault: string; reviewPath: string; targetId: string } 
   const vault = mkdtempSync(join(tmpdir(), "taskmate-staging-"));
   vaults.push(vault);
   mkdirSync(join(vault, ".obsidian", "plugins", "taskmate"), { recursive: true });
-  writeFileSync(join(vault, ".obsidian", "plugins", "taskmate", "data.json"), JSON.stringify({ sourceFolders: ["Notes"] }));
+  // Install this repository's plugin as Obsidian would: its manifest, and the compatibility record it writes at load.
+  const manifest = JSON.parse(readFileSync(MANIFEST, "utf8"));
+  writeFileSync(join(vault, ".obsidian", "plugins", "taskmate", "manifest.json"), JSON.stringify(manifest));
+  writeFileSync(join(vault, ".obsidian", "plugins", "taskmate", "data.json"), JSON.stringify({
+    sourceFolders: ["Notes"], agentCompatibility: importReviewCompatibility(manifest.version)
+  }));
   mkdirSync(join(vault, "Notes"));
   writeFileSync(join(vault, "Notes", "日次.md"), "# 日次メモ\n\n- 佐藤さんへ契約書を送る。\n- デモの検索フィルターを確認する。\n- 次回会議は金曜午後が候補。\n");
   const target = python(vault, "todo_store.py", "create", "--title", "明日のデモを準備する", "--date", "2026-10-19", "--label", "context/pc",
@@ -32,19 +38,25 @@ function stagedVault(): { vault: string; reviewPath: string; targetId: string } 
   const inspected = python(vault, "planning_store.py", "inspect", "--today", "2026-10-18");
   const snapshot = inspected.tasks.find((task: { id: string }) => task.id === target.id).snapshot;
   const request = {
+    contentLanguage: "ja",
+    languageSource: "setting",
     sources: [
       { type: "note", path: "Notes/日次.md", statements: ["佐藤さんへ契約書を送る。", "デモの検索フィルターを確認する。", "次回会議は金曜午後が候補。"] },
       { type: "conversation", localSourceId: "conversation-01", snapshot: "リリース手順を確認する。", selectionInstruction: "この発言を含める", threadId: null, turnRefs: [], statements: ["リリース手順を確認する。"] }
     ],
     candidates: [
       { operation: "create", title: "契約書を送る", sourceRefs: [{ source: "Notes/日次.md", statement: "佐藤さんへ契約書を送る。" }],
+        sourceSummaries: [{ source: "Notes/日次.md", summary: "佐藤さんへ契約書を送る必要がある。" }],
         taskDraft: { title: "契約書を送る", date: "2026-10-18", priority: 2, labels: ["context/pc"], project: null, steps: [], notes: "" } },
       { operation: "merge", title: "検索フィルター確認を統合する", sourceRefs: [{ source: "Notes/日次.md", statement: "デモの検索フィルターを確認する。" }],
+        sourceSummaries: [{ source: "Notes/日次.md", summary: "デモの検索フィルターを確認する必要がある。" }],
         mergeTarget: { taskId: target.id, snapshot, reason: "同じデモ準備の行動", changes: {
           steps: [{ text: "デモデータを準備する", completed: false, date: null }, { text: "検索フィルターを確認する", completed: false, date: null }],
           notes: "会議で追加された確認。" } } },
-      { operation: "exclude", title: "会議日程は除外", sourceRefs: [{ source: "Notes/日次.md", statement: "次回会議は金曜午後が候補。" }], exclusionReason: "候補日時であり行動ではない" },
+      { operation: "exclude", title: "会議日程は除外", sourceRefs: [{ source: "Notes/日次.md", statement: "次回会議は金曜午後が候補。" }],
+        sourceSummaries: [{ source: "Notes/日次.md", summary: "次回会議の候補日時だけが書かれている。" }], exclusionReason: "候補日時であり行動ではない" },
       { operation: "create", title: "リリース手順を確認する", sourceRefs: [{ source: "conversation-01", statement: "リリース手順を確認する。" }],
+        sourceSummaries: [{ source: "conversation-01", summary: "リリース手順を確認する必要がある。" }],
         taskDraft: { title: "リリース手順を確認する", date: null, priority: null, labels: [], project: null, steps: [], notes: "" } }
     ]
   };
@@ -66,6 +78,7 @@ describe("Task Pilot staging contract", () => {
     expect(validate(JSON.parse(text)) ? "" : ajv.errorsText(validate.errors)).toBe("");
     const proposal = parseImportReview(text);
     expect([proposal.status, proposal.health, proposal.revision]).toEqual(["pending", "ok", 1]);
+    expect([proposal.schemaVersion, proposal.contentLanguage, proposal.languageSource]).toEqual([2, "ja", "setting"]);
     expect(proposal.candidates.map((candidate) => candidate.operation)).toEqual(["create", "merge", "exclude", "create"]);
     const merge = proposal.candidates[1];
     if (merge.operation !== "merge") throw new Error("IC-02 must merge");

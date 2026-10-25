@@ -6,16 +6,19 @@ import {
   archiveReview,
   markSourceStale,
   noteSourceCompletion,
+  importReviewFormat,
   parseImportReview,
   planFormalApply,
   promotedTaskId,
   recordApplication,
   verifyMergeEvidence
 } from "./proposal";
-import type { ApplicationOutcome, ImportCandidate, ImportReview } from "./proposal";
+import type { ApplicationOutcome, ImportCandidate, ImportReview, ImportReviewFormat } from "./proposal";
 import { importedHash, sourceNoteHash, withSourceNoteProvenance } from "./source-note-provenance";
 
-const REVIEW_ID = /^import-review-[A-Za-z0-9._-]+$/;
+// Import reviews, and Source candidate reviews staged before the rename, which stay readable in their own shape.
+const REVIEW_ID = /^(?:import|source)-review-[A-Za-z0-9._-]+$/;
+const REVIEW_PREFIXES = ["import-review-", "source-review-"];
 
 export interface ImportReviewSummary {
   reviewId: string;
@@ -25,6 +28,7 @@ export interface ImportReviewSummary {
   updatedAt: string;
   candidateCount: number;
   appliedCount: number;
+  format: ImportReviewFormat;
 }
 
 export interface FormalApplyResult {
@@ -216,13 +220,16 @@ export class ImportReviewRepository {
   }
 
   private pendingFiles(): TFile[] {
-    const prefix = `${this.folder()}/import-review-`;
-    return this.app.vault.getFiles().filter((file) => file.path.startsWith(prefix) && file.extension === "json");
+    return this.filesIn(this.folder());
   }
 
   private historyFiles(): TFile[] {
-    const prefix = `${this.historyFolder()}/import-review-`;
-    return this.app.vault.getFiles().filter((file) => file.path.startsWith(prefix) && file.extension === "json");
+    return this.filesIn(this.historyFolder());
+  }
+
+  private filesIn(folder: string): TFile[] {
+    const prefixes = REVIEW_PREFIXES.map((prefix) => `${folder}/${prefix}`);
+    return this.app.vault.getFiles().filter((file) => file.extension === "json" && prefixes.some((prefix) => file.path.startsWith(prefix)));
   }
 
   private reviewFile(reviewId: string): TFile | null {
@@ -271,6 +278,7 @@ function summarize(review: ImportReview): ImportReviewSummary {
     createdAt: review.createdAt,
     updatedAt: review.updatedAt,
     candidateCount: review.candidates.length,
-    appliedCount: review.candidates.filter((candidate) => candidate.application.status === "applied").length
+    appliedCount: review.candidates.filter((candidate) => candidate.application.status === "applied").length,
+    format: importReviewFormat(review)
   };
 }

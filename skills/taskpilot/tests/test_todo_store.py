@@ -104,10 +104,10 @@ class TodoStoreTest(unittest.TestCase):
         self.assertEqual(language(language="en", desktopLanguage="ja"), {"language": "en", "source": "setting"})
         self.assertEqual(language(language="auto", desktopLanguage="ja"), {"language": "ja", "source": "desktop"})
         self.assertEqual(language(desktopLanguage="ja"), {"language": "ja", "source": "desktop"})
-        self.assertEqual(language(language="auto"), {"language": "en", "source": "default"})
-        self.assertEqual(language(language="auto", desktopLanguage="fr"), {"language": "en", "source": "default"})
+        self.assertEqual(language(language="auto"), {"language": "unknown", "source": "unknown"})
+        self.assertEqual(language(language="auto", desktopLanguage="fr"), {"language": "unknown", "source": "unknown"})
         settings.unlink()
-        self.assertEqual(self.run_store("language"), {"language": "en", "source": "default"})
+        self.assertEqual(self.run_store("language"), {"language": "unknown", "source": "unknown"})
 
     def test_update_can_clear_priority_labels_and_project(self):
         created = self.run_store(

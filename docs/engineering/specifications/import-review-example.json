@@ -1,7 +1,9 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "reviewId": "import-review-20261017T101500-demo",
   "reviewType": "import",
+  "contentLanguage": "ja",
+  "languageSource": "setting",
   "status": "ready-to-apply",
   "health": "ok",
   "revision": 3,
@@ -41,11 +43,19 @@
           "statement": "佐藤さんへ契約書の修正版を今日中に送る。"
         }
       ],
+      "sourceSummaries": [
+        {
+          "sourceId": "SRC-01",
+          "summary": "顧客Aの佐藤さんへ、修正版の契約書を今日中に送る必要がある。"
+        }
+      ],
       "taskDraft": {
         "title": "顧客Aへ修正版の契約書を送る",
         "date": "2026-10-17",
         "priority": 2,
-        "labels": ["context/pc"],
+        "labels": [
+          "context/pc"
+        ],
         "project": null,
         "steps": [
           {
@@ -84,6 +94,12 @@
         {
           "sourceId": "SRC-02",
           "statement": "デモ環境の検索フィルターを明日確認する。"
+        }
+      ],
+      "sourceSummaries": [
+        {
+          "sourceId": "SRC-02",
+          "summary": "明日、デモ環境の検索フィルターを確認する必要がある。"
         }
       ],
       "mergeTarget": {
@@ -142,6 +158,12 @@
         {
           "sourceId": "SRC-01",
           "statement": "次回会議は金曜午後を候補にする。"
+        }
+      ],
+      "sourceSummaries": [
+        {
+          "sourceId": "SRC-01",
+          "summary": "次回会議の候補が金曜午後であることだけが書かれており、行動は示されていない。"
         }
       ],
       "exclusionReason": "候補日時であり、利用者が実行する独立した行動ではない",

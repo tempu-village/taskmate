@@ -963,9 +963,9 @@ var en = {
   "reviews.invalidTitle": "Files that could not be read",
   "reviews.invalid.unreadableJson": "not valid review JSON",
   "reviews.invalid.unknownType": "unknown review type",
-  "reviews.invalid.unsupportedVersion": "unsupported format version",
+  "reviews.invalid.unsupportedVersion": "unsupported format version; update TaskMate and reload it",
   "reviews.invalid.mismatchedId": "the file name does not match the review ID",
-  "reviews.invalid.unreadableReview": "its review could not read it",
+  "reviews.invalid.unreadableReview": "its review could not read it; stage the review again with Task Pilot",
   "review.summary": "{tasks} Tasks, {changes} changes",
   "review.historyCounts": "{succeeded} applied \xB7 {failed} failed",
   "review.status.applied": "Applied",
@@ -1015,7 +1015,16 @@ var en = {
   "importReview.decide.pending": "Undecide",
   "importReview.decideAria": "{action} {candidate}",
   "importReview.decisionGroupAria": "Decision for {candidate}",
-  "importReview.sources": "Sources",
+  "importReview.evidence.title": "Evidence for this candidate",
+  "importReview.evidence.note": "Obsidian note",
+  "importReview.evidence.conversation": "Conversation",
+  "importReview.evidence.noteSummary": "What this note says",
+  "importReview.evidence.conversationSummary": "What this conversation says",
+  "importReview.evidence.noSummary": "This review has no summary. Show the statements to check them.",
+  "importReview.evidence.show": "Show {count} statements",
+  "importReview.evidence.hide": "Hide {count} statements",
+  "importReview.evidence.aria": "Statements from {source} for {candidate}",
+  "importReview.legacyFormat": "This review uses an earlier format.",
   "importReview.conversation": "Conversation {id}",
   "importReview.field.title": "Title",
   "importReview.field.date": "Date",
@@ -1064,7 +1073,7 @@ var en = {
   "importReview.provenanceFailed": "Could not record the import on {count} notes; it will be retried on the next apply.",
   "importReview.archived": "The review is complete and moved to history.",
   "importReview.actionFailed": "Could not update the import review: {error}",
-  "importReview.invalid": "This import review is missing or invalid",
+  "importReview.invalid": "This import review is missing or invalid: {error}. Stage it again with Task Pilot, or update TaskMate and reload it.",
   "importReview.invalidLink": "The import review link is invalid",
   "search.title": "Search",
   "search.placeholder": "Search tasks, labels, and projects",
@@ -1293,9 +1302,9 @@ var ja = {
   "reviews.invalidTitle": "\u8AAD\u3081\u306A\u3044\u30D5\u30A1\u30A4\u30EB",
   "reviews.invalid.unreadableJson": "\u30EC\u30D3\u30E5\u30FC\u306EJSON\u3068\u3057\u3066\u8AAD\u3081\u307E\u305B\u3093",
   "reviews.invalid.unknownType": "\u77E5\u3089\u306A\u3044\u7A2E\u985E\u306E\u30EC\u30D3\u30E5\u30FC\u3067\u3059",
-  "reviews.invalid.unsupportedVersion": "\u5BFE\u5FDC\u3057\u3066\u3044\u306A\u3044\u5F62\u5F0F\u306E\u7248\u3067\u3059",
+  "reviews.invalid.unsupportedVersion": "\u5BFE\u5FDC\u3057\u3066\u3044\u306A\u3044\u5F62\u5F0F\u306E\u7248\u3067\u3059\u3002TaskMate\u3092\u66F4\u65B0\u3057\u3066\u518D\u8AAD\u307F\u8FBC\u307F\u3057\u3066\u304F\u3060\u3055\u3044",
   "reviews.invalid.mismatchedId": "\u30D5\u30A1\u30A4\u30EB\u540D\u3068\u30EC\u30D3\u30E5\u30FCID\u304C\u4E00\u81F4\u3057\u307E\u305B\u3093",
-  "reviews.invalid.unreadableReview": "\u30EC\u30D3\u30E5\u30FC\u3068\u3057\u3066\u8AAD\u307F\u8FBC\u3081\u307E\u305B\u3093",
+  "reviews.invalid.unreadableReview": "\u30EC\u30D3\u30E5\u30FC\u3068\u3057\u3066\u8AAD\u307F\u8FBC\u3081\u307E\u305B\u3093\u3002Task Pilot\u3067\u30EC\u30D3\u30E5\u30FC\u3092\u4F5C\u308A\u76F4\u3057\u3066\u304F\u3060\u3055\u3044",
   "review.summary": "{tasks}\u4EF6\u306ETask\u3001{changes}\u4EF6\u306E\u5909\u66F4",
   "review.historyCounts": "\u6210\u529F{succeeded}\u4EF6\u30FB\u5931\u6557{failed}\u4EF6",
   "review.status.applied": "\u9069\u7528\u6E08\u307F",
@@ -1345,15 +1354,24 @@ var ja = {
   "importReview.decide.pending": "\u672A\u6C7A\u306B\u623B\u3059",
   "importReview.decideAria": "{candidate}\u3092{action}",
   "importReview.decisionGroupAria": "{candidate}\u306E\u5224\u65AD",
-  "importReview.sources": "Source",
+  "importReview.evidence.title": "\u3053\u306E\u5019\u88DC\u306E\u6839\u62E0",
+  "importReview.evidence.note": "Obsidian\u30CE\u30FC\u30C8",
+  "importReview.evidence.conversation": "\u4F1A\u8A71",
+  "importReview.evidence.noteSummary": "\u3053\u306E\u30CE\u30FC\u30C8\u304B\u3089\u5206\u304B\u308B\u3053\u3068",
+  "importReview.evidence.conversationSummary": "\u3053\u306E\u4F1A\u8A71\u304B\u3089\u5206\u304B\u308B\u3053\u3068",
+  "importReview.evidence.noSummary": "\u3053\u306E\u30EC\u30D3\u30E5\u30FC\u306B\u306F\u8981\u7D04\u304C\u3042\u308A\u307E\u305B\u3093\u3002\u8A72\u5F53\u7B87\u6240\u3092\u8868\u793A\u3057\u3066\u78BA\u8A8D\u3057\u3066\u304F\u3060\u3055\u3044",
+  "importReview.evidence.show": "\u8A72\u5F53\u7B87\u6240{count}\u4EF6\u3092\u8868\u793A",
+  "importReview.evidence.hide": "\u8A72\u5F53\u7B87\u6240{count}\u4EF6\u3092\u96A0\u3059",
+  "importReview.evidence.aria": "{candidate}\u306E\u6839\u62E0\uFF1A{source}\u306E\u8A72\u5F53\u7B87\u6240",
+  "importReview.legacyFormat": "\u65E7\u5F62\u5F0F\u306E\u30EC\u30D3\u30E5\u30FC\u3067\u3059",
   "importReview.conversation": "\u4F1A\u8A71 {id}",
   "importReview.field.title": "\u30BF\u30A4\u30C8\u30EB",
   "importReview.field.date": "\u65E5\u4ED8",
   "importReview.field.priority": "\u512A\u5148\u5EA6",
   "importReview.field.labels": "\u30E9\u30D9\u30EB",
   "importReview.field.project": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8",
-  "importReview.field.steps": "Steps",
-  "importReview.field.notes": "Notes",
+  "importReview.field.steps": "\u624B\u9806",
+  "importReview.field.notes": "\u30E1\u30E2",
   "importReview.empty": "\u306A\u3057",
   "importReview.mergeTarget": "{title}\u3078\u7D71\u5408",
   "importReview.showDiff": "\u5DEE\u5206\u3092\u8868\u793A",
@@ -1366,7 +1384,7 @@ var ja = {
   "importReview.applyCounts": "\u4F5C\u6210{create}\u4EF6\u3001\u7D71\u5408{merge}\u4EF6\u3001\u9664\u5916{exclude}\u4EF6",
   "importReview.nothingToApply": "\u5148\u306B1\u4EF6\u4EE5\u4E0A\u306E\u5019\u88DC\u3092\u627F\u8A8D\u3057\u3066\u304F\u3060\u3055\u3044",
   "importReview.blockedTitle": "\u4ECA\u56DE\u306F\u53CD\u6620\u3057\u306A\u3044\u3082\u306E",
-  "importReview.blocked.stale": "Source\u307E\u305F\u306F\u7D71\u5408\u5148\u304C\u5909\u308F\u308A\u307E\u3057\u305F",
+  "importReview.blocked.stale": "\u5143\u30CE\u30FC\u30C8\u307E\u305F\u306F\u7D71\u5408\u5148\u304C\u5909\u308F\u308A\u307E\u3057\u305F",
   "importReview.blocked.held": "\u4FDD\u7559\u4E2D",
   "importReview.blocked.undecided": "\u672A\u6C7A",
   "importReview.blocked.outdated": "\u5224\u65AD\u306E\u5F8C\u306B\u7DE8\u96C6\u3055\u308C\u307E\u3057\u305F",
@@ -1380,7 +1398,7 @@ var ja = {
   "importReview.editOperation": "\u64CD\u4F5C",
   "importReview.changeReason": "\u5909\u66F4\u306E\u7406\u7531\uFF08\u4EFB\u610F\uFF09",
   "importReview.editHelp.labels": "\u30E9\u30D9\u30EB\u306F\u30AB\u30F3\u30DE\u3067\u533A\u5207\u308A\u307E\u3059",
-  "importReview.editHelp.steps": "1\u884C\u306B1\u3064\u306EStep",
+  "importReview.editHelp.steps": "1\u884C\u306B1\u3064\u306E\u624B\u9806",
   "importReview.editHelp.changeReason": "\u5909\u3048\u305F\u9805\u76EE\u3054\u3068\u306B\u8868\u793A\u3055\u308C\u307E\u3059\u3002\u7A7A\u6B04\u306A\u3089\u300CTaskMate\u3067\u7DE8\u96C6\u300D\u3068\u8A18\u9332\u3057\u307E\u3059\u3002",
   "importReview.editedReason": "TaskMate\u3067\u7DE8\u96C6",
   "importReview.editHelp.noMergeTarget": "\u5225\u306ETask\u3078\u7D71\u5408\u3059\u308B\u306B\u306F\u3001Task Pilot\u3067\u30EC\u30D3\u30E5\u30FC\u3092\u4F5C\u308A\u76F4\u3057\u3066\u304F\u3060\u3055\u3044",
@@ -1394,7 +1412,7 @@ var ja = {
   "importReview.provenanceFailed": "{count}\u4EF6\u306E\u30CE\u30FC\u30C8\u306B\u53D6\u308A\u8FBC\u307F\u5C65\u6B74\u3092\u66F8\u3051\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u6B21\u306E\u53CD\u6620\u3067\u3082\u3046\u4E00\u5EA6\u66F8\u304D\u307E\u3059\u3002",
   "importReview.archived": "\u30EC\u30D3\u30E5\u30FC\u304C\u5B8C\u4E86\u3057\u3001\u5C65\u6B74\u3078\u79FB\u3057\u307E\u3057\u305F\u3002",
   "importReview.actionFailed": "\u53D6\u308A\u8FBC\u307F\u30EC\u30D3\u30E5\u30FC\u3092\u66F4\u65B0\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\uFF1A{error}",
-  "importReview.invalid": "\u3053\u306E\u53D6\u308A\u8FBC\u307F\u30EC\u30D3\u30E5\u30FC\u306F\u898B\u3064\u304B\u3089\u306A\u3044\u304B\u6B63\u3057\u304F\u3042\u308A\u307E\u305B\u3093",
+  "importReview.invalid": "\u3053\u306E\u53D6\u308A\u8FBC\u307F\u30EC\u30D3\u30E5\u30FC\u306F\u898B\u3064\u304B\u3089\u306A\u3044\u304B\u6B63\u3057\u304F\u3042\u308A\u307E\u305B\u3093\uFF08{error}\uFF09\u3002Task Pilot\u3067\u30EC\u30D3\u30E5\u30FC\u3092\u4F5C\u308A\u76F4\u3059\u304B\u3001TaskMate\u3092\u66F4\u65B0\u3057\u3066\u518D\u8AAD\u307F\u8FBC\u307F\u3057\u3066\u304F\u3060\u3055\u3044",
   "importReview.invalidLink": "\u53D6\u308A\u8FBC\u307F\u30EC\u30D3\u30E5\u30FC\u306E\u30EA\u30F3\u30AF\u304C\u6B63\u3057\u304F\u3042\u308A\u307E\u305B\u3093",
   "search.title": "\u691C\u7D22",
   "search.placeholder": "\u30BF\u30B9\u30AF\u3001\u30E9\u30D9\u30EB\u3001\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3092\u691C\u7D22",
@@ -7992,7 +8010,12 @@ function reviewCopy(plugin) {
 var import_obsidian17 = require("obsidian");
 
 // src/reviews/import/proposal.ts
-var SCHEMA_VERSION = 1;
+var CURRENT_SCHEMA_VERSION = 2;
+var SUPPORTED_SCHEMA_VERSIONS = [1, 2];
+var SUMMARY_MAX_LENGTH = 1e3;
+function importReviewCompatibility(pluginVersion) {
+  return { pluginVersion, importReviewSchemaVersions: [...SUPPORTED_SCHEMA_VERSIONS] };
+}
 var DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 var DATE = /^\d{4}-\d{2}-\d{2}$/;
 var SHA256 = /^[a-f0-9]{64}$/;
@@ -8002,6 +8025,23 @@ function parseImportReview(content) {
   const value = JSON.parse(content);
   validateProposal(value);
   return value;
+}
+function importReviewFormat(review) {
+  if (review.reviewType === "source-candidate") return "legacy";
+  return review.schemaVersion === 2 ? "v2" : "v1";
+}
+function candidateEvidence(candidate) {
+  const groups = /* @__PURE__ */ new Map();
+  for (const ref of candidate.sourceRefs) {
+    const statements = groups.get(ref.sourceId) ?? [];
+    statements.push(ref.statement);
+    groups.set(ref.sourceId, statements);
+  }
+  return [...groups].map(([sourceId, statements]) => ({
+    sourceId,
+    summary: candidate.sourceSummaries?.find((item) => item.sourceId === sourceId)?.summary ?? null,
+    statements
+  }));
 }
 async function verifyMergeEvidence(target) {
   if (await sha256(target.beforeMarkdown) !== target.beforeSha256) throw new Error(`Merge target ${target.taskId} beforeSha256 does not match its Markdown`);
@@ -8269,10 +8309,28 @@ function requiredText(value, name) {
 }
 function validateProposal(value) {
   const proposal = record(value, "Proposal");
-  allowOnly(proposal, ["schemaVersion", "reviewId", "reviewType", "status", "health", "revision", "createdAt", "updatedAt", "archivedAt", "sources", "candidates"], "Proposal");
-  if (proposal.schemaVersion !== SCHEMA_VERSION) invalid("schemaVersion", "must be 1");
-  if (typeof proposal.reviewId !== "string" || !/^import-review-[A-Za-z0-9._-]+$/.test(proposal.reviewId)) invalid("reviewId", "must start with import-review-");
-  if (proposal.reviewType !== "import") invalid("reviewType", "must be import");
+  const format = formatOf(proposal);
+  const v2 = format === "v2";
+  allowOnly(proposal, [
+    "schemaVersion",
+    "reviewId",
+    "reviewType",
+    ...v2 ? ["contentLanguage", "languageSource"] : [],
+    "status",
+    "health",
+    "revision",
+    "createdAt",
+    "updatedAt",
+    "archivedAt",
+    "sources",
+    "candidates"
+  ], "Proposal");
+  const reviewPrefix = format === "legacy" ? "source-review-" : "import-review-";
+  if (typeof proposal.reviewId !== "string" || !new RegExp(`^${reviewPrefix}[A-Za-z0-9._-]+$`).test(proposal.reviewId)) invalid("reviewId", `must start with ${reviewPrefix}`);
+  if (v2) {
+    oneOf(proposal.contentLanguage, ["ja", "en"], "contentLanguage");
+    oneOf(proposal.languageSource, ["setting", "desktop", "source", "user"], "languageSource");
+  }
   oneOf(proposal.status, ["pending", "ready-to-apply", "partially-applied", "applied", "history"], "status");
   oneOf(proposal.health, ["ok", "stale", "failed"], "health");
   positiveInteger(proposal.revision, "revision");
@@ -8291,7 +8349,7 @@ function validateProposal(value) {
   const statements = /* @__PURE__ */ new Map();
   proposal.candidates.forEach((candidate, index2) => {
     const path = `candidates[${index2}]`;
-    validateCandidate(candidate, path);
+    validateCandidate(candidate, path, format);
     const { id, sourceRefs } = candidate;
     if (candidateIds.has(id)) invalid(`${path}.id`, `duplicates ${id}`);
     candidateIds.add(id);
@@ -8331,10 +8389,21 @@ function validateSource(value, path) {
   }
   return source.id;
 }
-function validateCandidate(value, path) {
+function formatOf(proposal) {
+  if (proposal.reviewType === "source-candidate") {
+    if (proposal.schemaVersion !== 1) invalid("schemaVersion", "must be 1 for a Source candidate review");
+    return "legacy";
+  }
+  if (proposal.reviewType !== "import") invalid("reviewType", "must be import");
+  if (proposal.schemaVersion === 1) return "v1";
+  if (proposal.schemaVersion === CURRENT_SCHEMA_VERSION) return "v2";
+  return invalid("schemaVersion", `must be one of ${SUPPORTED_SCHEMA_VERSIONS.join(", ")}`);
+}
+function validateCandidate(value, path, format) {
   const candidate = record(value, path);
-  allowOnly(candidate, ["id", "revision", "originalOperation", "operation", "title", "sourceRefs", "taskDraft", "mergeTarget", "exclusionReason", "decision", "decisionRevision", "decidedAt", "diffViewedRevision", "health", "healthReason", "application"], path);
-  pattern(candidate.id, /^IC-[0-9]{2,}$/, `${path}.id`);
+  const v2 = format === "v2";
+  allowOnly(candidate, ["id", "revision", "originalOperation", "operation", "title", "sourceRefs", ...v2 ? ["sourceSummaries"] : [], "taskDraft", "mergeTarget", "exclusionReason", "decision", "decisionRevision", "decidedAt", "diffViewedRevision", "health", "healthReason", "application"], path);
+  pattern(candidate.id, format === "legacy" ? /^SC-[0-9]{2,}$/ : /^IC-[0-9]{2,}$/, `${path}.id`);
   positiveInteger(candidate.revision, `${path}.revision`);
   oneOf(candidate.originalOperation, ["create", "merge", "exclude"], `${path}.originalOperation`);
   oneOf(candidate.operation, ["create", "merge", "exclude"], `${path}.operation`);
@@ -8346,6 +8415,7 @@ function validateCandidate(value, path) {
     pattern(sourceRef.sourceId, /^SRC-[0-9]{2,}$/, `${path}.sourceRefs[${index2}].sourceId`);
     nonEmpty(sourceRef.statement, `${path}.sourceRefs[${index2}].statement`);
   });
+  if (v2) validateSourceSummaries(candidate.sourceSummaries, candidate.sourceRefs, `${path}.sourceSummaries`);
   if (candidate.taskDraft !== void 0) validateTaskDraft(candidate.taskDraft, `${path}.taskDraft`);
   if (candidate.mergeTarget !== void 0) validateMergeTarget(candidate.mergeTarget, `${path}.mergeTarget`);
   if (candidate.exclusionReason !== void 0) nonEmpty(candidate.exclusionReason, `${path}.exclusionReason`);
@@ -8364,6 +8434,24 @@ function validateCandidate(value, path) {
   if (typeof candidate.decisionRevision === "number" && candidate.decisionRevision > revision) invalid(`${path}.decisionRevision`, "is newer than the candidate");
   if (typeof candidate.diffViewedRevision === "number" && (candidate.diffViewedRevision > revision || candidate.operation !== "merge")) invalid(`${path}.diffViewedRevision`, "is valid only for a viewed merge revision");
   validateApplication(candidate.application, candidate, `${path}.application`);
+}
+function validateSourceSummaries(value, refs, path) {
+  const expected = [...new Set(refs.map((ref) => ref.sourceId))];
+  if (!Array.isArray(value)) invalid(path, "must be an array");
+  const seen = /* @__PURE__ */ new Set();
+  value.forEach((raw, index2) => {
+    const item = record(raw, `${path}[${index2}]`);
+    allowOnly(item, ["sourceId", "summary"], `${path}[${index2}]`);
+    pattern(item.sourceId, /^SRC-[0-9]{2,}$/, `${path}[${index2}].sourceId`);
+    if (typeof item.summary !== "string" || !item.summary.trim()) invalid(`${path}[${index2}].summary`, "must be a non-empty string");
+    if (item.summary.length > SUMMARY_MAX_LENGTH) invalid(`${path}[${index2}].summary`, `must not exceed ${SUMMARY_MAX_LENGTH} characters`);
+    const sourceId = item.sourceId;
+    if (!expected.includes(sourceId)) invalid(`${path}[${index2}].sourceId`, `${sourceId} is not referenced by the candidate`);
+    if (seen.has(sourceId)) invalid(`${path}[${index2}].sourceId`, `duplicates ${sourceId}`);
+    seen.add(sourceId);
+  });
+  const missing = expected.find((sourceId) => !seen.has(sourceId));
+  if (missing) invalid(path, `requires a summary of ${missing}`);
 }
 function validateApplication(value, candidate, path) {
   const application = record(value, path);
@@ -8564,7 +8652,8 @@ function scalar2(raw) {
 }
 
 // src/reviews/import/review-repository.ts
-var REVIEW_ID = /^import-review-[A-Za-z0-9._-]+$/;
+var REVIEW_ID = /^(?:import|source)-review-[A-Za-z0-9._-]+$/;
+var REVIEW_PREFIXES = ["import-review-", "source-review-"];
 var ImportReviewRepository = class {
   constructor(app, proposalFolder, tasks) {
     this.app = app;
@@ -8727,12 +8816,14 @@ var ImportReviewRepository = class {
     await this.app.fileManager.renameFile(source, (0, import_obsidian17.normalizePath)(`${this.historyFolder()}/${review.reviewId}.json`));
   }
   pendingFiles() {
-    const prefix = `${this.folder()}/import-review-`;
-    return this.app.vault.getFiles().filter((file) => file.path.startsWith(prefix) && file.extension === "json");
+    return this.filesIn(this.folder());
   }
   historyFiles() {
-    const prefix = `${this.historyFolder()}/import-review-`;
-    return this.app.vault.getFiles().filter((file) => file.path.startsWith(prefix) && file.extension === "json");
+    return this.filesIn(this.historyFolder());
+  }
+  filesIn(folder) {
+    const prefixes = REVIEW_PREFIXES.map((prefix) => `${folder}/${prefix}`);
+    return this.app.vault.getFiles().filter((file) => file.extension === "json" && prefixes.some((prefix) => file.path.startsWith(prefix)));
   }
   reviewFile(reviewId) {
     if (!REVIEW_ID.test(reviewId)) throw new Error("Invalid Import review id");
@@ -8774,7 +8865,8 @@ function summarize2(review) {
     createdAt: review.createdAt,
     updatedAt: review.updatedAt,
     candidateCount: review.candidates.length,
-    appliedCount: review.candidates.filter((candidate) => candidate.application.status === "applied").length
+    appliedCount: review.candidates.filter((candidate) => candidate.application.status === "applied").length,
+    format: importReviewFormat(review)
   };
 }
 
@@ -8899,8 +8991,14 @@ function editFieldId(field) {
 function editButtonId(candidateId) {
   return `taskmate-import-candidate-edit-${candidateId}`;
 }
+function evidenceKey(candidateId, sourceId) {
+  return `${candidateId}:${sourceId}`;
+}
+function evidenceToggleId(candidateId, sourceId) {
+  return `taskmate-import-evidence-toggle-${candidateId}-${sourceId}`;
+}
 function createImportReviewUiState() {
-  return { expandedDiffs: /* @__PURE__ */ new Set(), applyOpen: false, acknowledged: false, editing: null, focus: null };
+  return { expandedDiffs: /* @__PURE__ */ new Set(), expandedEvidence: /* @__PURE__ */ new Set(), applyOpen: false, acknowledged: false, editing: null, focus: null };
 }
 function reduceImportReviewUiState(state, action) {
   switch (action.type) {
@@ -8909,6 +9007,13 @@ function reduceImportReviewUiState(state, action) {
       if (expandedDiffs.has(action.candidateId)) expandedDiffs.delete(action.candidateId);
       else expandedDiffs.add(action.candidateId);
       return { ...state, expandedDiffs };
+    }
+    case "toggle-evidence": {
+      const key = evidenceKey(action.candidateId, action.sourceId);
+      const expandedEvidence = new Set(state.expandedEvidence);
+      if (expandedEvidence.has(key)) expandedEvidence.delete(key);
+      else expandedEvidence.add(key);
+      return { ...state, expandedEvidence, focus: evidenceToggleId(action.candidateId, action.sourceId) };
     }
     case "open-apply":
       return { ...state, applyOpen: true, acknowledged: false, focus: APPLY_TITLE_ID };
@@ -8956,6 +9061,7 @@ function renderImportReview(container, review, plan, state, copy, dispatch, opti
   }
   const summary = element3("p", "taskmate-import-review-summary", container);
   summary.textContent = [review.reviewId, copy.status[review.status], review.health === "ok" ? "" : copy.health[review.health]].filter(Boolean).join(" \xB7 ");
+  if (importReviewFormat(review) !== "v2") text2(container, "p", copy.legacyFormat, "taskmate-import-review-legacy");
   const list = element3("div", "taskmate-review-files", container);
   const projects = options.projects ?? [];
   for (const candidate of review.candidates) renderCard(list, review, candidate, state, copy, dispatch, Boolean(options.readOnly), projects);
@@ -8970,7 +9076,7 @@ function renderCard(parent, review, candidate, state, copy, dispatch, readOnly, 
   const identity = element3("div", "taskmate-review-file-identity", head);
   text2(identity, "span", candidate.id, "taskmate-review-id");
   text2(identity, "span", copy.operation[candidate.operation], "taskmate-import-candidate-operation");
-  text2(identity, "h3", candidate.title);
+  text2(identity, "h3", candidate.operation === "create" ? candidate.taskDraft.title : candidate.title);
   const status = element3("p", "taskmate-import-candidate-status", card);
   const applied = candidate.application.status === "applied";
   status.textContent = [
@@ -8978,18 +9084,10 @@ function renderCard(parent, review, candidate, state, copy, dispatch, readOnly, 
     candidate.health === "ok" ? "" : `${copy.health[candidate.health]}${candidate.healthReason ? `: ${candidate.healthReason}` : ""}`
   ].filter(Boolean).join(" \xB7 ");
   if (candidate.health !== "ok") status.classList.add(`is-${candidate.health}`);
-  const sources = element3("div", "taskmate-import-candidate-sources", card);
-  text2(sources, "h4", copy.sources);
-  for (const ref of candidate.sourceRefs) {
-    const source = review.sources.find((item) => item.id === ref.sourceId);
-    const label = !source ? ref.sourceId : source.type === "note" ? source.path : copy.conversation(source.localSourceId);
-    const quote = element3("blockquote", "taskmate-import-candidate-statement", sources);
-    text2(quote, "cite", `${ref.sourceId} \xB7 ${label}`);
-    text2(quote, "p", ref.statement);
-  }
   const editing = state.editing?.candidateId === candidate.id ? state.editing : null;
   if (editing) {
     renderEditForm(card, candidate, editing, copy, dispatch, projects);
+    renderEvidence(card, review, candidate, state, copy, dispatch);
     return;
   }
   if (candidate.operation === "create") renderDraft(card, candidate.taskDraft, copy, projects);
@@ -9018,6 +9116,38 @@ function renderCard(parent, review, candidate, state, copy, dispatch, readOnly, 
     edit.setAttribute("aria-label", copy.editAria(candidate.id));
     edit.disabled = state.editing !== null;
     actions.append(edit);
+  }
+  renderEvidence(card, review, candidate, state, copy, dispatch);
+}
+function renderEvidence(card, review, candidate, state, copy, dispatch) {
+  const section = element3("div", "taskmate-import-candidate-evidence", card);
+  text2(section, "h4", copy.evidenceTitle);
+  for (const group of candidateEvidence(candidate)) {
+    const source = review.sources.find((item) => item.id === group.sourceId);
+    const kind = source?.type ?? "note";
+    const name = !source ? group.sourceId : source.type === "note" ? source.path : copy.conversation(source.localSourceId);
+    const block = element3("section", "taskmate-import-evidence-source", section);
+    block.dataset.sourceId = group.sourceId;
+    text2(block, "p", copy.sourceKind[kind], "taskmate-import-evidence-kind");
+    text2(block, "p", name, "taskmate-import-evidence-name");
+    text2(block, "p", copy.summaryLabel[kind], "taskmate-import-evidence-summary-label");
+    const summary = text2(block, "p", group.summary ?? copy.noSummary, "taskmate-import-evidence-summary");
+    if (group.summary === null) summary.classList.add("is-missing");
+    const expanded = state.expandedEvidence.has(evidenceKey(candidate.id, group.sourceId));
+    const count = group.statements.length;
+    const listId = `taskmate-import-evidence-${candidate.id}-${group.sourceId}`;
+    const toggle = button2(expanded ? copy.hideStatements(count) : copy.showStatements(count), () => dispatch({ type: "toggle-evidence", candidateId: candidate.id, sourceId: group.sourceId }));
+    toggle.id = evidenceToggleId(candidate.id, group.sourceId);
+    toggle.classList.add("taskmate-import-evidence-toggle");
+    toggle.setAttribute("aria-expanded", String(expanded));
+    toggle.setAttribute("aria-controls", listId);
+    block.append(toggle);
+    if (!expanded) continue;
+    const statements = element3("div", "taskmate-import-evidence-statements", block);
+    statements.id = listId;
+    statements.setAttribute("role", "group");
+    statements.setAttribute("aria-label", copy.statementsAria(candidate.id, name));
+    for (const statement of group.statements) text2(statements, "blockquote", statement, "taskmate-import-candidate-statement");
   }
 }
 function renderDraft(card, draft, copy, projects) {
@@ -9237,7 +9367,7 @@ function formatValue2(value) {
 
 // src/reviews/import/review-view.ts
 var IMPORT_REVIEW_VIEW_TYPE = "taskmate-import-review";
-var REVIEW_ID2 = /^import-review-[A-Za-z0-9._-]+$/;
+var REVIEW_ID2 = /^(?:import|source)-review-[A-Za-z0-9._-]+$/;
 function importReviewIdFromLink(params) {
   const reviewId = params.review;
   return typeof reviewId === "string" && REVIEW_ID2.test(reviewId) ? reviewId : null;
@@ -9253,7 +9383,11 @@ function formalApplyMessage(result, i18n) {
 function importReviewIndexDetails(summary, i18n) {
   return {
     sortKey: summary.updatedAt,
-    lines: [statusText(summary.status, i18n), i18n.t("importReview.summary", { candidates: summary.candidateCount, applied: summary.appliedCount })]
+    lines: [
+      statusText(summary.status, i18n),
+      i18n.t("importReview.summary", { candidates: summary.candidateCount, applied: summary.appliedCount }),
+      ...summary.format === "v2" ? [] : [i18n.t("importReview.legacyFormat")]
+    ]
   };
 }
 var ImportReviewView = class extends import_obsidian18.ItemView {
@@ -9305,7 +9439,7 @@ var ImportReviewView = class extends import_obsidian18.ItemView {
       this.state = { ...this.state, focus: null };
     } catch (error) {
       console.error("TaskMate could not open Import review", error);
-      this.contentEl.createDiv({ cls: "taskmate-empty", text: i18n.t("importReview.invalid") });
+      this.contentEl.createDiv({ cls: "taskmate-empty", text: i18n.t("importReview.invalid", { error: error instanceof Error ? error.message : String(error) }) });
     }
     this.contentEl.scrollTop = scrollTop;
   }
@@ -9383,8 +9517,15 @@ function importReviewCopy(i18n) {
     },
     decideAria: (action, candidate) => t("importReview.decideAria", { action, candidate }),
     decisionGroupAria: (candidate) => t("importReview.decisionGroupAria", { candidate }),
-    sources: t("importReview.sources"),
+    evidenceTitle: t("importReview.evidence.title"),
+    sourceKind: { note: t("importReview.evidence.note"), conversation: t("importReview.evidence.conversation") },
     conversation: (id) => t("importReview.conversation", { id }),
+    summaryLabel: { note: t("importReview.evidence.noteSummary"), conversation: t("importReview.evidence.conversationSummary") },
+    noSummary: t("importReview.evidence.noSummary"),
+    showStatements: (count) => t("importReview.evidence.show", { count }),
+    hideStatements: (count) => t("importReview.evidence.hide", { count }),
+    statementsAria: (candidate, source) => t("importReview.evidence.aria", { candidate, source }),
+    legacyFormat: t("importReview.legacyFormat"),
     fields: {
       title: t("importReview.field.title"),
       date: t("importReview.field.date"),
@@ -9443,6 +9584,8 @@ function importReviewCopy(i18n) {
 var import_obsidian19 = require("obsidian");
 var TASK_CHANGE_ID = /^proposal-[A-Za-z0-9._-]+$/;
 var IMPORT_REVIEW_ID = /^import-review-[A-Za-z0-9._-]+$/;
+var LEGACY_IMPORT_REVIEW_ID = /^source-review-[A-Za-z0-9._-]+$/;
+var IMPORT_SCHEMA_VERSIONS = [1, 2];
 function classifyReviewFile(path, location, content) {
   const invalid2 = (reason) => ({ type: "invalid", path, location, reason });
   const review = (kind, id2) => ({ type: "review", ref: { kind, id: id2, location, path } });
@@ -9457,6 +9600,10 @@ function classifyReviewFile(path, location, content) {
   const { reviewType, schemaVersion, reviewId, id } = envelope;
   if (reviewType === "import") {
     if (!IMPORT_REVIEW_ID.test(name) || reviewId !== name) return invalid2("mismatched-id");
+    return IMPORT_SCHEMA_VERSIONS.includes(schemaVersion) ? review("import", name) : invalid2("unsupported-version");
+  }
+  if (reviewType === "source-candidate") {
+    if (!LEGACY_IMPORT_REVIEW_ID.test(name) || reviewId !== name) return invalid2("mismatched-id");
     return schemaVersion === 1 ? review("import", name) : invalid2("unsupported-version");
   }
   if (reviewType !== void 0) return invalid2("unknown-type");
@@ -9464,7 +9611,7 @@ function classifyReviewFile(path, location, content) {
     if (id !== name) return invalid2("mismatched-id");
     return schemaVersion === 1 ? review("task-change", name) : invalid2("unsupported-version");
   }
-  return invalid2(IMPORT_REVIEW_ID.test(name) ? "mismatched-id" : "unknown-type");
+  return invalid2(IMPORT_REVIEW_ID.test(name) || LEGACY_IMPORT_REVIEW_ID.test(name) ? "mismatched-id" : "unknown-type");
 }
 var ReviewCatalog = class {
   constructor(app, proposalFolder) {
@@ -9558,7 +9705,7 @@ var TaskMatePlugin = class extends import_obsidian21.Plugin {
   refreshTimer = null;
   async onload() {
     await this.loadSettings();
-    await this.recordDesktopLanguage();
+    await this.recordAgentContext();
     const { t } = this.i18n();
     this.repository = new TaskRepository(this.app, () => this.settings.taskFolder);
     this.projects = new ProjectRepository(this.app, () => this.settings.projectFolder);
@@ -9735,16 +9882,20 @@ var TaskMatePlugin = class extends import_obsidian21.Plugin {
   async saveSettings() {
     await this.saveData(this.settings);
   }
-  // Obsidian applies a language change by reloading its window, which loads this plugin again, so reading the language
-  // once at load is enough.
-  async recordDesktopLanguage() {
+  // Records what Task Pilot needs to know about the loaded plugin: the desktop language, and the plugin version with the
+  // Import review schema versions it reads. Obsidian applies a language change or a plugin update by loading this plugin
+  // again, so recording once at load is enough.
+  async recordAgentContext() {
     const language = desktopLanguageToRecord(this.settings.desktopLanguage, isDesktopObsidian(), detectObsidianLanguage());
-    if (!language) return;
-    this.settings.desktopLanguage = language;
+    const compatibility = importReviewCompatibility(this.manifest.version);
+    const compatibilityChanged = JSON.stringify(this.settings.agentCompatibility) !== JSON.stringify(compatibility);
+    if (!language && !compatibilityChanged) return;
+    if (language) this.settings.desktopLanguage = language;
+    this.settings.agentCompatibility = compatibility;
     try {
       await this.saveSettings();
     } catch (error) {
-      console.error("TaskMate could not record the desktop language for Task Pilot", error);
+      console.error("TaskMate could not record its compatibility and desktop language for Task Pilot", error);
     }
   }
   setCurrentNoteSource(value, checking) {

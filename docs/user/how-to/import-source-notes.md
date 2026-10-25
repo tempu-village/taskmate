@@ -64,11 +64,15 @@ The review opens in TaskMate. If it does not, run **TaskMate: Open reviews** and
 
 ## 4. Review the candidates in TaskMate
 
-Each candidate is a card. It quotes the source statements it covers and shows what would happen:
+Each candidate is a card. It shows first what would happen, then the decision buttons, and last **Evidence for this candidate**:
 
 - **Create Task** shows the Task draft: title, date, priority, labels, project, Steps, and Notes.
 - **Merge into Task** names the existing Task and summarizes each change; **Show diff** opens the exact change inside the card.
 - **Exclude** shows why no Task is proposed.
+
+The evidence names each source note or conversation once and shows **What this note says**, Task Pilot's summary of the statements this card covers. The summary is an interpretation; select **Show _n_ statements** to read the exact source text in its original order.
+
+If Codex reports that TaskMate must be updated, update TaskMate, reload it in Obsidian (or restart Obsidian), and ask Codex again; no review was written. A review created by an earlier version is marked as an earlier format and has no summaries, so read its statements instead.
 
 Compare every card with its source. Check for omitted actions, the target of every merge, and the reason for every exclusion. Select **Edit** to change a card's fields or its operation; an edited card returns to undecided. Merging into a different Task needs a new review from Codex.
 
@@ -168,11 +172,15 @@ TaskMate/Proposals/import-review-<id>.json
 
 ### 4：TaskMateで候補を確認する
 
-候補はそれぞれカードになり、対応する元の文を引用して、何が起きるかを示します。
+候補はそれぞれカードになり、何が起きるか、判断のボタン、最後に **この候補の根拠** の順に表示されます。
 
-- **Taskを作成**：Taskの下書き（タイトル、日付、優先度、ラベル、プロジェクト、Steps、Notes）を示す。
+- **Taskを作成**：Taskの下書き（タイトル、日付、優先度、ラベル、プロジェクト、手順、メモ）を示す。
 - **Taskへ統合**：統合先の既存Taskと、変更ごとの要約を示す。**差分を表示**でカードの中に正確な変更が開く。
 - **除外**：Taskを作らない理由を示す。
+
+根拠には元ノートや会話が1回ずつ表示され、**このノートから分かること** に、このカードが扱う文をTask Pilotがまとめた要約が出ます。要約はAIの解釈なので、**該当箇所n件を表示** で原文を元の順に確かめられます。
+
+CodexがTaskMateの更新が必要だと伝えた場合、レビューは作られていません。TaskMateを更新し、Obsidianで再読み込み（またはObsidianを再起動）してから、もう一度Codexに頼みます。以前のバージョンで作ったレビューには「旧形式のレビューです」と表示され、要約がないため、該当箇所を開いて確認します。
 
 各カードを元ノートと比べ、候補漏れ、統合先、除外理由を確認します。**編集**でカードの項目や操作を変えられ、編集したカードは未決に戻ります。別のTaskへ統合したい場合は、Codexでレビューを作り直します。
 
