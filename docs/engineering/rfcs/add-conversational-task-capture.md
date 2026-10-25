@@ -47,7 +47,7 @@ Source-note import already has strict scope and Coverage review rules ([Source-n
 ## Alternatives considered
 
 - **Leave behavior to the host agent.** Rejected: outcomes vary across agents and conflict with the no-invention guarantees of existing Task Pilot features.
-- **Reuse Source candidate review staging.** Rejected for capture: a TaskMate review round-trip for one explicitly requested, recoverable Task adds friction without protecting against an allowlist or omission risk. A request that names Source notes still goes to Source-note import.
+- **Reuse Import review staging.** Rejected for capture: a TaskMate review round-trip for one explicitly requested, recoverable Task adds friction without protecting against an allowlist or omission risk. A request that names Source notes still goes to Source-note import.
 - **Plugin-side natural-language quick add.** Rejected for this RFC: it is a different, non-agent feature and would need its own date grammar, localization, and mobile UI.
 - **Sequential interview (ask each field in turn).** Rejected: it makes capture slower than manual entry. One batched round with defaults keeps the cost bounded.
 - **Always write immediately without any question.** Rejected as the default: the date is the field most often missing and most consequential for Scheduled versus Unplanned, and an unconfirmed searched URL may be wrong. Immediate creation remains available when nothing is uncertain or the user asks for no questions.
@@ -153,7 +153,7 @@ Draft. Proposed defaults from the 2026-10-24 design conversation, pending produc
 
 **非目標:** プラグイン内の自然言語クイック追加、TaskMateレビュー画面でのステージング、締切項目（#51）、構造化リンク（#35）、記事本文の取得や要約、会話履歴や未指定ノートからの自動取り込み。
 
-**検討した代替案:** エージェント任せ（不採用：結果がばらつく）、Source candidate reviewの再利用（不採用：1件の明示依頼には過剰）、プラグイン側クイック追加（別機能）、項目ごとの逐次質問（不採用：手入力より遅い）、常に無質問で即作成（既定にはしない：日付とURLの誤りが重い。不明点がない場合や「質問なしで」の場合は即作成）。
+**検討した代替案:** エージェント任せ（不採用：結果がばらつく）、取り込みレビューの再利用（不採用：1件の明示依頼には過剰）、プラグイン側クイック追加（別機能）、項目ごとの逐次質問（不採用：手入力より遅い）、常に無質問で即作成（既定にはしない：日付とURLの誤りが重い。不明点がない場合や「質問なしで」の場合は即作成）。
 
 **提案設計:** `references/capture-workflow.md`を追加しSKILL.mdから案内する。流れは「解釈 → 既存確認 → 1回だけ質問 → 作成と検証」。回答を承認とみなし、未回答は既定値。項目規則：タイトルは行動形に直す。`date`は作業予定日で、相対表現は曜日つき絶対日付に変換して表示し、未指定なら1回だけ聞いて既定は日付なし。締切は#51まではNotesに記録。優先度は聞かず明示時のみ。Label・Projectは既存の一致候補のみ提案し、名前を挙げられた場合以外は作らない。URLは依頼にあれば使い、なければWeb対応ホストでのみ検索して確認後にNotesへ書く。重複時は新規・既存へ追記・中止を提示し、既定は中止。補助としてLabel/Project一覧、類似タスク検索、書き込まないプレビューを必要な分だけ追加し、Pythonテストを付ける。Web内容は信頼しないデータとして扱う。受け入れ条件はCAPTURE-01〜09。
 
