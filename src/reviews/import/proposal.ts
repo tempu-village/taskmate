@@ -102,15 +102,15 @@ interface CandidateBase {
   application: Application;
 }
 
-export type SourceCandidate =
+export type ImportCandidate =
   | (CandidateBase & { operation: "create"; taskDraft: CandidateTaskDraft })
   | (CandidateBase & { operation: "merge"; mergeTarget: MergeTarget })
   | (CandidateBase & { operation: "exclude"; exclusionReason: string });
 
-export interface SourceCandidateProposal {
+export interface ImportReview {
   schemaVersion: typeof SCHEMA_VERSION;
   reviewId: string;
-  reviewType: "source-candidate";
+  reviewType: "import";
   status: ReviewStatus;
   health: Health;
   revision: number;
@@ -118,7 +118,7 @@ export interface SourceCandidateProposal {
   updatedAt: string;
   archivedAt?: string | null;
   sources: ReviewSource[];
-  candidates: SourceCandidate[];
+  candidates: ImportCandidate[];
 }
 
 export type CandidateEdit =
@@ -132,7 +132,7 @@ export type ApplicationOutcome =
   | { kind: "stale"; reason: string };
 
 export interface FormalApplyPlan {
-  eligible: SourceCandidate[];
+  eligible: ImportCandidate[];
   blocked: Array<{ candidateId: string; reason: "stale" | "held" | "undecided" | "outdated-decision" }>;
   counts: Record<Operation, number>;
   unviewedMerges: Array<{ candidateId: string; targetTitle: string }>;
@@ -149,7 +149,7 @@ export interface NoteSourceCompletion {
 
 // Parsing and validation
 
-export function parseSourceCandidateProposal(content: string): SourceCandidateProposal {
+export function parseImportReview(content: string): ImportReview {
   const value: unknown = JSON.parse(content);
   validateProposal(value);
   return value;
@@ -184,7 +184,7 @@ export async function promotedTaskId(reviewId: string, candidateId: string, revi
 
 // Transitions
 
-export function editCandidate(proposal: SourceCandidateProposal, candidateId: string, edit: CandidateEdit, now: string): SourceCandidateProposal {
+export function editCandidate(proposal: ImportReview, candidateId: string, edit: CandidateEdit, now: string): ImportReview {
   return updateCandidate(proposal, candidateId, now, (candidate) => {
     if (candidate.application.status === "applied") throw new Error(`Candidate ${candidateId} is already applied`);
     const base = {
@@ -211,7 +211,7 @@ export function editCandidate(proposal: SourceCandidateProposal, candidateId: st
   });
 }
 
-export function decideCandidate(proposal: SourceCandidateProposal, candidateId: string, decision: Decision, now: string): SourceCandidateProposal {
+export function decideCandidate(proposal: ImportReview, candidateId: string, decision: Decision, now: string): ImportReview {
   return updateCandidate(proposal, candidateId, now, (candidate) => {
     if (candidate.application.status === "applied") throw new Error(`Candidate ${candidateId} is already applied`);
     return {
@@ -223,14 +223,14 @@ export function decideCandidate(proposal: SourceCandidateProposal, candidateId: 
   });
 }
 
-export function markDiffViewed(proposal: SourceCandidateProposal, candidateId: string, now: string): SourceCandidateProposal {
+export function markDiffViewed(proposal: ImportReview, candidateId: string, now: string): ImportReview {
   return updateCandidate(proposal, candidateId, now, (candidate) => {
     if (candidate.operation !== "merge") throw new Error(`Candidate ${candidateId} has no merge diff`);
     return { ...candidate, diffViewedRevision: candidate.revision };
   });
 }
 
-export function recordApplication(proposal: SourceCandidateProposal, candidateId: string, outcome: ApplicationOutcome, now: string): SourceCandidateProposal {
+export function recordApplication(proposal: ImportReview, candidateId: string, outcome: ApplicationOutcome, now: string): ImportReview {
   return updateCandidate(proposal, candidateId, now, (candidate) => {
     if (candidate.application.status === "applied") throw new Error(`Candidate ${candidateId} is already applied`);
     if (outcome.kind === "stale") {
@@ -255,7 +255,7 @@ export function recordApplication(proposal: SourceCandidateProposal, candidateId
   });
 }
 
-export function markSourceStale(proposal: SourceCandidateProposal, sourceId: string, reason: string, now: string): SourceCandidateProposal {
+export function markSourceStale(proposal: ImportReview, sourceId: string, reason: string, now: string): ImportReview {
   if (!proposal.sources.some((source) => source.id === sourceId)) throw new Error(`Unknown Source ${sourceId}`);
   let next = proposal;
   for (const candidate of proposal.candidates) {
@@ -266,14 +266,14 @@ export function markSourceStale(proposal: SourceCandidateProposal, sourceId: str
   return next;
 }
 
-export function archiveReview(proposal: SourceCandidateProposal, now: string): SourceCandidateProposal {
+export function archiveReview(proposal: ImportReview, now: string): ImportReview {
   if (derivedStatus(proposal) !== "applied") throw new Error(`Review ${proposal.reviewId} still has unapplied candidates`);
   return { ...structuredClone(proposal), status: "history", archivedAt: now, revision: proposal.revision + 1, updatedAt: now };
 }
 
 // Read models
 
-export function planFormalApply(proposal: SourceCandidateProposal): FormalApplyPlan {
+export function planFormalApply(proposal: ImportReview): FormalApplyPlan {
   const plan: FormalApplyPlan = { eligible: [], blocked: [], counts: { create: 0, merge: 0, exclude: 0 }, unviewedMerges: [], requiresAcknowledgement: false };
   if (proposal.status === "history") return plan;
   for (const candidate of proposal.candidates) {
@@ -298,7 +298,7 @@ export function planFormalApply(proposal: SourceCandidateProposal): FormalApplyP
 }
 
 // The before and after Task fields of a merge target, in the same shape as a Task draft.
-export function mergeTargetFields(candidate: SourceCandidate): { before: CandidateTaskDraft; after: CandidateTaskDraft } | null {
+export function mergeTargetFields(candidate: ImportCandidate): { before: CandidateTaskDraft; after: CandidateTaskDraft } | null {
   const target = candidate.mergeTarget;
   if (!target) return null;
   return {
@@ -307,7 +307,7 @@ export function mergeTargetFields(candidate: SourceCandidate): { before: Candida
   };
 }
 
-export function noteSourceCompletion(proposal: SourceCandidateProposal): NoteSourceCompletion[] {
+export function noteSourceCompletion(proposal: ImportReview): NoteSourceCompletion[] {
   return proposal.sources.flatMap((source) => {
     if (source.type !== "note") return [];
     const candidates = proposal.candidates.filter((candidate) => candidate.sourceRefs.some((ref) => ref.sourceId === source.id));
@@ -322,7 +322,7 @@ export function noteSourceCompletion(proposal: SourceCandidateProposal): NoteSou
   });
 }
 
-export function newlyCompletedNoteSources(before: SourceCandidateProposal, after: SourceCandidateProposal): NoteSourceCompletion[] {
+export function newlyCompletedNoteSources(before: ImportReview, after: ImportReview): NoteSourceCompletion[] {
   const previouslyComplete = new Set(noteSourceCompletion(before).filter((source) => source.complete).map((source) => source.sourceId));
   return noteSourceCompletion(after).filter((source) => source.complete && !previouslyComplete.has(source.sourceId));
 }
@@ -330,11 +330,11 @@ export function newlyCompletedNoteSources(before: SourceCandidateProposal, after
 // Internal helpers
 
 function updateCandidate(
-  proposal: SourceCandidateProposal,
+  proposal: ImportReview,
   candidateId: string,
   now: string,
-  update: (candidate: SourceCandidate) => SourceCandidate
-): SourceCandidateProposal {
+  update: (candidate: ImportCandidate) => ImportCandidate
+): ImportReview {
   if (proposal.status === "history") throw new Error(`Review ${proposal.reviewId} is in History`);
   if (!DATE_TIME.test(now)) throw new Error("Transition time must be an ISO date-time");
   const index = proposal.candidates.findIndex((candidate) => candidate.id === candidateId);
@@ -409,14 +409,14 @@ function requiredTask(path: string, markdown: string, taskId: string): Task {
   return task;
 }
 
-function derivedHealth(proposal: SourceCandidateProposal): Health {
+function derivedHealth(proposal: ImportReview): Health {
   const pending = proposal.candidates.filter((candidate) => candidate.application.status !== "applied");
   if (pending.some((candidate) => candidate.health === "failed")) return "failed";
   if (pending.some((candidate) => candidate.health === "stale")) return "stale";
   return "ok";
 }
 
-function derivedStatus(proposal: SourceCandidateProposal): ReviewStatus {
+function derivedStatus(proposal: ImportReview): ReviewStatus {
   if (proposal.status === "history") return "history";
   const applied = proposal.candidates.filter((candidate) => candidate.application.status === "applied").length;
   if (applied === proposal.candidates.length) return "applied";
@@ -439,14 +439,14 @@ function requiredText(value: unknown, name: string): string {
   return value;
 }
 
-// Shape validation (mirrors docs/engineering/specifications/source-candidate-proposal.schema.json)
+// Shape validation (mirrors docs/engineering/specifications/import-review.schema.json)
 
-function validateProposal(value: unknown): asserts value is SourceCandidateProposal {
+function validateProposal(value: unknown): asserts value is ImportReview {
   const proposal = record(value, "Proposal");
   allowOnly(proposal, ["schemaVersion", "reviewId", "reviewType", "status", "health", "revision", "createdAt", "updatedAt", "archivedAt", "sources", "candidates"], "Proposal");
   if (proposal.schemaVersion !== SCHEMA_VERSION) invalid("schemaVersion", "must be 1");
-  if (typeof proposal.reviewId !== "string" || !/^source-review-[A-Za-z0-9._-]+$/.test(proposal.reviewId)) invalid("reviewId", "must start with source-review-");
-  if (proposal.reviewType !== "source-candidate") invalid("reviewType", "must be source-candidate");
+  if (typeof proposal.reviewId !== "string" || !/^import-review-[A-Za-z0-9._-]+$/.test(proposal.reviewId)) invalid("reviewId", "must start with import-review-");
+  if (proposal.reviewType !== "import") invalid("reviewType", "must be import");
   oneOf(proposal.status, ["pending", "ready-to-apply", "partially-applied", "applied", "history"], "status");
   oneOf(proposal.health, ["ok", "stale", "failed"], "health");
   positiveInteger(proposal.revision, "revision");
@@ -466,7 +466,7 @@ function validateProposal(value: unknown): asserts value is SourceCandidatePropo
   proposal.candidates.forEach((candidate, index) => {
     const path = `candidates[${index}]`;
     validateCandidate(candidate, path);
-    const { id, sourceRefs } = candidate as SourceCandidate;
+    const { id, sourceRefs } = candidate as ImportCandidate;
     if (candidateIds.has(id)) invalid(`${path}.id`, `duplicates ${id}`);
     candidateIds.add(id);
     for (const ref of sourceRefs) {
@@ -479,7 +479,7 @@ function validateProposal(value: unknown): asserts value is SourceCandidatePropo
   });
   const referenced = new Set([...statements.keys()].map((key) => key.split("\u0000")[0]));
   for (const id of sourceIds) if (!referenced.has(id)) invalid("sources", `${id} is not mapped by any candidate`);
-  const typed = proposal as unknown as SourceCandidateProposal;
+  const typed = proposal as unknown as ImportReview;
   if ((typed.status === "history") !== Boolean(typed.archivedAt)) invalid("archivedAt", "must be set exactly when the review is in History");
   if (typed.status !== "history" && typed.status !== derivedStatus(typed)) invalid("status", `does not match candidate state (${derivedStatus(typed)})`);
   if (typed.status === "history" && derivedStatus({ ...typed, status: "pending" }) !== "applied") invalid("status", "History requires every candidate to be applied");
@@ -510,7 +510,7 @@ function validateSource(value: unknown, path: string): string {
 function validateCandidate(value: unknown, path: string): void {
   const candidate = record(value, path);
   allowOnly(candidate, ["id", "revision", "originalOperation", "operation", "title", "sourceRefs", "taskDraft", "mergeTarget", "exclusionReason", "decision", "decisionRevision", "decidedAt", "diffViewedRevision", "health", "healthReason", "application"], path);
-  pattern(candidate.id, /^SC-[0-9]{2,}$/, `${path}.id`);
+  pattern(candidate.id, /^IC-[0-9]{2,}$/, `${path}.id`);
   positiveInteger(candidate.revision, `${path}.revision`);
   oneOf(candidate.originalOperation, ["create", "merge", "exclude"], `${path}.originalOperation`);
   oneOf(candidate.operation, ["create", "merge", "exclude"], `${path}.operation`);
@@ -647,5 +647,5 @@ function isStringArray(value: unknown): value is string[] {
 }
 
 function invalid(path: string, message: string): never {
-  throw new Error(`Source candidate Proposal ${path} ${message}`);
+  throw new Error(`Import review ${path} ${message}`);
 }

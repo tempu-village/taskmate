@@ -114,58 +114,58 @@
 .taskmate-diff-header { color: var(--text-accent); }
 .taskmate-review-footer { position: sticky; bottom: calc(-1 * var(--taskmate-review-padding)); z-index: 5; justify-content: flex-end; flex-wrap: wrap; padding: 0.7rem 0; background: var(--background-primary); }
 .taskmate-review-index-item { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.35rem; align-items: start; width: 100%; max-width: 100%; height: auto; min-height: var(--input-height); margin: 0.4rem 0; padding: 0.7rem; }
-.taskmate-source-review-summary { margin: 0 0 0.7rem; color: var(--text-muted); font-size: var(--font-ui-smaller); overflow-wrap: anywhere; }
-.taskmate-source-candidate { padding-bottom: 0.6rem; }
-/* The Source review has no toolbar above its cards, so its headers meet the visible top edge. */
-.taskmate-source-candidate .taskmate-review-file-header { top: calc(-1 * var(--taskmate-review-padding)); }
-.taskmate-source-candidate .taskmate-review-file-identity { flex-wrap: wrap; gap: 0.45rem; }
-.taskmate-source-candidate-operation { padding: 0.05rem 0.45rem; border-radius: 999px; background: var(--background-modifier-hover); font-size: var(--font-ui-smaller); }
-.taskmate-source-candidate-status { margin: 0.4rem 0.7rem; color: var(--text-muted); font-size: var(--font-ui-smaller); overflow-wrap: anywhere; }
-.taskmate-source-candidate-status.is-stale { color: var(--text-warning); }
-.taskmate-source-candidate-status.is-failed { color: var(--text-error); }
-.taskmate-source-candidate-sources,
-.taskmate-source-candidate-fields,
-.taskmate-source-candidate-merge,
-.taskmate-source-candidate-reason,
-.taskmate-source-candidate-actions,
-.taskmate-source-candidate-edit { margin: 0.4rem 0.7rem; min-width: 0; }
-.taskmate-source-candidate-sources h4 { margin: 0 0 0.25rem; font-size: var(--font-ui-small); }
-.taskmate-source-candidate-statement { margin: 0 0 0.35rem; padding: 0.2rem 0.6rem; border-left: 3px solid var(--background-modifier-border); }
-.taskmate-source-candidate-statement cite { display: block; color: var(--text-muted); font-size: var(--font-ui-smaller); font-style: normal; overflow-wrap: anywhere; }
-.taskmate-source-candidate-statement p { margin: 0.15rem 0 0; overflow-wrap: anywhere; }
-.taskmate-source-candidate-fields { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0.25rem 0.7rem; }
-.taskmate-source-candidate-fields dt { color: var(--text-muted); }
-.taskmate-source-candidate-fields dd { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
-.taskmate-source-candidate-steps { margin: 0; padding-left: 1.1rem; }
-.taskmate-source-candidate-target { margin: 0 0 0.3rem; font-weight: 600; overflow-wrap: anywhere; }
-.taskmate-source-candidate-merge .taskmate-review-change { grid-template-columns: auto minmax(0, 1fr); padding-inline: 0; }
-.taskmate-source-candidate-diff-toggle { margin-top: 0.4rem; }
-.taskmate-source-candidate-merge .taskmate-review-diff { margin-top: 0.4rem; border-radius: 6px; background: var(--background-secondary); }
-.taskmate-source-candidate-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.45rem; }
-.taskmate-source-candidate-decisions { display: flex; flex-wrap: wrap; gap: 0.45rem; min-width: 0; }
-.taskmate-source-candidate-decisions button.is-active { color: var(--text-on-accent); background: var(--interactive-accent); }
-.taskmate-source-candidate-edit { display: grid; gap: 0.6rem; padding: 0.6rem; border-radius: 6px; background: var(--background-secondary); }
-.taskmate-source-candidate-edit-field { display: grid; gap: 0.2rem; min-width: 0; }
-.taskmate-source-candidate-edit-field label { font-size: var(--font-ui-small); font-weight: 600; }
-.taskmate-source-candidate-edit-field input,
-.taskmate-source-candidate-edit-field select,
-.taskmate-source-candidate-edit-field textarea { width: 100%; min-width: 0; }
-.taskmate-source-candidate-edit-field textarea { resize: vertical; }
-.taskmate-source-candidate-edit-field [aria-invalid="true"] { border-color: var(--text-error); }
-.taskmate-source-candidate-edit-help,
-.taskmate-source-candidate-edit-error { margin: 0; font-size: var(--font-ui-smaller); overflow-wrap: anywhere; }
-.taskmate-source-candidate-edit-help { color: var(--text-muted); }
-.taskmate-source-candidate-edit-error { color: var(--text-error); }
-.taskmate-source-candidate-edit-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.45rem; }
+.taskmate-import-review-summary { margin: 0 0 0.7rem; color: var(--text-muted); font-size: var(--font-ui-smaller); overflow-wrap: anywhere; }
+.taskmate-import-candidate { padding-bottom: 0.6rem; }
+/* The import review has no toolbar above its cards, so its headers meet the visible top edge. */
+.taskmate-import-candidate .taskmate-review-file-header { top: calc(-1 * var(--taskmate-review-padding)); }
+.taskmate-import-candidate .taskmate-review-file-identity { flex-wrap: wrap; gap: 0.45rem; }
+.taskmate-import-candidate-operation { padding: 0.05rem 0.45rem; border-radius: 999px; background: var(--background-modifier-hover); font-size: var(--font-ui-smaller); }
+.taskmate-import-candidate-status { margin: 0.4rem 0.7rem; color: var(--text-muted); font-size: var(--font-ui-smaller); overflow-wrap: anywhere; }
+.taskmate-import-candidate-status.is-stale { color: var(--text-warning); }
+.taskmate-import-candidate-status.is-failed { color: var(--text-error); }
+.taskmate-import-candidate-sources,
+.taskmate-import-candidate-fields,
+.taskmate-import-candidate-merge,
+.taskmate-import-candidate-reason,
+.taskmate-import-candidate-actions,
+.taskmate-import-candidate-edit { margin: 0.4rem 0.7rem; min-width: 0; }
+.taskmate-import-candidate-sources h4 { margin: 0 0 0.25rem; font-size: var(--font-ui-small); }
+.taskmate-import-candidate-statement { margin: 0 0 0.35rem; padding: 0.2rem 0.6rem; border-left: 3px solid var(--background-modifier-border); }
+.taskmate-import-candidate-statement cite { display: block; color: var(--text-muted); font-size: var(--font-ui-smaller); font-style: normal; overflow-wrap: anywhere; }
+.taskmate-import-candidate-statement p { margin: 0.15rem 0 0; overflow-wrap: anywhere; }
+.taskmate-import-candidate-fields { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0.25rem 0.7rem; }
+.taskmate-import-candidate-fields dt { color: var(--text-muted); }
+.taskmate-import-candidate-fields dd { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.taskmate-import-candidate-steps { margin: 0; padding-left: 1.1rem; }
+.taskmate-import-candidate-target { margin: 0 0 0.3rem; font-weight: 600; overflow-wrap: anywhere; }
+.taskmate-import-candidate-merge .taskmate-review-change { grid-template-columns: auto minmax(0, 1fr); padding-inline: 0; }
+.taskmate-import-candidate-diff-toggle { margin-top: 0.4rem; }
+.taskmate-import-candidate-merge .taskmate-review-diff { margin-top: 0.4rem; border-radius: 6px; background: var(--background-secondary); }
+.taskmate-import-candidate-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.45rem; }
+.taskmate-import-candidate-decisions { display: flex; flex-wrap: wrap; gap: 0.45rem; min-width: 0; }
+.taskmate-import-candidate-decisions button.is-active { color: var(--text-on-accent); background: var(--interactive-accent); }
+.taskmate-import-candidate-edit { display: grid; gap: 0.6rem; padding: 0.6rem; border-radius: 6px; background: var(--background-secondary); }
+.taskmate-import-candidate-edit-field { display: grid; gap: 0.2rem; min-width: 0; }
+.taskmate-import-candidate-edit-field label { font-size: var(--font-ui-small); font-weight: 600; }
+.taskmate-import-candidate-edit-field input,
+.taskmate-import-candidate-edit-field select,
+.taskmate-import-candidate-edit-field textarea { width: 100%; min-width: 0; }
+.taskmate-import-candidate-edit-field textarea { resize: vertical; }
+.taskmate-import-candidate-edit-field [aria-invalid="true"] { border-color: var(--text-error); }
+.taskmate-import-candidate-edit-help,
+.taskmate-import-candidate-edit-error { margin: 0; font-size: var(--font-ui-smaller); overflow-wrap: anywhere; }
+.taskmate-import-candidate-edit-help { color: var(--text-muted); }
+.taskmate-import-candidate-edit-error { color: var(--text-error); }
+.taskmate-import-candidate-edit-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.45rem; }
 /* The open confirmation is long, so it follows the cards instead of covering them from the sticky footer. */
-.taskmate-source-review-apply.is-open { position: static; }
-.taskmate-source-review-apply-panel { display: grid; gap: 0.4rem; width: 100%; min-width: 0; }
-.taskmate-source-review-apply-panel h3,
-.taskmate-source-review-apply-panel h4,
-.taskmate-source-review-apply-panel p { margin: 0; }
-.taskmate-source-review-apply-panel ul { margin: 0; padding-left: 1.1rem; overflow-wrap: anywhere; }
-.taskmate-source-review-acknowledge { display: flex; align-items: flex-start; gap: 0.45rem; overflow-wrap: anywhere; }
-.taskmate-source-review-apply-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.45rem; }
+.taskmate-import-review-apply.is-open { position: static; }
+.taskmate-import-review-apply-panel { display: grid; gap: 0.4rem; width: 100%; min-width: 0; }
+.taskmate-import-review-apply-panel h3,
+.taskmate-import-review-apply-panel h4,
+.taskmate-import-review-apply-panel p { margin: 0; }
+.taskmate-import-review-apply-panel ul { margin: 0; padding-left: 1.1rem; overflow-wrap: anywhere; }
+.taskmate-import-review-acknowledge { display: flex; align-items: flex-start; gap: 0.45rem; overflow-wrap: anywhere; }
+.taskmate-import-review-apply-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.45rem; }
 .taskmate-review-modal { width: min(96vw, 1100px); height: 94vh; }
 .taskmate-review-modal .modal-content { height: 100%; overflow: hidden; }
 
@@ -188,15 +188,15 @@
   .taskmate-review-file-actions { grid-column: 1; grid-row: 2; justify-self: start; flex-wrap: wrap; max-width: 100%; }
   .taskmate-review-change { grid-template-columns: auto auto minmax(0, 1fr); padding-inline: 0.55rem; }
   .taskmate-review-footer > button { flex: 1 1 auto; }
-  .taskmate-source-candidate-decisions,
-  .taskmate-source-candidate-edit-button { flex: 1 1 100%; }
-  .taskmate-source-candidate-decisions button,
-  .taskmate-source-candidate-edit-actions button,
-  .taskmate-source-review-apply-actions button { flex: 1 1 auto; min-height: 36px; }
-  .taskmate-source-candidate-edit-button,
-  .taskmate-source-candidate-edit-field input,
-  .taskmate-source-candidate-edit-field select { min-height: 36px; }
-  .taskmate-source-candidate-fields { grid-template-columns: minmax(0, 1fr); }
+  .taskmate-import-candidate-decisions,
+  .taskmate-import-candidate-edit-button { flex: 1 1 100%; }
+  .taskmate-import-candidate-decisions button,
+  .taskmate-import-candidate-edit-actions button,
+  .taskmate-import-review-apply-actions button { flex: 1 1 auto; min-height: 36px; }
+  .taskmate-import-candidate-edit-button,
+  .taskmate-import-candidate-edit-field input,
+  .taskmate-import-candidate-edit-field select { min-height: 36px; }
+  .taskmate-import-candidate-fields { grid-template-columns: minmax(0, 1fr); }
 }
 
 .is-phone .taskmate-review-files {

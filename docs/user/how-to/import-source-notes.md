@@ -50,14 +50,14 @@ Paste this after confirming the paths:
 ```text
 表示したノートだけを対象に、行動候補を漏れなく確認してください。
 各候補を「新規Taskを作成」「既存Taskへ統合」「除外候補」のどれかに分類し、
-TaskMateのSource候補レビューとしてステージして開いてください。
+TaskMateの取り込みレビューとしてステージして開いてください。
 まだTaskへの正式反映はしないでください。
 ```
 
 Codex reads the selected notes, inventories every statement that could imply an action, checks existing Tasks for merges, and saves one review file:
 
 ```text
-TaskMate/Proposals/source-review-<id>.json
+TaskMate/Proposals/import-review-<id>.json
 ```
 
 The review opens in TaskMate. If it does not, run **TaskMate: Open reviews** and open it from the pending list. You do not type the Python helper commands, and the review file is not a Task.
@@ -154,14 +154,14 @@ Vaultを開いているCodexのメッセージ欄へ、次を貼り付けて送�
 ```text
 表示したノートだけを対象に、行動候補を漏れなく確認してください。
 各候補を「新規Taskを作成」「既存Taskへ統合」「除外候補」のどれかに分類し、
-TaskMateのSource候補レビューとしてステージして開いてください。
+TaskMateの取り込みレビューとしてステージして開いてください。
 まだTaskへの正式反映はしないでください。
 ```
 
 Codexは対象ノートを読み、行動になり得る文をすべて棚卸しし、既存Taskへの統合先を確認して、レビューのファイルを1つ保存します。
 
 ```text
-TaskMate/Proposals/source-review-<id>.json
+TaskMate/Proposals/import-review-<id>.json
 ```
 
 レビューはTaskMateで開きます。開かない場合は **TaskMate: レビューを開く** を実行し、未レビューの一覧から開きます。利用者がPythonコマンドを入力する必要はなく、レビューのファイルはTaskではありません。

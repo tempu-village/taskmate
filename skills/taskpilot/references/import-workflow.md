@@ -1,6 +1,6 @@
 # Source-note import
 
-Read this reference whenever existing Obsidian notes should become TaskMate tasks. Task Pilot discovers the notes, builds the coverage review and stages it with [source-review-workflow.md](source-review-workflow.md). The user then edits, decides and applies every candidate in TaskMate; Task Pilot never creates or changes canonical tasks for an import.
+Read this reference whenever existing Obsidian notes should become TaskMate tasks. Task Pilot discovers the notes, builds the coverage review and stages it with [import-review-workflow.md](import-review-workflow.md). The user then edits, decides and applies every candidate in TaskMate; Task Pilot never creates or changes canonical tasks for an import.
 
 ## Discover eligible notes
 
@@ -24,7 +24,7 @@ Default every ambiguous action to **create**. Pure headings and connective prose
 
 Read [coverage-review-examples.md](coverage-review-examples.md) when building the inventory. It shows meeting notes, ambiguous background, task merging, task splitting, and explicit exclusions.
 
-Stage the complete review with [source-review-workflow.md](source-review-workflow.md) before the user decides anything. Do not create or change canonical task files. Apply the task-boundary rules in [task-schema.md](task-schema.md); the agent may decide whether related statements become one task or several.
+Stage the complete review with [import-review-workflow.md](import-review-workflow.md) before the user decides anything. Do not create or change canonical task files. Apply the task-boundary rules in [task-schema.md](task-schema.md); the agent may decide whether related statements become one task or several.
 
 ## Provenance
 

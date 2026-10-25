@@ -50,7 +50,7 @@ For each Task that may change, Task Pilot shows the current value, proposed valu
 - make no change;
 - ask the user to clarify.
 
-These actions describe a proposal session. They are not stored as Task statuses or displayed as a new status system in TaskMate.
+These actions classify a proposed change in a review. They are not stored as Task statuses or displayed as a new status system in TaskMate.
 
 Task Pilot may point out a possible duplicate, unclear title, oversized Task, or Task that may already be complete, but the first iteration does not merge, split, rename, complete, or delete it automatically or through a bulk review action. The user may still perform those operations through existing TaskMate behavior. Completion is allowed through Task Pilot only when the user directly instructs it to complete a named Task; it is not inferred from age, wording, or missing activity.
 
@@ -176,7 +176,7 @@ If some writes in an approved batch fail, Task Pilot identifies which Tasks succ
 7. Recheck current files, apply only approved changes, and validate the saved Markdown.
 8. Build a read-only capacity plan from the current canonical Tasks and display the capacity calculation, reasons, estimates, and inferences.
 
-Backlog-review mutations use persisted, reviewable [Task change Proposals](task-change-review/README.md) containing typed ChangeSets and complete before/after Markdown evidence. Capacity plans remain conversation output and read-only. Source-note imports continue to use their distinct persisted Proposal sessions. Canonical Task Markdown remains the only Task master data.
+Backlog-review mutations use persisted, reviewable [Task change Proposals](task-change-review/README.md) containing typed ChangeSets and complete before/after Markdown evidence. Capacity plans remain conversation output and read-only. Source-note imports use their own persisted Import reviews. Canonical Task Markdown remains the only Task master data.
 
 ## Failure handling and limitations
 
@@ -238,7 +238,7 @@ Automated evidence: [planning behavior tests](../../../skills/taskpilot/tests/te
 
 ## Implemented RFC
 
-The rolling-plan part of [RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md), [Issue #60](https://github.com/tempu-village/taskmate/issues/60), is implemented as described in [Maintaining a rolling plan](#maintaining-a-rolling-plan); the conversation capacity plan above remains available for a single bounded window. The rest of the RFC, the Source candidate review and the shared review list, is described in the [Source-note import](source-import.md) and [Task change review](task-change-review/README.md) Features.
+The rolling-plan part of [RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md), [Issue #60](https://github.com/tempu-village/taskmate/issues/60), is implemented as described in [Maintaining a rolling plan](#maintaining-a-rolling-plan); the conversation capacity plan above remains available for a single bounded window. The rest of the RFC, the Import review and the shared review list, is described in the [Source-note import](source-import.md) and [Task change review](task-change-review/README.md) Features.
 
 ## Related specifications and features
 
@@ -406,7 +406,7 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 7. 現在のファイルを再確認し、承認分だけ反映してMarkdownを検証する。
 8. 現在の正式Taskから読み取り専用の時間ベース計画を作り、時間計算、理由、見積もり、推測を表示する。
 
-バックログ変更は、型付きChangeSetと変更前後Markdown全文を含む永続化されたレビュー可能な[Task change Proposal](task-change-review/README.md)を使います。時間ベース計画は引き続き対話内だけの読み取り専用です。Source note取り込みは別の永続Proposal sessionを使い続け、正式なTask MarkdownだけをTaskの正本とします。
+バックログ変更は、型付きChangeSetと変更前後Markdown全文を含む永続化されたレビュー可能な[Task change Proposal](task-change-review/README.md)を使います。時間ベース計画は引き続き対話内だけの読み取り専用です。Source note取り込みは、それ専用の永続的な取り込みレビューを使い、正式なTask MarkdownだけをTaskの正本とします。
 
 ### 失敗時と制限
 
@@ -468,7 +468,7 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 
 ### 実装済みのRFC
 
-[RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md)のうち計画部分（[Issue #60](https://github.com/tempu-village/taskmate/issues/60)）は、上の「見直せる計画を保つ」のとおり実装済みです。1回分の時間に合わせる会話での計画も引き続き使えます。RFCの残り（Source候補レビューと共通のレビュー一覧）は、[Source-note import](source-import.md)と[Task change review](task-change-review/README.md)のFeatureに記載しています。
+[RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md)のうち計画部分（[Issue #60](https://github.com/tempu-village/taskmate/issues/60)）は、上の「見直せる計画を保つ」のとおり実装済みです。1回分の時間に合わせる会話での計画も引き続き使えます。RFCの残り（取り込みレビューと共通のレビュー一覧）は、[Source-note import](source-import.md)と[Task change review](task-change-review/README.md)のFeatureに記載しています。
 
 ### 関連仕様と機能
 

@@ -1,6 +1,6 @@
-# Source candidate review
+# Import review
 
-Stage the coverage review from [import-workflow.md](import-workflow.md) as one Source candidate review. In TaskMate the user can edit each candidate's fields or operation, decide, and formally apply; TaskMate then writes Source-note provenance itself.
+Stage the coverage review from [import-workflow.md](import-workflow.md) as one Import review. In TaskMate the user can edit each candidate's fields or operation, decide, and formally apply; TaskMate then writes Source-note provenance itself.
 
 ## Stage a review
 
@@ -29,16 +29,16 @@ For every Source, list its complete statement inventory: every statement that co
 ```
 
 ```bash
-python3 scripts/source_review.py --vault <vault> stage --request <request.json> --review-id source-review-<id> --open-review
+python3 scripts/import_review.py --vault <vault> stage --request <request.json> --review-id import-review-<id> --open-review
 ```
 
 The helper writes `<proposalFolder>/<review-id>.json` and nothing else. It refuses to stage when:
 
-- a note is ineligible, already imported and unchanged, or already in another pending Source candidate review;
+- a note is ineligible, already imported and unchanged, or already in another pending Import review;
 - an inventory statement is not found verbatim in its note body or conversation snapshot;
 - a statement is unmapped, mapped twice, or not in its Source inventory;
 - a merge target is completed, changed since `inspect`, or would not actually change, or a merge names a field other than title, date, priority, labels, project, Steps, or Notes.
 
 It records the note hash used for provenance, the conversation snapshot hash, complete before/after Markdown for merges, and every candidate as pending. Report the review ID, Sources, and candidates. Decisions and formal apply happen only in TaskMate.
 
-The output includes `uri`, the TaskMate-owned `obsidian://taskmate-source-review` link for the review. On macOS, Windows, and Linux, `--open-review` invokes it directly through the operating system, as `propose --open-review` does. The review is already saved before opening, so a launch failure does not fail the command: it sets `opened` to false and reports `openError`. Then give the user the review ID; the review is listed under TaskMate's Open reviews command.
+The output includes `uri`, the TaskMate-owned `obsidian://taskmate-import-review` link for the review. On macOS, Windows, and Linux, `--open-review` invokes it directly through the operating system, as `propose --open-review` does. The review is already saved before opening, so a launch failure does not fail the command: it sets `opened` to false and reports `openError`. Then give the user the review ID; the review is listed under TaskMate's Open reviews command.

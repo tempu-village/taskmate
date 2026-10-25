@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "reviewId": "source-review-20261017T101500-demo",
-  "reviewType": "source-candidate",
+  "reviewId": "import-review-20261017T101500-demo",
+  "reviewType": "import",
   "status": "ready-to-apply",
   "health": "ok",
   "revision": 3,
@@ -30,7 +30,7 @@
   ],
   "candidates": [
     {
-      "id": "SC-01",
+      "id": "IC-01",
       "revision": 1,
       "originalOperation": "create",
       "operation": "create",
@@ -75,7 +75,7 @@
       }
     },
     {
-      "id": "SC-02",
+      "id": "IC-02",
       "revision": 2,
       "originalOperation": "merge",
       "operation": "merge",
@@ -133,7 +133,7 @@
       }
     },
     {
-      "id": "SC-03",
+      "id": "IC-03",
       "revision": 1,
       "originalOperation": "exclude",
       "operation": "exclude",

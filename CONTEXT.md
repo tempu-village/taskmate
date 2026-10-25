@@ -5,7 +5,7 @@ TaskMate is a local-first task system in which Markdown remains inspectable and 
 ## Language
 
 **Task Pilot**:
-The optional portable agent skill that helps turn explicitly selected Source notes into reviewable Task proposals and manages TaskMate task Markdown. Its installable identifier and directory name are `taskpilot`.
+The optional portable agent skill that helps turn explicitly selected Source notes into an Import review that the user decides in TaskMate, and manages TaskMate task Markdown. Its installable identifier and directory name are `taskpilot`.
 _Avoid_: Agent Skill, TaskMate Skill
 
 **Task**:
@@ -36,16 +36,16 @@ _Avoid_: AI note, import file
 The accounting in which every statement from a source note that could imply follow-up is mapped to exactly one create, merge, or exclude candidate before the user decides in TaskMate.
 _Avoid_: Import preview, AI summary
 
-**Source candidate review**:
+**Import review**:
 One staged review of explicitly selected Sources and every candidate derived from them, kept separate from canonical Tasks until the user applies decisions in TaskMate. Markdown Proposal sessions from earlier versions are retired.
-_Avoid_: Proposal session, Sandbox, draft import
+_Avoid_: Source candidate review, Proposal session, Sandbox, draft import
 
-**Source candidate**:
-A non-canonical create, merge, or exclude entry in a Source candidate review that may become a new Task, a change to an existing Task, or a recorded exclusion once the user applies it.
-_Avoid_: Task proposal, Draft task, temporary task
+**Import candidate**:
+A non-canonical create, merge, or exclude entry in an Import review that may become a new Task, a change to an existing Task, or a recorded exclusion once the user applies it.
+_Avoid_: Source candidate, Task proposal, Draft task, temporary task
 
 **Review decision**:
-The user's explicit approval or hold of a Source candidate at its current revision, retained in the review. Editing a candidate returns it to undecided.
+The user's explicit approval or hold of an Import candidate at its current revision, retained in the review. Editing a candidate returns it to undecided.
 _Avoid_: AI decision, implicit approval
 
 **ChangeSet**:
@@ -53,7 +53,7 @@ An ordered set of typed instructions for changing fields of existing canonical T
 _Avoid_: Diff, approval record, Proposal
 
 **Task change Proposal**:
-A persisted, non-canonical review envelope containing a ChangeSet, complete before/after Markdown evidence, review decisions, and apply results. It never replaces canonical Task Markdown. This is distinct from a Source candidate review.
+A persisted, non-canonical review envelope containing a ChangeSet, complete before/after Markdown evidence, review decisions, and apply results. It never replaces canonical Task Markdown. This is distinct from an Import review.
 _Avoid_: ChangeSet, Task database, draft Task
 
 **Manual order**:

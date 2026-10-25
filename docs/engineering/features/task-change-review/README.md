@@ -13,7 +13,7 @@ The initial scope covers scheduled date, Priority, Labels, title, Steps, and Not
 ## User-visible behavior
 
 1. Task Pilot records a Proposal containing a ChangeSet without modifying the canonical Task files.
-2. TaskMate opens the pending Proposal from an Obsidian URI handoff or the shared review list, which shows Task change Proposals together with Source candidate reviews.
+2. TaskMate opens the pending Proposal from an Obsidian URI handoff or the shared review list, which shows Task change reviews together with Import reviews.
 3. Desktop and mobile use the same dedicated ItemView so URI handoff and pending-review selection share one tested rendering path.
 4. The Review View presents a compact continuous list of proposed changes with stable change identifiers.
 5. The user can switch between semantic and raw Markdown diffs and approve changes individually.
@@ -49,7 +49,7 @@ After synchronization finishes, run `Open reviews` in TaskMate and open the pend
 - Partial approval produces an explicit result for every proposed change.
 - Unrelated content and manual ordering are preserved.
 - The canonical context label is `context/break`; legacy `brk` input is normalized at the boundary.
-- Review text, such as titles, values, reasons and the Full text diff, can be selected and copied even though Obsidian turns off text selection elsewhere in its interface. Buttons stay unselectable, and the Source candidate review follows the same rule.
+- Review text, such as titles, values, reasons and the Full text diff, can be selected and copied even though Obsidian turns off text selection elsewhere in its interface. Buttons stay unselectable, and the Import review follows the same rule.
 
 ## Processing flow
 
@@ -112,7 +112,7 @@ The strict persisted format, lifecycle and URI security contract are defined by 
 
 Following [RFC 0033](../../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md), this Review View is the only approval surface for changes to already-canonical Tasks that originate from a rolling plan. Creating and editing a plan never writes Tasks; Codex must create a normal Task change Proposal before this view can approve anything.
 
-The shared review list classifies minimal envelopes through the Review Catalog and opens each review in its own view. Task change and Source candidate schemas, decisions, stale recovery, application and UI state remain separate. Task change Proposal version 1 is still recognized by its `proposal-*` name, so its behavior and compatibility are unchanged.
+The shared review list classifies minimal envelopes through the Review Catalog and opens each review in its own view. Task change and Import review schemas, decisions, stale recovery, application and UI state remain separate. Task change Proposal version 1 is still recognized by its `proposal-*` name, so its behavior and compatibility are unchanged.
 
 ## Related documents
 

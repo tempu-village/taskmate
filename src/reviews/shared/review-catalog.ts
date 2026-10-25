@@ -1,7 +1,7 @@
 import { normalizePath } from "obsidian";
 import type { App } from "obsidian";
 
-export type ReviewKind = "task-change" | "source-candidate";
+export type ReviewKind = "task-change" | "import";
 export type ReviewLocation = "pending" | "history";
 
 export interface ReviewReference {
@@ -18,7 +18,7 @@ export type ReviewCatalogEntry =
   | { type: "invalid"; path: string; location: ReviewLocation; reason: InvalidReviewReason };
 
 const TASK_CHANGE_ID = /^proposal-[A-Za-z0-9._-]+$/;
-const SOURCE_REVIEW_ID = /^source-review-[A-Za-z0-9._-]+$/;
+const IMPORT_REVIEW_ID = /^import-review-[A-Za-z0-9._-]+$/;
 
 // Classifies one review file from its envelope only. Complete parsing, validation and application stay in the owning
 // review Module, so a file classified here can still be rejected by that Module.
@@ -35,10 +35,10 @@ export function classifyReviewFile(path: string, location: ReviewLocation, conte
   if (typeof envelope !== "object" || envelope === null || Array.isArray(envelope)) return invalid("unreadable-json");
   const { reviewType, schemaVersion, reviewId, id } = envelope as Record<string, unknown>;
 
-  if (reviewType === "source-candidate") {
-    // Both the discriminator and the source-review-* name must agree, and the name must match the stored ID.
-    if (!SOURCE_REVIEW_ID.test(name) || reviewId !== name) return invalid("mismatched-id");
-    return schemaVersion === 1 ? review("source-candidate", name) : invalid("unsupported-version");
+  if (reviewType === "import") {
+    // Both the discriminator and the import-review-* name must agree, and the name must match the stored ID.
+    if (!IMPORT_REVIEW_ID.test(name) || reviewId !== name) return invalid("mismatched-id");
+    return schemaVersion === 1 ? review("import", name) : invalid("unsupported-version");
   }
   if (reviewType !== undefined) return invalid("unknown-type");
   // Task change schema version 1 has no reviewType; the proposal-* name is its compatibility discriminator.
@@ -46,7 +46,7 @@ export function classifyReviewFile(path: string, location: ReviewLocation, conte
     if (id !== name) return invalid("mismatched-id");
     return schemaVersion === 1 ? review("task-change", name) : invalid("unsupported-version");
   }
-  return invalid(SOURCE_REVIEW_ID.test(name) ? "mismatched-id" : "unknown-type");
+  return invalid(IMPORT_REVIEW_ID.test(name) ? "mismatched-id" : "unknown-type");
 }
 
 // Lists the review files directly inside the Proposal folder (pending) or its History folder. It only reads files.

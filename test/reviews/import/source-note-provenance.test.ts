@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import { importedHash, sourceNoteHash, withSourceNoteProvenance } from "../../../src/reviews/source-candidate/source-note-provenance";
+import { importedHash, sourceNoteHash, withSourceNoteProvenance } from "../../../src/reviews/import/source-note-provenance";
 
 const SCRIPTS = fileURLToPath(new URL("../../../skills/taskpilot/scripts/", import.meta.url));
 const directories: string[] = [];

@@ -9,7 +9,7 @@ Do not place feature introductions, background narratives or implementation hist
 | [Task file format](task-file-format.md) | Markdown storage, identity, properties, Steps and compatibility |
 | [Source note property format](source-note-properties.md) | Source eligibility, import provenance and TaskMate-unowned note properties |
 | [Task change Proposal format](task-change-proposal-format.md) | Proposal JSON schema, identifiers, evidence, lifecycle and URI security |
-| [Source candidate Proposal format](source-candidate-proposal-format.md) | Source candidate review JSON schema, coverage, decisions, formal apply, provenance timing and URI security |
+| [Import review format](import-review-format.md) | Import review JSON schema, coverage, decisions, formal apply, provenance timing and URI security |
 
 ## 日本語参考
 
@@ -19,4 +19,4 @@ Do not place feature introductions, background narratives or implementation hist
 
 Specificationは、実装が満たす厳密で規範的な技術契約です。データ形式、API、schema、上限値、状態遷移、互換性、security制約を、検証可能なMUST、MUST NOT、形式、遷移条件として記録します。機能紹介、背景、実装履歴、機能固有のWhatとHowは[Feature](../features/README.md)へ置き、契約を複製せずリンクします。実装と契約は同じ変更で更新します。
 
-正式TaskのPropertyは[Task file format](task-file-format.md)、通常ノートの対象指定と取り込み履歴は[Source note property format](source-note-properties.md)、Source候補レビューのJSONは[Source candidate Proposal format](source-candidate-proposal-format.md)を参照してください。
+正式TaskのPropertyは[Task file format](task-file-format.md)、通常ノートの対象指定と取り込み履歴は[Source note property format](source-note-properties.md)、取り込みレビューのJSONは[Import review format](import-review-format.md)を参照してください。

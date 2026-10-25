@@ -9,7 +9,7 @@ from pathlib import Path
 
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 TODO_STORE = SCRIPTS / "todo_store.py"
-SOURCE_REVIEW = SCRIPTS / "source_review.py"
+IMPORT_REVIEW = SCRIPTS / "import_review.py"
 sys.path.insert(0, str(SCRIPTS))
 import todo_store  # noqa: E402
 
@@ -26,7 +26,7 @@ type: meeting-note
 CONVERSATION = "Please also prepare the release checklist."
 
 
-class SourceReviewTest(unittest.TestCase):
+class ImportReviewTest(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.vault = Path(self.temporary.name)
@@ -69,8 +69,8 @@ class SourceReviewTest(unittest.TestCase):
         path.write_text(json.dumps(value), encoding="utf-8")
         return path
 
-    def stage(self, request, review_id="source-review-sync", check=True):
-        return self.run_script(SOURCE_REVIEW, "stage", "--request", str(self.write_json(request)), "--review-id", review_id, check=check)
+    def stage(self, request, review_id="import-review-sync", check=True):
+        return self.run_script(IMPORT_REVIEW, "stage", "--request", str(self.write_json(request)), "--review-id", review_id, check=check)
 
     def tree(self):
         return {path.relative_to(self.vault).as_posix(): path.read_bytes() for path in sorted(self.vault.rglob("*.md"))}
@@ -124,7 +124,7 @@ class SourceReviewTest(unittest.TestCase):
 
         after = {path: path.read_bytes() for path in sorted((self.vault / "TaskMate" / "Proposals").rglob("*")) if path.is_file()}
         self.assertEqual({path: content for path, content in after.items() if path in before}, before)
-        self.assertEqual([path.relative_to(self.vault).as_posix() for path in after if path not in before], ["TaskMate/Proposals/source-review-sync.json"])
+        self.assertEqual([path.relative_to(self.vault).as_posix() for path in after if path not in before], ["TaskMate/Proposals/import-review-sync.json"])
 
     def test_stage_writes_one_pending_json_without_changing_tasks_or_notes(self):
         target = self.demo_task()
@@ -133,16 +133,16 @@ class SourceReviewTest(unittest.TestCase):
         _, result = self.stage(self.request(target))
 
         self.assertEqual(self.tree(), before)
-        self.assertEqual(result["path"], "TaskMate/Proposals/source-review-sync.json")
-        self.assertEqual(result["uri"], f"obsidian://taskmate-source-review?vault={self.vault.name}&review=source-review-sync")
+        self.assertEqual(result["path"], "TaskMate/Proposals/import-review-sync.json")
+        self.assertEqual(result["uri"], f"obsidian://taskmate-import-review?vault={self.vault.name}&review=import-review-sync")
         self.assertEqual((result["opened"], result["openError"]), (False, None))
         self.assertFalse((self.vault / "TaskMate" / "Proposals" / "Active").exists())
         review = json.loads((self.vault / result["path"]).read_text(encoding="utf-8"))
-        self.assertEqual((review["schemaVersion"], review["reviewType"], review["status"], review["health"], review["revision"]), (1, "source-candidate", "pending", "ok", 1))
+        self.assertEqual((review["schemaVersion"], review["reviewType"], review["status"], review["health"], review["revision"]), (1, "import", "pending", "ok", 1))
         self.assertEqual([source["id"] for source in review["sources"]], ["SRC-01", "SRC-02"])
         self.assertEqual(review["sources"][0]["sha256"], todo_store.source_hash(NOTE_TEXT))
         self.assertEqual(review["sources"][1]["sha256"], hashlib.sha256(CONVERSATION.encode("utf-8")).hexdigest())
-        self.assertEqual([candidate["id"] for candidate in review["candidates"]], ["SC-01", "SC-02", "SC-03", "SC-04"])
+        self.assertEqual([candidate["id"] for candidate in review["candidates"]], ["IC-01", "IC-02", "IC-03", "IC-04"])
         self.assertTrue(all(candidate["decision"] == "pending" and candidate["application"]["status"] == "not-applied" for candidate in review["candidates"]))
         merge = review["candidates"][1]["mergeTarget"]
         target_text = (self.vault / target["path"]).read_text(encoding="utf-8")
@@ -164,10 +164,10 @@ class SourceReviewTest(unittest.TestCase):
         results = [self.stage(request, check=False)[0].stderr for request in (missing, duplicate, unknown, invented)]
 
         self.assertIn("is not mapped by any candidate: The next meeting may be Friday afternoon.", results[0])
-        self.assertIn("is mapped by both SC-01 and SC-03", results[1])
+        self.assertIn("is mapped by both IC-01 and IC-03", results[1])
         self.assertIn("not in the Source inventory", results[2])
         self.assertIn("statement was not found in Source Notes/sync.md: Call the lawyer.", results[3])
-        self.assertFalse((self.vault / "TaskMate" / "Proposals" / "source-review-sync.json").exists())
+        self.assertFalse((self.vault / "TaskMate" / "Proposals" / "import-review-sync.json").exists())
 
     def test_notes_must_be_eligible_unprocessed_and_not_already_in_review(self):
         target = self.demo_task()
@@ -179,11 +179,11 @@ class SourceReviewTest(unittest.TestCase):
 
         self.assertIn("not eligible", self.stage(ineligible, check=False)[0].stderr)
         self.stage(self.request(target))
-        self.assertIn("already in pending Source candidate review source-review-sync", self.stage(self.request(target), "source-review-again", check=False)[0].stderr)
+        self.assertIn("already in pending Import review import-review-sync", self.stage(self.request(target), "import-review-again", check=False)[0].stderr)
         self.assertIn("already exists", self.stage(self.request(target), check=False)[0].stderr)
-        (self.vault / "TaskMate" / "Proposals" / "source-review-sync.json").unlink()
+        (self.vault / "TaskMate" / "Proposals" / "import-review-sync.json").unlink()
         self.run_script(TODO_STORE, "mark-source", "--source", "Notes/sync.md")
-        self.assertIn("already imported", self.stage(self.request(target), "source-review-third", check=False)[0].stderr)
+        self.assertIn("already imported", self.stage(self.request(target), "import-review-third", check=False)[0].stderr)
 
     def test_merge_targets_must_be_current_incomplete_and_actually_changed(self):
         target = self.demo_task()
@@ -212,7 +212,7 @@ class SourceReviewTest(unittest.TestCase):
     def test_review_identifier_is_validated(self):
         result, _ = self.stage(self.request(self.demo_task()), "proposal-wrong", check=False)
 
-        self.assertIn("review-id must start with source-review-", result.stderr)
+        self.assertIn("review-id must start with import-review-", result.stderr)
 
 
 if __name__ == "__main__":

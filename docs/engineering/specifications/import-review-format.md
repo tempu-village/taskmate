@@ -1,16 +1,16 @@
-# Source candidate Proposal format
+# Import review format
 
-Status: Current contract for the implemented Source candidate review. User-visible behavior is described in [Source-note import](../features/source-import.md). Promoted from [RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md); the RFC keeps the decision history.
+Status: Current contract for the implemented Import review. User-visible behavior is described in [Source-note import](../features/source-import.md). Promoted from [RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md); the RFC keeps the decision history.
 
-The complete version 1 shape is defined by the [JSON Schema](source-candidate-proposal.schema.json) (Draft 2020-12), with one [complete example](source-candidate-proposal-example.json). This page states the rules a writer and a reader MUST follow beyond that shape.
+The complete version 1 shape is defined by the [JSON Schema](import-review.schema.json) (Draft 2020-12), with one [complete example](import-review-example.json). This page states the rules a writer and a reader MUST follow beyond that shape.
 
 ## Storage and identity
 
-A pending Source candidate Proposal MUST be UTF-8 JSON at `<proposalFolder>/<reviewId>.json`. The default folder is `TaskMate/Proposals`. A review in History MUST be at `<proposalFolder>/History/<reviewId>.json`; History MUST NOT be deleted automatically. The file name MUST equal `reviewId`.
+A pending Import review MUST be UTF-8 JSON at `<proposalFolder>/<reviewId>.json`. The default folder is `TaskMate/Proposals`. A review in History MUST be at `<proposalFolder>/History/<reviewId>.json`; History MUST NOT be deleted automatically. The file name MUST equal `reviewId`.
 
-`schemaVersion` MUST be `1` and `reviewType` MUST be `source-candidate`. `reviewId` MUST match `source-review-[A-Za-z0-9._-]+`. A reader that classifies review files MUST require both the `reviewType` and the `source-review-*` name to agree; a file where they disagree, or with another version, MUST NOT be opened or applied.
+`schemaVersion` MUST be `1` and `reviewType` MUST be `import`. `reviewId` MUST match `import-review-[A-Za-z0-9._-]+`. A reader that classifies review files MUST require both the `reviewType` and the `import-review-*` name to agree; a file where they disagree, or with another version, MUST NOT be opened or applied.
 
-Source IDs MUST match `SRC-[0-9]{2,}` and candidate IDs MUST match `SC-[0-9]{2,}`; both MUST be unique inside one review. Writers MUST serialize the review with two-space indentation and a final newline. Unknown properties MUST be rejected.
+Source IDs MUST match `SRC-[0-9]{2,}` and candidate IDs MUST match `IC-[0-9]{2,}`; both MUST be unique inside one review. Writers MUST serialize the review with two-space indentation and a final newline. Unknown properties MUST be rejected.
 
 ## Sources
 
@@ -53,7 +53,7 @@ Every transition MUST increment the review `revision`, set `updatedAt`, and reco
 
 ## Staging
 
-The staging writer MUST write only the review file. It MUST NOT create or change canonical Tasks, Source notes or Markdown review files. It MUST refuse a review whose statements are missing, unmapped or mapped twice; a note that is ineligible, already imported and unchanged, or already part of another pending Source candidate review; and a merge target that is completed, changed since inspection, or would not change. Every new candidate starts `pending`, `ok` and not applied.
+The staging writer MUST write only the review file. It MUST NOT create or change canonical Tasks, Source notes or Markdown review files. It MUST refuse a review whose statements are missing, unmapped or mapped twice; a note that is ineligible, already imported and unchanged, or already part of another pending Import review; and a merge target that is completed, changed since inspection, or would not change. Every new candidate starts `pending`, `ok` and not applied.
 
 ## Formal apply
 
@@ -72,7 +72,7 @@ Formal apply MUST be a separate, explicitly confirmed action. Opening, editing o
 
 ## URI handoff
 
-`obsidian://taskmate-source-review?vault=<vault>&review=<reviewId>` opens a review in TaskMate. TaskMate MUST accept only a `review` value that matches the review ID pattern, and the URI MUST NOT decide, edit or apply anything.
+`obsidian://taskmate-import-review?vault=<vault>&review=<reviewId>` opens a review in TaskMate. TaskMate MUST accept only a `review` value that matches the review ID pattern, and the URI MUST NOT decide, edit or apply anything.
 
 ## Compatibility and verification
 

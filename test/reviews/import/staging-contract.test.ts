@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import { parseSourceCandidateProposal, planFormalApply, verifyMergeEvidence } from "../../../src/reviews/source-candidate/proposal";
+import { parseImportReview, planFormalApply, verifyMergeEvidence } from "../../../src/reviews/import/proposal";
 import { schemaJson } from "./fixture";
 
 const SCRIPTS = fileURLToPath(new URL("../../../skills/taskpilot/scripts/", import.meta.url));
@@ -50,7 +50,7 @@ function stagedVault(): { vault: string; reviewPath: string; targetId: string } 
   };
   const requestPath = join(vault, "request.json");
   writeFileSync(requestPath, JSON.stringify(request));
-  const staged = python(vault, "source_review.py", "stage", "--request", requestPath, "--review-id", "source-review-contract");
+  const staged = python(vault, "import_review.py", "stage", "--request", requestPath, "--review-id", "import-review-contract");
   return { vault, reviewPath: join(vault, staged.path), targetId: target.id };
 }
 
@@ -64,11 +64,11 @@ describe("Task Pilot staging contract", () => {
     const text = readFileSync(reviewPath, "utf8");
 
     expect(validate(JSON.parse(text)) ? "" : ajv.errorsText(validate.errors)).toBe("");
-    const proposal = parseSourceCandidateProposal(text);
+    const proposal = parseImportReview(text);
     expect([proposal.status, proposal.health, proposal.revision]).toEqual(["pending", "ok", 1]);
     expect(proposal.candidates.map((candidate) => candidate.operation)).toEqual(["create", "merge", "exclude", "create"]);
     const merge = proposal.candidates[1];
-    if (merge.operation !== "merge") throw new Error("SC-02 must merge");
+    if (merge.operation !== "merge") throw new Error("IC-02 must merge");
     expect(merge.mergeTarget.taskId).toBe(targetId);
     expect(merge.mergeTarget.changes.map((change) => change.field)).toEqual(["steps", "notes"]);
     await expect(verifyMergeEvidence(merge.mergeTarget)).resolves.toBeUndefined();

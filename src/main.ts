@@ -10,8 +10,8 @@ import type { I18n } from "./i18n";
 import { detectObsidianLanguage, isDesktopObsidian } from "./i18n/obsidian-locale";
 import { TaskChangeProposalRepository } from "./reviews/task-change/proposal-repository";
 import { openProposalInReviewView, TASK_CHANGE_REVIEW_VIEW_TYPE, TaskChangeReviewView, taskChangeIndexDetails } from "./reviews/task-change/review-view";
-import { SourceCandidateReviewRepository } from "./reviews/source-candidate/review-repository";
-import { SOURCE_CANDIDATE_REVIEW_VIEW_TYPE, SourceCandidateReviewView, sourceReviewIdFromLink, sourceReviewIndexDetails } from "./reviews/source-candidate/review-view";
+import { ImportReviewRepository } from "./reviews/import/review-repository";
+import { IMPORT_REVIEW_VIEW_TYPE, ImportReviewView, importReviewIdFromLink, importReviewIndexDetails } from "./reviews/import/review-view";
 import { ReviewCatalog } from "./reviews/shared/review-catalog";
 import type { ReviewLocation, ReviewReference } from "./reviews/shared/review-catalog";
 import { buildReviewIndex } from "./reviews/shared/review-index";
@@ -23,7 +23,7 @@ export default class TaskMatePlugin extends Plugin {
   repository!: TaskRepository;
   projects!: ProjectRepository;
   proposals!: TaskChangeProposalRepository;
-  sourceReviews!: SourceCandidateReviewRepository;
+  importReviews!: ImportReviewRepository;
   reviewCatalog!: ReviewCatalog;
   private refreshTimer: number | null = null;
 
@@ -34,7 +34,7 @@ export default class TaskMatePlugin extends Plugin {
     this.repository = new TaskRepository(this.app, () => this.settings.taskFolder);
     this.projects = new ProjectRepository(this.app, () => this.settings.projectFolder);
     this.proposals = new TaskChangeProposalRepository(this.app, () => this.settings.proposalFolder, this.repository);
-    this.sourceReviews = new SourceCandidateReviewRepository(this.app, () => this.settings.proposalFolder, this.repository);
+    this.importReviews = new ImportReviewRepository(this.app, () => this.settings.proposalFolder, this.repository);
     this.reviewCatalog = new ReviewCatalog(this.app, () => this.settings.proposalFolder);
     try {
       const migrated = await this.repository.migrateLegacyFileNames();
@@ -45,7 +45,7 @@ export default class TaskMatePlugin extends Plugin {
     }
     this.registerView(TODO_VIEW_TYPE, (leaf) => new TodoListView(leaf, this));
     this.registerView(TASK_CHANGE_REVIEW_VIEW_TYPE, (leaf) => new TaskChangeReviewView(leaf, this));
-    this.registerView(SOURCE_CANDIDATE_REVIEW_VIEW_TYPE, (leaf) => new SourceCandidateReviewView(leaf, this));
+    this.registerView(IMPORT_REVIEW_VIEW_TYPE, (leaf) => new ImportReviewView(leaf, this));
     this.registerView(REVIEW_INDEX_VIEW_TYPE, (leaf) => new ReviewIndexView(leaf, this));
     this.addSettingTab(new TaskMateSettingTab(this.app, this));
 
@@ -62,13 +62,13 @@ export default class TaskMatePlugin extends Plugin {
       const changeId = typeof params.change === "string" && /^C-[0-9]{2,}$/.test(params.change) ? params.change : undefined;
       await this.openProposalReview(proposalId, taskId, changeId);
     });
-    this.registerObsidianProtocolHandler("taskmate-source-review", async (params) => {
-      const reviewId = sourceReviewIdFromLink(params);
+    this.registerObsidianProtocolHandler("taskmate-import-review", async (params) => {
+      const reviewId = importReviewIdFromLink(params);
       if (!reviewId) {
-        new Notice(this.i18n().t("sourceReview.invalidLink"));
+        new Notice(this.i18n().t("importReview.invalidLink"));
         return;
       }
-      await this.openSourceReview(reviewId);
+      await this.openImportReview(reviewId);
     });
     this.addCommand({
       id: "include-current-note-as-ai-source",
@@ -97,8 +97,8 @@ export default class TaskMatePlugin extends Plugin {
         for (const leaf of this.app.workspace.getLeavesOfType(TASK_CHANGE_REVIEW_VIEW_TYPE)) {
           if (leaf.view instanceof TaskChangeReviewView) leaf.view.requestRender();
         }
-        for (const leaf of this.app.workspace.getLeavesOfType(SOURCE_CANDIDATE_REVIEW_VIEW_TYPE)) {
-          if (leaf.view instanceof SourceCandidateReviewView) leaf.view.requestRender();
+        for (const leaf of this.app.workspace.getLeavesOfType(IMPORT_REVIEW_VIEW_TYPE)) {
+          if (leaf.view instanceof ImportReviewView) leaf.view.requestRender();
         }
         for (const leaf of this.app.workspace.getLeavesOfType(REVIEW_INDEX_VIEW_TYPE)) {
           if (leaf.view instanceof ReviewIndexView) leaf.view.requestRender();
@@ -148,21 +148,21 @@ export default class TaskMatePlugin extends Plugin {
       await (ref.location === "history" ? view.openHistoryProposal(ref.id) : view.openProposal(ref.id));
       return;
     }
-    const view = await this.showViewInLeaf(leaf, SOURCE_CANDIDATE_REVIEW_VIEW_TYPE) as SourceCandidateReviewView;
+    const view = await this.showViewInLeaf(leaf, IMPORT_REVIEW_VIEW_TYPE) as ImportReviewView;
     await view.openReview(ref.id);
   }
 
   // Lists every review kind together: the catalog classifies the files and each owning Module describes its own reviews.
   async reviewIndex(location: ReviewLocation): Promise<ReviewIndexItem[]> {
     const i18n = this.i18n();
-    const [entries, taskChanges, sourceReviews] = await Promise.all([
+    const [entries, taskChanges, importReviews] = await Promise.all([
       this.reviewCatalog.list(location),
       location === "pending" ? this.proposals.listPending() : this.proposals.listHistory(),
-      location === "pending" ? this.sourceReviews.listPending() : this.sourceReviews.listHistory()
+      location === "pending" ? this.importReviews.listPending() : this.importReviews.listHistory()
     ]);
     const details = new Map<string, ReviewIndexDetails>([
       ...taskChanges.map((summary): [string, ReviewIndexDetails] => [`task-change:${summary.id}`, taskChangeIndexDetails(summary, i18n)]),
-      ...sourceReviews.map((summary): [string, ReviewIndexDetails] => [`source-candidate:${summary.reviewId}`, sourceReviewIndexDetails(summary, i18n)])
+      ...importReviews.map((summary): [string, ReviewIndexDetails] => [`import:${summary.reviewId}`, importReviewIndexDetails(summary, i18n)])
     ]);
     return buildReviewIndex(entries, (ref) => details.get(`${ref.kind}:${ref.id}`) ?? null);
   }
@@ -171,18 +171,18 @@ export default class TaskMatePlugin extends Plugin {
     await openProposalInReviewView(() => this.activateReviewView(), proposalId, taskId, changeId);
   }
 
-  async activateSourceReviewView(): Promise<SourceCandidateReviewView> {
-    let leaf = this.app.workspace.getLeavesOfType(SOURCE_CANDIDATE_REVIEW_VIEW_TYPE)[0];
+  async activateImportReviewView(): Promise<ImportReviewView> {
+    let leaf = this.app.workspace.getLeavesOfType(IMPORT_REVIEW_VIEW_TYPE)[0];
     if (!leaf) {
       leaf = this.app.workspace.getLeaf(false);
-      await leaf.setViewState({ type: SOURCE_CANDIDATE_REVIEW_VIEW_TYPE, active: true });
+      await leaf.setViewState({ type: IMPORT_REVIEW_VIEW_TYPE, active: true });
     }
     await this.app.workspace.revealLeaf(leaf);
-    return leaf.view as SourceCandidateReviewView;
+    return leaf.view as ImportReviewView;
   }
 
-  async openSourceReview(reviewId: string): Promise<void> {
-    const view = await this.activateSourceReviewView();
+  async openImportReview(reviewId: string): Promise<void> {
+    const view = await this.activateImportReviewView();
     await view.openReview(reviewId);
   }
 
