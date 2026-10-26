@@ -11,11 +11,9 @@ Only folder-selected notes or notes with `taskmate-source: true` are eligible fo
 
 Inventory every statement that could imply an action before proposing create, merge, or exclude. Every statement belongs to exactly one candidate, including statements the agent considers informational or redundant. Source identity is part of statement identity; identical text in two notes cannot cover each other. An exclusion needs a reason and the user's decision in TaskMate.
 
-Task Pilot stages one Import review JSON under the configured proposal folder for each review. Staging creates no canonical Tasks, candidate Markdown or `Review.md`. The user reads, edits and decides every candidate in TaskMate's Import Review View, opened from the shared review list or the review URI, and applies approved candidates through a separate confirmation. Held and undecided candidates remain pending, and a partly applied review stays in the pending list. Provenance is written once per Source note when every candidate from that note is applied, and a fully applied review moves to the proposal folder's `History` area, where it remains until the user removes it.
+Task Pilot stages one Import review JSON under the configured proposal folder for each review. Staging creates no canonical Tasks. The user reads, edits and decides every candidate in TaskMate's Import Review View, opened from the shared review list or the review URI, and applies approved candidates through a separate confirmation. Held and undecided candidates remain pending, and a partly applied review stays in the pending list. Provenance is written once per Source note when every candidate from that note is applied, and a fully applied review moves to the proposal folder's `History` area, where it remains until the user removes it.
 
 Formal apply rechecks Source snapshots and merge targets. A changed Source or target blocks only its own candidates, which then need renewed review. Retrying never duplicates a created Task or a merge. Preserve unrelated source prose and properties and existing Task associations. Do not invent dates, priorities, labels or projects without source or request authority.
-
-Reviews staged by earlier versions as Markdown under the proposal folder's `Active` and `Archive` areas are retired. TaskMate does not list them, and Task Pilot no longer reads, promotes or writes them. They are never migrated, moved or deleted; the user can read them as ordinary notes or stage a new review from their source notes.
 
 ## Current discovery limitation
 
@@ -23,11 +21,10 @@ The Python helper currently enumerates Vault Markdown and reads non-managed note
 
 ## Acceptance and evidence
 
-- IMPORT-01: Two notes produce one review with every statement mapped to exactly one candidate; staging creates zero Tasks and no Markdown review files.
+- IMPORT-01: Two notes produce one review with every statement mapped to exactly one candidate; staging creates zero Tasks.
 - IMPORT-02: Applying one candidate while others are held keeps the review pending; applying the rest moves it to History; retries do not duplicate Tasks or merges.
 - IMPORT-03: Exclusions require the user's decision; a changed Source or merge target blocks only its own candidates.
 - IMPORT-04: Provenance is written once per completed note with its created and merge-target Task IDs, keeping IDs from earlier imports.
-- IMPORT-05: Reviews from earlier versions under `Active` and `Archive` stay byte-for-byte unchanged and are not listed.
 
 Evidence: Task Pilot [staging tests](../../../skills/taskpilot/tests/test_import_review.py) and [store tests](../../../skills/taskpilot/tests/test_todo_store.py); TaskMate [Import review tests](../../../test/reviews/import/) for the Domain, formal apply, provenance parity, editing and the Review View; and the [Review Catalog tests](../../../test/reviews/shared/review-catalog.test.ts). These deterministic tests do not prove an agent extracted every semantic action; review actual notes against the statement inventory.
 
@@ -62,11 +59,9 @@ Statement validation checks the declared inventory, not whether the agent unders
 
 行動になり得る文をすべて棚卸しし、作成・統合・除外のいずれかの候補へ正確に一度割り当てます。別ノートの同じ文は別の文として扱います。情報的・重複と判断した文も黙って落とさず、除外には理由と、TaskMateでの利用者の判断が必要です。
 
-Task Pilotは、レビューごとに1つの取り込みレビューJSONを提案フォルダーへステージします。ステージでは正式なTask、候補のMarkdown、`Review.md`を作りません。利用者は、共通のレビュー一覧かレビューのURIから開くTaskMateの取り込みReview Viewで、すべての候補を読み、編集し、判断し、別の確認を経て承認した候補を反映します。保留と未決の候補は未処理のまま残り、一部だけ反映したレビューは未レビューの一覧に残ります。取り込み履歴は、そのノートの候補がすべて反映された時点でノートごとに1回だけ書き、全候補を反映したレビューは提案フォルダーの`History`へ移り、利用者が消すまで残ります。
+Task Pilotは、レビューごとに1つの取り込みレビューJSONを提案フォルダーへステージします。ステージでは正式なTaskを作りません。利用者は、共通のレビュー一覧かレビューのURIから開くTaskMateの取り込みReview Viewで、すべての候補を読み、編集し、判断し、別の確認を経て承認した候補を反映します。保留と未決の候補は未処理のまま残り、一部だけ反映したレビューは未レビューの一覧に残ります。取り込み履歴は、そのノートの候補がすべて反映された時点でノートごとに1回だけ書き、全候補を反映したレビューは提案フォルダーの`History`へ移り、利用者が消すまで残ります。
 
 正式反映ではSourceと統合先のスナップショットを確かめ直します。Sourceや統合先が変わっていれば、その候補だけを止め、再レビューが必要になります。やり直しても、作成したTaskや統合が二重になることはありません。本文、無関係なProperty、既存の関連Taskを保ち、根拠のない日付・優先度・ラベル・所属は付けません。
-
-以前のバージョンが提案フォルダーの`Active`と`Archive`にMarkdownでステージしたレビューは廃止しました。TaskMateは一覧に出さず、Task Pilotも読み込み・反映・書き込みをしません。移行・移動・削除は一切せず、利用者は普通のノートとして読むか、元のノートから新しいレビューをステージできます。
 
 現在のPython探索は管理領域以外のMarkdownを読み、適格性を判定します。「対象外を一切読まない」は現在の保証ではありません。[索引](source-note-index.md)と[Vault登録](agent-vault-setup.md)は提案・未実装です。
 
@@ -74,4 +69,4 @@ Agentが文の棚卸しとステージ用の依頼を作り、todo storeが対�
 
 正式反映は候補ごとにレビューを保存し、保存に失敗したらそこで止まります。作るTaskのIDはレビュー・候補・版番号から決まり、統合先が既に結果と同じなら反映済みとみなすため、中断後のやり直しでも二重作成や二重統合は起きません。取り込み履歴の書き込みに失敗した場合は、次の反映でやり直します。全候補の反映後にノートが変わっていた場合は、取り込み履歴を書かずに報告します。棚卸しの検証は宣言された文を確かめるだけで、Agentが文中の行動をすべて理解したかは証明しないため、TaskMateでの人のレビューが必要です。
 
-IMPORT-01：2つのノートから、すべての文を正確に一度候補へ割り当てた1つのレビューを作り、ステージではTaskもMarkdownのレビューファイルも作らない。IMPORT-02：一部の候補だけを反映して他を保留するとレビューは未処理のまま残り、残りを反映するとHistoryへ移り、やり直してもTaskや統合が二重にならない。IMPORT-03：除外には利用者の判断が必要で、Sourceや統合先の変更はその候補だけを止める。IMPORT-04：取り込み履歴は完了したノートごとに1回だけ書き、作成したTaskと統合先のIDを含め、以前の取り込みのIDも保つ。IMPORT-05：`Active`と`Archive`にある以前のバージョンのレビューは1バイトも変わらず、一覧にも出ない。自動テストだけではAIの意味的な抽出漏れを証明できず、元メモとの照合も必要です。
+IMPORT-01：2つのノートから、すべての文を正確に一度候補へ割り当てた1つのレビューを作り、ステージではTaskを作らない。IMPORT-02：一部の候補だけを反映して他を保留するとレビューは未処理のまま残り、残りを反映するとHistoryへ移り、やり直してもTaskや統合が二重にならない。IMPORT-03：除外には利用者の判断が必要で、Sourceや統合先の変更はその候補だけを止める。IMPORT-04：取り込み履歴は完了したノートごとに1回だけ書き、作成したTaskと統合先のIDを含め、以前の取り込みのIDも保つ。自動テストだけではAIの意味的な抽出漏れを証明できず、元メモとの照合も必要です。

@@ -76,6 +76,6 @@ Formal apply MUST be a separate, explicitly confirmed action. Opening, editing o
 
 ## Compatibility and verification
 
-Readers MUST reject unknown schema versions and malformed reviews rather than guessing, and such a file MUST NOT trigger any write. Task change Proposals are a separate review kind defined by [Task change Proposal format](task-change-proposal-format.md); they have no `reviewType` and are recognized by their `proposal-*` name. Markdown review sessions created by earlier versions under `<proposalFolder>/Active` and `<proposalFolder>/Archive` are not part of this format; readers and writers MUST leave them unchanged.
+Readers MUST reject unknown schema versions and malformed reviews rather than guessing, and such a file MUST NOT trigger any write. Task change Proposals are a separate review kind defined by [Task change Proposal format](task-change-proposal-format.md); they have no `reviewType` and are recognized by their `proposal-*` name.
 
 The TypeScript Domain, Schema, formal-apply, provenance-parity, edit-form and Review View tests and the Task Pilot staging tests provide automated evidence for selected cases. Every written state in those tests is also validated against the JSON Schema.

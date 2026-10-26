@@ -88,13 +88,6 @@ Select **Apply decisions…** to see how many candidates will be created, merged
 
 Opening a review applies nothing, and selecting a source does not create a review. For exact behavior and retry limits, see [Source-note import](../../engineering/features/source-import.md).
 
-## Reviews from earlier versions
-
-Earlier versions staged reviews as Markdown under `TaskMate/Proposals/Active` and moved finished ones to `TaskMate/Proposals/Archive`, and you approved them in the Codex conversation. TaskMate does not show those files, and Task Pilot no longer reads or writes them. They are never moved or deleted.
-
-- Before updating, finish any review still in `Active` with the previous version.
-- After updating, read them as ordinary notes. To finish remaining candidates, ask Codex to stage a new review from their source notes; Tasks those reviews already created appear as merge targets or can be excluded.
-
 ## 日本語参考
 
 <!-- translation-status: ai-translated -->
@@ -191,10 +184,3 @@ TaskMate/Proposals/import-review-<id>.json
 - ノートの候補がすべて反映されると、そのノートに取り込み履歴が付く。レビューの候補がすべて反映されると、レビューは **TaskMate: レビューを開く** の履歴タブへ移る
 
 レビューを開いただけでは何も反映されず、AI対象にしただけではレビューは作られません。正確な挙動と再試行時の制約は[ソース取り込みFeature](../../engineering/features/source-import.md)を参照してください。
-
-### 以前のバージョンで作ったレビュー
-
-以前のバージョンは、レビューをMarkdownで`TaskMate/Proposals/Active`に作り、終わったものを`TaskMate/Proposals/Archive`へ移し、承認はCodexの会話で行っていました。TaskMateはこれらのファイルを表示せず、Task Pilotも読み書きしません。移動や削除も一切しません。
-
-- 更新する前に、`Active`に残っているレビューは以前のバージョンで終わらせてください。
-- 更新した後は、普通のノートとして読めます。残りの候補を終わらせるには、Codexに元のノートから新しいレビューを作るよう頼みます。以前のレビューで既に作ったTaskは、統合先として出るか、除外できます。

@@ -3,7 +3,7 @@
 [English](README.md) | 日本語
 
 <!-- translation-status: ai-translated -->
-<!-- translation-source-sha256: ac2e502a5b5c0d82ef89c5aad863aa0e5ec5ada0b7c336efd32fc691489a0dc7 -->
+<!-- translation-source-sha256: 2d3f3695ee1feac4b4d9e25208d97a981a610727a20616ba2ec0663c1f37eabe -->
 
 > 翻訳状態：`ai-translated`
 >
@@ -191,8 +191,6 @@ $taskpilot Find work for a 30-minute phone-only break.
 ```
 
 Task Pilotは提案フォルダへレビューのファイルを1つ保存してTaskMateで開き、この段階では正式なタスクを作成しません。未レビューのレビューを一覧にする**TaskMate: レビューを開く**からも開けます。候補はそれぞれ、元の文を引用したカードになります。必要ならカードを編集し、作成、統合、除外、保留のいずれかを選んでから、**判断を反映…**を選びます。TaskMateは確定するまでタスクを変更せず、差分を開いていない統合には追加の確認を求め、ソースノートの候補がすべて反映されたときにそのノートへ取り込み履歴を記録します。完了したレビューは`TaskMate/Proposals/History`へ移動し、削除するまで残ります。詳しい手順は[ソースノートを確認してTaskを作る](docs/user/how-to/import-source-notes.md)を参照してください。
-
-以前のバージョンは、レビューをMarkdownで`TaskMate/Proposals/Active`に作り、会話で承認していました。TaskMateはこれらのレビューを表示せず、Task Pilotも読み書きしません。移動や削除も一切しません。`Active`に残っているレビューは更新前に終わらせるか、更新後に普通のノートとして読み、元のノートから新しいレビューを作るようTask Pilotに依頼してください。
 
 バックログ変更も書き込み前に提示します。時間ベース計画は読み取り専用で、表示される初期20%の余白と所要時間の上限を使い、新しいTask状態やManual orderの変更を行いません。「後で」はPendingやWaitingを追加せず、日付を外します。
 

@@ -40,8 +40,8 @@ describe("Review Catalog listing", () => {
     memory.put("TaskMate/Proposals/proposal-a.json", taskChange("proposal-a"));
     memory.put("TaskMate/Proposals/import-review-b.json", importReview("import-review-b"));
     memory.put("TaskMate/Proposals/proposal-broken.json", "{");
-    memory.put("TaskMate/Proposals/Active/session-1/Review.md", "# Legacy review\n");
-    memory.put("TaskMate/Proposals/Archive/session-0/candidate.json", "{}");
+    memory.put("TaskMate/Proposals/notes.md", "# Proposal folder note\n");
+    memory.put("TaskMate/Proposals/Drafts/import-review-c.json", importReview("import-review-c"));
     memory.put("TaskMate/Proposals/History/proposal-old.json", taskChange("proposal-old", { status: "applied" }));
     memory.put("TaskMate/Proposals/History/import-review-done.json", importReview("import-review-done", { status: "history" }));
     memory.put("Notes/proposal-z.json", taskChange("proposal-z"));

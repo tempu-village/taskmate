@@ -38,7 +38,7 @@ Initial setup may make a sole registered Vault the default. Registering another 
 1. First use registers an identified Vault without manual JSON editing. Subsequent use needs neither its path nor shell commands.
 2. Repeat setup preserves settings; multiple, missing, moved, and copied Vaults resolve as specified.
 3. Default labels appear on new proposals, current-request instructions override them, and existing merge-target labels remain unchanged unless requested.
-4. A short request stages proposals without creating Tasks. Partial decisions remain active, all decisions archive the session, and source changes before promotion require renewed review.
+4. A short request stages a review without creating Tasks. A partly applied review stays pending, a fully applied review moves to History, and source changes before apply require renewed review.
 
 ## Related records
 
@@ -79,4 +79,4 @@ Coverage review、明示承認、許可リスト、無関係な本文の保持�
 1. 初回はJSON手編集なしで特定Vaultを登録でき、次回からパス・コマンド不要。
 2. 再設定は値を保持し、複数・消失・移動・コピーされたVaultを規定どおり扱う。
 3. 既定ラベルを新規提案へ適用し、今回の明示指示を優先する。merge先の既存ラベルは依頼がなければ保持する。
-4. 短い依頼では提案までとし、部分承認はActive、全件判断後はArchive。反映前のSource変更は再レビューする。
+4. 短い依頼ではレビューのステージまでとし、Taskは作らない。一部だけ反映したレビューは未処理に残り、全件反映後はHistoryへ移る。反映前のSource変更は再レビューする。

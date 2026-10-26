@@ -29,7 +29,7 @@ flowchart TB
     settings[("Plugin settings<br/>data.json")]
     sources[("Source notes<br/>allowlisted ordinary notes")]
     canonical[("TaskMate/Tasks and TaskMate/Projects<br/>one Markdown file each")]
-    proposals[("TaskMate/Proposals<br/>proposal-ID.json<br/>import-review-ID.json<br/>Active · Archive · History")]
+    proposals[("TaskMate/Proposals<br/>proposal-ID.json<br/>import-review-ID.json<br/>History")]
     plans[("TaskMate/Plans<br/>rolling plans")]
   end
 
@@ -545,8 +545,6 @@ sequenceDiagram
   Plugin->>Vault: write provenance on completed notes, move the review to History
 ```
 
-Reviews that earlier versions staged as Markdown under `Active` and `Archive` are retired: neither side reads or writes them, and they are never moved or deleted. Details: [Source-note import](../features/source-import.md).
-
 ## 6. Where each feature lives
 
 | Feature | What the user gets | Main code |
@@ -585,5 +583,5 @@ TaskMateを説明するための図をまとめたページです。正本は[Ar
 - **2. Module map**：`src/`のフォルダーを依存の段ごとに並べた図です。矢印は実際のimportから描いています。依存は下向きだけで、`task-list → task-editor → labels / projects → tasks`、`reviews → tasks`です。`tasks/`はほかの機能フォルダーに依存しません。この規則はModule boundary testで自動確認しています。`i18n/`と`shared/`はどこからでも使えます。
 - **3. Layers**：各フォルダーの中身を4つの役割で示します。UI Adapterは画面、Applicationは操作の段取り、Domainは純粋なルール（Obsidianに依存しない）、Persistence Adapterはファイルの読み書きです。3aは一覧と編集、3bはレビューの主要クラスです。2種類のレビューは同じ形をしていますが、スキーマとコードは別々に保っています。共通なのはReview Catalogだけで、ファイルを「封筒」で分類し、一覧の説明は各Review Moduleが作り、プラグインが持ち主の画面で開きます。
 - **4. Data model**：4aは正本のデータです。TaskはStepを中に持ち、IDでProjectを参照し、Labelは文字列です。`rank`は全体で一つの手動順です。4bはレビュー用のデータです。Task変更Proposalは既存Taskの変更前後のMarkdownを丸ごと持ち、取り込みレビューは元ノートから見つけた候補をすべて作成・統合・除外のいずれかに振り分けます。
-- **5. Key flows**：5aは編集保存の流れです。開いたときの内容・自分の編集・今のファイルを3方向で比べ、同じ項目が両方で変わっていれば項目ごとに選んでもらいます。5bはTask Pilotの変更提案を承認する流れです。承認した変更だけを、元の内容から変わっていない場合に書き込みます。5cはメモからTaskを作る流れです。Task Pilotがノートを読んでレビューをステージし、判断と書き込みはすべてプラグインの取り込みレビューで行います。以前の`Active`と`Archive`のMarkdownのレビューは廃止し、どちらも読み書きせず、移動や削除もしません。
+- **5. Key flows**：5aは編集保存の流れです。開いたときの内容・自分の編集・今のファイルを3方向で比べ、同じ項目が両方で変わっていれば項目ごとに選んでもらいます。5bはTask Pilotの変更提案を承認する流れです。承認した変更だけを、元の内容から変わっていない場合に書き込みます。5cはメモからTaskを作る流れです。Task Pilotがノートを読んでレビューをステージし、判断と書き込みはすべてプラグインの取り込みレビューで行います。
 - **6. Where each feature lives**：機能ごとに、利用者が得られることと主なコードの場所を対応させた表です。

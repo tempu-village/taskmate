@@ -13,8 +13,9 @@ related-features:
 > Record status: Historical — implemented through [#60](https://github.com/tempu-village/taskmate/issues/60), [#61](https://github.com/tempu-village/taskmate/issues/61) and [#62](https://github.com/tempu-village/taskmate/issues/62).
 > Current authority: [Source-note import](../features/source-import.md), [Task Pilot review and capacity planning](../features/task-pilot-planning.md), [Task change review](../features/task-change-review/README.md) and [Import review format](../specifications/import-review-format.md). The proposal below preserves the decision history; its statements that behavior is pending describe the time of acceptance.
 > Renamed after implementation: the Source candidate review is now the Import review (取り込みレビュー). Its files use `import-review-*`, `reviewType: import`, candidate IDs `IC-xx` and the `obsidian://taskmate-import-review` URI; this record keeps the names used when it was decided.
+> Legacy guidance not published: the release and user guidance for legacy Source reviews required below was intentionally not written, because the maintainer was the only user of the legacy workflow; current documents no longer mention it ([#90](https://github.com/tempu-village/taskmate/issues/90)).
 >
-> 記録の状態：#60、#61、#62で実装済みです。現在の正本は上記のFeatureとSpecificationで、以下は検討当時の記録として残します。「未実装」とする記述は承認時点のものです。実装後、Source候補レビューは取り込みレビュー（Import review）に改名しました。ファイルは`import-review-*`、`reviewType: import`、候補IDは`IC-xx`、URIは`obsidian://taskmate-import-review`です。以下は検討当時の名前のままです。
+> 記録の状態：#60、#61、#62で実装済みです。現在の正本は上記のFeatureとSpecificationで、以下は検討当時の記録として残します。「未実装」とする記述は承認時点のものです。実装後、Source候補レビューは取り込みレビュー（Import review）に改名しました。ファイルは`import-review-*`、`reviewType: import`、候補IDは`IC-xx`、URIは`obsidian://taskmate-import-review`です。以下は検討当時の名前のままです。以下で求めている旧Sourceレビューのリリース案内・ユーザー案内は、旧方式の利用者がメンテナーだけだったため意図的に作成せず、現在の文書からも記述を削除しました（[#90](https://github.com/tempu-village/taskmate/issues/90)）。
 
 ## Summary
 
