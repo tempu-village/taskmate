@@ -21,6 +21,7 @@ const review: ProposalReview = {
 
 const copy = {
   title: "Review changes",
+  summaryTitle: "What this plan changes",
   apply: "Approve and apply selected changes",
   reject: "Reject",
   selectAll: "Select all changes in every Task",
@@ -149,5 +150,36 @@ describe("Task change review renderer", () => {
     expect(container.querySelector(".taskmate-review-display-switch")).not.toBeNull();
     container.querySelector<HTMLButtonElement>(".taskmate-review-back")?.click();
     expect(back).toHaveBeenCalledOnce();
+  });
+
+  it("shows Task Pilot's summary and per-Task lines above the changes", () => {
+    const container = document.createElement("div");
+    const described: ProposalReview = {
+      ...review,
+      summary: "Move the report and keep the rest.",
+      tasks: [{ ...review.tasks[0], summary: "Moved to the new date." }]
+    };
+    renderTaskChangeReview(container, described, { mode: "semantic", approvedChangeIds: new Set() }, copy, vi.fn());
+
+    const summary = container.querySelector(".taskmate-review-summary");
+    expect(summary?.querySelector("h3")?.textContent).toBe("What this plan changes");
+    expect(summary?.textContent).toContain("Move the report and keep the rest.");
+    expect(summary?.querySelector(".taskmate-review-summary-line")?.textContent).toBe("Moved to the new date.");
+    expect(summary?.compareDocumentPosition(container.querySelector(".taskmate-review-files")!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(container.querySelector(".taskmate-review-file .taskmate-review-task-summary")?.textContent).toBe("Moved to the new date.");
+    expect(container.querySelector(".taskmate-review-file-header")?.textContent).toBe("Example");
+
+    const section = container.querySelector<HTMLElement>("[data-review-anchor='task-uuid']")!;
+    section.scrollIntoView = vi.fn();
+    container.querySelector<HTMLButtonElement>(".taskmate-review-summary-jump")?.click();
+    expect(section.scrollIntoView).toHaveBeenCalledWith({ block: "start" });
+  });
+
+  it("shows a Proposal without summaries as before", () => {
+    const container = document.createElement("div");
+    renderTaskChangeReview(container, review, { mode: "semantic", approvedChangeIds: new Set() }, copy, vi.fn());
+
+    expect(container.querySelector(".taskmate-review-summary")).toBeNull();
+    expect(container.querySelector(".taskmate-review-task-summary")).toBeNull();
   });
 });

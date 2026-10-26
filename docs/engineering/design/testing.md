@@ -33,8 +33,8 @@ git diff --check
 | [I18N-01/02/03](../features/localization.md) | dictionary/fallback tests; desktop-language recording and Task Pilot language tests | Command/ribbon reload, narrow translated controls, and recording after Obsidian's language Relaunch |
 | [CONFLICT-01/02/03/04](../features/edit-conflicts.md) | merge, repository and editing flow tests, including Step value equality | Two-device synchronization |
 | [IMPORT-01/02/03/04/05](../features/source-import.md) | Python staging/store tests; Import review Domain, formal-apply, provenance-parity and Review Catalog tests | Actual agent's coverage inventory versus all source statements, and a desktop review that applies mixed candidates |
-| [PLAN-01 through PLAN-23](../features/task-pilot-planning.md) | Python planning, rolling-plan, proposal and store tests | Actual agent estimate quality, explanation usefulness and conversation review; a Codex-created multi-day rolling plan revised in a disposable Vault and its generated Proposal approved in TaskMate |
-| [REVIEW-01 through REVIEW-17](../features/task-change-review/README.md) | Proposal model/repository/renderer tests and Python planning-store tests, including platform dispatch | Fresh desktop/mobile review, Full text unified-diff readability, Manual-order stale regeneration, and URI handoff delivery on macOS, Windows, and Linux |
+| [PLAN-01 through PLAN-27](../features/task-pilot-planning.md) | Python planning, rolling-plan, proposal and store tests | Actual agent estimate quality, explanation and summary usefulness and conversation review; a Codex-created multi-day rolling plan revised in a disposable Vault and its generated Proposal approved in TaskMate; a Japanese plan created and revised on desktop and its summary confirmed in the Review View |
+| [REVIEW-01 through REVIEW-18](../features/task-change-review/README.md) | Proposal model/repository/renderer tests and Python planning-store tests, including platform dispatch | Fresh desktop/mobile review, Full text unified-diff readability, Manual-order stale regeneration, and URI handoff delivery on macOS, Windows, and Linux |
 | [STORE-01/02](../features/storage-and-privacy.md) | settings/repository inspection | Uninstall retention and folder-setting change |
 
 Use stable acceptance IDs in specs and link meaningful tests here or in the spec. An evidence link does not imply every condition is automated. Keep untested expectations visible. Source-index and Vault-setup acceptance scenarios are targets, not passing current tests.
@@ -67,7 +67,7 @@ In a disposable Vault, follow [getting started](../../user/getting-started.md), 
 
 受け入れIDとテスト・手動確認の対応は表を正本にします。Project削除、実キーボード、同期など、自動テストだけでは確認できない範囲を明記します。
 
-PLAN-01〜23はplanning・計画ファイル・proposal・storeのPythonテストで決定的な境界を確認し、実際のAgentによる見積もり品質、説明の有用性、対話レビュー、Codexで作った複数日の計画を使い捨てVaultで修正し、作ったProposalをTaskMateで承認する流れは追加の手動確認対象とします。REVIEW-01〜17はProposalモデル・repository・rendererとPython planning-storeテストで確認し、Full textのunified diffの読みやすさ、Proposal作成後のManual order変更によるstaleと再生成、各OSでのURI配信は追加の手動確認対象とします。
+PLAN-01〜27はplanning・計画ファイル・proposal・storeのPythonテストで決定的な境界を確認し、実際のAgentによる見積もり品質、説明の有用性、対話レビュー、Codexで作った複数日の計画を使い捨てVaultで修正し、作ったProposalをTaskMateで承認する流れ、パソコン版で日本語の計画を作って修正し、Review Viewで要約を確かめる流れは追加の手動確認対象とします。REVIEW-01〜18はProposalモデル・repository・rendererとPython planning-storeテストで確認し、Full textのunified diffの読みやすさ、Proposal作成後のManual order変更によるstaleと再生成、各OSでのURI配信は追加の手動確認対象とします。
 
 既知の不足：Source探索の対象外読み取り、複数ファイル反映のクラッシュ復旧、今回未実施の実機確認を区別します。iOSは未検証です。CONFLICT-04は、Stepを追加して保存した後の未変更再保存を対象とするrepository回帰テストで確認します。
 

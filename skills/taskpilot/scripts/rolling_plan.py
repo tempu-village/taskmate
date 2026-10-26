@@ -22,17 +22,155 @@ import todo_store
 from planning_store import fail
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 PLAN_ID_RE = re.compile(r"plan-[A-Za-z0-9._-]+")
 BASES = ("recommended", "evidence")
 BASE_PREFIX = {"recommended": "R", "evidence": "E", "working": "PLAN"}
-SECTION_TITLES = {"working": "Working plan", "recommended": "Recommended base", "evidence": "Evidence base"}
 WEEKDAYS = ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
 HORIZON_LIMIT_DAYS = 366
 EVIDENCE_BASES = {"user", "task-text"}
 MUTABLE_STATUSES = {"draft", "ready", "proposal-created"}
+SUMMARY_LIMIT = 500
+TASK_SUMMARY_LIMIT = 200
+OMISSION_REASONS = ("no-change", "stale", "completed", "missing")
 PLAN_COMMENT_RE = re.compile(r"^<!-- taskmate-plan (\{.*\}) -->$", re.MULTILINE)
 ITEM_COMMENT_RE = re.compile(r"^\s*<!-- taskmate-plan-item (\{.*\}) -->$", re.MULTILINE)
+
+# Every visible heading and fixed phrase of a plan, and of the reasons it writes into Task change Proposals, in each
+# output language. IDs, Task titles, labels and machine-readable comments are never translated.
+TEXT: Dict[str, Dict[str, str]] = {
+    "en": {
+        "title": "Plan from {date}",
+        "today": "Today: {planning} of {available} min after a {buffer}% buffer.",
+        "future-none": "Future capacity: not provided. No Task receives a future plan date.",
+        "future-awaiting": "Future capacity ({mode}): awaiting confirmation. No Task receives a future plan date.",
+        "future-confirmed": "Future capacity ({mode}, confirmed {confirmedAt}): {minutes} min on {days}, {buffer}% buffer.",
+        "mode-explicit": "explicit",
+        "mode-assumed": "assumed",
+        "no-weekdays": "no weekdays",
+        "weekday-joiner": ", ",
+        "section-working": "Working plan",
+        "section-recommended": "Recommended base",
+        "section-evidence": "Evidence base",
+        "section-gap": "Gaps",
+        "section-conflict": "Conflicts",
+        "no-tasks": "_No Tasks._",
+        "no-base": "_No base selected. Choose the recommended base or the evidence base; they are never mixed._",
+        "day": "{date} — {used} of {capacity} min",
+        "estimate": "{min}–{max} min ({basis})",
+        "no-estimate": "no estimate",
+        "basis-user": "your estimate",
+        "basis-task-text": "from the Task",
+        "basis-inference": "inferred",
+        "item": "- {id} {link} — {estimate}. {reason}",
+        "summary-title": "What this plan changes",
+        "counts": "Change: {changed} · No change: {unchanged} · Not scheduled: {unplaced}",
+        "proposal": "- Task change review {id} ({scope}, plan revision {revision}): {count} included.",
+        "scope-all": "all dates",
+        "scope-today": "today",
+        "change-prefix": "Change: ",
+        "part-joiner": "; ",
+        "list-joiner": ", ",
+        "date-new": "add date {new}",
+        "date-past": "move past date {old} → {new}",
+        "date-earlier": "move date earlier {old} → {new}",
+        "date-later": "move date later {old} → {new}",
+        "cause-capacity": " (not enough time)",
+        "cause-user": " (placed by you)",
+        "labels": "add labels {labels}",
+        "steps": "set Steps ({count})",
+        "notes": "update Notes",
+        "unchanged": "No change: stays on {date}",
+        "not-scheduled": "No change: not scheduled in this plan",
+        "in-review": "In Task change review {id}.",
+        "revised-after": "Revised after Task change review {id}; a new review is needed to include the revision.",
+        "omitted-no-change": "Not in Task change review {id}: nothing changes.",
+        "omitted-stale": "Not in Task change review {id}: the Task changed after planning.",
+        "omitted-completed": "Not in Task change review {id}: the Task is already completed.",
+        "omitted-missing": "Not in Task change review {id}: the Task no longer exists.",
+        "detail-future-capacity-unconfirmed": "Does not fit today, and future capacity is not confirmed.",
+        "detail-oversized": "Larger than any confirmed day's capacity.",
+        "detail-no-usable-capacity": "No confirmed capacity within {days} days.",
+        "detail-missing-effort": "No credible effort range.",
+        "detail-needs-breakdown": "Needs to be broken down before scheduling.",
+        "detail-deadline-capacity": "Earliest capacity is {earliest}, after the deadline {deadline}.",
+        "reason": "{reason} (rolling plan {plan} {item}{details})",
+        "reason-joiner": "; ",
+        "reason-capacity": "moved from {date} for capacity",
+        "reason-overdue": "overdue from {date}",
+        "reason-user": "placed by the user",
+    },
+    "ja": {
+        "title": "{date}からの計画",
+        "today": "今日の作業時間は{planning}分（{available}分から余白{buffer}%を引いた分）。",
+        "future-none": "今後の作業時間：まだ決めていません。今日より先の日付にはTaskを入れません。",
+        "future-awaiting": "今後の作業時間（{mode}）：確認待ちです。今日より先の日付にはTaskを入れません。",
+        "future-confirmed": "今後の作業時間（{mode}、{confirmedAt}に確認）：{days}に{minutes}分、余白{buffer}%。",
+        "mode-explicit": "指定",
+        "mode-assumed": "仮の案",
+        "no-weekdays": "曜日の指定なし",
+        "weekday-joiner": "・",
+        "section-working": "作業計画",
+        "section-recommended": "推奨案",
+        "section-evidence": "根拠案",
+        "section-gap": "日付を決めていないもの",
+        "section-conflict": "締め切りと合わないもの",
+        "no-tasks": "_Taskはありません。_",
+        "no-base": "_まだ案を選んでいません。推奨案か根拠案のどちらかを選んでください。2つの案を混ぜることはありません。_",
+        "day": "{date} — {used} / {capacity}分",
+        "estimate": "{min}〜{max}分（{basis}）",
+        "no-estimate": "見積もりなし",
+        "basis-user": "あなたの見積もり",
+        "basis-task-text": "Taskの記載から",
+        "basis-inference": "推定",
+        "item": "- {id} {link} — {estimate}。{reason}",
+        "summary-title": "この計画で変わること",
+        "counts": "変わる：{changed}件・変わらない：{unchanged}件・日付を決めていない：{unplaced}件",
+        "proposal": "- Task変更レビュー {id}（{scope}、計画の版 {revision}）：{count}件を含めました。",
+        "scope-all": "全日程",
+        "scope-today": "今日の分",
+        "change-prefix": "変更：",
+        "part-joiner": "、",
+        "list-joiner": "・",
+        "date-new": "日付を追加 {new}",
+        "date-past": "過ぎた予定日を移動 {old} → {new}",
+        "date-earlier": "日付を前倒し {old} → {new}",
+        "date-later": "日付を後ろ倒し {old} → {new}",
+        "cause-capacity": "（時間が足りないため）",
+        "cause-user": "（あなたが配置）",
+        "labels": "ラベルを追加 {labels}",
+        "steps": "Stepsを設定（{count}件）",
+        "notes": "Notesを更新",
+        "unchanged": "変更なし：{date}のまま",
+        "not-scheduled": "変更なし：この計画では日付を決めていません",
+        "in-review": "Task変更レビュー {id} に含めています。",
+        "revised-after": "Task変更レビュー {id} の後に修正しました。反映するには新しいレビューが必要です。",
+        "omitted-no-change": "変わらないため、Task変更レビュー {id} に含めていません。",
+        "omitted-stale": "計画の後でTaskが変更されたため、Task変更レビュー {id} に含めていません。",
+        "omitted-completed": "Taskが完了しているため、Task変更レビュー {id} に含めていません。",
+        "omitted-missing": "Taskが見つからないため、Task変更レビュー {id} に含めていません。",
+        "detail-future-capacity-unconfirmed": "今日には入らず、今後の作業時間がまだ確認されていません。",
+        "detail-oversized": "どの日の作業時間よりも大きい作業です。",
+        "detail-no-usable-capacity": "{days}日以内に確認済みの作業時間がありません。",
+        "detail-missing-effort": "所要時間の見当がつきません。",
+        "detail-needs-breakdown": "日付を決める前に分ける必要があります。",
+        "detail-deadline-capacity": "空いている最初の日は{earliest}で、締め切りの{deadline}より後です。",
+        "reason": "{reason}（計画 {plan} の {item}{details}）",
+        "reason-joiner": "、",
+        "reason-capacity": "時間が足りないため{date}から移動",
+        "reason-overdue": "予定日{date}を過ぎていた",
+        "reason-user": "あなたが配置",
+    },
+}
+WEEKDAY_NAMES = {"en": ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"), "ja": ("月", "火", "水", "木", "金", "土", "日")}
+
+
+def say(language: str, key: str, **values: Any) -> str:
+    return TEXT[language][key].format(**values)
+
+
+def output_language(vault: Path) -> str:
+    return todo_store.output_language(vault)["language"]
 
 
 # Paths and persistence
@@ -65,6 +203,8 @@ def load_plan(vault: Path, plan_id: str) -> Tuple[Path, Dict[str, Any]]:
     if header is None:
         fail(f"plan metadata is missing: {plan_id}")
     plan = json.loads(header.group(1))
+    if plan.get("schemaVersion") != SCHEMA_VERSION:
+        fail(f"plan {plan_id} uses schema version {plan.get('schemaVersion')} from an earlier Task Pilot; create a new plan from current Tasks without --supersedes")
     sections: Dict[str, List[Dict[str, Any]]] = {"recommended": [], "evidence": [], "working": []}
     for match in ITEM_COMMENT_RE.finditer(text):
         item = json.loads(match.group(1))
@@ -79,8 +219,21 @@ def load_plan(vault: Path, plan_id: str) -> Tuple[Path, Dict[str, Any]]:
     return path, plan
 
 
-def save_plan(path: Path, plan: Dict[str, Any]) -> None:
+def save_plan(vault: Path, path: Path, plan: Dict[str, Any]) -> None:
+    # Each write follows the current language setting; the stored value lets a later load re-render the file exactly.
+    plan["language"] = output_language(vault)
     todo_store.atomic_write(path, render_plan(plan))
+
+
+def validated_text(value: Any, name: str, limit: int) -> str:
+    text = str(value or "").strip()
+    if not text:
+        fail(f"{name} is required; write it in the output language reported by todo_store.py language")
+    if "\n" in text or "\r" in text or "<!--" in text:
+        fail(f"{name} must be one paragraph without line breaks or HTML comments")
+    if len(text) > limit:
+        fail(f"{name} must be at most {limit} characters")
+    return text
 
 
 def check_revision(plan: Dict[str, Any], expected: int) -> None:
@@ -267,6 +420,7 @@ def validated_entries(vault: Path, override: Optional[str], base: str, raw_entri
             fail(f"deadline must be YYYY-MM-DD for Task: {task_id}")
         entries.append({
             "taskId": task_id, "title": task["title"], "path": task["path"], "currentDate": task["date"],
+            "currentLabels": list(task["labels"]), "currentSteps": task["steps"], "currentNotes": task["notes"],
             "snapshot": snapshot, "order": order, "reason": reason, "reasonCodes": list(reason_codes),
             "estimate": estimate, "needsBreakdown": raw.get("needsBreakdown") is True, "proposedFields": proposed,
             "deadline": deadline, "gap": validated_flag(raw.get("gap"), "gap", task_id),
@@ -297,15 +451,23 @@ def place_base(entries: List[Dict[str, Any]], capacity: Dict[str, Any], target: 
         return None
 
     def record(entry: Dict[str, Any], kind: str, **values: Any) -> Dict[str, Any]:
-        public = {key: entry[key] for key in ("taskId", "title", "path", "currentDate", "snapshot", "order", "reason", "estimate", "proposedFields")}
+        public = {key: entry[key] for key in (
+            "taskId", "title", "path", "currentDate", "currentLabels", "currentSteps", "currentNotes",
+            "snapshot", "order", "reason", "estimate", "proposedFields",
+        )}
         return {**public, "kind": kind, "reasonCodes": list(entry["reasonCodes"]), **values}
+
+    # Gaps and conflicts found here carry a detailKey rendered in the plan's language; ones the agent supplied carry
+    # its own detail text.
+    def found(entry: Dict[str, Any], kind: str, code: str, detail_key: str, **detail_values: Any) -> Dict[str, Any]:
+        return record(entry, kind, code=code, detailKey=detail_key, detailValues=detail_values)
 
     def unplaced(entry: Dict[str, Any], minutes: int) -> Dict[str, Any]:
         if not future_confirmed(capacity):
-            return record(entry, "gap", code="future-capacity-unconfirmed", detail="Does not fit today, and future capacity is not confirmed.")
+            return found(entry, "gap", "future-capacity-unconfirmed", "future-capacity-unconfirmed")
         if minutes > largest_day:
-            return record(entry, "gap", code="needs-breakdown", detail="Larger than any confirmed day's capacity.")
-        return record(entry, "gap", code="no-usable-capacity", detail=f"No confirmed capacity within {HORIZON_LIMIT_DAYS} days.")
+            return found(entry, "gap", "needs-breakdown", "oversized")
+        return found(entry, "gap", "no-usable-capacity", "no-usable-capacity", days=HORIZON_LIMIT_DAYS)
 
     results = []
     ordered = sorted(entries, key=lambda entry: entry["order"])
@@ -317,7 +479,7 @@ def place_base(entries: List[Dict[str, Any]], capacity: Dict[str, Any], target: 
             results.append(record(entry, "conflict", code=entry["conflict"]["code"], detail=entry["conflict"]["reason"]))
         elif entry["estimate"] is None:
             code = "needs-breakdown" if entry["needsBreakdown"] else "missing-effort"
-            results.append(record(entry, "gap", code=code, detail="No credible effort range." if code == "missing-effort" else "Needs to be broken down before scheduling."))
+            results.append(found(entry, "gap", code, code))
         else:
             pending.append(entry)
     dated = [entry for entry in pending if entry["currentDate"] and dt.date.fromisoformat(entry["currentDate"]) >= target]
@@ -331,7 +493,7 @@ def place_base(entries: List[Dict[str, Any]], capacity: Dict[str, Any], target: 
             results.append(unplaced(entry, minutes))
             continue
         if entry["deadline"] and day > dt.date.fromisoformat(entry["deadline"]):
-            results.append(record(entry, "conflict", code="deadline-capacity", detail=f"Earliest capacity is {day.isoformat()}, after the deadline {entry['deadline']}."))
+            results.append(found(entry, "conflict", "deadline-capacity", "deadline-capacity", earliest=day.isoformat(), deadline=entry["deadline"]))
             continue
         remaining[day] = free(day) - minutes
         codes = []
@@ -380,10 +542,28 @@ def yaml_scalar(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False)
 
 
-def estimate_text(estimate: Optional[Dict[str, Any]]) -> str:
+def long_date(language: str, value: str, target: dt.date) -> str:
+    day = dt.date.fromisoformat(value)
+    weekday = WEEKDAY_NAMES[language][day.weekday()]
+    if language == "ja":
+        prefix = f"{day.month}月{day.day}日" if day.year == target.year else f"{day.year}年{day.month}月{day.day}日"
+        return f"{prefix}（{weekday}）"
+    return f"{value} ({weekday})"
+
+
+def short_date(language: str, value: str, target: dt.date) -> str:
+    if language != "ja":
+        return long_date(language, value, target)
+    day = dt.date.fromisoformat(value)
+    prefix = f"{day.month}/{day.day}" if day.year == target.year else f"{day.year}/{day.month}/{day.day}"
+    return f"{prefix}（{WEEKDAY_NAMES[language][day.weekday()]}）"
+
+
+def estimate_text(language: str, estimate: Optional[Dict[str, Any]]) -> str:
     if not estimate:
-        return "no estimate"
-    return f"{estimate['minMinutes']}–{estimate['maxMinutes']} min ({estimate['basis']})"
+        return say(language, "no-estimate")
+    basis = say(language, f"basis-{estimate['basis']}")
+    return say(language, "estimate", min=estimate["minMinutes"], max=estimate["maxMinutes"], basis=basis)
 
 
 def task_link(item: Dict[str, Any]) -> str:
@@ -392,51 +572,124 @@ def task_link(item: Dict[str, Any]) -> str:
     return f"[[{target}|{title}]]"
 
 
-def item_lines(item: Dict[str, Any], section: str) -> List[str]:
+def snapshot_changes(item: Dict[str, Any]) -> Dict[str, Any]:
+    """The Task changes a planned item implies, judged against the Task as it was when the plan was made."""
+    baseline = {"date": item["currentDate"], "labels": item["currentLabels"], "steps": item["currentSteps"], "notes": item["currentNotes"]}
+    return proposed_changes(item, baseline)
+
+
+def change_text(language: str, item: Dict[str, Any], target: dt.date) -> str:
+    changes = snapshot_changes(item)
+    if not changes:
+        return say(language, "unchanged", date=short_date(language, item["plannedDate"], target))
+    parts = []
+    if "date" in changes:
+        new = short_date(language, item["plannedDate"], target)
+        old = item["currentDate"]
+        if old is None:
+            part = say(language, "date-new", new=new)
+        else:
+            kind = "date-past" if dt.date.fromisoformat(old) < target else "date-earlier" if item["plannedDate"] < old else "date-later"
+            part = say(language, kind, old=short_date(language, old, target), new=new)
+        codes = item.get("moveCodes", [])
+        if "moved-capacity" in codes:
+            part += say(language, "cause-capacity")
+        elif "user-moved" in codes or "user-scheduled" in codes:
+            part += say(language, "cause-user")
+        parts.append(part)
+    if "addLabels" in changes:
+        parts.append(say(language, "labels", labels=say(language, "list-joiner").join(changes["addLabels"])))
+    if "steps" in changes:
+        parts.append(say(language, "steps", count=len(changes["steps"])))
+    if "notes" in changes:
+        parts.append(say(language, "notes"))
+    return say(language, "change-prefix") + say(language, "part-joiner").join(parts)
+
+
+def review_status(language: str, item: Dict[str, Any], plan: Dict[str, Any]) -> Optional[str]:
+    proposal_id = item.get("proposalId")
+    if proposal_id and item.get("proposedItemRevision") == item["revision"]:
+        return say(language, "in-review", id=proposal_id)
+    for proposal in reversed(plan.get("proposals") or []):
+        # A Proposal no longer describes an item revised after it was created.
+        if item["revision"] >= proposal["planRevision"]:
+            continue
+        reasons = {value["id"]: value["reason"] for value in proposal["omitted"]}
+        if reasons.get(item["id"]) in OMISSION_REASONS:
+            return say(language, f"omitted-{reasons[item['id']]}", id=proposal["proposalId"])
+    if proposal_id:
+        return say(language, "revised-after", id=proposal_id)
+    return None
+
+
+def unplaced_text(language: str, item: Dict[str, Any], target: dt.date) -> str:
+    if not item.get("detailKey"):
+        return item["detail"]
+    values = dict(item.get("detailValues") or {})
+    for key in ("earliest", "deadline"):
+        if key in values:
+            values[key] = short_date(language, values[key], target)
+    return say(language, f"detail-{item['detailKey']}", **values)
+
+
+def item_lines(language: str, item: Dict[str, Any], section: str, plan: Dict[str, Any], target: dt.date) -> List[str]:
     if item["kind"] == "planned":
-        notes = [estimate_text(item["estimate"])]
-        if "overdue" in item["moveCodes"]:
-            notes.append(f"overdue from {item['currentDate']}")
-        if "moved-capacity" in item["moveCodes"]:
-            notes.append(f"moved from {item['currentDate']} for capacity")
-        if "user-moved" in item["moveCodes"] or "user-scheduled" in item["moveCodes"]:
-            notes.append("placed by the user")
-        if item["currentDate"] is None:
-            notes.append("newly dated")
-        if item["proposedFields"]:
-            notes.append("proposes " + ", ".join(sorted(item["proposedFields"])))
-        if item.get("proposalId"):
-            notes.append(f"in {item['proposalId']}")
-        line = f"- {item['id']} {task_link(item)} — " + "; ".join(notes) + f". {item['reason']}"
+        lines = [
+            say(language, "item", id=item["id"], link=task_link(item), estimate=estimate_text(language, item["estimate"]), reason=item["reason"]),
+            "  - " + change_text(language, item, target),
+        ]
+        status = review_status(language, item, plan)
+        if status:
+            lines.append("  - " + status)
     else:
-        line = f"- {item['id']} {task_link(item)} — {item['code']}: {item['detail']}"
-    return [line, "  <!-- taskmate-plan-item " + comment_json({**item, "section": section}) + " -->"]
+        lines = [f"- {item['id']} {task_link(item)} — {unplaced_text(language, item, target)}", "  - " + say(language, "not-scheduled")]
+    return [*lines, "  <!-- taskmate-plan-item " + comment_json({**item, "section": section}) + " -->"]
 
 
-def section_lines(section: str, items: List[Dict[str, Any]], capacity: Dict[str, Any], target: dt.date) -> List[str]:
-    lines = [f"## {SECTION_TITLES[section]}", ""]
+def section_lines(language: str, section: str, items: List[Dict[str, Any]], plan: Dict[str, Any], target: dt.date) -> List[str]:
+    lines = [f"## {say(language, f'section-{section}')}", ""]
     planned = [item for item in items if item["kind"] == "planned"]
     for date in sorted({item["plannedDate"] for item in planned}):
         day = dt.date.fromisoformat(date)
         day_items = [item for item in planned if item["plannedDate"] == date]
         used = sum(item["estimate"]["maxMinutes"] for item in day_items)
-        lines += [f"### {date} ({WEEKDAYS[day.weekday()].capitalize()}) — {used} of {day_capacity(capacity, target, day)} min", ""]
+        capacity = day_capacity(plan["capacity"], target, day)
+        lines += [f"### {say(language, 'day', date=long_date(language, date, target), used=used, capacity=capacity)}", ""]
         for item in day_items:
-            lines += item_lines(item, section)
+            lines += item_lines(language, item, section, plan, target)
         lines.append("")
-    for kind, title in (("gap", "Gaps"), ("conflict", "Conflicts")):
+    for kind in ("gap", "conflict"):
         group = [item for item in items if item["kind"] == kind]
         if group:
-            lines += [f"### {title}", ""]
+            lines += [f"### {say(language, f'section-{kind}')}", ""]
             for item in group:
-                lines += item_lines(item, section)
+                lines += item_lines(language, item, section, plan, target)
             lines.append("")
     if not items:
-        lines += ["_No Tasks._", ""]
+        lines += [say(language, "no-tasks"), ""]
+    return lines
+
+
+def summary_lines(language: str, plan: Dict[str, Any]) -> List[str]:
+    working = plan["working"]
+    planned = [item for item in working if item["kind"] == "planned"]
+    changed = sum(1 for item in planned if snapshot_changes(item))
+    lines = [f"## {say(language, 'summary-title')}", ""]
+    if plan.get("summary"):
+        lines += [plan["summary"], ""]
+    lines += [say(language, "counts", changed=changed, unchanged=len(planned) - changed, unplaced=len(working) - len(planned)), ""]
+    proposals = plan.get("proposals") or []
+    for proposal in proposals:
+        scope = proposal["scope"]
+        scope_text = ", ".join(scope["requested"]) if scope["kind"] == "items" else say(language, f"scope-{scope['kind']}")
+        lines.append(say(language, "proposal", id=proposal["proposalId"], scope=scope_text, revision=proposal["planRevision"], count=len(proposal["itemIds"])))
+    if proposals:
+        lines.append("")
     return lines
 
 
 def render_plan(plan: Dict[str, Any]) -> str:
+    language = plan["language"]
     target = dt.date.fromisoformat(plan["targetDate"])
     future = plan["capacity"]["future"]
     frontmatter = {
@@ -456,25 +709,27 @@ def render_plan(plan: Dict[str, Any]) -> str:
     }
     header = {key: value for key, value in plan.items() if key not in {"bases", "working"}}
     lines = ["---", *[f"{key}: {yaml_scalar(value)}" for key, value in frontmatter.items()], "---", ""]
-    lines += [f"# Plan for {plan['targetDate']}", "", "<!-- taskmate-plan " + comment_json(header) + " -->", ""]
+    lines += [f"# {say(language, 'title', date=long_date(language, plan['targetDate'], target))}", "", "<!-- taskmate-plan " + comment_json(header) + " -->", ""]
     today = plan["capacity"]["today"]
-    lines.append(f"Today: {planning_minutes(today['availableMinutes'], today['bufferPercent'])} of {today['availableMinutes']} min after a {today['bufferPercent']}% buffer.")
+    lines.append(say(language, "today", planning=planning_minutes(today["availableMinutes"], today["bufferPercent"]), available=today["availableMinutes"], buffer=today["bufferPercent"]))
     if future is None:
-        lines.append("Future capacity: not provided. No Task receives a future plan date.")
-    elif future["confirmedAt"] is None:
-        lines.append(f"Future capacity ({future['mode']}): awaiting confirmation. No Task receives a future plan date.")
+        lines.append(say(language, "future-none"))
     else:
-        days = ", ".join(day.capitalize() for day in future["weekdays"]) or "no weekdays"
-        lines.append(f"Future capacity ({future['mode']}, confirmed {future['confirmedAt']}): {future['dailyMinutes']} min on {days}, {future['bufferPercent']}% buffer.")
-    for proposal in plan.get("proposals") or []:
-        lines.append(f"Task change Proposal {proposal['proposalId']}: {proposal['scope']['kind']} scope, {len(proposal['itemIds'])} Tasks, plan revision {proposal['planRevision']}.")
+        mode = say(language, f"mode-{future['mode']}")
+        if future["confirmedAt"] is None:
+            lines.append(say(language, "future-awaiting", mode=mode))
+        else:
+            names = [WEEKDAY_NAMES[language][WEEKDAYS.index(day)] for day in future["weekdays"]]
+            days = say(language, "weekday-joiner").join(names) or say(language, "no-weekdays")
+            lines.append(say(language, "future-confirmed", mode=mode, confirmedAt=future["confirmedAt"], minutes=future["dailyMinutes"], days=days, buffer=future["bufferPercent"]))
     lines.append("")
     if plan["working"] is None:
-        lines += [f"## {SECTION_TITLES['working']}", "", "_No base selected. Choose the recommended base or the evidence base; they are never mixed._", ""]
+        lines += [f"## {say(language, 'section-working')}", "", say(language, "no-base"), ""]
     else:
-        lines += section_lines("working", plan["working"], plan["capacity"], target)
+        lines += summary_lines(language, plan)
+        lines += section_lines(language, "working", plan["working"], plan, target)
     for base in BASES:
-        lines += section_lines(base, plan["bases"][base], plan["capacity"], target)
+        lines += section_lines(language, base, plan["bases"][base], plan, target)
     return "\n".join(lines).rstrip("\n") + "\n"
 
 
@@ -526,7 +781,7 @@ def command_create(args: argparse.Namespace) -> None:
         "schemaVersion": SCHEMA_VERSION, "planId": args.plan_id, "targetDate": target_text, "status": "draft",
         "baseMode": None, "revision": 1, "createdAt": timestamp, "updatedAt": timestamp, "endDate": None,
         "supersedes": args.supersedes, "supersededBy": None, "capacity": capacity,
-        "counters": {"gap": 0, "conflict": 0, "plan": 0}, "proposals": [], "bases": {}, "working": None,
+        "counters": {"gap": 0, "conflict": 0, "plan": 0}, "proposals": [], "summary": None, "bases": {}, "working": None,
     }
     bases = request.get("bases")
     if not isinstance(bases, dict) or set(bases) != set(BASES):
@@ -535,12 +790,12 @@ def command_create(args: argparse.Namespace) -> None:
         entries = validated_entries(args.vault, args.task_folder, base, bases[base])
         plan["bases"][base] = numbered(place_base(entries, capacity, target), BASE_PREFIX[base], plan, base)
     plan["endDate"] = end_date(plan)
-    save_plan(path, plan)
+    save_plan(args.vault, path, plan)
     if superseded:
         old_path, old = superseded
         old["status"], old["supersededBy"] = "superseded", args.plan_id
         bump(old)
-        save_plan(old_path, old)
+        save_plan(args.vault, old_path, old)
     print_result(args.vault, path, plan, args.open)
 
 
@@ -569,8 +824,9 @@ def command_select_base(args: argparse.Namespace) -> None:
         working.append(copied)
     plan["working"] = sorted(working, key=sort_key)
     plan["baseMode"], plan["status"] = args.base, "ready"
+    plan["summary"] = validated_text(args.summary, "--summary", SUMMARY_LIMIT)
     plan["endDate"] = end_date(plan)
-    save_plan(path, plan)
+    save_plan(args.vault, path, plan)
     print_result(args.vault, path, plan)
 
 
@@ -593,6 +849,7 @@ def command_revise(args: argparse.Namespace) -> None:
     check_revision(plan, args.revision)
     if plan["status"] not in {"ready", "proposal-created"} or plan["working"] is None:
         fail("only a selected working plan can be revised")
+    summary_text = validated_text(args.summary, "--summary", SUMMARY_LIMIT)
     raw_changes = planning_store.read_json(args.changes).get("changes")
     if not isinstance(raw_changes, list) or not raw_changes:
         fail("revision requires a non-empty changes array")
@@ -619,7 +876,7 @@ def command_revise(args: argparse.Namespace) -> None:
             plan["counters"]["gap"] += 1
             items.pop(item["id"])
             item.update({"id": f"GAP-{plan['counters']['gap']:02d}", "kind": "gap", "code": "user-unscheduled", "detail": reason})
-            for key in ("plannedDate", "moveCodes"):
+            for key in ("plannedDate", "moveCodes", "detailKey", "detailValues"):
                 item.pop(key, None)
             items[item["id"]] = item
         elif operation == "schedule":
@@ -632,7 +889,7 @@ def command_revise(args: argparse.Namespace) -> None:
             plan["counters"]["plan"] += 1
             items.pop(item["id"])
             item.update({"id": f"PLAN-{plan['counters']['plan']:02d}", "kind": "planned", "plannedDate": allowed_plan_date(plan, change.get("date")), "moveCodes": ["user-scheduled"]})
-            for key in ("code", "detail"):
+            for key in ("code", "detail", "detailKey", "detailValues"):
                 item.pop(key, None)
             items[item["id"]] = item
         elif operation == "set-fields":
@@ -642,20 +899,35 @@ def command_revise(args: argparse.Namespace) -> None:
         item["reason"] = reason
         item["revision"] = plan["revision"]
     plan["working"] = sorted(items.values(), key=sort_key)
+    plan["summary"] = summary_text
     plan["endDate"] = end_date(plan)
-    save_plan(path, plan)
+    save_plan(args.vault, path, plan)
     print_result(args.vault, path, plan)
 
 
-def proposal_reason(plan: Dict[str, Any], item: Dict[str, Any]) -> str:
-    details = [f"rolling plan {plan['planId']} {item['id']}"]
-    if "moved-capacity" in item.get("moveCodes", []):
-        details.append(f"moved from {item['currentDate']} for capacity")
-    if "overdue" in item.get("moveCodes", []):
-        details.append(f"overdue from {item['currentDate']}")
-    if "user-moved" in item.get("moveCodes", []) or "user-scheduled" in item.get("moveCodes", []):
-        details.append("placed by the user")
-    return f"{item['reason']} ({'; '.join(details)})"
+def proposal_reason(language: str, plan: Dict[str, Any], item: Dict[str, Any]) -> str:
+    codes = item.get("moveCodes", [])
+    details = []
+    if "moved-capacity" in codes:
+        details.append(say(language, "reason-capacity", date=item["currentDate"]))
+    if "overdue" in codes:
+        details.append(say(language, "reason-overdue", date=item["currentDate"]))
+    if "user-moved" in codes or "user-scheduled" in codes:
+        details.append(say(language, "reason-user"))
+    joiner = say(language, "reason-joiner")
+    suffix = joiner + joiner.join(details) if details else ""
+    return say(language, "reason", reason=item["reason"], plan=plan["planId"], item=item["id"], details=suffix)
+
+
+def validated_task_summaries(plan: Dict[str, Any], path: Path) -> Dict[str, str]:
+    raw = planning_store.read_json(path)
+    known = {item["id"] for item in plan["working"]}
+    summaries = {}
+    for item_id, value in raw.items():
+        if item_id not in known:
+            fail(f"unknown working-plan item in --task-summaries: {item_id}")
+        summaries[item_id] = validated_text(value, f"task summary for {item_id}", TASK_SUMMARY_LIMIT)
+    return summaries
 
 
 def selected_items(plan: Dict[str, Any], args: argparse.Namespace) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
@@ -695,6 +967,8 @@ def command_proposal(args: argparse.Namespace) -> None:
     if plan["status"] not in {"ready", "proposal-created"} or plan["working"] is None:
         fail("a Task change Proposal can be generated only from a selected working plan")
     planning_store.validated_proposal_id(args.proposal_id)
+    language = output_language(args.vault)
+    task_summaries = validated_task_summaries(plan, args.task_summaries)
     selected, scope = selected_items(plan, args)
     if not selected:
         fail("the requested scope contains no planned items")
@@ -719,12 +993,18 @@ def command_proposal(args: argparse.Namespace) -> None:
             continue
         review.append({
             "taskId": item["taskId"], "snapshot": item["snapshot"], "changes": changes,
-            "reason": proposal_reason(plan, item), "dateAuthority": f"rolling plan {plan['planId']} {item['id']}",
+            "reason": proposal_reason(language, plan, item), "dateAuthority": f"rolling plan {plan['planId']} {item['id']}",
         })
         included.append({"id": item["id"], "taskId": item["taskId"], "title": item["title"], "fields": sorted(changes)})
     if not review:
         fail("no Task changes to propose; omitted: " + ", ".join(f"{value['id']} ({value['reason']})" for value in omitted))
-    result = planning_store.write_task_change_proposal(args.vault, args.task_folder, {"proposals": review}, args.proposal_id)
+    missing_lines = [value["id"] for value in included if value["id"] not in task_summaries]
+    if missing_lines:
+        fail("--task-summaries needs a one-line summary for every included item; missing: " + ", ".join(missing_lines))
+    result = planning_store.write_task_change_proposal(
+        args.vault, args.task_folder, {"proposals": review}, args.proposal_id,
+        summary=plan.get("summary"), task_summaries={value["taskId"]: task_summaries[value["id"]] for value in included},
+    )
     bump(plan)
     included_ids = {value["id"] for value in included}
     for item in plan["working"]:
@@ -736,7 +1016,7 @@ def command_proposal(args: argparse.Namespace) -> None:
         "proposalId": args.proposal_id, "createdAt": plan["updatedAt"], "planRevision": plan["revision"],
         "scope": scope, "itemIds": [value["id"] for value in included], "omitted": omitted,
     })
-    save_plan(path, plan)
+    save_plan(args.vault, path, plan)
     output = {
         **result, "opened": False, "planId": plan["planId"], "planRevision": plan["revision"], "status": plan["status"],
         "scope": scope, "included": included, "omitted": omitted,
@@ -757,7 +1037,7 @@ def command_close(args: argparse.Namespace) -> None:
         fail(f"plan cannot be closed from status {plan['status']}")
     bump(plan)
     plan["status"] = "closed"
-    save_plan(path, plan)
+    save_plan(args.vault, path, plan)
     print_result(args.vault, path, plan)
 
 
@@ -783,18 +1063,21 @@ def parser() -> argparse.ArgumentParser:
     select.add_argument("--base", required=True, choices=BASES)
     select.add_argument("--revision", required=True, type=int)
     select.add_argument("--replace-working-plan", action="store_true")
+    select.add_argument("--summary", required=True, help="short report, in the output language, of what the working plan changes")
     select.set_defaults(run=command_select_base)
 
     revise = commands.add_parser("revise")
     revise.add_argument("--plan-id", required=True, type=validated_plan_id)
     revise.add_argument("--revision", required=True, type=int)
     revise.add_argument("--changes", required=True, type=Path)
+    revise.add_argument("--summary", required=True, help="short report, in the output language, of what the revised plan changes")
     revise.set_defaults(run=command_revise)
 
     proposal = commands.add_parser("proposal")
     proposal.add_argument("--plan-id", required=True, type=validated_plan_id)
     proposal.add_argument("--revision", required=True, type=int)
     proposal.add_argument("--proposal-id", required=True)
+    proposal.add_argument("--task-summaries", required=True, type=Path, help="JSON object mapping PLAN-xx IDs to one-line summaries")
     scope = proposal.add_mutually_exclusive_group()
     scope.add_argument("--today-only", action="store_true")
     scope.add_argument("--items")

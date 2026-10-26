@@ -119,6 +119,8 @@ The command reserves the displayed buffer, packs only upper bounds into `planned
 
 Use a rolling plan when the user wants every incomplete Task accounted for across today and future days. It is a separate Markdown artifact, not a Task change: creating, selecting, revising, closing, and superseding it never writes Task Markdown. Run `inspect` first and plan only canonical incomplete Tasks; never include pending Import candidates.
 
+The helper writes the plan's headings and fixed phrases in the language reported by `python3 scripts/todo_store.py --vault <vault> language`. Write every reason, summary and gap or conflict reason you supply in that language too.
+
 ### Capacity
 
 Ask for today's net available minutes. For future days, ask for usable weekdays, daily minutes, a buffer, fixed commitments, and date exceptions. If the user does not give them, propose one concrete profile with `"mode": "assumed"` and `"confirmedAt": null`. Set `confirmedAt` only after the user approves the profile; until then no Task receives a future plan date and work that does not fit today becomes a `future-capacity-unconfirmed` gap.
@@ -171,8 +173,10 @@ The helper keeps each Task with an existing date on that date when capacity allo
 Show both bases and ask the user to choose one. Never mix them. Copy the chosen base into `PLAN-xx` items:
 
 ```bash
-python3 scripts/rolling_plan.py --vault <vault> select-base --plan-id <id> --base recommended --revision <n>
+python3 scripts/rolling_plan.py --vault <vault> select-base --plan-id <id> --base recommended --revision <n> --summary "<summary>"
 ```
+
+`--summary` is required. Write one paragraph, at most 500 characters and without line breaks, that reads like a short report from a colleague: the important changes first, then what stays as it is. For example: "Put the overdue invoice check first today and give the three undated Tasks dates next week. The study-session slides go on Friday in two Steps. The weekly report and the demo update stay as planned." The plan shows it under "What this plan changes" with counts of what changes; every item also states its own change, so do not list every item.
 
 Revise only the working plan, with a reason for every change:
 
@@ -186,20 +190,26 @@ Revise only the working plan, with a reason for every change:
 ```
 
 ```bash
-python3 scripts/rolling_plan.py --vault <vault> revise --plan-id <id> --revision <n> --changes <changes.json>
+python3 scripts/rolling_plan.py --vault <vault> revise --plan-id <id> --revision <n> --changes <changes.json> --summary "<summary>"
 ```
 
-Every write requires the current `--revision` and fails if the file was edited outside Task Pilot; run `show` and ask the user how to proceed. Close a plan with `close`. To replan, run `inspect` again and create a new plan with `--supersedes`; never treat unapproved plan dates as facts.
+Each revision replaces the summary, so write it for the revised plan as a whole. Every write requires the current `--revision` and fails if the file was edited outside Task Pilot; run `show` and ask the user how to proceed. A plan written by an earlier Task Pilot (schema version 1) is refused; create a new plan from current Tasks without `--supersedes`. Close a plan with `close`. To replan, run `inspect` again and create a new plan with `--supersedes`; never treat unapproved plan dates as facts.
 
 ### Task change Proposal from the working plan
 
 Create a Task change Proposal only when the user explicitly asks, for example "Create a Task change review from this working plan". With no range qualifier, cover every date in the working plan. Narrow it only when the user says "today only" (`--today-only`) or names `PLAN-xx` items (`--items PLAN-01,PLAN-03`):
 
 ```bash
-python3 scripts/rolling_plan.py --vault <vault> proposal --plan-id <id> --revision <n> --proposal-id proposal-<id> [--today-only | --items PLAN-01,PLAN-03] --open-review
+python3 scripts/rolling_plan.py --vault <vault> proposal --plan-id <id> --revision <n> --proposal-id proposal-<id> --task-summaries <summaries.json> [--today-only | --items PLAN-01,PLAN-03] --open-review
 ```
 
-The helper rereads every selected Task and omits it, without blocking the others, when it is `missing`, `completed`, `stale` (changed since the plan snapshot), `no-change`, or `already-proposed` (included in an earlier Proposal and not revised since). It proposes only date, new `context/*` labels, Steps, and Notes, never Priority. Each change reason names the plan item and any move. It writes the same Proposal format as `planning_store.py propose`, marks the plan `proposal-created`, and records the Proposal and its scope in the plan. Report every included and omitted item. TaskMate's Task change Review View remains the only place where changes are approved and written; the working plan may still be revised afterwards.
+`--task-summaries` maps `PLAN-xx` IDs to one line each (at most 200 characters) about how that Task changes and why, shown next to the Task in the Review View. Give a line for every planned item in the requested range; lines for items that turn out to be omitted are ignored, and a missing line for an included item stops the command before anything is written:
+
+```json
+{"PLAN-01": "Overdue, so it goes first today.", "PLAN-03": "Friday, in two Steps: outline, then slides."}
+```
+
+The helper rereads every selected Task and omits it, without blocking the others, when it is `missing`, `completed`, `stale` (changed since the plan snapshot), `no-change`, or `already-proposed` (included in an earlier Proposal and not revised since). It proposes only date, new `context/*` labels, Steps, and Notes, never Priority. Each change reason names the plan item and any move. It writes the same Proposal format as `planning_store.py propose`, adds the plan summary and your lines, marks the plan `proposal-created`, and records the Proposal and its scope in the plan, where each item then names the review that includes it or says why it was left out. Report every included and omitted item. TaskMate's Task change Review View remains the only place where changes are approved and written; the working plan may still be revised afterwards.
 
 ## Context-label interpretation
 

@@ -46,6 +46,7 @@ Do not move an RFC directly from proposal to current authority. For example, RFC
 | [0032 Task change preview diff engine](0032-use-jsdiff-for-task-change-preview.md) | implemented | [Task change review](../features/task-change-review/README.md) |
 | [0033 Reviewable rolling plans and Source candidate reviews](0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md) | implemented | [Source import](../features/source-import.md), [Task Pilot planning](../features/task-pilot-planning.md), [Task change review](../features/task-change-review/README.md), [Import review format](../specifications/import-review-format.md) |
 | [Conversational Task capture](add-conversational-task-capture.md) | draft | — (not implemented) |
+| [Show what plans and reviews change](show-plan-and-review-changes.md) | implemented | [Task Pilot planning](../features/task-pilot-planning.md), [Task change review](../features/task-change-review/README.md), [Task change Proposal format](../specifications/task-change-proposal-format.md) |
 | [Reproducible development environment](document-reproducible-development-environment.md) | draft | [Testing design](../design/testing.md) |
 | [Minimal view presentation seam](establish-minimal-view-presentation-seam.md) | implemented | [Architecture design](../design/architecture.md) |
 | [Sorting and editor sizing](improve-sorting-and-task-editor-sizing.md) | implemented | [Filtering and sorting](../features/filtering-and-sorting.md) |

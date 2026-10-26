@@ -29,6 +29,7 @@ export const en = {
   "common.clear": "Clear",
   "command.openReviews": "Open reviews",
   "review.title": "Review Task changes",
+  "review.summaryTitle": "What this plan changes",
   "reviews.title": "Reviews",
   "reviews.pending": "Pending",
   "reviews.history": "History",

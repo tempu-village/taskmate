@@ -207,7 +207,10 @@ def validated_proposal_id(value: str) -> str:
     return value
 
 
-def write_task_change_proposal(vault: Path, override: Optional[str], plan: Dict[str, Any], proposal_id: str) -> Dict[str, Any]:
+def write_task_change_proposal(
+    vault: Path, override: Optional[str], plan: Dict[str, Any], proposal_id: str,
+    summary: Optional[str] = None, task_summaries: Optional[Dict[str, str]] = None,
+) -> Dict[str, Any]:
     validated_proposal_id(proposal_id)
     review = validated_review(vault, override, plan)
     timestamp = todo_store.now_iso()
@@ -236,14 +239,20 @@ def write_task_change_proposal(vault: Path, override: Optional[str], plan: Dict[
             change_number += 1
         after_task["updated-at"] = timestamp
         after_markdown = todo_store.encode_task_preserving_properties(after_task, before_markdown)
-        tasks.append({
+        entry = {
             "taskId": item["taskId"], "path": task["path"], "title": task["title"],
             "beforeMarkdown": before_markdown, "afterMarkdown": after_markdown,
             "beforeSha256": hashlib.sha256(before_markdown.encode("utf-8")).hexdigest(), "changes": changes,
-        })
+        }
+        if task_summaries and task_summaries.get(item["taskId"]):
+            entry["summary"] = task_summaries[item["taskId"]]
+        tasks.append(entry)
     if not tasks:
         fail("review plan has no change proposals to persist")
-    proposal = {"schemaVersion": 1, "id": proposal_id, "status": "pending", "createdAt": timestamp, "tasks": tasks}
+    proposal: Dict[str, Any] = {"schemaVersion": 1, "id": proposal_id, "status": "pending", "createdAt": timestamp}
+    if summary:
+        proposal["summary"] = summary
+    proposal["tasks"] = tasks
     folder = todo_store.safe_path(vault, str(todo_store.plugin_settings(vault)["proposalFolder"]))
     destination = folder / f"{proposal_id}.json"
     if destination.exists():
