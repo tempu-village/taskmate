@@ -225,6 +225,24 @@ describe("Import review renderer", () => {
     expect(reduceImportReviewUiState(state, { type: "toggle-evidence", candidateId: "IC-01", sourceId: "SRC-01" }).expandedEvidence.size).toBe(0);
   });
 
+  it("repeats the collapse button below a long statement list", () => {
+    const review = example();
+    for (const statement of ["二。", "三。", "四。"]) review.candidates[0].sourceRefs.push({ sourceId: "SRC-01", statement });
+    const state = reduceImportReviewUiState(createImportReviewUiState(), { type: "toggle-evidence", candidateId: "IC-01", sourceId: "SRC-01" });
+    const { container, dispatch } = render(review, state);
+
+    const hides = buttons(container, "Hide 4 statements");
+    expect(hides).toHaveLength(2);
+    expect(hides[1].previousElementSibling?.classList.contains("taskmate-import-evidence-statements")).toBe(true);
+    expect(hides.map((hide) => hide.getAttribute("aria-controls"))).toEqual([hides[0].getAttribute("aria-controls"), hides[0].getAttribute("aria-controls")]);
+    hides[1].click();
+    expect(dispatch).toHaveBeenCalledWith({ type: "toggle-evidence", candidateId: "IC-01", sourceId: "SRC-01" });
+    // Collapsing moves focus to the top toggle, which scrolls it into view.
+    const collapsed = render(review, reduceImportReviewUiState(state, { type: "toggle-evidence", candidateId: "IC-01", sourceId: "SRC-01" }));
+    expect(document.activeElement).toBe(buttons(collapsed.container, "Show 4 statements")[0]);
+    expect(buttons(render(example(), reduceImportReviewUiState(createImportReviewUiState(), { type: "toggle-evidence", candidateId: "IC-01", sourceId: "SRC-01" })).container, "Hide 1 statements")).toHaveLength(1);
+  });
+
   it("marks earlier formats and explains their missing summaries", () => {
     const review = example();
     const legacy = JSON.parse(JSON.stringify(review).replaceAll("import-review-", "source-review-").replaceAll("\"IC-", "\"SC-"));

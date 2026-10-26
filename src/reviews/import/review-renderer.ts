@@ -98,6 +98,8 @@ export type ImportReviewAction =
   | { type: "save-edit" };
 
 const OPERATION_ID = "taskmate-import-edit-operation";
+// Expanded statement lists at least this long repeat the collapse button below the last statement.
+const LONG_EVIDENCE = 4;
 const FORM_ERROR_ID = "taskmate-import-edit-form-error";
 const OPEN_APPLY_ID = "taskmate-import-review-open-apply";
 const APPLY_TITLE_ID = "taskmate-import-review-apply-title";
@@ -305,6 +307,17 @@ function renderEvidence(
     statements.setAttribute("role", "group");
     statements.setAttribute("aria-label", copy.statementsAria(candidate.id, name));
     for (const statement of group.statements) text(statements, "blockquote", statement, "taskmate-import-candidate-statement");
+    // A long list would otherwise need scrolling back up to collapse it; collapsing returns focus, and the view, to the
+    // toggle at the top.
+    if (count >= LONG_EVIDENCE) {
+      const bottom = button(copy.hideStatements(count), () => (
+        dispatch({ type: "toggle-evidence", candidateId: candidate.id, sourceId: group.sourceId })
+      ));
+      bottom.classList.add("taskmate-import-evidence-toggle", "is-bottom");
+      bottom.setAttribute("aria-expanded", "true");
+      bottom.setAttribute("aria-controls", listId);
+      block.append(bottom);
+    }
   }
 }
 

@@ -8982,6 +8982,7 @@ function sameValue3(left, right) {
 
 // src/reviews/import/review-renderer.ts
 var OPERATION_ID = "taskmate-import-edit-operation";
+var LONG_EVIDENCE = 4;
 var FORM_ERROR_ID = "taskmate-import-edit-form-error";
 var OPEN_APPLY_ID = "taskmate-import-review-open-apply";
 var APPLY_TITLE_ID = "taskmate-import-review-apply-title";
@@ -9148,6 +9149,13 @@ function renderEvidence(card, review, candidate, state, copy, dispatch) {
     statements.setAttribute("role", "group");
     statements.setAttribute("aria-label", copy.statementsAria(candidate.id, name));
     for (const statement of group.statements) text2(statements, "blockquote", statement, "taskmate-import-candidate-statement");
+    if (count >= LONG_EVIDENCE) {
+      const bottom = button2(copy.hideStatements(count), () => dispatch({ type: "toggle-evidence", candidateId: candidate.id, sourceId: group.sourceId }));
+      bottom.classList.add("taskmate-import-evidence-toggle", "is-bottom");
+      bottom.setAttribute("aria-expanded", "true");
+      bottom.setAttribute("aria-controls", listId);
+      block.append(bottom);
+    }
   }
 }
 function renderDraft(card, draft, copy, projects) {
@@ -9421,6 +9429,7 @@ var ImportReviewView = class extends import_obsidian18.ItemView {
     const scrollTop = preserveScroll ? this.contentEl.scrollTop : 0;
     const active = this.contentEl.ownerDocument.activeElement;
     const focused = preserveScroll && active instanceof HTMLElement && this.contentEl.contains(active) ? active.id : "";
+    const requestedFocus = this.state.focus;
     this.contentEl.empty();
     const i18n = this.plugin.i18n();
     if (!this.reviewId) {
@@ -9442,6 +9451,7 @@ var ImportReviewView = class extends import_obsidian18.ItemView {
       this.contentEl.createDiv({ cls: "taskmate-empty", text: i18n.t("importReview.invalid", { error: error instanceof Error ? error.message : String(error) }) });
     }
     this.contentEl.scrollTop = scrollTop;
+    if (requestedFocus) this.contentEl.querySelector(`[id="${requestedFocus}"]`)?.scrollIntoView({ block: "nearest" });
   }
   async handle(action) {
     const reviewId = this.reviewId;

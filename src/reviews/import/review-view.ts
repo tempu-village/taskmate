@@ -65,6 +65,7 @@ export class ImportReviewView extends ItemView {
     // A refresh from a Vault change keeps keyboard focus on the same control, such as an edit field.
     const active = this.contentEl.ownerDocument.activeElement;
     const focused = preserveScroll && active instanceof HTMLElement && this.contentEl.contains(active) ? active.id : "";
+    const requestedFocus = this.state.focus;
     this.contentEl.empty();
     const i18n = this.plugin.i18n();
     if (!this.reviewId) {
@@ -86,6 +87,9 @@ export class ImportReviewView extends ItemView {
       this.contentEl.createDiv({ cls: "taskmate-empty", text: i18n.t("importReview.invalid", { error: error instanceof Error ? error.message : String(error) }) });
     }
     this.contentEl.scrollTop = scrollTop;
+    // Restoring the scroll position can hide the element that just received focus, such as the top toggle after a long
+    // statement list was collapsed from below; bring it back into view.
+    if (requestedFocus) this.contentEl.querySelector<HTMLElement>(`[id="${requestedFocus}"]`)?.scrollIntoView({ block: "nearest" });
   }
 
   private async handle(action: ImportReviewAction): Promise<void> {
