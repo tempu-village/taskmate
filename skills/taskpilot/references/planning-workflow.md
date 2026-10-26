@@ -119,7 +119,7 @@ The command reserves the displayed buffer, packs only upper bounds into `planned
 
 Use a rolling plan when the user wants every incomplete Task accounted for across today and future days. It is a separate Markdown artifact, not a Task change: creating, selecting, revising, closing, and superseding it never writes Task Markdown. Run `inspect` first and plan only canonical incomplete Tasks; never include pending Import candidates.
 
-The helper writes the plan's headings and fixed phrases in the language reported by `python3 scripts/todo_store.py --vault <vault> language`. Write every reason, summary and gap or conflict reason you supply in that language too.
+The helper writes the plan's headings and fixed phrases in the language reported by `python3 scripts/todo_store.py --vault <vault> language`. When it reports `unknown`, ask the user which language to use and pass it as `rolling_plan.py --vault <vault> --language ja|en <command>`; the helper refuses to write without it, and TaskMate's setting always wins when it decides the language. Write every reason, summary and gap or conflict reason you supply in that language too.
 
 ### Capacity
 
