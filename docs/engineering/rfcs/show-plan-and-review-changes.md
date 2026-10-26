@@ -31,7 +31,7 @@ The manual check for [Issue #60](https://github.com/tempu-village/taskmate/issue
 
 ## Alternatives considered
 
-The [interactive mockup](assets/plan-review-change-display.html) shows the current plan and review next to the improved version with the same six Tasks as the test Vault, and switches between the options below. On 2026-10-24 the user chose the combination the mockup now opens with.
+The [interactive mockup](assets/plan-review-change-display.html) shows the current plan and review next to the improved version with the same six Tasks as the test Vault, and switches between the options below. On 2026-10-24 the user chose the combination the mockup now opens with. Its visual styling, such as badges, cards, count chips and links between the plan and the review, is illustrative only: on 2026-10-26 the user decided that the plan stays a Markdown note and is not shown in a TaskMate view.
 
 | Question | Options compared | Decision and reason |
 | --- | --- | --- |
@@ -83,7 +83,7 @@ rolling planと、そこから作るTask変更レビューで、どのTaskがど
 
 ### 検討した選択肢
 
-[試作](assets/plan-review-change-display.html)では、今の計画とレビューを改善案と並べ、テスト用Vaultと同じ6件のTaskで次の選択肢を切り替えました。2026年10月24日に利用者が選んだ組み合わせで、試作は最初に表示されます。
+[試作](assets/plan-review-change-display.html)では、今の計画とレビューを改善案と並べ、テスト用Vaultと同じ6件のTaskで次の選択肢を切り替えました。2026年10月24日に利用者が選んだ組み合わせで、試作は最初に表示されます。試作の見た目（バッジ、カード、件数のチップ、計画とレビューの間のリンクなど）は説明用です。2026年10月26日に、計画はMarkdownのノートのままとし、TaskMateの画面には表示しないと利用者が決めました。
 
 | 問い | 比べた案 | 決定と理由 |
 | --- | --- | --- |
