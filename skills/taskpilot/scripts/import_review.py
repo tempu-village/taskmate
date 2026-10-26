@@ -2,7 +2,7 @@
 """Stage Import review JSON for TaskMate's Import review.
 
 Staging writes one versioned JSON review and never creates, changes, or
-deletes canonical Tasks, Source notes, candidate Markdown, or Review.md.
+deletes canonical Tasks or Source notes.
 """
 
 from __future__ import annotations
