@@ -147,7 +147,7 @@ export class TaskChangeReviewView extends ItemView {
 function reviewCopy(plugin: TaskMatePlugin): TaskChangeReviewCopy {
   const { t } = plugin.i18n();
   return {
-    title: t("review.title"), apply: t("review.apply"), reject: t("review.reject"),
+    title: t("review.title"), summaryTitle: t("review.summaryTitle"), apply: t("review.apply"), reject: t("review.reject"),
     selectAll: t("review.selectAll"), selectAllShort: t("review.selectAllShort"), selectTask: t("review.selectTask"),
     clearAll: t("review.clearAll"), clearAllShort: t("review.clearAllShort"), clearTask: t("review.clearTask"),
     semantic: t("review.semantic"), semanticAria: t("review.semanticAria"), markdown: t("review.markdown"), markdownAria: t("review.markdownAria"),

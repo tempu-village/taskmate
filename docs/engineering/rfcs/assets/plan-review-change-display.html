@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>計画とレビューの変更表示</title>
+<style>
+/* Layout: control bar on top, then the plan note and the Task change review side by side (stacked on phones), styled like Obsidian panes. */
+:root {
+  --bg: #f6f5f9;
+  --pane: #ffffff;
+  --fg: #222129;
+  --muted: #6b6878;
+  --line: #e3e0ea;
+  --soft: #f0edf7;
+  --accent: #7b5ce6;
+  --accent-fg: #ffffff;
+  --accent-soft: #ece6fd;
+  --earlier: #b25a00;
+  --earlier-soft: #fdf0e1;
+  --added: #23794a;
+  --added-soft: #e3f4ea;
+  --same: #6b6878;
+  --same-soft: #eeedf2;
+  --code-bg: #f3f2f6;
+  --font: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", sans-serif;
+  --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #18171c; --pane: #232228; --fg: #e8e6ef; --muted: #a29fb0; --line: #36343e; --soft: #2b2932;
+    --accent: #9d84ff; --accent-fg: #17151e; --accent-soft: #352d55;
+    --earlier: #f0a65a; --earlier-soft: #3d2b18; --added: #6fd39b; --added-soft: #1b3527; --same: #a29fb0; --same-soft: #2e2c35;
+    --code-bg: #2b2932; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #18171c; --pane: #232228; --fg: #e8e6ef; --muted: #a29fb0; --line: #36343e; --soft: #2b2932;
+  --accent: #9d84ff; --accent-fg: #17151e; --accent-soft: #352d55;
+  --earlier: #f0a65a; --earlier-soft: #3d2b18; --added: #6fd39b; --added-soft: #1b3527; --same: #a29fb0; --same-soft: #2e2c35;
+  --code-bg: #2b2932; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 14px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 40px; }
+.wrap { max-width: 1280px; margin: 0 auto; display: grid; gap: 16px; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.35; }
+.intro h1 { margin: 0; font-size: 1.35rem; }
+.intro p { margin: 4px 0 0; color: var(--muted); max-width: 70ch; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px 20px; padding: 12px 14px; background: var(--pane); border: 1px solid var(--line); border-radius: 10px; }
+.control { display: grid; gap: 4px; min-width: 0; }
+.control > span { font-size: 0.75rem; color: var(--muted); letter-spacing: 0.04em; }
+.seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 2px; background: var(--soft); border-radius: 8px; }
+.seg button { border: 0; background: transparent; color: var(--fg); font: inherit; font-size: 0.85rem; padding: 4px 10px; border-radius: 6px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--pane); box-shadow: 0 1px 2px rgba(0,0,0,0.12); font-weight: 600; }
+button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.panes { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 980px) { .panes { grid-template-columns: minmax(0, 1fr); } }
+.pane { background: var(--pane); border: 1px solid var(--line); border-radius: 10px; min-width: 0; overflow: hidden; }
+.pane-tab { display: flex; justify-content: space-between; gap: 8px; padding: 8px 14px; border-bottom: 1px solid var(--line); font-size: 0.8rem; color: var(--muted); }
+.pane-tab strong { color: var(--fg); font-weight: 600; }
+.pane-body { padding: 16px 18px 22px; min-width: 0; }
+.note h1 { font-size: 1.45rem; margin: 0 0 6px; }
+.note h2 { font-size: 1.1rem; margin: 22px 0 6px; }
+.note h3 { font-size: 0.98rem; margin: 16px 0 6px; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.cap { font-size: 0.8rem; color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; }
+.capacity { color: var(--muted); margin: 0; }
+.summary { margin-top: 14px; padding: 12px 14px; border-radius: 8px; background: var(--accent-soft); display: grid; gap: 8px; }
+.summary h2 { margin: 0 !important; font-size: 0.95rem; }
+.summary p { margin: 0; }
+.summary-kind { font-size: 0.72rem; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: inherit; font-size: 0.78rem; padding: 1px 9px; border-radius: 999px; border: 1px solid transparent; background: var(--pane); color: var(--fg); }
+button.chip { cursor: pointer; border-color: var(--accent); color: var(--accent); }
+.items { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.item { border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; display: grid; gap: 4px; min-width: 0; transition: box-shadow .15s, border-color .15s; }
+.item.is-same { background: var(--soft); }
+.item.is-target, .task.is-target { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.item-head { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; min-width: 0; }
+.plan-id { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); }
+.task-link { color: var(--accent); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent); overflow-wrap: anywhere; }
+.est { font-size: 0.78rem; color: var(--muted); }
+.change { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
+.badge { font-size: 0.72rem; font-weight: 600; padding: 0 7px; border-radius: 4px; white-space: nowrap; }
+.badge.earlier { color: var(--earlier); background: var(--earlier-soft); }
+.badge.added { color: var(--added); background: var(--added-soft); }
+.badge.same { color: var(--same); background: var(--same-soft); }
+.detail { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.reason { margin: 0; color: var(--muted); font-size: 0.85rem; overflow-wrap: anywhere; }
+.to-review { justify-self: start; font: inherit; font-size: 0.78rem; border: 0; background: none; color: var(--accent); padding: 0; cursor: pointer; text-decoration: underline; }
+.omitted { margin-top: 14px; font-size: 0.85rem; color: var(--muted); }
+.raw { font-family: var(--mono); font-size: 0.8rem; background: var(--code-bg); border-radius: 8px; padding: 12px; overflow-x: auto; white-space: pre; line-height: 1.55; }
+details { margin-top: 14px; color: var(--muted); font-size: 0.85rem; }
+details summary { cursor: pointer; }
+.review-head { display: grid; gap: 2px; margin-bottom: 4px; }
+.review-head h2 { margin: 0; font-size: 1.15rem; }
+.review-head p { margin: 0; color: var(--muted); font-size: 0.8rem; overflow-wrap: anywhere; }
+.lines { margin: 0; padding-left: 1.3rem; display: grid; gap: 4px; }
+.lines button { font: inherit; border: 0; background: none; color: var(--accent); padding: 0; cursor: pointer; text-decoration: underline; text-align: start; }
+.toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin: 14px 0 10px; }
+.toolbar .seg button { font-size: 0.8rem; }
+.tasks { display: grid; gap: 10px; }
+.task { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; transition: box-shadow .15s, border-color .15s; }
+.task h3 { margin: 0; padding: 7px 11px; background: var(--soft); font-size: 0.95rem; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.task h3 .one-line { font-size: 0.8rem; font-weight: 400; color: var(--muted); }
+.row { display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: 8px; padding: 8px 11px; border-top: 1px solid var(--line); align-items: start; }
+.row:first-of-type { border-top: 0; }
+.cid { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); padding-top: 1px; }
+.row-body { display: grid; gap: 2px; min-width: 0; }
+.field { font-weight: 600; }
+.values { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.footer { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin-top: 14px; }
+.apply { font: inherit; border: 0; border-radius: 6px; padding: 6px 14px; background: var(--accent); color: var(--accent-fg); font-weight: 600; cursor: pointer; }
+.status { font-size: 0.8rem; color: var(--muted); min-height: 1.4em; }
+.decide { background: var(--pane); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.decide h2 { margin: 0 0 6px; font-size: 1rem; }
+.decide h3 { margin: 12px 0 4px; font-size: 0.9rem; }
+.decide ol { margin: 0; padding-left: 1.3rem; display: grid; gap: 4px; }
+.legend { font-size: 0.8rem; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="intro">
+    <h1>計画とレビューの変更表示</h1>
+    <p>計画ノートと Task変更レビューに「何がどう変わるか」を出す案の試作です。テスト用 Vault と同じ6件の Task を使っています。上のボタンで表示を切り替え、項目のリンクで左右の対応を確かめられます。反映ボタンは試作のため何も書き込みません。最初は、2026年10月24日に選んだ組み合わせ（改善案・説明文・すべて・日付ごと）で表示します。</p>
+  </header>
+
+  <div class="controls" role="group" aria-label="表示の切り替え">
+    <div class="control"><span>表示</span><div class="seg" data-key="mode"><button type="button" data-value="current">今の形</button><button type="button" data-value="proposed">改善案</button></div></div>
+    <div class="control"><span>要約の書き方（改善案）</span><div class="seg" data-key="summary"><button type="button" data-value="auto">定型文（TaskMateが作る）</button><button type="button" data-value="ai">説明文（Task Pilotが書く）</button></div></div>
+    <div class="control"><span>計画ノートに出す項目</span><div class="seg" data-key="filter"><button type="button" data-value="all">すべて</button><button type="button" data-value="changed">変わるものだけ</button></div></div>
+    <div class="control"><span>計画ノートの並べ方</span><div class="seg" data-key="group"><button type="button" data-value="date">日付ごと</button><button type="button" data-value="kind">変わり方ごと</button></div></div>
+  </div>
+
+  <div class="panes">
+    <section class="pane" aria-labelledby="plan-tab">
+      <div class="pane-tab" id="plan-tab"><strong>計画ノート</strong><span>TaskMate/Plans/plan-manual-check.md</span></div>
+      <div class="pane-body" id="plan"></div>
+    </section>
+    <section class="pane" aria-labelledby="review-tab">
+      <div class="pane-tab" id="review-tab"><strong>Task変更レビュー</strong><span>proposal-plan-manual-check</span></div>
+      <div class="pane-body" id="review"></div>
+    </section>
+  </div>
+
+  <section class="decide" aria-labelledby="decide-title">
+    <h2 id="decide-title">決めたいこと</h2>
+    <ol>
+      <li>要約を書くのはどちらか：TaskMate が変更内容から作る定型文か、Task Pilot が理由も含めて書く説明文か、両方か。</li>
+      <li>計画ノートで、変わらない項目も並べるか、変わるものだけにするか。</li>
+      <li>計画ノートを日付ごとに並べるか、変わり方ごとに並べるか。</li>
+      <li>日本語で使うとき、計画ノートとレビューの理由に残っている英語（Working plan、min、overdue from など）をすべて日本語にするか。</li>
+    </ol>
+    <h3>決めたこと（2026年10月24日）</h3>
+    <ol>
+      <li>要約は Task Pilot が説明文として書く。</li>
+      <li>計画ノートには変わらない項目も含めてすべて並べ、変わらないことを示す。</li>
+      <li>計画ノートは日付ごとに並べる。</li>
+      <li>計画ノートとレビューの理由は、TaskMate の言語設定に合わせて英語か日本語で書く。</li>
+    </ol>
+    <p class="legend">PLAN-01 などは、計画の中の項目の番号です。「PLAN-03 を木曜に移して」のように修正を頼むときや、レビューに入れる範囲を指定するときに使います。番号は案を選んだときの順番で付き、日付を動かしても変わりません。</p>
+  </section>
+</div>
+
+<script>
+const ITEMS = [
+  { id: "PLAN-01", task: "請求書の金額を確認する", date: "2026-10-23", est: "15〜30分（推定）", estEn: "15–30 min (inference)",
+    kind: "earlier", badge: "日付を前倒し", detail: "10/20（期限切れ）→ 10/23（今日）",
+    reason: "期限を過ぎているので最初に片付ける。", ai: "期限切れなので今日の最初に片付けます。",
+    notesEn: "overdue from 2026-10-20; in proposal-plan-manual-check", review: "t1" },
+  { id: "PLAN-02", task: "週次レポートを書く", date: "2026-10-23", est: "30〜60分（推定）", estEn: "30–60 min (inference)",
+    kind: "same", badge: "変更なし", detail: "今の日付 10/23 のまま",
+    reason: "今日が期限のレポート。", notesEn: "", review: null },
+  { id: "PLAN-04", task: "デモ環境を更新する", date: "2026-10-28", est: "30〜60分（推定）", estEn: "30–60 min (inference)",
+    kind: "same", badge: "変更なし", detail: "今の日付 10/28 のまま",
+    reason: "既存の日付のまま。", notesEn: "", review: null },
+  { id: "PLAN-03", task: "歯医者の予約を取る", date: "2026-10-29", est: "5〜15分（推定）", estEn: "5–15 min (inference)",
+    kind: "added", badge: "日付を追加", detail: "日付なし → 10/29（木）",
+    reason: "月曜は外出が多いので木曜に電話する。", ai: "月曜は外出が多いので、木曜に電話します。",
+    notesEn: "placed by the user; newly dated; in proposal-plan-manual-check", review: "t2" },
+  { id: "PLAN-06", task: "読書メモを整理する", date: "2026-10-29", est: "15〜30分（あなたの見積もり）", estEn: "15–30 min (user)",
+    kind: "added", badge: "日付を追加", detail: "日付なし → 10/29（木）",
+    reason: "30分あれば終わると見積もった。", ai: "30分で終わるので、木曜の空き時間に入れます。",
+    notesEn: "placed by the user; newly dated; in proposal-plan-manual-check", review: "t3" },
+  { id: "PLAN-05", task: "勉強会の発表資料を作る", date: "2026-10-30", est: "45〜60分（あなたの見積もり）", estEn: "45–60 min (user)",
+    kind: "added", badge: "日付と中身を追加", detail: "日付なし → 10/30（金）、Steps 2つ（構成を決める・スライドを作る）、ラベル context/pc",
+    reason: "構成とスライドで1時間と見積もった。", ai: "金曜に1時間で、構成とスライドの2段階に分けて進めます。",
+    notesEn: "placed by the user; newly dated; proposes addLabels, steps; in proposal-plan-manual-check", review: "t4" }
+];
+const DAYS = {
+  "2026-10-23": { label: "10月23日（金）", en: "2026-10-23 (Fri)", cap: "90 / 96分", capEn: "90 of 96 min" },
+  "2026-10-28": { label: "10月28日（水）", en: "2026-10-28 (Wed)", cap: "60 / 72分", capEn: "60 of 72 min" },
+  "2026-10-29": { label: "10月29日（木）", en: "2026-10-29 (Thu)", cap: "45 / 72分", capEn: "45 of 72 min" },
+  "2026-10-30": { label: "10月30日（金）", en: "2026-10-30 (Fri)", cap: "60 / 72分", capEn: "60 of 72 min" }
+};
+const KINDS = [
+  { kind: "earlier", label: "日付を前倒しするもの" },
+  { kind: "added", label: "日付などを追加するもの" },
+  { kind: "same", label: "変わらないもの" }
+];
+const TASKS = [
+  { key: "t1", plan: "PLAN-01", title: "請求書の金額を確認する", changes: [
+    { id: "C-01", field: "日付", before: "10/20（期限切れ）", after: "10/23（今日）", rawBefore: "2026-10-20", rawAfter: "2026-10-23" }] },
+  { key: "t2", plan: "PLAN-03", title: "歯医者の予約を取る", changes: [
+    { id: "C-02", field: "日付", before: "なし", after: "10/29（木）", rawBefore: "—", rawAfter: "2026-10-29" }] },
+  { key: "t3", plan: "PLAN-06", title: "読書メモを整理する", changes: [
+    { id: "C-03", field: "日付", before: "なし", after: "10/29（木）", rawBefore: "—", rawAfter: "2026-10-29" }] },
+  { key: "t4", plan: "PLAN-05", title: "勉強会の発表資料を作る", changes: [
+    { id: "C-04", field: "日付", before: "なし", after: "10/30（金）", rawBefore: "—", rawAfter: "2026-10-30" },
+    { id: "C-05", field: "Steps", before: "なし", after: "構成を決める、スライドを作る", rawBefore: "—", rawAfter: "構成を決める, スライドを作る" },
+    { id: "C-06", field: "ラベル", before: "なし", after: "context/pc", rawBefore: "—", rawAfter: "context/pc" }] }
+];
+const SUMMARY = {
+  auto: "6件のうち4件の Task が変わります。日付の前倒しが1件、日付の追加が3件で、そのうち1件は Steps とラベルも加えます。残りの2件は今の日付のままです。",
+  ai: "期限を過ぎた請求書の確認を今日に入れ、日付のなかった3件に来週の日付を入れます。勉強会の資料は金曜に、構成とスライドに分けて進めます。週次レポートとデモ環境の更新は今の予定どおりです。"
+};
+
+const state = { mode: "proposed", summary: "ai", filter: "all", group: "date", target: null, approved: new Set(TASKS.flatMap((task) => task.changes.map((change) => change.id))), status: "" };
+try { const saved = JSON.parse(localStorage.getItem("plan-change-preview") || "{}"); for (const key of ["mode", "summary", "filter", "group"]) if (saved[key]) state[key] = saved[key]; } catch {}
+
+const esc = (value) => String(value).replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[char]);
+const itemByReview = (key) => ITEMS.find((item) => item.review === key);
+const taskOf = (key) => TASKS.find((task) => task.key === key);
+const oneLine = (item) => state.summary === "ai" ? item.ai : `${item.badge}：${item.detail}`;
+
+function renderPlan() {
+  const root = document.getElementById("plan");
+  if (state.mode === "current") {
+    const lines = ["# Plan for 2026-10-23", "", "Today: 96 of 120 min after a 20% buffer.", "Future capacity (explicit, confirmed 2026-10-23T09:00:00+09:00): 90 min on Mon, Tue, Wed, Thu, Fri, 20% buffer.", "Task change Proposal proposal-plan-manual-check: all scope, 4 Tasks, plan revision 4.", "", "## Working plan"];
+    for (const [date, day] of Object.entries(DAYS)) {
+      lines.push("", `### ${day.en} — ${day.capEn}`, "");
+      for (const item of ITEMS.filter((value) => value.date === date)) {
+        lines.push(`- ${item.id} [[${item.task}]] — ${item.estEn}${item.notesEn ? `; ${item.notesEn}` : ""}. ${item.reason}`);
+      }
+    }
+    lines.push("", "## Recommended base", "…", "## Evidence base", "…");
+    root.innerHTML = `<p class="capacity">今のノートの見た目です（内部の目印のコメントは省いています）。どれが変わるのかは、英語の注記「in proposal-…」から読み取るしかありません。</p><div class="raw" tabindex="0" role="region" aria-label="今の計画ノート">${esc(lines.join("\n"))}</div>`;
+    return;
+  }
+  const changed = ITEMS.filter((item) => item.kind !== "same");
+  const visible = ITEMS.filter((item) => state.filter === "all" || item.kind !== "same");
+  const groups = state.group === "date"
+    ? Object.entries(DAYS).map(([date, day]) => ({ title: day.label, cap: day.cap, items: visible.filter((item) => item.date === date) }))
+    : KINDS.map((kind) => ({ title: kind.label, cap: "", items: visible.filter((item) => item.kind === kind.kind) }));
+  root.innerHTML = `
+    <article class="note">
+      <h1>10月23日（金）からの計画</h1>
+      <p class="capacity">今日の作業時間は96分（120分から余白20%を引いた分）。来週以降は平日90分で、余白20%を引いて計画します。10/26（月）は定例で30分少なく、10/27（火）は作業しません。</p>
+      <section class="summary" aria-labelledby="plan-summary-title">
+        <h2 id="plan-summary-title">この計画で変わること</h2>
+        <p>${esc(SUMMARY[state.summary])}</p>
+        <span class="summary-kind">${state.summary === "ai" ? "Task Pilot が計画を作るときに書いた説明文" : "変更内容から TaskMate が作る定型文"}</span>
+        <div class="chips">
+          <span class="chip">変わる ${changed.length}件</span>
+          <span class="chip">変わらない ${ITEMS.length - changed.length}件</span>
+          <button type="button" class="chip" data-jump-review="">Task変更レビュー：承認待ち ${changed.length}件</button>
+        </div>
+      </section>
+      <h2>作業計画</h2>
+      ${groups.filter((group) => group.items.length).map((group) => `
+        <h3>${esc(group.title)}${group.cap ? `<span class="cap">${esc(group.cap)}</span>` : ""}</h3>
+        <ul class="items">${group.items.map(renderItem).join("")}</ul>`).join("")}
+      ${state.filter === "changed" ? `<p class="omitted">変わらないため表示していない Task：${ITEMS.filter((item) => item.kind === "same").map((item) => esc(item.task)).join("、")}</p>` : `<p class="omitted">変わらないため Task変更レビューに入れなかったもの：${ITEMS.filter((item) => item.kind === "same").map((item) => esc(item.task)).join("、")}</p>`}
+      <details><summary>元にした2つの案（推奨案と根拠案）</summary><p>推奨案は推定の所要時間も使って全件を並べた案、根拠案は Task に書かれた情報だけで並べた案です。今回は推奨案を選び、そのあと3件を手で動かしています。</p></details>
+    </article>`;
+}
+
+function renderItem(item) {
+  const target = state.target === item.id ? " is-target" : "";
+  return `<li class="item${item.kind === "same" ? " is-same" : ""}${target}" id="plan-${item.id}">
+    <div class="item-head"><span class="plan-id">${item.id}</span><a class="task-link" href="#plan-${item.id}">${esc(item.task)}</a><span class="est">${esc(item.est)}</span></div>
+    <div class="change"><span class="badge ${item.kind}">${esc(item.badge)}</span><span class="detail">${esc(item.detail)}</span></div>
+    <p class="reason">${esc(item.reason)}</p>
+    ${item.review ? `<button type="button" class="to-review" data-review="${item.review}">レビューで ${taskOf(item.review).changes.map((change) => change.id).join("・")} を見る</button>` : ""}
+  </li>`;
+}
+
+function renderReview() {
+  const root = document.getElementById("review");
+  const current = state.mode === "current";
+  const selected = state.approved.size;
+  root.innerHTML = `
+    <div class="review-head"><h2>Task変更をレビュー</h2><p>proposal-plan-manual-check・元の計画：plan-manual-check</p></div>
+    ${current ? "" : `
+    <section class="summary" aria-labelledby="review-summary-title">
+      <h2 id="review-summary-title">このレビューで変わること</h2>
+      <p>${esc(SUMMARY[state.summary])}</p>
+      <ol class="lines">${TASKS.map((task) => `<li><button type="button" data-plan-item="${task.plan}">${esc(task.title)}</button>：${esc(oneLine(itemByReview(task.key)))}</li>`).join("")}</ol>
+    </section>`}
+    <div class="toolbar">
+      <div class="seg" role="group" aria-label="選択"><button type="button" data-select="all">すべて選択</button><button type="button" data-select="none">選択を解除</button></div>
+      <div class="seg" role="group" aria-label="表示"><button type="button" aria-pressed="true">項目</button><button type="button" aria-pressed="false" disabled>全文</button></div>
+    </div>
+    <div class="tasks">${TASKS.map((task) => `
+      <section class="task${state.target === task.key ? " is-target" : ""}" id="review-${task.key}" aria-label="${esc(task.title)}">
+        <h3>${esc(task.title)}${current ? "" : `<span class="one-line">${esc(oneLine(itemByReview(task.key)))}</span>`}</h3>
+        ${task.changes.map((change) => renderRow(task, change, current)).join("")}
+      </section>`).join("")}
+    </div>
+    <div class="footer"><span class="status" role="status">${esc(state.status)}</span><button type="button" class="apply" data-apply="">選んだ変更を反映（${selected}）</button></div>`;
+}
+
+function renderRow(task, change, current) {
+  const item = itemByReview(task.key);
+  const reason = current
+    ? `${item.reason} (rolling plan plan-manual-check ${item.id}; ${item.notesEn.split("; in proposal")[0]})`
+    : `${item.reason}（計画 ${item.id}）`;
+  const values = current ? `${change.rawBefore} → ${change.rawAfter}` : `${change.before} → ${change.after}`;
+  return `<label class="row"><input type="checkbox" data-change="${change.id}" ${state.approved.has(change.id) ? "checked" : ""}>
+    <span class="cid">${change.id}</span>
+    <span class="row-body"><span><span class="field">${esc(current ? fieldEn(change.field) : change.field)}</span>　<span class="values">${esc(values)}</span></span><span class="reason">${esc(reason)}</span></span></label>`;
+}
+
+function fieldEn(field) { return { "日付": "date", "Steps": "steps", "ラベル": "labels" }[field] ?? field; }
+
+function render() {
+  for (const group of document.querySelectorAll(".seg[data-key]")) {
+    for (const button of group.querySelectorAll("button")) button.setAttribute("aria-pressed", String(state[group.dataset.key] === button.dataset.value));
+    const disabled = state.mode === "current" && group.dataset.key !== "mode";
+    for (const button of group.querySelectorAll("button")) button.disabled = disabled;
+  }
+  renderPlan();
+  renderReview();
+  try { localStorage.setItem("plan-change-preview", JSON.stringify({ mode: state.mode, summary: state.summary, filter: state.filter, group: state.group })); } catch {}
+}
+
+function focusTarget(id) {
+  const element = document.getElementById(id);
+  if (element) element.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "nearest" });
+}
+
+document.addEventListener("click", (event) => {
+  const seg = event.target.closest(".seg[data-key] button");
+  if (seg) { state[seg.parentElement.dataset.key] = seg.dataset.value; state.target = null; state.status = ""; render(); return; }
+  const toReview = event.target.closest("[data-review]");
+  if (toReview) { state.target = toReview.dataset.review; render(); focusTarget(`review-${state.target}`); return; }
+  const toPlan = event.target.closest("[data-plan-item]");
+  if (toPlan) {
+    state.target = toPlan.dataset.planItem; state.filter = "all"; render(); focusTarget(`plan-${state.target}`); return;
+  }
+  if (event.target.closest("[data-jump-review]")) { focusTarget("review"); return; }
+  const select = event.target.closest("[data-select]");
+  if (select) {
+    state.approved = new Set(select.dataset.select === "all" ? TASKS.flatMap((task) => task.changes.map((change) => change.id)) : []);
+    state.status = ""; render(); return;
+  }
+  if (event.target.closest("[data-apply]")) { state.status = `試作のため反映はしていません（選んだ変更 ${state.approved.size}件）。`; renderReview(); }
+});
+document.addEventListener("change", (event) => {
+  const box = event.target.closest("[data-change]");
+  if (!box) return;
+  if (box.checked) state.approved.add(box.dataset.change); else state.approved.delete(box.dataset.change);
+  state.status = ""; renderReview();
+});
+render();
+</script>
+</body>
+</html>

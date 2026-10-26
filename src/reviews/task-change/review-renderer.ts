@@ -7,6 +7,7 @@ export interface TaskChangeReviewState {
 
 export interface TaskChangeReviewCopy {
   title: string;
+  summaryTitle: string;
   apply: string;
   reject: string;
   selectAll: string;
@@ -67,6 +68,9 @@ export function renderTaskChangeReview(
     header.append(back);
   }
 
+  const sections = new Map<string, HTMLElement>();
+  renderSummary(container, review, copy, sections);
+
   const controls = element("div", "taskmate-review-controls", container);
   const allIds = review.tasks.flatMap((task) => task.changes.map((change) => change.id));
   const selectedAllCount = selectedCount(allIds, state.approvedChangeIds);
@@ -86,6 +90,7 @@ export function renderTaskChangeReview(
     const section = element("section", "taskmate-review-file", list);
     section.id = `taskmate-review-${task.taskId}`;
     section.dataset.reviewAnchor = task.taskId;
+    sections.set(task.taskId, section);
     const fileHeader = element("div", "taskmate-review-file-header", section);
     const identity = element("div", "taskmate-review-file-identity", fileHeader);
     appendTextElement(identity, "h3", task.title);
@@ -96,6 +101,7 @@ export function renderTaskChangeReview(
       taskActions.append(bulkButton(copy.selectTask, "taskmate-review-select-task", selectedTaskCount === taskIds.length, () => dispatch({ type: "set-many-approved", changeIds: taskIds, approved: true })));
       taskActions.append(bulkButton(copy.clearTask, "taskmate-review-clear-task", selectedTaskCount === 0, () => dispatch({ type: "set-many-approved", changeIds: taskIds, approved: false })));
     }
+    if (task.summary) appendTextElement(section, "p", task.summary, "taskmate-review-task-summary");
 
     if (state.mode === "semantic") {
       for (const change of task.changes) {
@@ -140,6 +146,24 @@ export function renderTaskChangeReview(
     const reject = button(copy.reject, () => dispatch({ type: "reject" }));
     reject.classList.add("taskmate-review-reject", "mod-warning");
     footer.append(reject);
+  }
+}
+
+// Task Pilot's explanations, shown above the changes only when the Proposal carries them.
+function renderSummary(container: HTMLElement, review: ProposalReview, copy: TaskChangeReviewCopy, sections: ReadonlyMap<string, HTMLElement>): void {
+  const described = review.tasks.filter((task) => task.summary);
+  if (!review.summary && described.length === 0) return;
+  const summary = element("section", "taskmate-review-summary", container);
+  appendTextElement(summary, "h3", copy.summaryTitle);
+  if (review.summary) appendTextElement(summary, "p", review.summary);
+  if (described.length === 0) return;
+  const list = element("ol", "taskmate-review-summary-tasks", summary);
+  for (const task of described) {
+    const item = element("li", "", list);
+    const jump = button(task.title, () => sections.get(task.taskId)?.scrollIntoView({ block: "start" }));
+    jump.classList.add("taskmate-review-summary-jump");
+    item.append(jump);
+    appendTextElement(item, "span", task.summary ?? "", "taskmate-review-summary-line");
   }
 }
 

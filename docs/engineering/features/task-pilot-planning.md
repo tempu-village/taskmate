@@ -1,7 +1,7 @@
 # Task Pilot review and capacity planning
 
 Approval: Accepted — product review confirmed on 2026-10-11.
-Implementation: Implemented on the current branch — tracked by [Issue #52](https://github.com/tempu-village/taskmate/issues/52), with rolling plans tracked by [Issue #60](https://github.com/tempu-village/taskmate/issues/60); not yet identified with a release.
+Implementation: Implemented on the current branch — tracked by [Issue #52](https://github.com/tempu-village/taskmate/issues/52), with rolling plans tracked by [Issue #60](https://github.com/tempu-village/taskmate/issues/60) and their change display and language tracked by [Issue #82](https://github.com/tempu-village/taskmate/issues/82); not yet identified with a release.
 
 > English is canonical. Japanese is an AI-translated reference.
 
@@ -126,6 +126,16 @@ The user selects exactly one base as the working plan and revises it through Tas
 
 Only an explicit request turns the working plan into a Task change Proposal. Without a range, it covers every date; `today only` or named `PLAN-xx` items narrow it. Task Pilot rereads each Task and omits missing, completed, stale, unchanged, or already proposed items without blocking the rest. Plan-derived changes are limited to the date, new `context/*` labels, Steps, and Notes. The Proposal opens in the [Task change review](task-change-review/README.md), and no Task changes before approval there.
 
+#### Reading what a plan changes
+
+A plan is written in the output language: an explicit English or Japanese TaskMate setting first, then the language the desktop Obsidian app recorded under Auto (see [Localization](localization.md)), then English. Every heading and fixed phrase follows it, including the title, capacity lines, day headings and weekday names, estimate units and bases, change and placement notes, gap and conflict descriptions, and review notes. IDs, Task titles, labels, frontmatter keys and machine-readable comments stay unchanged. Each plan write follows the setting current at that time.
+
+After a base is selected, a "What this plan changes" section precedes the working plan. It contains Task Pilot's summary, a short report of the important changes and what stays as it is, followed by counts of planned items that change, planned items that do not, and items not scheduled. Task Pilot must supply a new summary each time it selects a base or revises the working plan. Every item stays visible and grouped by date. Each planned item states its change, judged against the Task as captured when the plan was made: a date added, a past date moved, a date moved earlier or later (with the reason when it was for capacity or placed by the user), labels added, Steps set or Notes updated, or that it stays on its date. Gaps and conflicts state that the Task does not change.
+
+Once a Task change review exists, each included item names it, each item the review left out says why (nothing changes, the Task changed after planning, it is completed, or it no longer exists), and an item revised after its review says a new review is needed. A Proposal generated from the plan carries the plan's summary and a one-line summary per included Task that Task Pilot supplies, and its change reasons name the plan item and any move in the output language. The summaries only explain; the typed changes alone are approved and applied.
+
+The plan file uses schema version 2. A plan written by an earlier Task Pilot is refused with guidance to create a new plan from current Tasks.
+
 ## Context label vocabulary
 
 A Context label is an ordinary, user-editable Label whose name begins with `context/`. It describes circumstances in which a Task is practical to perform. It is neither a Task status nor required metadata. Multiple Context labels may be attached to one Task.
@@ -217,8 +227,12 @@ All criteria below are implemented on the current branch. Semantic judgment stil
 - PLAN-21: An unqualified Proposal request covers every working-plan date; `today only` or explicit `PLAN-xx` IDs cover only that subset, and plan-derived changes are limited to date, `context/*` labels, Steps, and Notes.
 - PLAN-22: Proposal generation omits stale, completed, missing, unchanged, and already proposed Tasks while unaffected Tasks continue, and no Task changes before approval in the Task change Review View.
 - PLAN-23: Replanning starts from current canonical Tasks and marks the prior plan `superseded` without treating unapproved plan dates as facts.
+- PLAN-24: With TaskMate set to Japanese, or to Auto with a recorded Japanese desktop language, a new rolling plan and the reasons of its Proposals contain no English interface text other than IDs, Task titles, labels and code identifiers.
+- PLAN-25: Each working-plan item states its change or that it does not change, every item stays visible grouped by date, and the changed and unchanged counts match the items an all-dates Proposal includes and omits.
+- PLAN-26: Selecting a base and revising the working plan require Task Pilot's one-paragraph summary, and a Proposal generated from the plan carries it with a one-line summary for every included Task.
+- PLAN-27: Each item names the Task change review that includes it, states readably why a review left it out, or says it was revised after its review.
 
-Automated evidence: [planning behavior tests](../../../skills/taskpilot/tests/test_planning_store.py), [rolling-plan tests](../../../skills/taskpilot/tests/test_rolling_plan.py) for PLAN-17 through PLAN-23, and [Task store tests](../../../skills/taskpilot/tests/test_todo_store.py). The deterministic planning tests cover 50-Task grouping, stale and partial writes, 20% capacity arithmetic, upper-bound packing, Context evidence, read-only plans, estimate clarification, and schedule/Priority conflict disclosure. They cannot prove that an agent's semantic estimates or reasons are good; the visible user review remains required.
+Automated evidence: [planning behavior tests](../../../skills/taskpilot/tests/test_planning_store.py), [rolling-plan tests](../../../skills/taskpilot/tests/test_rolling_plan.py) for PLAN-17 through PLAN-27, and [Task store tests](../../../skills/taskpilot/tests/test_todo_store.py). The deterministic planning tests cover 50-Task grouping, stale and partial writes, 20% capacity arithmetic, upper-bound packing, Context evidence, read-only plans, estimate clarification, and schedule/Priority conflict disclosure. They cannot prove that an agent's semantic estimates or reasons are good; the visible user review remains required.
 
 ## Out of scope for this iteration
 
@@ -240,6 +254,8 @@ Automated evidence: [planning behavior tests](../../../skills/taskpilot/tests/te
 
 The rolling-plan part of [RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md), [Issue #60](https://github.com/tempu-village/taskmate/issues/60), is implemented as described in [Maintaining a rolling plan](#maintaining-a-rolling-plan); the conversation capacity plan above remains available for a single bounded window. The rest of the RFC, the Import review and the shared review list, is described in the [Source-note import](source-import.md) and [Task change review](task-change-review/README.md) Features.
 
+The change display and output language of rolling plans follow [Show what plans and reviews change](../rfcs/show-plan-and-review-changes.md), [Issue #82](https://github.com/tempu-village/taskmate/issues/82), whose [interactive mockup](../rfcs/assets/plan-review-change-display.html) records the options compared.
+
 ## Related specifications and features
 
 - [Task schema](../../../skills/taskpilot/references/task-schema.md)
@@ -250,6 +266,8 @@ The rolling-plan part of [RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-an
 - [Storage and privacy](storage-and-privacy.md)
 - [Task change review](task-change-review/README.md)
 - [RFC 0033: Reviewable rolling plans and Source candidate reviews](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md)
+- [RFC: Show what plans and reviews change](../rfcs/show-plan-and-review-changes.md)
+- [Localization](localization.md)
 
 ## 日本語参考
 
@@ -257,7 +275,7 @@ The rolling-plan part of [RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-an
 
 > 翻訳状態：`ai-translated`。英語版が正本です。
 
-承認：2026年10月11日の製品レビューで採用済み。実装：現在のブランチへ実装済みで、[Issue #52](https://github.com/tempu-village/taskmate/issues/52)で追跡します。対応リリースはまだ特定していません。
+承認：2026年10月11日の製品レビューで採用済み。実装：現在のブランチへ実装済みで、[Issue #52](https://github.com/tempu-village/taskmate/issues/52)、計画は[Issue #60](https://github.com/tempu-village/taskmate/issues/60)、計画の変更表示と言語は[Issue #82](https://github.com/tempu-village/taskmate/issues/82)で追跡します。対応リリースはまだ特定していません。
 
 ### 目的と範囲
 
@@ -356,6 +374,16 @@ Context labelがないだけでTaskを除外しません。固定3件ではな�
 
 作業中の計画からTask変更Proposalを作るのは明示的な依頼があるときだけです。範囲の指定がなければ全日程、「今日だけ」や`PLAN-xx`の指定があればその分だけが対象です。Task Pilotは各Taskを読み直し、見つからない・完了済み・変更済み・変更なし・提案済みの項目を、ほかを止めずに外します。計画から変えられるのは日付、新しい`context/*`、Steps、Notesだけです。Proposalは[Task変更レビュー](task-change-review/README.md)で開き、そこで承認するまでTaskは変わりません。
 
+#### 計画で何が変わるかを読む
+
+計画は出力言語で書きます。TaskMateで英語か日本語を明示していればその言語、「自動」ならパソコン版Obsidianが記録した言語（[Localization](localization.md)参照）、どちらもなければ英語です。タイトル、作業時間の行、日付の見出しと曜日、所要時間の単位と根拠、変更と配置の注記、日付を決めていないものと締め切りと合わないものの説明、レビューの注記まで、見出しと決まった言い回しはすべてこれに従います。ID、Taskのタイトル、ラベル、frontmatterのキー、機械用のコメントは変えません。計画を書き込むたびに、その時点の設定に従います。
+
+案を選ぶと、作業計画の前に「この計画で変わること」の欄が入ります。Task Pilotが書いた要約（大事な変更と変わらないものを伝える短い報告）と、変わる項目、変わらない項目、日付を決めていない項目の件数を示します。Task Pilotは、案を選ぶときも作業計画を修正するときも新しい要約を渡す必要があります。項目はすべて日付ごとに表示します。計画済みの各項目には、計画を作った時点のTaskと比べた変更を示します。日付の追加、過ぎた予定日の移動、日付の前倒しや後ろ倒し（時間が足りないため、またはあなたが配置した場合はその理由）、ラベルの追加、Stepsの設定、Notesの更新、または今の日付のままであることです。日付を決めていないものと締め切りと合わないものには、Taskが変わらないことを示します。
+
+Task変更レビューを作ると、含めた項目にはそのレビュー名を、含めなかった項目には理由（変わらない、計画後にTaskが変更された、完了している、見つからない）を、レビュー後に修正した項目には新しいレビューが必要なことを示します。計画から作るProposalは、計画の要約と、含める各TaskについてTask Pilotが書いた1行を持ちます。変更理由には、計画の項目と移動の事情を出力言語で書きます。要約は説明だけで、承認と反映には型付きの変更だけを使います。
+
+計画ファイルの形式はversion 2です。以前のTask Pilotで作った計画は読み込みを断り、今のTaskから新しい計画を作るよう案内します。
+
 ### Context labelの語彙
 
 Context labelは、名前が`context/`で始まる通常のユーザー編集可能なLabelです。Taskを実行しやすい状況を表し、Taskの状態でも必須情報でもありません。一つのTaskへ複数付けられます。
@@ -447,8 +475,12 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 - PLAN-21：範囲を指定しないProposal依頼は作業中の計画の全日程、「今日だけ」や`PLAN-xx`の指定はその分だけを対象にし、変更は日付、`context/*`、Steps、Notesに限る。
 - PLAN-22：Proposalの作成では、変更済み・完了済み・見つからない・変更なし・提案済みのTaskを外しつつ、ほかのTaskは続け、Task変更Review Viewで承認するまでTaskを変えない。
 - PLAN-23：計画の作り直しは今の正式なTaskから始め、前の計画を`superseded`にし、承認されていない計画上の日付を事実として扱わない。
+- PLAN-24：TaskMateを日本語、または「自動」でパソコン版の記録が日本語のとき、新しい計画とそのProposalの理由には、ID、Taskのタイトル、ラベル、コード上の識別子以外の英語を出さない。
+- PLAN-25：作業計画の各項目に変更内容か変更なしを示し、すべての項目を日付ごとに表示し、変わる件数と変わらない件数が全日程のProposalに含める項目と外す項目に一致する。
+- PLAN-26：案の選択と作業計画の修正にはTask Pilotが書いた1段落の要約が必要で、計画から作るProposalはその要約と、含めるTaskごとの1行を持つ。
+- PLAN-27：各項目に、含めたTask変更レビュー、レビューに含めなかった理由、またはレビュー後に修正したことを読める言葉で示す。
 
-自動根拠は[planning挙動テスト](../../../skills/taskpilot/tests/test_planning_store.py)、PLAN-17〜23の[計画ファイルのテスト](../../../skills/taskpilot/tests/test_rolling_plan.py)、[Task storeテスト](../../../skills/taskpilot/tests/test_todo_store.py)です。50件のグループ化、変更競合と一部失敗、20%余白、上限による容量判定、Context根拠、読み取り専用計画、見積もり要確認、予定日とPriorityの競合表示を検証します。Agentによる意味上の見積もりや理由の品質は決定的テストだけでは証明できないため、見える利用者レビューを必須とします。
+自動根拠は[planning挙動テスト](../../../skills/taskpilot/tests/test_planning_store.py)、PLAN-17〜27の[計画ファイルのテスト](../../../skills/taskpilot/tests/test_rolling_plan.py)、[Task storeテスト](../../../skills/taskpilot/tests/test_todo_store.py)です。50件のグループ化、変更競合と一部失敗、20%余白、上限による容量判定、Context根拠、読み取り専用計画、見積もり要確認、予定日とPriorityの競合表示を検証します。Agentによる意味上の見積もりや理由の品質は決定的テストだけでは証明できないため、見える利用者レビューを必須とします。
 
 ### 今回のイテレーションの対象外
 
@@ -469,6 +501,8 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 ### 実装済みのRFC
 
 [RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md)のうち計画部分（[Issue #60](https://github.com/tempu-village/taskmate/issues/60)）は、上の「見直せる計画を保つ」のとおり実装済みです。1回分の時間に合わせる会話での計画も引き続き使えます。RFCの残り（取り込みレビューと共通のレビュー一覧）は、[Source-note import](source-import.md)と[Task change review](task-change-review/README.md)のFeatureに記載しています。
+
+計画の変更表示と出力言語は[Show what plans and reviews change](../rfcs/show-plan-and-review-changes.md)（[Issue #82](https://github.com/tempu-village/taskmate/issues/82)）に従います。比べた選択肢は[試作](../rfcs/assets/plan-review-change-display.html)に残しています。
 
 ### 関連仕様と機能
 

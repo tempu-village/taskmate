@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Task } from "../../../src/tasks/domain";
 import { encodeTask } from "../../../src/tasks/markdown";
-import { applyProposalDecision, buildProposalReview } from "../../../src/reviews/task-change/proposal";
+import { applyProposalDecision, buildProposalReview, parseTaskChangeProposal } from "../../../src/reviews/task-change/proposal";
 import { sha256 } from "../../../src/shared/sha256";
 import type { TaskChangeProposal } from "../../../src/reviews/task-change/proposal";
 
@@ -267,6 +267,41 @@ describe("Task change Proposal review", () => {
     expect(result.closedProposal.result?.failed).toEqual([
       expect.objectContaining({ taskId: second.id, changeIds: ["C-03"] })
     ]);
+  });
+
+  it("reads optional plan summaries, keeps older Proposals valid and rejects blank summaries", async () => {
+    const before = encodeTask(task());
+    const after = encodeTask(task({ date: "2026-10-18", notes: "Changed", updatedAt: "2026-10-12T00:00:00.000Z" }));
+    const base = {
+      schemaVersion: 1 as const, id: "proposal-001", status: "pending" as const, createdAt: "2026-10-12T00:00:00.000Z"
+    };
+    const proposalTask = {
+      taskId: "task-uuid", path: "TaskMate/Tasks/Example.md", title: "Example",
+      beforeMarkdown: before, afterMarkdown: after, beforeSha256: await sha256(before),
+      changes: [
+        { id: "C-01", field: "date" as const, before: "2026-10-10", after: "2026-10-18", reason: "Reschedule" },
+        { id: "C-02", field: "notes" as const, before: "Original", after: "Changed", reason: "Clarify" }
+      ]
+    };
+    const described = parseTaskChangeProposal(JSON.stringify({ ...base, summary: "Move the report to Sunday.", tasks: [{ ...proposalTask, summary: "Sunday, with clearer Notes." }] }));
+    const older = parseTaskChangeProposal(JSON.stringify({ ...base, tasks: [proposalTask] }));
+
+    const review = await buildProposalReview(described);
+    expect(review.summary).toBe("Move the report to Sunday.");
+    expect(review.tasks[0].summary).toBe("Sunday, with clearer Notes.");
+    expect((await buildProposalReview(older)).summary).toBeUndefined();
+    expect(() => parseTaskChangeProposal(JSON.stringify({ ...base, summary: " ", tasks: [proposalTask] }))).toThrow("Invalid Proposal summary");
+    expect(() => parseTaskChangeProposal(JSON.stringify({ ...base, tasks: [{ ...proposalTask, summary: 3 }] }))).toThrow("Invalid Proposal task summary");
+
+    const result = await applyProposalDecision(described, ["C-01"], new Map([["task-uuid", before]]), {
+      decidedAt: "2026-10-12T01:00:00.000Z", followUpProposalId: "proposal-002"
+    });
+    const plain = await applyProposalDecision(older, ["C-01"], new Map([["task-uuid", before]]), {
+      decidedAt: "2026-10-12T01:00:00.000Z", followUpProposalId: "proposal-002"
+    });
+    expect(result.writes).toEqual(plain.writes);
+    expect(result.followUp?.summary).toBeUndefined();
+    expect(result.followUp?.tasks[0].summary).toBe("Sunday, with clearer Notes.");
   });
 
   it("builds a synchronous review for 20 small Tasks within the initial guardrail", async () => {

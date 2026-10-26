@@ -47,6 +47,9 @@ class RollingPlanTest(unittest.TestCase):
         }), encoding="utf-8")
 
     def run_script(self, script, *arguments, check=True):
+        # Plan writes that create or revise a working plan need a summary; tests that check it pass their own.
+        if script == ROLLING_PLAN and arguments[0] in {"select-base", "revise"} and "--summary" not in arguments:
+            arguments = (*arguments, "--summary", "Plan summary.")
         result = subprocess.run(
             [sys.executable, str(script), "--vault", str(self.vault), *arguments],
             check=False, capture_output=True, text=True,
@@ -202,8 +205,8 @@ class RollingPlanTest(unittest.TestCase):
         self.assertEqual((items[competing["id"]]["plannedDate"], items[competing["id"]]["moveCodes"]), ("2026-10-21", ["moved-capacity"]))
         self.assertEqual((items[overdue["id"]]["plannedDate"], items[overdue["id"]]["moveCodes"]), (TARGET, ["overdue"]))
         text = (self.vault / "TaskMate" / "Plans" / "plan-week.md").read_text(encoding="utf-8")
-        self.assertIn("moved from 2026-10-20 for capacity", text)
-        self.assertIn("overdue from 2026-10-01", text)
+        self.assertIn("move date later 2026-10-20 (Tue) → 2026-10-21 (Wed) (not enough time)", text)
+        self.assertIn("move past date 2026-10-01 (Thu) → 2026-10-19 (Mon)", text)
 
     def test_dated_tasks_keep_their_date_before_undated_work_fills_it(self):
         first = self.create_task("First undated")
@@ -396,8 +399,11 @@ class RollingPlanTest(unittest.TestCase):
         self.run_script(ROLLING_PLAN, "select-base", "--plan-id", "plan-week", "--base", "recommended", "--revision", "1")
         return today, moved, unchanged
 
-    def propose(self, proposal_id, revision, *scope, check=True):
-        return self.run_script(ROLLING_PLAN, "proposal", "--plan-id", "plan-week", "--revision", str(revision), "--proposal-id", proposal_id, *scope, check=check)
+    def propose(self, proposal_id, revision, *scope, check=True, summaries=None):
+        if summaries is None:
+            summaries = {item["id"]: f"Line for {item['title']}" for item in self.show()["working"] or [] if item["kind"] == "planned"}
+        path = self.write_json(summaries)
+        return self.run_script(ROLLING_PLAN, "proposal", "--plan-id", "plan-week", "--revision", str(revision), "--proposal-id", proposal_id, *scope, "--task-summaries", str(path), check=check)
 
     def proposal_json(self, proposal_id):
         return json.loads((self.vault / "TaskMate" / "Proposals" / f"{proposal_id}.json").read_text(encoding="utf-8"))
@@ -426,7 +432,11 @@ class RollingPlanTest(unittest.TestCase):
         self.assertTrue(all(change["field"] != "priority" for task in proposal["tasks"] for change in task["changes"]))
         plan = self.show()
         self.assertEqual(plan["proposals"][0]["itemIds"], ["PLAN-01", "PLAN-03"])
-        self.assertIn("in proposal-all", (self.vault / "TaskMate" / "Plans" / "plan-week.md").read_text(encoding="utf-8"))
+        text = (self.vault / "TaskMate" / "Plans" / "plan-week.md").read_text(encoding="utf-8")
+        self.assertIn("In Task change review proposal-all.", text)
+        self.assertIn("Not in Task change review proposal-all: nothing changes.", text)
+        self.assertEqual(proposal["summary"], "Plan summary.")
+        self.assertEqual(by_task[today["id"]]["summary"], "Line for Today work")
 
     def test_today_only_and_explicit_items_narrow_the_scope(self):
         today, moved, _ = self.ready_plan()
@@ -490,6 +500,127 @@ class RollingPlanTest(unittest.TestCase):
         _, result = self.run_script(ROLLING_PLAN, "revise", "--plan-id", "plan-week", "--revision", "3", "--changes", str(changes))
 
         self.assertEqual((result["status"], result["revision"]), ("proposal-created", 4))
+
+    def plan_text(self):
+        return (self.vault / "TaskMate" / "Plans" / "plan-week.md").read_text(encoding="utf-8")
+
+    def visible_text(self):
+        body = self.plan_text().split("---\n", 2)[2]
+        return "\n".join(line for line in body.splitlines() if "<!-- taskmate-plan" not in line)
+
+    def mixed_plan(self):
+        overdue = self.create_task("請求書を確認する", "--date", "2026-10-01")
+        kept = self.create_task("週次レポート", "--date", "2026-10-20")
+        undated = self.create_task("発表資料を作る")
+        snapshots = self.snapshots()
+        steps = [{"text": "構成を決める", "completed": False, "date": None}, {"text": "スライドを作る", "completed": False, "date": None}]
+        recommended = [
+            self.entry(overdue, snapshots, 1, reason="期限を過ぎているので最初に片付ける。"),
+            self.entry(kept, snapshots, 2, reason="今の日付のまま。"),
+            self.entry(undated, snapshots, 3, reason="構成とスライドで1時間。", proposedFields={"addLabels": ["context/pc"], "steps": steps}),
+        ]
+        evidence = [self.entry(task, snapshots, number) for number, task in enumerate((overdue, kept, undated), 1)]
+        self.create_plan(self.request(recommended, evidence, future=CONFIRMED_WEEKDAYS))
+        self.run_script(ROLLING_PLAN, "select-base", "--plan-id", "plan-week", "--base", "recommended", "--revision", "1",
+                        "--summary", "期限を過ぎた請求書を今日に入れ、資料は水曜に2段階で進めます。")
+        return overdue, kept, undated
+
+    def test_japanese_plan_has_no_english_interface_text(self):
+        sys.path.insert(0, str(SCRIPTS))
+        import rolling_plan
+        self.write_settings({"language": "auto", "desktopLanguage": "ja"})
+        self.mixed_plan()
+
+        visible = self.visible_text()
+
+        self.assertIn("# 10月19日（月）からの計画", visible)
+        self.assertIn("## この計画で変わること", visible)
+        self.assertIn("期限を過ぎた請求書を今日に入れ、資料は水曜に2段階で進めます。", visible)
+        self.assertIn("変わる：2件・変わらない：1件・日付を決めていない：0件", visible)
+        self.assertIn("### 10月19日（月） — 60 / 60分", visible)
+        self.assertIn("変更：過ぎた予定日を移動 10/1（木） → 10/19（月）", visible)
+        self.assertIn("変更なし：10/20（火）のまま", visible)
+        self.assertIn("変更：日付を追加 10/21（水）、ラベルを追加 context/pc、Stepsを設定（2件）", visible)
+        self.assertIn("60〜60分（あなたの見積もり）", visible)
+        self.assertIn("今後の作業時間（指定、2026-10-19T08:00:00Zに確認）：月・火・水・木・金に60分、余白0%。", visible)
+        for value in rolling_plan.TEXT["en"].values():
+            for fragment in re.split(r"\{[^}]+\}", value):
+                if sum(character.isalpha() for character in fragment) >= 3:
+                    self.assertNotIn(fragment, visible)
+        for name in rolling_plan.WEEKDAY_NAMES["en"]:
+            self.assertNotIn(f"({name})", visible)
+
+    def test_japanese_proposal_reasons_and_review_notes(self):
+        self.write_settings({"language": "ja"})
+        overdue, _, undated = self.mixed_plan()
+
+        _, result = self.propose("proposal-ja", 2)
+
+        proposal = self.proposal_json("proposal-ja")
+        reasons = {task["taskId"]: task["changes"][0]["reason"] for task in proposal["tasks"]}
+        self.assertEqual(reasons[overdue["id"]], "期限を過ぎているので最初に片付ける。（計画 plan-week の PLAN-01、予定日2026-10-01を過ぎていた）")
+        self.assertEqual(reasons[undated["id"]], "構成とスライドで1時間。（計画 plan-week の PLAN-03）")
+        self.assertEqual(proposal["summary"], "期限を過ぎた請求書を今日に入れ、資料は水曜に2段階で進めます。")
+        visible = self.visible_text()
+        self.assertIn("Task変更レビュー proposal-ja に含めています。", visible)
+        self.assertIn("変わらないため、Task変更レビュー proposal-ja に含めていません。", visible)
+        self.assertIn("- Task変更レビュー proposal-ja（全日程、計画の版 3）：2件を含めました。", visible)
+        self.assertEqual(len(result["included"]), 2)
+        self.assertEqual([value["reason"] for value in result["omitted"]], ["no-change"])
+
+    def test_change_counts_match_the_items_an_all_dates_proposal_includes_and_omits(self):
+        self.ready_plan()
+
+        self.assertIn("Change: 2 · No change: 1 · Not scheduled: 0", self.visible_text())
+        _, result = self.propose("proposal-all", 2)
+
+        self.assertEqual((len(result["included"]), len(result["omitted"])), (2, 1))
+
+    def test_revised_and_stale_items_explain_their_review_status(self):
+        today, _, _ = self.ready_plan()
+        self.run_script(TODO_STORE, "update", "--id", today["id"], "--title", "Edited elsewhere")
+        self.propose("proposal-first", 2)
+        move = self.write_json({"changes": [{"id": "PLAN-03", "operation": "move", "date": "2026-10-28", "reason": "Later is fine."}]})
+        self.run_script(ROLLING_PLAN, "revise", "--plan-id", "plan-week", "--revision", "3", "--changes", str(move))
+
+        visible = self.visible_text()
+
+        self.assertIn("Not in Task change review proposal-first: the Task changed after planning.", visible)
+        self.assertIn("Revised after Task change review proposal-first; a new review is needed to include the revision.", visible)
+
+    def test_working_plan_summary_is_required_and_single_paragraph(self):
+        self.simple_plan(count=1)
+
+        empty, _ = self.run_script(ROLLING_PLAN, "select-base", "--plan-id", "plan-week", "--base", "recommended", "--revision", "1", "--summary", " ", check=False)
+        multiline, _ = self.run_script(ROLLING_PLAN, "select-base", "--plan-id", "plan-week", "--base", "recommended", "--revision", "1", "--summary", "One.\nTwo.", check=False)
+        comment, _ = self.run_script(ROLLING_PLAN, "select-base", "--plan-id", "plan-week", "--base", "recommended", "--revision", "1", "--summary", "<!-- taskmate-plan {} -->", check=False)
+        too_long, _ = self.run_script(ROLLING_PLAN, "select-base", "--plan-id", "plan-week", "--base", "recommended", "--revision", "1", "--summary", "x" * 501, check=False)
+
+        self.assertIn("--summary is required", empty.stderr)
+        self.assertIn("one paragraph", multiline.stderr)
+        self.assertIn("one paragraph", comment.stderr)
+        self.assertIn("at most 500 characters", too_long.stderr)
+        self.assertIsNone(self.show()["working"])
+
+    def test_task_summaries_are_required_for_every_included_item(self):
+        self.ready_plan()
+
+        missing, _ = self.propose("proposal-missing", 2, summaries={"PLAN-01": "Today first."}, check=False)
+        unknown, _ = self.propose("proposal-unknown", 2, summaries={"PLAN-09": "Nothing."}, check=False)
+
+        self.assertIn("missing: PLAN-03", missing.stderr)
+        self.assertIn("unknown working-plan item in --task-summaries: PLAN-09", unknown.stderr)
+        self.assertFalse((self.vault / "TaskMate" / "Proposals" / "proposal-missing.json").exists())
+        self.assertEqual(self.show()["status"], "ready")
+
+    def test_plans_from_an_earlier_schema_are_refused(self):
+        self.simple_plan(count=1)
+        path = self.vault / "TaskMate" / "Plans" / "plan-week.md"
+        path.write_text(path.read_text(encoding="utf-8").replace('"schemaVersion":2', '"schemaVersion":1'), encoding="utf-8")
+
+        result, _ = self.run_script(ROLLING_PLAN, "show", "--plan-id", "plan-week", check=False)
+
+        self.assertIn("schema version 1 from an earlier Task Pilot", result.stderr)
 
     def test_invalid_plan_identifier_is_rejected(self):
         result, _ = self.run_script(ROLLING_PLAN, "show", "--plan-id", "../escape", check=False)
