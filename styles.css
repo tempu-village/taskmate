@@ -131,16 +131,24 @@
 .taskmate-import-candidate-status { margin: 0.4rem 0.7rem; color: var(--text-muted); font-size: var(--font-ui-smaller); overflow-wrap: anywhere; }
 .taskmate-import-candidate-status.is-stale { color: var(--text-warning); }
 .taskmate-import-candidate-status.is-failed { color: var(--text-error); }
-.taskmate-import-candidate-sources,
+.taskmate-import-candidate-evidence,
 .taskmate-import-candidate-fields,
 .taskmate-import-candidate-merge,
 .taskmate-import-candidate-reason,
 .taskmate-import-candidate-actions,
 .taskmate-import-candidate-edit { margin: 0.4rem 0.7rem; min-width: 0; }
-.taskmate-import-candidate-sources h4 { margin: 0 0 0.25rem; font-size: var(--font-ui-small); }
-.taskmate-import-candidate-statement { margin: 0 0 0.35rem; padding: 0.2rem 0.6rem; border-left: 3px solid var(--background-modifier-border); }
-.taskmate-import-candidate-statement cite { display: block; color: var(--text-muted); font-size: var(--font-ui-smaller); font-style: normal; overflow-wrap: anywhere; }
-.taskmate-import-candidate-statement p { margin: 0.15rem 0 0; overflow-wrap: anywhere; }
+.taskmate-import-candidate-evidence { padding-top: 0.5rem; border-top: 1px solid var(--background-modifier-border); }
+.taskmate-import-candidate-evidence h4 { margin: 0 0 0.35rem; font-size: var(--font-ui-small); }
+.taskmate-import-evidence-source { margin: 0 0 0.6rem; min-width: 0; }
+.taskmate-import-evidence-source p { margin: 0; overflow-wrap: anywhere; }
+.taskmate-import-evidence-kind,
+.taskmate-import-evidence-summary-label { color: var(--text-muted); font-size: var(--font-ui-smaller); }
+.taskmate-import-evidence-summary-label { margin-top: 0.3rem !important; }
+.taskmate-import-evidence-summary.is-missing { color: var(--text-muted); font-style: italic; }
+.taskmate-import-evidence-toggle { margin-top: 0.35rem; }
+.taskmate-import-evidence-statements { margin-top: 0.35rem; }
+.taskmate-import-candidate-statement { margin: 0 0 0.35rem; padding: 0.2rem 0.6rem; border-left: 3px solid var(--background-modifier-border); overflow-wrap: anywhere; white-space: pre-wrap; }
+.taskmate-import-review-legacy { margin: 0 0 0.6rem; color: var(--text-muted); font-size: var(--font-ui-small); }
 .taskmate-import-candidate-fields { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0.25rem 0.7rem; }
 .taskmate-import-candidate-fields dt { color: var(--text-muted); }
 .taskmate-import-candidate-fields dd { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }

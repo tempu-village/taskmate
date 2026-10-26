@@ -128,7 +128,7 @@ Only an explicit request turns the working plan into a Task change Proposal. Wit
 
 #### Reading what a plan changes
 
-A plan is written in the output language: an explicit English or Japanese TaskMate setting first, then the language the desktop Obsidian app recorded under Auto (see [Localization](localization.md)), then English. Every heading and fixed phrase follows it, including the title, capacity lines, day headings and weekday names, estimate units and bases, change and placement notes, gap and conflict descriptions, and review notes. IDs, Task titles, labels, frontmatter keys and machine-readable comments stay unchanged. Each plan write follows the setting current at that time.
+A plan is written in the output language: an explicit English or Japanese TaskMate setting first, then the language the desktop Obsidian app recorded under Auto (see [Localization](localization.md)). When neither decides it, the helper writes nothing until the agent passes `--language` with the language the user chose. Every heading and fixed phrase follows it, including the title, capacity lines, day headings and weekday names, estimate units and bases, change and placement notes, gap and conflict descriptions, and review notes. IDs, Task titles, labels, frontmatter keys and machine-readable comments stay unchanged. Each plan write follows the setting current at that time.
 
 After a base is selected, a "What this plan changes" section precedes the working plan. It contains Task Pilot's summary, a short report of the important changes and what stays as it is, followed by counts of planned items that change, planned items that do not, and items not scheduled. Task Pilot must supply a new summary each time it selects a base or revises the working plan. Every item stays visible and grouped by date. Each planned item states its change, judged against the Task as captured when the plan was made: a date added, a past date moved, a date moved earlier or later (with the reason when it was for capacity or placed by the user), labels added, Steps set or Notes updated, or that it stays on its date. Gaps and conflicts state that the Task does not change.
 
@@ -376,7 +376,7 @@ Context labelがないだけでTaskを除外しません。固定3件ではな�
 
 #### 計画で何が変わるかを読む
 
-計画は出力言語で書きます。TaskMateで英語か日本語を明示していればその言語、「自動」ならパソコン版Obsidianが記録した言語（[Localization](localization.md)参照）、どちらもなければ英語です。タイトル、作業時間の行、日付の見出しと曜日、所要時間の単位と根拠、変更と配置の注記、日付を決めていないものと締め切りと合わないものの説明、レビューの注記まで、見出しと決まった言い回しはすべてこれに従います。ID、Taskのタイトル、ラベル、frontmatterのキー、機械用のコメントは変えません。計画を書き込むたびに、その時点の設定に従います。
+計画は出力言語で書きます。TaskMateで英語か日本語を明示していればその言語、「自動」ならパソコン版Obsidianが記録した言語（[Localization](localization.md)参照）です。どちらでも決まらないときは、利用者が選んだ言語をAgentが`--language`で渡すまで何も書きません。タイトル、作業時間の行、日付の見出しと曜日、所要時間の単位と根拠、変更と配置の注記、日付を決めていないものと締め切りと合わないものの説明、レビューの注記まで、見出しと決まった言い回しはすべてこれに従います。ID、Taskのタイトル、ラベル、frontmatterのキー、機械用のコメントは変えません。計画を書き込むたびに、その時点の設定に従います。
 
 案を選ぶと、作業計画の前に「この計画で変わること」の欄が入ります。Task Pilotが書いた要約（大事な変更と変わらないものを伝える短い報告）と、変わる項目、変わらない項目、日付を決めていない項目の件数を示します。Task Pilotは、案を選ぶときも作業計画を修正するときも新しい要約を渡す必要があります。項目はすべて日付ごとに表示します。計画済みの各項目には、計画を作った時点のTaskと比べた変更を示します。日付の追加、過ぎた予定日の移動、日付の前倒しや後ろ倒し（時間が足りないため、またはあなたが配置した場合はその理由）、ラベルの追加、Stepsの設定、Notesの更新、または今の日付のままであることです。日付を決めていないものと締め切りと合わないものには、Taskが変わらないことを示します。
 

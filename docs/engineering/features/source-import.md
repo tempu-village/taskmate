@@ -13,6 +13,8 @@ Inventory every statement that could imply an action before proposing create, me
 
 Task Pilot stages one Import review JSON under the configured proposal folder for each review. Staging creates no canonical Tasks. The user reads, edits and decides every candidate in TaskMate's Import Review View, opened from the shared review list or the review URI, and applies approved candidates through a separate confirmation. Held and undecided candidates remain pending, and a partly applied review stays in the pending list. Provenance is written once per Source note when every candidate from that note is applied, and a fully applied review moves to the proposal folder's `History` area, where it remains until the user removes it.
 
+Task Pilot stages a review only when the Vault's installed TaskMate and the plugin Obsidian has loaded both read the current review format; otherwise it writes nothing and asks the user to update and reload TaskMate. Each candidate card shows the Task it would produce first, then its decisions, and last the evidence: each Source note or conversation once, with Task Pilot's summary of what that Source says for this candidate, and the exact statements collapsed until the user expands them. Generated text is written in the review's content language. Reviews staged in the two earlier formats stay readable and are completed in their own format, marked as earlier reviews without summaries.
+
 Formal apply rechecks Source snapshots and merge targets. A changed Source or target blocks only its own candidates, which then need renewed review. Retrying never duplicates a created Task or a merge. Preserve unrelated source prose and properties and existing Task associations. Do not invent dates, priorities, labels or projects without source or request authority.
 
 ## Current discovery limitation
@@ -25,6 +27,9 @@ The Python helper currently enumerates Vault Markdown and reads non-managed note
 - IMPORT-02: Applying one candidate while others are held keeps the review pending; applying the rest moves it to History; retries do not duplicate Tasks or merges.
 - IMPORT-03: Exclusions require the user's decision; a changed Source or merge target blocks only its own candidates.
 - IMPORT-04: Provenance is written once per completed note with its created and merge-target Task IDs, keeping IDs from earlier imports.
+- IMPORT-05: Staging writes nothing when the installed or loaded TaskMate cannot read the review format, and names the required version and the reload step.
+- IMPORT-06: A candidate card names each Source once with its summary below the Task fields and decisions; its statements are collapsed by default and expand in their original order.
+- IMPORT-07: Source candidate reviews and first-format Import reviews are listed, decided, edited, applied and moved to History without changing their IDs, type or schema version.
 
 Evidence: Task Pilot [staging tests](../../../skills/taskpilot/tests/test_import_review.py) and [store tests](../../../skills/taskpilot/tests/test_todo_store.py); TaskMate [Import review tests](../../../test/reviews/import/) for the Domain, formal apply, provenance parity, editing and the Review View; and the [Review Catalog tests](../../../test/reviews/shared/review-catalog.test.ts). These deterministic tests do not prove an agent extracted every semantic action; review actual notes against the statement inventory.
 
@@ -61,6 +66,8 @@ Statement validation checks the declared inventory, not whether the agent unders
 
 Task Pilotは、レビューごとに1つの取り込みレビューJSONを提案フォルダーへステージします。ステージでは正式なTaskを作りません。利用者は、共通のレビュー一覧かレビューのURIから開くTaskMateの取り込みReview Viewで、すべての候補を読み、編集し、判断し、別の確認を経て承認した候補を反映します。保留と未決の候補は未処理のまま残り、一部だけ反映したレビューは未レビューの一覧に残ります。取り込み履歴は、そのノートの候補がすべて反映された時点でノートごとに1回だけ書き、全候補を反映したレビューは提案フォルダーの`History`へ移り、利用者が消すまで残ります。
 
+Task Pilotは、Vaultに入っているTaskMateと、Obsidianが読み込んでいるTaskMateの両方が今のレビュー形式を読めるときだけレビューをステージします。読めなければ何も書かず、TaskMateを更新して再読み込みするよう案内します。候補カードには、作られるTask、判断の操作、最後に根拠の順で表示します。根拠では元ノートや会話を1回だけ示し、その候補についてTask Pilotが書いた要約を添え、原文の該当箇所は利用者が開くまで折りたたみます。生成する文はレビューの言語で書きます。以前の2つの形式でステージしたレビューも読み込め、要約のない旧形式として表示し、元の形式のまま完了できます。
+
 正式反映ではSourceと統合先のスナップショットを確かめ直します。Sourceや統合先が変わっていれば、その候補だけを止め、再レビューが必要になります。やり直しても、作成したTaskや統合が二重になることはありません。本文、無関係なProperty、既存の関連Taskを保ち、根拠のない日付・優先度・ラベル・所属は付けません。
 
 現在のPython探索は管理領域以外のMarkdownを読み、適格性を判定します。「対象外を一切読まない」は現在の保証ではありません。[索引](source-note-index.md)と[Vault登録](agent-vault-setup.md)は提案・未実装です。
@@ -69,4 +76,4 @@ Agentが文の棚卸しとステージ用の依頼を作り、todo storeが対�
 
 正式反映は候補ごとにレビューを保存し、保存に失敗したらそこで止まります。作るTaskのIDはレビュー・候補・版番号から決まり、統合先が既に結果と同じなら反映済みとみなすため、中断後のやり直しでも二重作成や二重統合は起きません。取り込み履歴の書き込みに失敗した場合は、次の反映でやり直します。全候補の反映後にノートが変わっていた場合は、取り込み履歴を書かずに報告します。棚卸しの検証は宣言された文を確かめるだけで、Agentが文中の行動をすべて理解したかは証明しないため、TaskMateでの人のレビューが必要です。
 
-IMPORT-01：2つのノートから、すべての文を正確に一度候補へ割り当てた1つのレビューを作り、ステージではTaskを作らない。IMPORT-02：一部の候補だけを反映して他を保留するとレビューは未処理のまま残り、残りを反映するとHistoryへ移り、やり直してもTaskや統合が二重にならない。IMPORT-03：除外には利用者の判断が必要で、Sourceや統合先の変更はその候補だけを止める。IMPORT-04：取り込み履歴は完了したノートごとに1回だけ書き、作成したTaskと統合先のIDを含め、以前の取り込みのIDも保つ。自動テストだけではAIの意味的な抽出漏れを証明できず、元メモとの照合も必要です。
+IMPORT-01：2つのノートから、すべての文を正確に一度候補へ割り当てた1つのレビューを作り、ステージではTaskを作らない。IMPORT-02：一部の候補だけを反映して他を保留するとレビューは未処理のまま残り、残りを反映するとHistoryへ移り、やり直してもTaskや統合が二重にならない。IMPORT-03：除外には利用者の判断が必要で、Sourceや統合先の変更はその候補だけを止める。IMPORT-04：取り込み履歴は完了したノートごとに1回だけ書き、作成したTaskと統合先のIDを含め、以前の取り込みのIDも保つ。IMPORT-05：入っている、または読み込まれているTaskMateがレビュー形式を読めないとき、ステージは何も書かず、必要な版と再読み込みの手順を示す。IMPORT-06：候補カードはTask情報と判断の操作の下に、元ノートごとに名前を1回だけ要約とともに示し、該当箇所は初期状態で折りたたみ、開くと元の順で表示する。IMPORT-07：Source候補レビューと最初の形式の取り込みレビューは、IDや種類、形式の版を変えずに一覧・判断・編集・反映・History移動ができる。自動テストだけではAIの意味的な抽出漏れを証明できず、元メモとの照合も必要です。

@@ -4,7 +4,7 @@ import { TaskRepository } from "../../../src/tasks/repository";
 import { parseImportReview, promotedTaskId } from "../../../src/reviews/import/proposal";
 import { ImportReviewRepository } from "../../../src/reviews/import/review-repository";
 import { importedHash, sourceNoteHash } from "../../../src/reviews/import/source-note-provenance";
-import { exampleJson } from "./fixture";
+import { earlierFormatJson, exampleJson } from "./fixture";
 import { MemoryVault } from "./memory-vault";
 
 const NOTE_PATH = "Notes/2026-10-17 顧客定例.md";
@@ -35,6 +35,29 @@ async function setup(note = NOTE) {
 function taskFiles(vault: MemoryVault): string[] {
   return [...vault.files.keys()].filter((path) => path.startsWith("TaskMate/Tasks/")).sort();
 }
+
+describe("Import reviews staged in an earlier format", () => {
+  it("lists a legacy Source candidate review, applies it in its own shape and moves it to History under its own name", async () => {
+    const vault = new MemoryVault();
+    for (const folder of ["Notes", "TaskMate", "TaskMate/Tasks", PROPOSALS]) vault.folders.add(folder);
+    const legacy = earlierFormatJson("legacy");
+    vault.put(NOTE_PATH, NOTE);
+    legacy.sources[0].sha256 = await sourceNoteHash(NOTE);
+    vault.put(legacy.candidates[1].mergeTarget.path, legacy.candidates[1].mergeTarget.beforeMarkdown);
+    const legacyId = legacy.reviewId as string;
+    vault.put(`${PROPOSALS}/${legacyId}.json`, `${JSON.stringify(legacy, null, 2)}\n`);
+    const app = vault.app();
+    const reviews = new ImportReviewRepository(app, () => PROPOSALS, new TaskRepository(app, () => "TaskMate/Tasks"));
+
+    expect((await reviews.listPending()).map((summary) => [summary.reviewId, summary.format])).toEqual([[legacyId, "legacy"]]);
+    const result = await reviews.formalApply(legacyId, { acknowledgeUnviewedMerges: true, now });
+
+    expect([result.applied, result.archived]).toEqual([["SC-01", "SC-02", "SC-03"], true]);
+    const archived = JSON.parse(vault.text(`${PROPOSALS}/History/${legacyId}.json`));
+    expect([archived.reviewType, archived.schemaVersion, archived.candidates[0].id, archived.status]).toEqual(["source-candidate", 1, "SC-01", "history"]);
+    expect((await reviews.listHistory()).map((summary) => summary.reviewId)).toEqual([legacyId]);
+  });
+});
 
 describe("Import review formal apply", () => {
   it("applies create, merge and exclude, writes provenance once and archives the review", async () => {

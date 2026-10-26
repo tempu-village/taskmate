@@ -20,9 +20,49 @@ import todo_store
 from planning_store import fail
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
+# The oldest TaskMate that reads schema version 2. Raise it together with SCHEMA_VERSION and the plugin version whenever
+# the review format changes; test/reviews/import/compatibility.test.ts checks that they stay in step.
+MIN_TASKMATE_VERSION = "0.7.0"
 REVIEW_ID_RE = re.compile(r"import-review-[A-Za-z0-9._-]+")
 MERGE_FIELDS = ("title", "date", "priority", "labels", "project", "steps", "notes")
+CONTENT_LANGUAGES = ("ja", "en")
+LANGUAGE_SOURCES = ("setting", "desktop", "source", "user")
+SUMMARY_MAX_LENGTH = 1000
+
+
+def version_tuple(value: Any) -> Optional[Tuple[int, ...]]:
+    if not isinstance(value, str) or not re.fullmatch(r"[0-9]+(\.[0-9]+)*", value):
+        return None
+    return tuple(int(part) for part in value.split("."))
+
+
+def check_taskmate_compatibility(vault: Path) -> None:
+    """Refuse to stage unless the installed and loaded TaskMate both read this schema version.
+
+    The manifest says which plugin files are installed; agentCompatibility in data.json is written by the plugin when
+    Obsidian loads it. Requiring both to agree also catches updated files that Obsidian has not reloaded yet.
+    """
+    plugin = vault / ".obsidian" / "plugins" / "taskmate"
+    remedy = (f"Task Pilot needs TaskMate {MIN_TASKMATE_VERSION} or later to stage an Import review. "
+              "Update TaskMate, reload it in Obsidian (or restart Obsidian), and run Task Pilot again.")
+    try:
+        installed = json.loads((plugin / "manifest.json").read_text(encoding="utf-8")).get("version")
+    except (OSError, json.JSONDecodeError, AttributeError):
+        fail(f"TaskMate is not installed in this vault or its manifest cannot be read. {remedy}")
+    if (version_tuple(installed) or ()) < version_tuple(MIN_TASKMATE_VERSION):
+        fail(f"installed TaskMate is {installed}. {remedy}")
+    try:
+        data = json.loads((plugin / "data.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        data = {}
+    compatibility = data.get("agentCompatibility") if isinstance(data, dict) else None
+    loaded = compatibility.get("pluginVersion") if isinstance(compatibility, dict) else None
+    if loaded != installed:
+        fail(f"installed TaskMate is {installed}, but Obsidian has loaded {loaded or 'an older version'}. {remedy}")
+    schemas = compatibility.get("importReviewSchemaVersions")
+    if not isinstance(schemas, list) or SCHEMA_VERSION not in schemas:
+        fail(f"loaded TaskMate {loaded} does not read Import review schema version {SCHEMA_VERSION}. {remedy}")
 
 
 def validated_review_id(value: str) -> str:
@@ -57,12 +97,13 @@ def statements_of(raw: Dict[str, Any], name: str) -> List[str]:
 def pending_review_paths(vault: Path) -> Dict[str, str]:
     folder = todo_store.safe_path(vault, str(todo_store.plugin_settings(vault)["proposalFolder"]))
     claimed: Dict[str, str] = {}
-    for path in sorted(folder.glob("import-review-*.json")) if folder.exists() else []:
+    paths = sorted([*folder.glob("import-review-*.json"), *folder.glob("source-review-*.json")]) if folder.exists() else []
+    for path in paths:
         try:
             review = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             continue
-        if review.get("reviewType") != "import" or review.get("status") == "history":
+        if review.get("reviewType") not in ("import", "source-candidate") or review.get("status") == "history":
             continue
         for source in review.get("sources") or []:
             if isinstance(source, dict) and source.get("type") == "note":
@@ -140,6 +181,36 @@ def validated_refs(raw: Dict[str, Any], keys: Dict[str, str], inventories: Dict[
             fail(f"sourceRef statement is not in the Source inventory of {key}: {statement}")
         result.append({"sourceId": keys[key], "statement": statement})
     return result
+
+
+def validated_summaries(raw: Dict[str, Any], refs: List[Dict[str, str]], keys: Dict[str, str], name: str) -> List[Dict[str, str]]:
+    """One summary per Source the candidate references, ordered by that Source's first sourceRef."""
+    summaries = raw.get("sourceSummaries")
+    if not isinstance(summaries, list) or not summaries:
+        fail(f"{name} requires sourceSummaries, one per referenced Source")
+    by_source: Dict[str, str] = {}
+    for item in summaries:
+        if not isinstance(item, dict):
+            fail(f"{name} each sourceSummary must be an object")
+        key = item.get("source")
+        if key not in keys:
+            fail(f"{name} sourceSummary names an unknown Source: {key}")
+        source_id = keys[key]
+        if source_id in by_source:
+            fail(f"{name} summarizes Source {key} twice")
+        summary = required_text(item.get("summary"), f"{name} summary of {key}")
+        if len(summary) > SUMMARY_MAX_LENGTH:
+            fail(f"{name} summary of {key} exceeds {SUMMARY_MAX_LENGTH} characters")
+        by_source[source_id] = summary
+    order = list(dict.fromkeys(ref["sourceId"] for ref in refs))
+    names = {source_id: key for key, source_id in keys.items()}
+    extra = next((source_id for source_id in by_source if source_id not in order), None)
+    if extra is not None:
+        fail(f"{name} summarizes Source {names[extra]}, which it does not reference")
+    missing = next((source_id for source_id in order if source_id not in by_source), None)
+    if missing is not None:
+        fail(f"{name} requires a summary of Source {names[missing]}")
+    return [{"sourceId": source_id, "summary": by_source[source_id]} for source_id in order]
 
 
 def validated_task_draft(raw: Any, name: str) -> Dict[str, Any]:
@@ -221,6 +292,7 @@ def staged_candidates(args: argparse.Namespace, raw_candidates: Any, keys: Dict[
             "title": required_text(raw.get("title"), f"{candidate_id} title"),
             "sourceRefs": validated_refs(raw, keys, inventories),
         }
+        candidate["sourceSummaries"] = validated_summaries(raw, candidate["sourceRefs"], keys, candidate_id)
         if operation == "create":
             candidate["taskDraft"] = validated_task_draft(raw.get("taskDraft"), candidate_id)
         elif operation == "merge":
@@ -251,7 +323,14 @@ def check_coverage(candidates: List[Dict[str, Any]], inventories: Dict[str, List
 
 
 def command_stage(args: argparse.Namespace) -> None:
+    check_taskmate_compatibility(args.vault)
     request = planning_store.read_json(args.request)
+    content_language = request.get("contentLanguage")
+    if content_language not in CONTENT_LANGUAGES:
+        fail("request.contentLanguage must be ja or en; resolve the language before generating the review")
+    language_source = request.get("languageSource")
+    if language_source not in LANGUAGE_SOURCES:
+        fail("request.languageSource must be setting, desktop, source, or user")
     folder = todo_store.safe_path(args.vault, str(todo_store.plugin_settings(args.vault)["proposalFolder"]))
     destination = folder / f"{args.review_id}.json"
     if destination.exists() or (folder / "History" / f"{args.review_id}.json").exists():
@@ -262,6 +341,7 @@ def command_stage(args: argparse.Namespace) -> None:
     check_coverage(candidates, inventories, names)
     review = {
         "schemaVersion": SCHEMA_VERSION, "reviewId": args.review_id, "reviewType": "import",
+        "contentLanguage": content_language, "languageSource": language_source,
         "status": "pending", "health": "ok", "revision": 1, "createdAt": now, "updatedAt": now, "archivedAt": None,
         "sources": sources, "candidates": candidates,
     }

@@ -11,7 +11,7 @@ import { createImportReviewUiState, reduceImportReviewUiState, renderImportRevie
 import type { ImportReviewAction, ImportReviewCopy, ImportReviewUiState } from "./review-renderer";
 
 export const IMPORT_REVIEW_VIEW_TYPE = "taskmate-import-review";
-const REVIEW_ID = /^import-review-[A-Za-z0-9._-]+$/;
+const REVIEW_ID = /^(?:import|source)-review-[A-Za-z0-9._-]+$/;
 
 export function importReviewIdFromLink(params: Record<string, string | undefined>): string | null {
   const reviewId = params.review;
@@ -30,7 +30,11 @@ export function formalApplyMessage(result: FormalApplyResult, i18n: I18n): strin
 export function importReviewIndexDetails(summary: ImportReviewSummary, i18n: I18n): ReviewIndexDetails {
   return {
     sortKey: summary.updatedAt,
-    lines: [statusText(summary.status, i18n), i18n.t("importReview.summary", { candidates: summary.candidateCount, applied: summary.appliedCount })]
+    lines: [
+      statusText(summary.status, i18n),
+      i18n.t("importReview.summary", { candidates: summary.candidateCount, applied: summary.appliedCount }),
+      ...(summary.format === "v2" ? [] : [i18n.t("importReview.legacyFormat")])
+    ]
   };
 }
 
@@ -61,6 +65,7 @@ export class ImportReviewView extends ItemView {
     // A refresh from a Vault change keeps keyboard focus on the same control, such as an edit field.
     const active = this.contentEl.ownerDocument.activeElement;
     const focused = preserveScroll && active instanceof HTMLElement && this.contentEl.contains(active) ? active.id : "";
+    const requestedFocus = this.state.focus;
     this.contentEl.empty();
     const i18n = this.plugin.i18n();
     if (!this.reviewId) {
@@ -79,9 +84,12 @@ export class ImportReviewView extends ItemView {
       this.state = { ...this.state, focus: null };
     } catch (error) {
       console.error("TaskMate could not open Import review", error);
-      this.contentEl.createDiv({ cls: "taskmate-empty", text: i18n.t("importReview.invalid") });
+      this.contentEl.createDiv({ cls: "taskmate-empty", text: i18n.t("importReview.invalid", { error: error instanceof Error ? error.message : String(error) }) });
     }
     this.contentEl.scrollTop = scrollTop;
+    // Restoring the scroll position can hide the element that just received focus, such as the top toggle after a long
+    // statement list was collapsed from below; bring it back into view.
+    if (requestedFocus) this.contentEl.querySelector<HTMLElement>(`[id="${requestedFocus}"]`)?.scrollIntoView({ block: "nearest" });
   }
 
   private async handle(action: ImportReviewAction): Promise<void> {
@@ -163,8 +171,15 @@ function importReviewCopy(i18n: I18n): ImportReviewCopy {
     },
     decideAria: (action, candidate) => t("importReview.decideAria", { action, candidate }),
     decisionGroupAria: (candidate) => t("importReview.decisionGroupAria", { candidate }),
-    sources: t("importReview.sources"),
+    evidenceTitle: t("importReview.evidence.title"),
+    sourceKind: { note: t("importReview.evidence.note"), conversation: t("importReview.evidence.conversation") },
     conversation: (id) => t("importReview.conversation", { id }),
+    summaryLabel: { note: t("importReview.evidence.noteSummary"), conversation: t("importReview.evidence.conversationSummary") },
+    noSummary: t("importReview.evidence.noSummary"),
+    showStatements: (count) => t("importReview.evidence.show", { count }),
+    hideStatements: (count) => t("importReview.evidence.hide", { count }),
+    statementsAria: (candidate, source) => t("importReview.evidence.aria", { candidate, source }),
+    legacyFormat: t("importReview.legacyFormat"),
     fields: {
       title: t("importReview.field.title"),
       date: t("importReview.field.date"),

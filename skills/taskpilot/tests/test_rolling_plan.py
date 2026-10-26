@@ -43,6 +43,7 @@ class RollingPlanTest(unittest.TestCase):
             "proposalFolder": "TaskMate/Proposals",
             "sourceFolders": ["Notes"],
             "includeSourceSubfolders": True,
+            "language": "en",
             **extra,
         }), encoding="utf-8")
 
@@ -549,6 +550,27 @@ class RollingPlanTest(unittest.TestCase):
                     self.assertNotIn(fragment, visible)
         for name in rolling_plan.WEEKDAY_NAMES["en"]:
             self.assertNotIn(f"({name})", visible)
+
+    def test_unknown_language_stops_before_writing_until_the_agent_names_one(self):
+        self.write_settings({"language": "auto"})
+        task = self.create_task("Task 1")
+        entries = [self.entry(task, self.snapshots(), 1)]
+        request = str(self.write_json(self.request(entries, entries)))
+
+        result, _ = self.run_script(ROLLING_PLAN, "create", "--request", request, "--plan-id", "plan-week", check=False)
+        self.assertIn("output language is unknown", result.stderr)
+        self.assertFalse((self.vault / "TaskMate" / "Plans" / "plan-week.md").exists())
+
+        self.run_script(ROLLING_PLAN, "--language", "ja", "create", "--request", request, "--plan-id", "plan-week")
+        self.assertIn("## 作業計画", self.visible_text())
+
+    def test_taskmate_language_setting_wins_over_the_language_option(self):
+        self.write_settings({"language": "auto", "desktopLanguage": "en"})
+        task = self.create_task("Task 1")
+        entries = [self.entry(task, self.snapshots(), 1)]
+
+        self.run_script(ROLLING_PLAN, "--language", "ja", "create", "--request", str(self.write_json(self.request(entries, entries))), "--plan-id", "plan-week")
+        self.assertIn("## Working plan", self.visible_text())
 
     def test_japanese_proposal_reasons_and_review_notes(self):
         self.write_settings({"language": "ja"})

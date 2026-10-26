@@ -169,8 +169,18 @@ def say(language: str, key: str, **values: Any) -> str:
     return TEXT[language][key].format(**values)
 
 
+# Set from --language, the language the agent resolved from the Sources or the user when TaskMate's setting does not
+# decide it. A language TaskMate's setting decides always wins.
+LANGUAGE_OVERRIDE: Optional[str] = None
+
+
 def output_language(vault: Path) -> str:
-    return todo_store.output_language(vault)["language"]
+    language = todo_store.output_language(vault)["language"]
+    if language in TEXT:
+        return language
+    if LANGUAGE_OVERRIDE in TEXT:
+        return LANGUAGE_OVERRIDE
+    fail("the output language is unknown: TaskMate's setting does not decide it. Ask the user which language to use and pass --language ja or --language en")
 
 
 # Paths and persistence
@@ -1045,6 +1055,7 @@ def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description=__doc__)
     result.add_argument("--vault", required=True, type=lambda value: Path(value).resolve())
     result.add_argument("--task-folder")
+    result.add_argument("--language", choices=sorted(TEXT), help="output language when TaskMate's setting does not decide it")
     commands = result.add_subparsers(dest="command", required=True)
 
     create = commands.add_parser("create")
@@ -1095,6 +1106,8 @@ def main() -> None:
     args = parser().parse_args()
     if not args.vault.is_dir():
         fail(f"vault does not exist: {args.vault}")
+    global LANGUAGE_OVERRIDE
+    LANGUAGE_OVERRIDE = args.language
     args.run(args)
 
 

@@ -8,6 +8,8 @@ import {
   mergeTargetFields,
   newlyCompletedNoteSources,
   noteSourceCompletion,
+  candidateEvidence,
+  importReviewFormat,
   parseImportReview,
   planFormalApply,
   recordApplication,
@@ -15,7 +17,7 @@ import {
 } from "../../../src/reviews/import/proposal";
 import type { ImportCandidate, ImportReview } from "../../../src/reviews/import/proposal";
 import { sha256 } from "../../../src/shared/sha256";
-import { NOW, exampleJson, exampleText } from "./fixture";
+import { NOW, earlierFormatJson, exampleJson, exampleText } from "./fixture";
 
 const CREATED_TASK = "55555555-5555-4555-8555-555555555555";
 const MERGE_TARGET = "44444444-4444-4444-8444-444444444444";
@@ -48,6 +50,38 @@ function applyAll(proposal: ImportReview): ImportReview {
   return recordApplication(next, "IC-03", { kind: "applied", promotedTaskId: null }, NOW);
 }
 
+describe("Earlier Import review formats", () => {
+  it.each([["v1", "IC-01"], ["legacy", "SC-01"]] as const)("reads a %s review and keeps its own shape through edits, decisions and History", (format, first) => {
+    const value = earlierFormatJson(format);
+    let review = parseImportReview(JSON.stringify(value));
+    expect(importReviewFormat(review)).toBe(format);
+    expect(candidateEvidence(review.candidates[0])).toEqual([{ sourceId: "SRC-01", summary: null, statements: ["佐藤さんへ契約書の修正版を今日中に送る。"] }]);
+
+    review = editCandidate(review, first, { operation: "exclude", exclusionReason: "Not needed." }, NOW);
+    review = decideCandidate(review, first, "approved", NOW);
+    const [, second, third] = review.candidates.map((item) => item.id);
+    review = recordApplication(review, first, { kind: "applied", promotedTaskId: null }, NOW);
+    review = recordApplication(review, second, { kind: "applied", promotedTaskId: MERGE_TARGET }, NOW);
+    review = archiveReview(recordApplication(review, third, { kind: "applied", promotedTaskId: null }, NOW), NOW);
+
+    const saved = JSON.parse(JSON.stringify(review));
+    expect([saved.reviewId, saved.reviewType, saved.schemaVersion, saved.candidates[0].id]).toEqual([value.reviewId, value.reviewType, 1, first]);
+    expect("contentLanguage" in saved || saved.candidates.some((item: Record<string, unknown>) => "sourceSummaries" in item)).toBe(false);
+    expect(() => parseImportReview(JSON.stringify(saved))).not.toThrow();
+  });
+
+  it.each([
+    ["Source summaries in v1", (value: Record<string, any>) => { value.candidates[0].sourceSummaries = [{ sourceId: "SRC-01", summary: "x" }]; }, "unsupported properties: sourceSummaries"],
+    ["a content language in v1", (value: Record<string, any>) => { value.contentLanguage = "ja"; }, "unsupported properties: contentLanguage"],
+    ["IC- candidate IDs in a legacy review", (value: Record<string, any>) => { value.reviewType = "source-candidate"; value.reviewId = "source-review-x"; }, "must match ^SC-"],
+    ["a legacy review with schema version 2", (value: Record<string, any>) => { value.reviewType = "source-candidate"; value.schemaVersion = 2; }, "must be 1 for a Source candidate review"]
+  ])("rejects %s", (_name, mutate, message) => {
+    const value = earlierFormatJson("v1");
+    mutate(value);
+    expect(() => parseImportReview(JSON.stringify(value))).toThrow(message);
+  });
+});
+
 describe("Import review parsing", () => {
   it("accepts the RFC example and verifies its merge evidence", async () => {
     const proposal = example();
@@ -62,7 +96,16 @@ describe("Import review parsing", () => {
     ["the review ID prefix", (value: Record<string, any>) => { value.reviewId = "proposal-1"; }, "reviewId"],
     ["unknown properties", (value: Record<string, any>) => { value.extra = true; }, "unsupported properties"],
     ["a statement mapped twice", (value: Record<string, any>) => { value.candidates[2].sourceRefs = value.candidates[0].sourceRefs; }, "already mapped by IC-01"],
-    ["an unknown Source reference", (value: Record<string, any>) => { value.candidates[0].sourceRefs[0].sourceId = "SRC-09"; }, "unknown Source SRC-09"],
+    ["an unknown Source reference", (value: Record<string, any>) => { value.candidates[0].sourceRefs[0].sourceId = "SRC-09"; value.candidates[0].sourceSummaries[0].sourceId = "SRC-09"; }, "unknown Source SRC-09"],
+    ["a missing Source summary", (value: Record<string, any>) => { value.candidates[0].sourceSummaries = []; }, "requires a summary of SRC-01"],
+    ["a summary of an unreferenced Source", (value: Record<string, any>) => { value.candidates[0].sourceSummaries.push({ sourceId: "SRC-02", summary: "x" }); }, "SRC-02 is not referenced by the candidate"],
+    ["a Source summarized twice", (value: Record<string, any>) => { value.candidates[0].sourceSummaries.push({ sourceId: "SRC-01", summary: "x" }); }, "duplicates SRC-01"],
+    ["a blank summary", (value: Record<string, any>) => { value.candidates[0].sourceSummaries[0].summary = "  "; }, "summary must be a non-empty string"],
+    ["a summary over 1000 characters", (value: Record<string, any>) => { value.candidates[0].sourceSummaries[0].summary = "x".repeat(1001); }, "must not exceed 1000 characters"],
+    ["a candidate without summaries", (value: Record<string, any>) => { delete value.candidates[0].sourceSummaries; }, "sourceSummaries must be an array"],
+    ["an unresolved content language", (value: Record<string, any>) => { value.contentLanguage = "unknown"; }, "contentLanguage"],
+    ["a missing language source", (value: Record<string, any>) => { delete value.languageSource; }, "languageSource"],
+    ["an unknown schema version", (value: Record<string, any>) => { value.schemaVersion = 3; }, "must be one of 1, 2"],
     ["an unmapped Source", (value: Record<string, any>) => { value.sources.push({ ...value.sources[0], id: "SRC-03" }); }, "SRC-03 is not mapped"],
     ["a create without a Task draft", (value: Record<string, any>) => { delete value.candidates[0].taskDraft; }, "create requires taskDraft"],
     ["an applied create without a Task ID", (value: Record<string, any>) => { value.candidates[0].application = { status: "applied", appliedAt: NOW, promotedTaskId: null, error: null }; }, "promotedTaskId"],

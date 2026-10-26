@@ -2,7 +2,16 @@ import { encodeTaskPreservingProperties, parseTaskMarkdown } from "../../tasks/m
 import type { Task } from "../../tasks/domain";
 import { sha256 } from "../../shared/sha256";
 
-const SCHEMA_VERSION = 1 as const;
+// Task Pilot writes only the current format. The two earlier formats stay readable and are saved in their own shape,
+// because they have no Source summaries and TaskMate cannot write one.
+export const CURRENT_SCHEMA_VERSION = 2 as const;
+export const SUPPORTED_SCHEMA_VERSIONS = [1, 2] as const;
+const SUMMARY_MAX_LENGTH = 1000;
+
+// What the plugin records in its settings at load so Task Pilot can refuse to stage a review this plugin cannot read.
+export function importReviewCompatibility(pluginVersion: string): { pluginVersion: string; importReviewSchemaVersions: number[] } {
+  return { pluginVersion, importReviewSchemaVersions: [...SUPPORTED_SCHEMA_VERSIONS] };
+}
 const DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const SHA256 = /^[a-f0-9]{64}$/;
@@ -40,6 +49,11 @@ type ReviewSource = NoteSource | ConversationSource;
 interface SourceRef {
   sourceId: string;
   statement: string;
+}
+
+interface SourceSummary {
+  sourceId: string;
+  summary: string;
 }
 
 interface CandidateStep {
@@ -90,6 +104,8 @@ interface CandidateBase {
   originalOperation: Operation;
   title: string;
   sourceRefs: SourceRef[];
+  // Present exactly in schema version 2: one summary per Source the candidate references.
+  sourceSummaries?: SourceSummary[];
   taskDraft?: CandidateTaskDraft;
   mergeTarget?: MergeTarget;
   exclusionReason?: string;
@@ -107,10 +123,16 @@ export type ImportCandidate =
   | (CandidateBase & { operation: "merge"; mergeTarget: MergeTarget })
   | (CandidateBase & { operation: "exclude"; exclusionReason: string });
 
+// "legacy" is the unreleased Source candidate review (source-review-*, source-candidate, SC-*), "v1" the first Import
+// review format, and "v2" the current one with Source summaries and the content language.
+export type ImportReviewFormat = "legacy" | "v1" | "v2";
+
 export interface ImportReview {
-  schemaVersion: typeof SCHEMA_VERSION;
+  schemaVersion: 1 | 2;
   reviewId: string;
-  reviewType: "import";
+  reviewType: "import" | "source-candidate";
+  contentLanguage?: "ja" | "en";
+  languageSource?: "setting" | "desktop" | "source" | "user";
   status: ReviewStatus;
   health: Health;
   revision: number;
@@ -153,6 +175,27 @@ export function parseImportReview(content: string): ImportReview {
   const value: unknown = JSON.parse(content);
   validateProposal(value);
   return value;
+}
+
+export function importReviewFormat(review: Pick<ImportReview, "reviewType" | "schemaVersion">): ImportReviewFormat {
+  if (review.reviewType === "source-candidate") return "legacy";
+  return review.schemaVersion === 2 ? "v2" : "v1";
+}
+
+// Groups a candidate's Source statements by Source, in the order each Source first appears in its sourceRefs, with that
+// Source's summary when the format has one.
+export function candidateEvidence(candidate: ImportCandidate): Array<{ sourceId: string; summary: string | null; statements: string[] }> {
+  const groups = new Map<string, string[]>();
+  for (const ref of candidate.sourceRefs) {
+    const statements = groups.get(ref.sourceId) ?? [];
+    statements.push(ref.statement);
+    groups.set(ref.sourceId, statements);
+  }
+  return [...groups].map(([sourceId, statements]) => ({
+    sourceId,
+    summary: candidate.sourceSummaries?.find((item) => item.sourceId === sourceId)?.summary ?? null,
+    statements
+  }));
 }
 
 export async function verifyMergeEvidence(target: MergeTarget): Promise<void> {
@@ -443,10 +486,18 @@ function requiredText(value: unknown, name: string): string {
 
 function validateProposal(value: unknown): asserts value is ImportReview {
   const proposal = record(value, "Proposal");
-  allowOnly(proposal, ["schemaVersion", "reviewId", "reviewType", "status", "health", "revision", "createdAt", "updatedAt", "archivedAt", "sources", "candidates"], "Proposal");
-  if (proposal.schemaVersion !== SCHEMA_VERSION) invalid("schemaVersion", "must be 1");
-  if (typeof proposal.reviewId !== "string" || !/^import-review-[A-Za-z0-9._-]+$/.test(proposal.reviewId)) invalid("reviewId", "must start with import-review-");
-  if (proposal.reviewType !== "import") invalid("reviewType", "must be import");
+  const format = formatOf(proposal);
+  const v2 = format === "v2";
+  allowOnly(proposal, [
+    "schemaVersion", "reviewId", "reviewType", ...(v2 ? ["contentLanguage", "languageSource"] : []),
+    "status", "health", "revision", "createdAt", "updatedAt", "archivedAt", "sources", "candidates"
+  ], "Proposal");
+  const reviewPrefix = format === "legacy" ? "source-review-" : "import-review-";
+  if (typeof proposal.reviewId !== "string" || !new RegExp(`^${reviewPrefix}[A-Za-z0-9._-]+$`).test(proposal.reviewId)) invalid("reviewId", `must start with ${reviewPrefix}`);
+  if (v2) {
+    oneOf(proposal.contentLanguage, ["ja", "en"], "contentLanguage");
+    oneOf(proposal.languageSource, ["setting", "desktop", "source", "user"], "languageSource");
+  }
   oneOf(proposal.status, ["pending", "ready-to-apply", "partially-applied", "applied", "history"], "status");
   oneOf(proposal.health, ["ok", "stale", "failed"], "health");
   positiveInteger(proposal.revision, "revision");
@@ -465,7 +516,7 @@ function validateProposal(value: unknown): asserts value is ImportReview {
   const statements = new Map<string, string>();
   proposal.candidates.forEach((candidate, index) => {
     const path = `candidates[${index}]`;
-    validateCandidate(candidate, path);
+    validateCandidate(candidate, path, format);
     const { id, sourceRefs } = candidate as ImportCandidate;
     if (candidateIds.has(id)) invalid(`${path}.id`, `duplicates ${id}`);
     candidateIds.add(id);
@@ -507,10 +558,22 @@ function validateSource(value: unknown, path: string): string {
   return source.id as string;
 }
 
-function validateCandidate(value: unknown, path: string): void {
+function formatOf(proposal: Record<string, unknown>): ImportReviewFormat {
+  if (proposal.reviewType === "source-candidate") {
+    if (proposal.schemaVersion !== 1) invalid("schemaVersion", "must be 1 for a Source candidate review");
+    return "legacy";
+  }
+  if (proposal.reviewType !== "import") invalid("reviewType", "must be import");
+  if (proposal.schemaVersion === 1) return "v1";
+  if (proposal.schemaVersion === CURRENT_SCHEMA_VERSION) return "v2";
+  return invalid("schemaVersion", `must be one of ${SUPPORTED_SCHEMA_VERSIONS.join(", ")}`);
+}
+
+function validateCandidate(value: unknown, path: string, format: ImportReviewFormat): void {
   const candidate = record(value, path);
-  allowOnly(candidate, ["id", "revision", "originalOperation", "operation", "title", "sourceRefs", "taskDraft", "mergeTarget", "exclusionReason", "decision", "decisionRevision", "decidedAt", "diffViewedRevision", "health", "healthReason", "application"], path);
-  pattern(candidate.id, /^IC-[0-9]{2,}$/, `${path}.id`);
+  const v2 = format === "v2";
+  allowOnly(candidate, ["id", "revision", "originalOperation", "operation", "title", "sourceRefs", ...(v2 ? ["sourceSummaries"] : []), "taskDraft", "mergeTarget", "exclusionReason", "decision", "decisionRevision", "decidedAt", "diffViewedRevision", "health", "healthReason", "application"], path);
+  pattern(candidate.id, format === "legacy" ? /^SC-[0-9]{2,}$/ : /^IC-[0-9]{2,}$/, `${path}.id`);
   positiveInteger(candidate.revision, `${path}.revision`);
   oneOf(candidate.originalOperation, ["create", "merge", "exclude"], `${path}.originalOperation`);
   oneOf(candidate.operation, ["create", "merge", "exclude"], `${path}.operation`);
@@ -522,6 +585,7 @@ function validateCandidate(value: unknown, path: string): void {
     pattern(sourceRef.sourceId, /^SRC-[0-9]{2,}$/, `${path}.sourceRefs[${index}].sourceId`);
     nonEmpty(sourceRef.statement, `${path}.sourceRefs[${index}].statement`);
   });
+  if (v2) validateSourceSummaries(candidate.sourceSummaries, candidate.sourceRefs as SourceRef[], `${path}.sourceSummaries`);
   if (candidate.taskDraft !== undefined) validateTaskDraft(candidate.taskDraft, `${path}.taskDraft`);
   if (candidate.mergeTarget !== undefined) validateMergeTarget(candidate.mergeTarget, `${path}.mergeTarget`);
   if (candidate.exclusionReason !== undefined) nonEmpty(candidate.exclusionReason, `${path}.exclusionReason`);
@@ -540,6 +604,25 @@ function validateCandidate(value: unknown, path: string): void {
   if (typeof candidate.decisionRevision === "number" && candidate.decisionRevision > revision) invalid(`${path}.decisionRevision`, "is newer than the candidate");
   if (typeof candidate.diffViewedRevision === "number" && (candidate.diffViewedRevision > revision || candidate.operation !== "merge")) invalid(`${path}.diffViewedRevision`, "is valid only for a viewed merge revision");
   validateApplication(candidate.application, candidate, `${path}.application`);
+}
+
+function validateSourceSummaries(value: unknown, refs: SourceRef[], path: string): void {
+  const expected = [...new Set(refs.map((ref) => ref.sourceId))];
+  if (!Array.isArray(value)) invalid(path, "must be an array");
+  const seen = new Set<string>();
+  value.forEach((raw, index) => {
+    const item = record(raw, `${path}[${index}]`);
+    allowOnly(item, ["sourceId", "summary"], `${path}[${index}]`);
+    pattern(item.sourceId, /^SRC-[0-9]{2,}$/, `${path}[${index}].sourceId`);
+    if (typeof item.summary !== "string" || !item.summary.trim()) invalid(`${path}[${index}].summary`, "must be a non-empty string");
+    if (item.summary.length > SUMMARY_MAX_LENGTH) invalid(`${path}[${index}].summary`, `must not exceed ${SUMMARY_MAX_LENGTH} characters`);
+    const sourceId = item.sourceId as string;
+    if (!expected.includes(sourceId)) invalid(`${path}[${index}].sourceId`, `${sourceId} is not referenced by the candidate`);
+    if (seen.has(sourceId)) invalid(`${path}[${index}].sourceId`, `duplicates ${sourceId}`);
+    seen.add(sourceId);
+  });
+  const missing = expected.find((sourceId) => !seen.has(sourceId));
+  if (missing) invalid(path, `requires a summary of ${missing}`);
 }
 
 function validateApplication(value: unknown, candidate: Record<string, unknown>, path: string): void {

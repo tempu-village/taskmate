@@ -14,6 +14,14 @@ export interface TaskMateSettings {
   favoriteLabels: string[];
   // The language Auto resolves to in the desktop Obsidian app, recorded for Task Pilot. Only the desktop app writes it.
   desktopLanguage?: SupportedLocale;
+  // The loaded plugin version and the Import review schema versions it reads, recorded at load for Task Pilot's
+  // compatibility check. Only the plugin writes it.
+  agentCompatibility?: AgentCompatibility;
+}
+
+export interface AgentCompatibility {
+  pluginVersion: string;
+  importReviewSchemaVersions: number[];
 }
 
 export const DEFAULT_SETTINGS: TaskMateSettings = {

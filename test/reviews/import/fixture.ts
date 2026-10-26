@@ -20,3 +20,17 @@ export function exampleJson(): Record<string, any> {
 export function schemaJson(): Record<string, unknown> {
   return JSON.parse(readFileSync(SCHEMA_PATH, "utf8"));
 }
+
+// The example rewritten as a review staged by an earlier Task Pilot: the first Import review format, or the unreleased
+// Source candidate review that preceded it. Neither has Source summaries or a content language.
+export function earlierFormatJson(format: "v1" | "legacy"): Record<string, any> {
+  let text = exampleText();
+  if (format === "legacy") text = text.replaceAll("import-review-", "source-review-").replaceAll('"IC-', '"SC-');
+  const value = JSON.parse(text);
+  value.schemaVersion = 1;
+  if (format === "legacy") value.reviewType = "source-candidate";
+  delete value.contentLanguage;
+  delete value.languageSource;
+  for (const candidate of value.candidates) delete candidate.sourceSummaries;
+  return value;
+}

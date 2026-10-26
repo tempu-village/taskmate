@@ -13,6 +13,11 @@ describe("Review Catalog classification", () => {
     expect(classifyReviewFile("P/History/import-review-b.json", "history", importReview("import-review-b"))).toEqual({
       type: "review", ref: { kind: "import", id: "import-review-b", location: "history", path: "P/History/import-review-b.json" }
     });
+    expect(classifyReviewFile("P/import-review-v2.json", "pending", importReview("import-review-v2", { schemaVersion: 2 }))).toMatchObject({ type: "review", ref: { kind: "import" } });
+    // The unreleased Source candidate review is read as an Import review under its own name.
+    expect(classifyReviewFile("P/source-review-old.json", "pending", importReview("source-review-old", { reviewType: "source-candidate" }))).toEqual({
+      type: "review", ref: { kind: "import", id: "source-review-old", location: "pending", path: "P/source-review-old.json" }
+    });
   });
 
   it("reports unreadable, unknown, unsupported and mismatched files instead of routing them", () => {
@@ -23,7 +28,10 @@ describe("Review Catalog classification", () => {
 
     expect([reason("P/proposal-a.json", "{"), reason("P/proposal-a.json", "[]"), reason("P/proposal-a.json", "null")]).toEqual(["unreadable-json", "unreadable-json", "unreadable-json"]);
     expect(reason("P/proposal-a.json", taskChange("proposal-a", { schemaVersion: 2 }))).toBe("unsupported-version");
-    expect(reason("P/import-review-b.json", importReview("import-review-b", { schemaVersion: 2 }))).toBe("unsupported-version");
+    expect(reason("P/import-review-b.json", importReview("import-review-b", { schemaVersion: 3 }))).toBe("unsupported-version");
+    expect(reason("P/source-review-c.json", importReview("source-review-c", { reviewType: "source-candidate", schemaVersion: 2 }))).toBe("unsupported-version");
+    expect(reason("P/source-review-c.json", importReview("source-review-c"))).toBe("mismatched-id");
+    expect(reason("P/import-review-c.json", importReview("import-review-c", { reviewType: "source-candidate" }))).toBe("mismatched-id");
     expect(reason("P/proposal-a.json", taskChange("proposal-other"))).toBe("mismatched-id");
     expect(reason("P/import-review-b.json", importReview("import-review-other"))).toBe("mismatched-id");
     // The discriminator and the import-review-* name must agree in both directions.
