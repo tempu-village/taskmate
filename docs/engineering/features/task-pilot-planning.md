@@ -1,7 +1,7 @@
 # Task Pilot review and capacity planning
 
 Approval: Accepted — product review confirmed on 2026-10-11.
-Implementation: Implemented on the current branch — tracked by [Issue #52](https://github.com/tempu-village/taskmate/issues/52), with rolling plans tracked by [Issue #60](https://github.com/tempu-village/taskmate/issues/60) and their change display and language tracked by [Issue #82](https://github.com/tempu-village/taskmate/issues/82); not yet identified with a release.
+Implementation: Implemented on the current branch — tracked by [Issue #52](https://github.com/tempu-village/taskmate/issues/52), with rolling plans tracked by [Issue #60](https://github.com/tempu-village/taskmate/issues/60) their change display and language tracked by [Issue #82](https://github.com/tempu-village/taskmate/issues/82), the planning trigger tracked by [Issue #95](https://github.com/tempu-village/taskmate/issues/95), and the review handoff tracked by [Issue #96](https://github.com/tempu-village/taskmate/issues/96); not yet identified with a release.
 
 > English is canonical. Japanese is an AI-translated reference.
 
@@ -30,7 +30,10 @@ The user may make a natural-language request such as:
 - “Review my Tasks.”
 - “Review past-scheduled Tasks.”
 - “Plan today; I have two hours.”
+- “Plan my week.”
 - “Find something I can do in 30 minutes.”
+
+Short planning requests that do not name Task Pilot, such as “Plan my week” or 「計画して」, start Task Pilot.
 
 Task Pilot first summarizes the relevant incomplete Task set. Depending on the request, the summary may include counts for Scheduled, past-scheduled, today, Unplanned, and Tasks that need user clarification. A zero-result review reports that no applicable Tasks were found and performs no write.
 
@@ -125,6 +128,8 @@ When the user wants every incomplete Task accounted for beyond today, Task Pilot
 The user selects exactly one base as the working plan and revises it through Task Pilot by stable `PLAN-xx`, `GAP-xx`, and `CONFLICT-xx` IDs. Creating, selecting, revising, closing, and superseding a plan never writes Task Markdown. Every plan write requires the current plan revision and stops if the file was edited outside Task Pilot. Replanning starts from current canonical Tasks and marks the previous plan `superseded`.
 
 Only an explicit request turns the working plan into a Task change Proposal. Without a range, it covers every date; `today only` or named `PLAN-xx` items narrow it. Task Pilot rereads each Task and omits missing, completed, stale, unchanged, or already proposed items without blocking the rest. Plan-derived changes are limited to the date, new `context/*` labels, Steps, and Notes. The Proposal opens in the [Task change review](task-change-review/README.md), and no Task changes before approval there.
+
+After selecting a base, or after a revision that leaves a confirmed working plan, Task Pilot says that only the plan file changed and no Task was written. It then asks whether to create the Task change review now, covering every date unless the user narrows it. A yes counts as the explicit request and creates the Proposal; a no, or no answer, leaves the plan unchanged, and a review can be requested later.
 
 #### Reading what a plan changes
 
@@ -231,8 +236,10 @@ All criteria below are implemented on the current branch. Semantic judgment stil
 - PLAN-25: Each working-plan item states its change or that it does not change, every item stays visible grouped by date, and the changed and unchanged counts match the items an all-dates Proposal includes and omits.
 - PLAN-26: Selecting a base and revising the working plan require Task Pilot's one-paragraph summary, and a Proposal generated from the plan carries it with a one-line summary for every included Task.
 - PLAN-27: Each item names the Task change review that includes it, states readably why a review left it out, or says it was revised after its review.
+- PLAN-28: After selecting a base, or a revision that leaves a confirmed working plan, Task Pilot reports that only the plan file changed and asks whether to create the Task change review; it creates the Proposal only after a yes.
+- PLAN-29: Short planning requests such as “Plan my week”, 「今週の計画を立てて」 and 「計画して」 start Task Pilot without naming it, and import requests still start it.
 
-Automated evidence: [planning behavior tests](../../../skills/taskpilot/tests/test_planning_store.py), [rolling-plan tests](../../../skills/taskpilot/tests/test_rolling_plan.py) for PLAN-17 through PLAN-27, and [Task store tests](../../../skills/taskpilot/tests/test_todo_store.py). The deterministic planning tests cover 50-Task grouping, stale and partial writes, 20% capacity arithmetic, upper-bound packing, Context evidence, read-only plans, estimate clarification, and schedule/Priority conflict disclosure. They cannot prove that an agent's semantic estimates or reasons are good; the visible user review remains required.
+Automated evidence: [planning behavior tests](../../../skills/taskpilot/tests/test_planning_store.py), [rolling-plan tests](../../../skills/taskpilot/tests/test_rolling_plan.py) for PLAN-17 through PLAN-27, and [Task store tests](../../../skills/taskpilot/tests/test_todo_store.py). The deterministic planning tests cover 50-Task grouping, stale and partial writes, 20% capacity arithmetic, upper-bound packing, Context evidence, read-only plans, estimate clarification, and schedule/Priority conflict disclosure. They cannot prove that an agent's semantic estimates or reasons are good; the visible user review remains required. PLAN-28 and PLAN-29 depend on agent behavior and are verified manually in Codex and Claude Code.
 
 ## Out of scope for this iteration
 
@@ -275,7 +282,7 @@ The change display and output language of rolling plans follow [Show what plans 
 
 > 翻訳状態：`ai-translated`。英語版が正本です。
 
-承認：2026年10月11日の製品レビューで採用済み。実装：現在のブランチへ実装済みで、[Issue #52](https://github.com/tempu-village/taskmate/issues/52)、計画は[Issue #60](https://github.com/tempu-village/taskmate/issues/60)、計画の変更表示と言語は[Issue #82](https://github.com/tempu-village/taskmate/issues/82)で追跡します。対応リリースはまだ特定していません。
+承認：2026年10月11日の製品レビューで採用済み。実装：現在のブランチへ実装済みで、[Issue #52](https://github.com/tempu-village/taskmate/issues/52)、計画は[Issue #60](https://github.com/tempu-village/taskmate/issues/60)、計画の変更表示と言語は[Issue #82](https://github.com/tempu-village/taskmate/issues/82)、計画依頼での起動は[Issue #95](https://github.com/tempu-village/taskmate/issues/95)、レビューへの引き継ぎは[Issue #96](https://github.com/tempu-village/taskmate/issues/96)で追跡します。対応リリースはまだ特定していません。
 
 ### 目的と範囲
 
@@ -295,7 +302,7 @@ TaskMateの見える状態管理は単純なままにします。Taskは未完�
 
 ### 対象となる利用者体験
 
-利用者は「Taskを整理して」「予定日を過ぎたTaskを見直して」「今日は2時間使えるので計画して」「30分でできることを探して」のように依頼できます。
+利用者は「Taskを整理して」「予定日を過ぎたTaskを見直して」「今日は2時間使えるので計画して」「30分でできることを探して」「今週の計画を立てて」のように依頼できます。「計画して」のようにTask Pilotの名前を出さない短い計画依頼でも、Task Pilotが起動します。
 
 Task Pilotは最初に、対象となる未完了Taskを要約します。依頼に応じて、Scheduled、予定日超過、今日、Unplanned、要確認の件数を示します。対象が0件なら、該当Taskがないことを伝え、書き込みません。
 
@@ -373,6 +380,8 @@ Context labelがないだけでTaskを除外しません。固定3件ではな�
 利用者はどちらか一方の案を作業中の計画として選び、`PLAN-xx`・`GAP-xx`・`CONFLICT-xx`のIDを使ってTask Pilotで修正します。計画の作成、選択、修正、終了、置き換えではTaskのMarkdownを書き換えません。計画への書き込みには今の版番号が必要で、Task Pilotの外で編集されていれば止まります。計画の作り直しは今の正式なTaskから始め、前の計画を`superseded`にします。
 
 作業中の計画からTask変更Proposalを作るのは明示的な依頼があるときだけです。範囲の指定がなければ全日程、「今日だけ」や`PLAN-xx`の指定があればその分だけが対象です。Task Pilotは各Taskを読み直し、見つからない・完了済み・変更済み・変更なし・提案済みの項目を、ほかを止めずに外します。計画から変えられるのは日付、新しい`context/*`、Steps、Notesだけです。Proposalは[Task変更レビュー](task-change-review/README.md)で開き、そこで承認するまでTaskは変わりません。
+
+案を選んだ後、または確定した作業計画が残る修正の後、Task Pilotは「変わったのは計画ファイルだけで、Taskは書き込んでいない」と伝えます。続けて、Task変更レビューを今作るかを尋ねます。範囲を絞らなければ全日程が対象です。「はい」は明示的な依頼とみなしてProposalを作ります。「いいえ」や回答がない場合は計画をそのままにし、後からレビューを依頼できます。
 
 #### 計画で何が変わるかを読む
 
@@ -479,8 +488,10 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 - PLAN-25：作業計画の各項目に変更内容か変更なしを示し、すべての項目を日付ごとに表示し、変わる件数と変わらない件数が全日程のProposalに含める項目と外す項目に一致する。
 - PLAN-26：案の選択と作業計画の修正にはTask Pilotが書いた1段落の要約が必要で、計画から作るProposalはその要約と、含めるTaskごとの1行を持つ。
 - PLAN-27：各項目に、含めたTask変更レビュー、レビューに含めなかった理由、またはレビュー後に修正したことを読める言葉で示す。
+- PLAN-28：案の選択、または確定した作業計画が残る修正の後、計画ファイルだけが変わったことを伝えてTask変更レビューを作るか尋ね、「はい」の後にだけProposalを作る。
+- PLAN-29：「Plan my week」「今週の計画を立てて」「計画して」のような短い計画依頼で、名前を出さなくてもTask Pilotが起動し、取り込み依頼でも引き続き起動する。
 
-自動根拠は[planning挙動テスト](../../../skills/taskpilot/tests/test_planning_store.py)、PLAN-17〜27の[計画ファイルのテスト](../../../skills/taskpilot/tests/test_rolling_plan.py)、[Task storeテスト](../../../skills/taskpilot/tests/test_todo_store.py)です。50件のグループ化、変更競合と一部失敗、20%余白、上限による容量判定、Context根拠、読み取り専用計画、見積もり要確認、予定日とPriorityの競合表示を検証します。Agentによる意味上の見積もりや理由の品質は決定的テストだけでは証明できないため、見える利用者レビューを必須とします。
+自動根拠は[planning挙動テスト](../../../skills/taskpilot/tests/test_planning_store.py)、PLAN-17〜27の[計画ファイルのテスト](../../../skills/taskpilot/tests/test_rolling_plan.py)、[Task storeテスト](../../../skills/taskpilot/tests/test_todo_store.py)です。50件のグループ化、変更競合と一部失敗、20%余白、上限による容量判定、Context根拠、読み取り専用計画、見積もり要確認、予定日とPriorityの競合表示を検証します。Agentによる意味上の見積もりや理由の品質は決定的テストだけでは証明できないため、見える利用者レビューを必須とします。PLAN-28とPLAN-29はAgentの挙動に依存するため、CodexとClaude Codeで手動確認します。
 
 ### 今回のイテレーションの対象外
 

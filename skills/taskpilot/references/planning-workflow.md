@@ -178,6 +178,8 @@ python3 scripts/rolling_plan.py --vault <vault> select-base --plan-id <id> --bas
 
 `--summary` is required. Write one paragraph, at most 500 characters and without line breaks, that reads like a short report from a colleague: the important changes first, then what stays as it is. For example: "Put the overdue invoice check first today and give the three undated Tasks dates next week. The study-session slides go on Friday in two Steps. The weekly report and the demo update stay as planned." The plan shows it under "What this plan changes" with counts of what changes; every item also states its own change, so do not list every item.
 
+After a successful `select-base`, hand off in the same reply, in the TaskMate output language. First say that confirming changed only the plan file and that no Task was written. Then end with one question: whether to create the Task change review from this working plan now. Say that it covers every date unless the user says "today only" or names `PLAN-xx` items. Do not run `proposal` before the user answers. If the user declines or does not answer, leave the plan as it is and say that a review can be requested later.
+
 Revise only the working plan, with a reason for every change:
 
 ```json
@@ -195,9 +197,11 @@ python3 scripts/rolling_plan.py --vault <vault> revise --plan-id <id> --revision
 
 Each revision replaces the summary, so write it for the revised plan as a whole. Every write requires the current `--revision` and fails if the file was edited outside Task Pilot; run `show` and ask the user how to proceed. A plan written by an earlier Task Pilot (schema version 1) is refused; create a new plan from current Tasks without `--supersedes`. Close a plan with `close`. To replan, run `inspect` again and create a new plan with `--supersedes`; never treat unapproved plan dates as facts.
 
+After a successful `revise` that leaves a confirmed working plan, give the same handoff.
+
 ### Task change Proposal from the working plan
 
-Create a Task change Proposal only when the user explicitly asks, for example "Create a Task change review from this working plan". With no range qualifier, cover every date in the working plan. Narrow it only when the user says "today only" (`--today-only`) or names `PLAN-xx` items (`--items PLAN-01,PLAN-03`):
+Create a Task change Proposal only when the user explicitly asks, for example "Create a Task change review from this working plan". A yes to the handoff question counts as that request; do not ask for other wording. With no range qualifier, cover every date in the working plan. Narrow it only when the user says "today only" (`--today-only`) or names `PLAN-xx` items (`--items PLAN-01,PLAN-03`):
 
 ```bash
 python3 scripts/rolling_plan.py --vault <vault> proposal --plan-id <id> --revision <n> --proposal-id proposal-<id> --task-summaries <summaries.json> [--today-only | --items PLAN-01,PLAN-03] --open-review

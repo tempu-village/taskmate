@@ -1,10 +1,10 @@
 ---
 name: taskpilot
-description: Turn explicitly selected Obsidian notes into complete, reviewable TaskMate tasks and manage the resulting task Markdown. Use when the user wants to extract, add, update, complete, search, or reorganize TaskMate tasks without silently dropping source content.
+description: Turn explicitly selected Obsidian notes into complete, reviewable TaskMate tasks, manage the resulting task Markdown, and plan the user's TaskMate Tasks. Use when the user wants to extract, add, update, complete, search, or reorganize TaskMate tasks without silently dropping source content, or asks to plan, schedule, or prioritize their work for today, this week, or the coming days (for example "plan my week", 「今週の計画を立てて」, 「計画して」, 「今日やることを決めて」).
 license: MIT
 metadata:
   author: Masashi
-  version: "0.8.0"
+  version: "0.9.0"
 ---
 
 # Task Pilot
