@@ -6,9 +6,9 @@ Use this workflow for on-demand Task review, plans, and free-time Task suggestio
 
 A plan is always a rolling plan (section 6). A free-time Task suggestion (section 5) is not a plan: it writes no file and sets no date. Choose by the request's wording:
 
-- A planning request that includes days after today, such as this week, next week, or the coming days (for example 「今週の計画を立てて」 or "plan next week"), creates a rolling plan.
+- A request that asks for a plan by name (計画, plan), such as 「計画して」, 「今日の計画を立てて」, or 「今週の計画を立てて」, creates a rolling plan without asking which output. Ask only for missing capacity. If the user limits it to today, confirm today's placement and move the remaining Tasks to later days.
 - A request about free time now, such as a duration or a short break (for example 「30分でできることある？」 or 「今ちょっと空いた」), gives a free-time Task suggestion.
-- A request that fits both, such as 「計画して」 or 「今日の計画を立てて」, including one that names Task Pilot, gets one question in the TaskMate output language: suggest Tasks for the free time now, or create a plan that places every incomplete Task from today onward. Build neither before the answer.
+- A request that names neither a plan nor free time, such as 「今日何やろう」, gets one question in the TaskMate output language: suggest Tasks for the free time now, or create a plan. Build neither before the answer.
 
 Call the free-time output a suggestion, never a plan, when you report it. For example, end it with 「この提案は表示しただけで、Taskファイルは何も変えていません。」 or "This is only a suggestion; no Task file changed."
 

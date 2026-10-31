@@ -37,9 +37,9 @@ Planning requests that name a period, such as 「今週の計画を立てて」,
 
 A plan is always a [rolling plan](#maintaining-a-rolling-plan). A [free-time Task suggestion](#suggesting-tasks-for-free-time) is not a plan; it writes no file and sets no date. Task Pilot chooses by the request's wording:
 
-- A planning request that includes days after today, such as this week, next week, or the coming days, creates a rolling plan.
+- A request that asks for a plan by name, such as 「計画して」, 「今日の計画を立てて」, or 「今週の計画を立てて」, creates a rolling plan without asking which output. Task Pilot asks only for missing capacity; a plan limited to today confirms today's placement and moves the remaining Tasks to later days.
 - A request about free time now, such as a duration or a short break, gives a free-time Task suggestion.
-- A request that fits both, such as 「計画して」 or 「今日の計画を立てて」, including one that names Task Pilot, gets one question: suggest Tasks for the free time now, or create a plan that places every incomplete Task from today onward. Task Pilot builds neither before the answer.
+- A request that names neither a plan nor free time, such as 「今日何やろう」, gets one question: suggest Tasks for the free time now, or create a plan. Task Pilot builds neither before the answer.
 
 Task Pilot first summarizes the relevant incomplete Task set. Depending on the request, the summary may include counts for Scheduled, past-scheduled, today, Unplanned, and Tasks that need user clarification. A zero-result review reports that no applicable Tasks were found and performs no write.
 
@@ -188,7 +188,7 @@ If some writes in an approved batch fail, Task Pilot identifies which Tasks succ
 
 ## Processing flow
 
-1. Distinguish a backlog review, a plan, a read-only free-time Task suggestion, and an explicitly requested Source-note import; ask once when a request fits both a plan and a suggestion; resolve the scope of each.
+1. Distinguish a backlog review, a plan, a read-only free-time Task suggestion, and an explicitly requested Source-note import; create a rolling plan for a request that names a plan, and ask once when a request names neither a plan nor free time; resolve the scope of each.
 2. When Source notes are requested, show the selected eligible paths, then complete coverage review and approval.
 3. Load the canonical incomplete Tasks and summarize the review population without changing it.
 4. Collect only missing planning constraints and derive evidence-labeled effort ranges.
@@ -244,7 +244,7 @@ All criteria below are implemented on the current branch. Semantic judgment stil
 - PLAN-27: Each item names the Task change review that includes it, states readably why a review left it out, or says it was revised after its review.
 - PLAN-28: After selecting a base, or a revision that leaves a confirmed working plan, Task Pilot reports that only the plan file changed and asks whether to create the Task change review; it creates the Proposal only after a yes.
 - PLAN-29: A planning request that names a period, such as 「今週の計画を立てて」, starts Task Pilot without naming it, and import requests still start it.
-- PLAN-30: A planning request that includes days after today creates a rolling plan, a request about free time now gives a free-time Task suggestion that writes no file, and a request that fits both, such as 「計画して」 or 「今日の計画を立てて」, gets one clarifying question before either is built.
+- PLAN-30: A request that names a plan, such as 「計画して」 or 「今日の計画を立てて」, creates a rolling plan without a clarifying question; a request about free time now gives a free-time Task suggestion that writes no file; and a request that names neither, such as 「今日何やろう」, gets one clarifying question before either is built.
 
 Automated evidence: [planning behavior tests](../../../skills/taskpilot/tests/test_planning_store.py), [rolling-plan tests](../../../skills/taskpilot/tests/test_rolling_plan.py) for PLAN-17 through PLAN-27, and [Task store tests](../../../skills/taskpilot/tests/test_todo_store.py). The deterministic planning tests cover 50-Task grouping, stale and partial writes, 20% capacity arithmetic, upper-bound packing, Context evidence, read-only suggestions, estimate clarification, and schedule/Priority conflict disclosure. They cannot prove that an agent's semantic estimates or reasons are good; the visible user review remains required. PLAN-28 through PLAN-30 depend on agent behavior and are verified manually in Codex and Claude Code.
 
@@ -313,9 +313,9 @@ TaskMateの見える状態管理は単純なままにします。Taskは未完�
 
 計画は常に[ローリング計画](#見直せる計画を保つ)です。[空き時間のTask提案](#空き時間に合わせてtaskを提案する)は計画ではなく、ファイルを書かず日付も付けません。Task Pilotは依頼の言葉で選びます。
 
-- 今週・来週・今後数日など、今日より後の日を含む計画依頼はローリング計画を作ります。
+- 「計画して」「今日の計画を立てて」「今週の計画を立てて」のように計画を名指しする依頼は、どちらを作るか尋ねずにローリング計画を作ります。足りない作業時間だけを尋ねます。今日だけに限る計画は今日の割り振りを確定し、残りのTaskを後の日へ回します。
 - 時間の長さや短い休憩など、今の空き時間についての依頼は空き時間のTask提案を返します。
-- 「計画して」「今日の計画を立てて」のようにどちらにも合う依頼は、Task Pilotを名指ししていても1回だけ尋ねます。今の空き時間にやるTaskを提案するか、今日以降の未完了Taskをすべて割り振る計画を作るかです。答えを聞くまでどちらも作りません。
+- 「今日何やろう」のように計画も空き時間も名指ししない依頼は、1回だけ尋ねます。今の空き時間にやるTaskを提案するか、計画を作るかです。答えを聞くまでどちらも作りません。
 
 Task Pilotは最初に、対象となる未完了Taskを要約します。依頼に応じて、Scheduled、予定日超過、今日、Unplanned、要確認の件数を示します。対象が0件なら、該当Taskがないことを伝え、書き込みません。
 
@@ -447,7 +447,7 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 
 ### 処理の流れ
 
-1. バックログ見直し、計画、読み取り専用の空き時間のTask提案、明示依頼されたSource note取り込みを区別し、計画と提案のどちらにも合う依頼は1回だけ尋ね、それぞれの範囲を決める。
+1. バックログ見直し、計画、読み取り専用の空き時間のTask提案、明示依頼されたSource note取り込みを区別し、計画を名指しする依頼はローリング計画を作り、計画も空き時間も名指ししない依頼は1回だけ尋ね、それぞれの範囲を決める。
 2. Source noteが指定された場合は対象となる適格なパスを示し、coverage reviewと承認を完了する。
 3. 正式な未完了Taskを読み、変更前に全体を要約する。
 4. 不足している計画制約だけを集め、根拠を示した所要時間幅を作る。
@@ -503,7 +503,7 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 - PLAN-27：各項目に、含めたTask変更レビュー、レビューに含めなかった理由、またはレビュー後に修正したことを読める言葉で示す。
 - PLAN-28：案の選択、または確定した作業計画が残る修正の後、計画ファイルだけが変わったことを伝えてTask変更レビューを作るか尋ね、「はい」の後にだけProposalを作る。
 - PLAN-29：「今週の計画を立てて」のように期間を含む計画依頼で、名前を出さなくてもTask Pilotが起動し、取り込み依頼でも引き続き起動する。
-- PLAN-30：今日より後の日を含む計画依頼はローリング計画を作り、今の空き時間についての依頼はファイルを書かない空き時間のTask提案を返し、「計画して」「今日の計画を立てて」のようにどちらにも合う依頼はどちらかを作る前に1回だけ尋ねる。
+- PLAN-30：「計画して」「今日の計画を立てて」のように計画を名指しする依頼は聞き返さずにローリング計画を作り、今の空き時間についての依頼はファイルを書かない空き時間のTask提案を返し、「今日何やろう」のようにどちらも名指ししない依頼はどちらかを作る前に1回だけ尋ねる。
 
 自動根拠は[planning挙動テスト](../../../skills/taskpilot/tests/test_planning_store.py)、PLAN-17〜27の[計画ファイルのテスト](../../../skills/taskpilot/tests/test_rolling_plan.py)、[Task storeテスト](../../../skills/taskpilot/tests/test_todo_store.py)です。50件のグループ化、変更競合と一部失敗、20%余白、上限による容量判定、Context根拠、読み取り専用の提案、見積もり要確認、予定日とPriorityの競合表示を検証します。Agentによる意味上の見積もりや理由の品質は決定的テストだけでは証明できないため、見える利用者レビューを必須とします。PLAN-28〜30はAgentの挙動に依存するため、CodexとClaude Codeで手動確認します。
 

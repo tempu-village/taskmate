@@ -4,7 +4,7 @@ description: Turn explicitly selected Obsidian notes into complete, reviewable T
 license: MIT
 metadata:
   author: Masashi
-  version: "0.10.0"
+  version: "0.10.1"
 ---
 
 # Task Pilot
@@ -26,7 +26,7 @@ Treat selected source folders and `taskmate-source` properties as an allowlist, 
 
 Re-read every file immediately before modifying it. Preserve unrelated frontmatter and prose in source notes. Use recoverable deletion when the environment supports it, and request confirmation immediately before deletion or another destructive bulk change.
 
-Keep backlog review, plans, and free-time Task suggestions distinct. A plan is always a rolling plan, and a free-time suggestion is never called a plan; when a request could mean either, ask once before building one. Plans and suggestions never write Task Markdown. Apply date, Priority, or Context-label changes only through a separately visible review whose affected Tasks and exact changes the user approved. “Do later” removes the date and does not create a Pending or Waiting state. Never use age alone to invent a date or Priority.
+Keep backlog review, plans, and free-time Task suggestions distinct. A plan is always a rolling plan, and a free-time suggestion is never called a plan; a request that asks for a plan by name always gets a rolling plan. Plans and suggestions never write Task Markdown. Apply date, Priority, or Context-label changes only through a separately visible review whose affected Tasks and exact changes the user approved. “Do later” removes the date and does not create a Pending or Waiting state. Never use age alone to invent a date or Priority.
 
 Estimate active effort as a visible range with a stated basis. Prefer the user's current estimate, then explicit Task text, then a coarse inference. Ask or mark the Task for breakdown when the boundary is too vague. Use the visible, user-adjustable 20% default buffer and upper estimate bounds for a free-time suggestion. Compare candidates through must-consider evidence, feasibility, and explained multi-signal judgment rather than a hidden fixed precedence.
 
