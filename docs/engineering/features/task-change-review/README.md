@@ -119,7 +119,7 @@ The shared review list classifies minimal envelopes through the Review Catalog a
 
 ## Related documents
 
-- [Task Pilot review and capacity planning](../task-pilot-planning.md)
+- [Task Pilot review, planning, and free-time suggestions](../task-pilot-planning.md)
 - [RFC 0032: Use jsdiff for Task change preview](../../rfcs/0032-use-jsdiff-for-task-change-preview.md)
 - [RFC 0033: Reviewable rolling plans and Source candidate reviews](../../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md)
 - [RFC: Show what plans and reviews change](../../rfcs/show-plan-and-review-changes.md)

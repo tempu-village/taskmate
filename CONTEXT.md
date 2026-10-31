@@ -72,12 +72,16 @@ _Avoid_: Tag, category
 A user-editable Label under the `context/` prefix that describes circumstances in which a Task is practical to perform. It is not a Task status or required metadata.
 _Avoid_: Context status, system label
 
-**Capacity plan**:
-A Task Pilot suggestion sized to the user's stated available time and circumstances. It does not define a fixed Task count or rewrite Manual order.
-_Avoid_: Top three, daily status
+**Rolling plan**:
+The only Task Pilot output called a plan: a saved Markdown artifact that places every incomplete Task on today or a later date, or shows it as a gap or conflict. Selecting and revising it never writes Task Markdown.
+_Avoid_: Schedule, capacity plan
+
+**Free-time Task suggestion**:
+A read-only Task Pilot answer that picks Tasks fitting the user's free time now and circumstances. It writes no file, sets no date, does not define a fixed Task count, and does not rewrite Manual order.
+_Avoid_: Capacity plan, top three, daily status
 
 **Effort estimate**:
-A session-only range of active work time used to build a Capacity plan. It excludes elapsed waiting time and is neither a deadline nor a persisted actual duration.
+A range of active work time used to build a Free-time Task suggestion or a Rolling plan; it is never written to Task Markdown. It excludes elapsed waiting time and is neither a deadline nor a persisted actual duration.
 _Avoid_: Time record, due time
 
 **Priority**:

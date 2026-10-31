@@ -175,17 +175,18 @@ Open the vault as the agent workspace and ask:
 $taskpilot Review the selected source notes and stage every Task candidate for review in TaskMate.
 ```
 
-For backlog review or a capacity-based plan, ask for the operation and give the available time or Context when known:
+For backlog review, a plan, or a free-time Task suggestion, ask for the operation and give the available time or Context when known:
 
 ```text
 $taskpilot Review my stale Tasks and propose safe date, Priority, and Context-label changes.
-$taskpilot I have two hours. Build a realistic plan without changing my Tasks.
+$taskpilot Plan this week without changing my Tasks.
+$taskpilot I have two hours. What can I do now?
 $taskpilot Find work for a 30-minute phone-only break.
 ```
 
 Task Pilot saves one review file in the proposal folder, opens it in TaskMate, and creates no Task at this stage; you can also run **TaskMate: Open reviews**, which lists every pending review. Each candidate is a card that quotes its source sentences. Edit a card when needed, choose to create, merge, exclude, or hold it, and then select **Apply decisions…**. TaskMate changes no Task before you confirm, asks for an extra confirmation for merges whose diff you did not open, and records the import on a source note once all of its candidates are applied. Completed reviews move to `TaskMate/Proposals/History` and remain there until you delete them. See [Review source notes and create Tasks](docs/user/how-to/import-source-notes.md) for the full steps.
 
-Backlog changes are also shown before writing. Capacity plans are read-only, use a visible 20% default buffer and upper effort estimates, and never add Task statuses or change Manual order. “Do later” removes the date instead of adding a Pending or Waiting state.
+Backlog changes are also shown before writing. A plan is always a rolling plan saved under `TaskMate/Plans`. A free-time Task suggestion is read-only, writes no file, uses a visible 20% default buffer and upper effort estimates, and never adds Task statuses or changes Manual order. A request that asks for a plan, such as “Plan today”, always gets a rolling plan; Task Pilot asks once only when a request names neither a plan nor free time. “Do later” removes the date instead of adding a Pending or Waiting state.
 
 Change the proposal location under **Settings → TaskMate → Proposal folder** when needed. The proposal folder is an approval boundary, not a security sandbox, and does not expand the source-note allowlist.
 

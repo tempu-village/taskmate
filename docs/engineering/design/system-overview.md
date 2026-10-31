@@ -49,7 +49,7 @@ flowchart TB
   helpers -->|"write"| plans
 ```
 
-- Task Pilot's helpers are `todo_store` (direct Task and Project operations), `planning_store` (backlog review, Task change Proposals and capacity plans), `rolling_plan` (rolling plans) and `import_review` (Import reviews).
+- Task Pilot's helpers are `todo_store` (direct Task and Project operations), `planning_store` (backlog review, Task change Proposals and free-time Task suggestions), `rolling_plan` (rolling plans) and `import_review` (Import reviews).
 - The plugin and Task Pilot never call each other's code. They share the file formats in [Specifications](../specifications/README.md) and Task Pilot's [Task schema](../../../skills/taskpilot/references/task-schema.md). The only direct handoffs are the URIs that open a Task change review or an Import review.
 - Task Pilot reads the plugin's `data.json` to find the managed folders, so both sides agree on where Tasks live.
 - The plugin's Import review also writes import provenance on a Source note once all of that note's candidates are applied.
@@ -560,7 +560,7 @@ sequenceDiagram
 | [Storage and privacy](../features/storage-and-privacy.md) | Plain Markdown in the user's Vault | `tasks/repository.ts`, `projects/project-repository.ts` |
 | [Task change review](../features/task-change-review/README.md) | Approve AI-suggested changes field by field | `reviews/task-change/`, Task Pilot `planning_store.py` |
 | [Source-note import](../features/source-import.md) | Turn selected notes into Tasks with nothing silently dropped | Task Pilot `todo_store.py`, `import_review.py`; `reviews/import/` |
-| [Task Pilot review and capacity planning](../features/task-pilot-planning.md) | Backlog review and plans sized to available time | Task Pilot `planning_store.py`, `rolling_plan.py` |
+| [Task Pilot review, planning, and free-time suggestions](../features/task-pilot-planning.md) | Backlog review, rolling plans, and Task suggestions sized to free time | Task Pilot `planning_store.py`, `rolling_plan.py` |
 
 ## 日本語参考
 
