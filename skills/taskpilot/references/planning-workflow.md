@@ -10,7 +10,7 @@ A plan is always a rolling plan (section 6). A free-time Task suggestion (sectio
 - A request about free time now, such as a duration or a short break (for example 「30分でできることある？」 or 「今ちょっと空いた」), gives a free-time Task suggestion.
 - A request that fits both, such as 「計画して」 or 「今日の計画を立てて」, including one that names Task Pilot, gets one question in the TaskMate output language: suggest Tasks for the free time now, or create a plan that places every incomplete Task from today onward. Build neither before the answer.
 
-Call the free-time output a suggestion, never a plan, when you report it.
+Call the free-time output a suggestion, never a plan, when you report it. For example, end it with 「この提案は表示しただけで、Taskファイルは何も変えていません。」 or "This is only a suggestion; no Task file changed."
 
 When the user explicitly requests Source-note import, resolve only eligible notes under the requested bounded rule, show their Vault-relative paths before reading them for candidate extraction, and let the user remove notes from the run without changing the long-term allowlist. Then follow [import-workflow.md](import-workflow.md) and [import-review-workflow.md](import-review-workflow.md).
 
