@@ -30,10 +30,10 @@ The user may make a natural-language request such as:
 - “Review my Tasks.”
 - “Review past-scheduled Tasks.”
 - “Plan today; I have two hours.”
-- “Plan my week.”
+- “Plan this week.”
 - “Find something I can do in 30 minutes.”
 
-Short planning requests that do not name Task Pilot, such as “Plan my week” or 「計画して」, start Task Pilot.
+Planning requests that name a period, such as 「今週の計画を立てて」, start Task Pilot without naming it. Agents choose skills by judgment, so a very short request such as 「計画して」 or “Plan my week” may get a generic reply instead; naming Task Pilot always starts it.
 
 Task Pilot first summarizes the relevant incomplete Task set. Depending on the request, the summary may include counts for Scheduled, past-scheduled, today, Unplanned, and Tasks that need user clarification. A zero-result review reports that no applicable Tasks were found and performs no write.
 
@@ -237,7 +237,7 @@ All criteria below are implemented on the current branch. Semantic judgment stil
 - PLAN-26: Selecting a base and revising the working plan require Task Pilot's one-paragraph summary, and a Proposal generated from the plan carries it with a one-line summary for every included Task.
 - PLAN-27: Each item names the Task change review that includes it, states readably why a review left it out, or says it was revised after its review.
 - PLAN-28: After selecting a base, or a revision that leaves a confirmed working plan, Task Pilot reports that only the plan file changed and asks whether to create the Task change review; it creates the Proposal only after a yes.
-- PLAN-29: Short planning requests such as “Plan my week”, 「今週の計画を立てて」 and 「計画して」 start Task Pilot without naming it, and import requests still start it.
+- PLAN-29: A planning request that names a period, such as 「今週の計画を立てて」, starts Task Pilot without naming it, and import requests still start it.
 
 Automated evidence: [planning behavior tests](../../../skills/taskpilot/tests/test_planning_store.py), [rolling-plan tests](../../../skills/taskpilot/tests/test_rolling_plan.py) for PLAN-17 through PLAN-27, and [Task store tests](../../../skills/taskpilot/tests/test_todo_store.py). The deterministic planning tests cover 50-Task grouping, stale and partial writes, 20% capacity arithmetic, upper-bound packing, Context evidence, read-only plans, estimate clarification, and schedule/Priority conflict disclosure. They cannot prove that an agent's semantic estimates or reasons are good; the visible user review remains required. PLAN-28 and PLAN-29 depend on agent behavior and are verified manually in Codex and Claude Code.
 
@@ -302,7 +302,7 @@ TaskMateの見える状態管理は単純なままにします。Taskは未完�
 
 ### 対象となる利用者体験
 
-利用者は「Taskを整理して」「予定日を過ぎたTaskを見直して」「今日は2時間使えるので計画して」「30分でできることを探して」「今週の計画を立てて」のように依頼できます。「計画して」のようにTask Pilotの名前を出さない短い計画依頼でも、Task Pilotが起動します。
+利用者は「Taskを整理して」「予定日を過ぎたTaskを見直して」「今日は2時間使えるので計画して」「30分でできることを探して」「今週の計画を立てて」のように依頼できます。期間を含む計画依頼なら、Task Pilotの名前を出さなくても起動します。AgentはSkillを判断で選ぶため、「計画して」「Plan my week」のようなごく短い依頼では一般的な返答になることがあります。Task Pilotの名前を添えれば必ず起動します。
 
 Task Pilotは最初に、対象となる未完了Taskを要約します。依頼に応じて、Scheduled、予定日超過、今日、Unplanned、要確認の件数を示します。対象が0件なら、該当Taskがないことを伝え、書き込みません。
 
@@ -489,7 +489,7 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 - PLAN-26：案の選択と作業計画の修正にはTask Pilotが書いた1段落の要約が必要で、計画から作るProposalはその要約と、含めるTaskごとの1行を持つ。
 - PLAN-27：各項目に、含めたTask変更レビュー、レビューに含めなかった理由、またはレビュー後に修正したことを読める言葉で示す。
 - PLAN-28：案の選択、または確定した作業計画が残る修正の後、計画ファイルだけが変わったことを伝えてTask変更レビューを作るか尋ね、「はい」の後にだけProposalを作る。
-- PLAN-29：「Plan my week」「今週の計画を立てて」「計画して」のような短い計画依頼で、名前を出さなくてもTask Pilotが起動し、取り込み依頼でも引き続き起動する。
+- PLAN-29：「今週の計画を立てて」のように期間を含む計画依頼で、名前を出さなくてもTask Pilotが起動し、取り込み依頼でも引き続き起動する。
 
 自動根拠は[planning挙動テスト](../../../skills/taskpilot/tests/test_planning_store.py)、PLAN-17〜27の[計画ファイルのテスト](../../../skills/taskpilot/tests/test_rolling_plan.py)、[Task storeテスト](../../../skills/taskpilot/tests/test_todo_store.py)です。50件のグループ化、変更競合と一部失敗、20%余白、上限による容量判定、Context根拠、読み取り専用計画、見積もり要確認、予定日とPriorityの競合表示を検証します。Agentによる意味上の見積もりや理由の品質は決定的テストだけでは証明できないため、見える利用者レビューを必須とします。PLAN-28とPLAN-29はAgentの挙動に依存するため、CodexとClaude Codeで手動確認します。
 
