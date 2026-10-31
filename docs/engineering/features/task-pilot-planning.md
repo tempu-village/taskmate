@@ -1,7 +1,7 @@
-# Task Pilot review and capacity planning
+# Task Pilot review, planning, and free-time suggestions
 
 Approval: Accepted — product review confirmed on 2026-10-11.
-Implementation: Implemented on the current branch — tracked by [Issue #52](https://github.com/tempu-village/taskmate/issues/52), with rolling plans tracked by [Issue #60](https://github.com/tempu-village/taskmate/issues/60) their change display and language tracked by [Issue #82](https://github.com/tempu-village/taskmate/issues/82), the planning trigger tracked by [Issue #95](https://github.com/tempu-village/taskmate/issues/95), and the review handoff tracked by [Issue #96](https://github.com/tempu-village/taskmate/issues/96); not yet identified with a release.
+Implementation: Implemented on the current branch — tracked by [Issue #52](https://github.com/tempu-village/taskmate/issues/52), with rolling plans tracked by [Issue #60](https://github.com/tempu-village/taskmate/issues/60), their change display and language tracked by [Issue #82](https://github.com/tempu-village/taskmate/issues/82), the planning trigger tracked by [Issue #95](https://github.com/tempu-village/taskmate/issues/95), the review handoff tracked by [Issue #96](https://github.com/tempu-village/taskmate/issues/96), and request routing with free-time suggestions tracked by [Issue #98](https://github.com/tempu-village/taskmate/issues/98); not yet identified with a release.
 
 > English is canonical. Japanese is an AI-translated reference.
 
@@ -29,17 +29,23 @@ The user may make a natural-language request such as:
 
 - “Review my Tasks.”
 - “Review past-scheduled Tasks.”
-- “Plan today; I have two hours.”
+- “I have two hours today; what can I do?”
 - “Plan this week.”
 - “Find something I can do in 30 minutes.”
 
 Planning requests that name a period, such as 「今週の計画を立てて」, start Task Pilot without naming it. Agents choose skills by judgment, so a very short request such as 「計画して」 or “Plan my week” may get a generic reply instead; naming Task Pilot always starts it.
 
+A plan is always a [rolling plan](#maintaining-a-rolling-plan). A [free-time Task suggestion](#suggesting-tasks-for-free-time) is not a plan; it writes no file and sets no date. Task Pilot chooses by the request's wording:
+
+- A planning request that includes days after today, such as this week, next week, or the coming days, creates a rolling plan.
+- A request about free time now, such as a duration or a short break, gives a free-time Task suggestion.
+- A request that fits both, such as 「計画して」 or 「今日の計画を立てて」, including one that names Task Pilot, gets one question: suggest Tasks for the free time now, or create a plan that places every incomplete Task from today onward. Task Pilot builds neither before the answer.
+
 Task Pilot first summarizes the relevant incomplete Task set. Depending on the request, the summary may include counts for Scheduled, past-scheduled, today, Unplanned, and Tasks that need user clarification. A zero-result review reports that no applicable Tasks were found and performs no write.
 
 The review asks only for constraints that materially affect the result and are not already known. These can include available time, fixed commitments, desired planning buffer, current energy or concentration, available device or place, and a project the user wants to favor. Population averages for leisure time are not a substitute for the user's stated capacity.
 
-A backlog review and a capacity plan are separate operations that may be requested together. A backlog review proposes changes to canonical Tasks. A capacity plan selects from the current canonical Tasks and is read-only. Approving or following a plan does not by itself set Task dates, priorities, labels, or completion. Those changes require separately visible Task-change proposals.
+A backlog review and a free-time Task suggestion are separate operations that may be requested together. A backlog review proposes changes to canonical Tasks. A free-time suggestion selects from the current canonical Tasks and is read-only. Following a suggestion or a plan does not by itself set Task dates, priorities, labels, or completion. Those changes require separately visible Task-change proposals.
 
 ### Reviewing existing Tasks
 
@@ -71,7 +77,7 @@ A Task date remains the date on which the user plans to work on the Task; this p
 
 An eligible Source note is an ordinary note in a folder selected in TaskMate settings or a note with `taskmate-source: true`. `taskmate-source: false` excludes a note even inside a selected folder. Task, Project, Proposal, and Obsidian configuration folders remain excluded, as defined by [Source-note import](source-import.md).
 
-A normal backlog review or capacity plan reads canonical Tasks only. It does not silently scan or import recently edited notes. Source-note import runs only when the user names eligible notes, explicitly asks to include Source notes under a bounded rule such as a named folder or recent period, or continues an existing coverage review. Before extraction, Task Pilot shows the selected note paths; the user may remove notes from that run without changing their long-term eligibility.
+A normal backlog review, plan, or free-time suggestion reads canonical Tasks only. It does not silently scan or import recently edited notes. Source-note import runs only when the user names eligible notes, explicitly asks to include Source notes under a bounded rule such as a named folder or recent period, or continues an existing coverage review. Before extraction, Task Pilot shows the selected note paths; the user may remove notes from that run without changing their long-term eligibility.
 
 For selected Source notes, Task Pilot uses the existing coverage review. Every action candidate is accounted for as a proposed Task, merge, or explicit exclusion. Only approved proposals become canonical Tasks. The planning step uses existing Tasks plus newly approved Tasks; unapproved proposals do not enter the plan. Automatically discovering and importing recent notes without an explicit request is outside this iteration.
 
@@ -90,22 +96,22 @@ Inferred estimates use coarse ranges such as 5–15, 15–30, 30–60, or 60–1
 
 Every displayed estimate identifies its basis as user-provided, Task-text evidence, or Task Pilot inference. A user correction overrides the estimate for the current planning session. This iteration does not write estimates back to Task Markdown or remember corrections across sessions.
 
-### Building a capacity-based plan
+### Suggesting Tasks for free time
 
-If the user gives a net duration such as “I have two hours,” Task Pilot uses it directly. If the user gives a clock interval such as “13:00–17:00,” it subtracts fixed commitments inside that interval once. It then reserves a planning buffer. The default buffer is 20% of the remaining window, rounded down to a whole minute, is shown to the user, and may be changed or removed by the user. It does not use population-average leisure time.
+A free-time Task suggestion answers a request about the free time the user has now. If the user gives a net duration such as “I have two hours,” Task Pilot uses it directly. If the user gives a clock interval such as “13:00–17:00,” it subtracts fixed commitments inside that interval once. It then reserves a buffer. The default buffer is 20% of the remaining window, rounded down to a whole minute, is shown to the user, and may be changed or removed by the user. It does not use population-average leisure time.
 
-A Task fits the capacity plan only when the sum of the selected Tasks' upper estimate bounds does not exceed the buffered planning capacity. Tasks that only fit under optimistic lower bounds appear separately as near matches, not inside the committed plan. Task Pilot does not force a fixed number of Tasks.
+A Task fits the suggestion only when the sum of the selected Tasks' upper estimate bounds does not exceed the buffered planning capacity. Tasks that only fit under optimistic lower bounds appear separately as near matches, not inside the suggestion. Task Pilot does not force a fixed number of Tasks.
 
-Each planned Task shows:
+Each suggested Task shows:
 
 - an estimated effort range, clearly marked as an estimate;
 - the reason it was selected now;
 - the relevant date, priority, project, or context evidence;
 - whether any context judgment was inferred rather than explicitly labeled.
 
-The plan may group work as “start first,” “next,” and “short free-time options.” These are presentation groups, not persisted Task states. The plan does not rewrite Manual order.
+The suggestion may group work as “start first,” “next,” and “short free-time options.” These are presentation groups, not persisted Task states. The suggestion does not rewrite Manual order.
 
-Task Pilot may propose a plan even when some effort estimates are uncertain, but it must expose that uncertainty. If it cannot form a credible plan from the available information, it asks for the smallest missing constraint instead of manufacturing precision.
+Task Pilot may make a suggestion even when some effort estimates are uncertain, but it must expose that uncertainty. If it cannot form a credible suggestion from the available information, it asks for the smallest missing constraint instead of manufacturing precision.
 
 Task Pilot chooses work in three stages rather than applying one rigid global ranking.
 
@@ -119,11 +125,11 @@ No single signal in stage three always wins. When an old Scheduled date conflict
 
 The user can supply a duration and optionally a device, place, situation, or energy level. Task Pilot prioritizes Tasks whose context labels match those constraints. It may also suggest an unlabeled Task when its content clearly appears suitable, but it marks that match as an inference.
 
-Missing context labels do not automatically exclude a Task. A free-time request returns as many credible options as fit the capacity; it is not fixed to three. An explicit contradiction in the Task text, such as “requires PC” during a phone-only request, excludes it from the plan. Task Pilot does not interrupt the user or automatically detect breaks in this iteration.
+Missing context labels do not automatically exclude a Task. A free-time request returns as many credible options as fit the capacity; it is not fixed to three. An explicit contradiction in the Task text, such as “requires PC” during a phone-only request, excludes it from the suggestion. Task Pilot does not interrupt the user or automatically detect breaks in this iteration.
 
 ### Maintaining a rolling plan
 
-When the user wants every incomplete Task accounted for beyond today, Task Pilot writes one rolling-plan Markdown per plan ID to `planFolder` (default `TaskMate/Plans`, excluded from Source discovery). The plan contains a recommended base, which may use displayed assumptions, and an evidence base, which uses only explicit Task data. Each base accounts for every canonical incomplete Task exactly once as a planned item, a `GAP`, or a `CONFLICT`. Work is placed only on today and on future dates whose capacity profile the user has confirmed; the horizon extends until every Task is accounted for. A Task's existing date is a strong constraint: a capacity move is shown with the old date and reason.
+Every plan is a rolling plan. Task Pilot writes one rolling-plan Markdown per plan ID to `planFolder` (default `TaskMate/Plans`, excluded from Source discovery). The plan contains a recommended base, which may use displayed assumptions, and an evidence base, which uses only explicit Task data. Each base accounts for every canonical incomplete Task exactly once as a planned item, a `GAP`, or a `CONFLICT`. Work is placed only on today and on future dates whose capacity profile the user has confirmed; the horizon extends until every Task is accounted for. A Task's existing date is a strong constraint: a capacity move is shown with the old date and reason.
 
 The user selects exactly one base as the working plan and revises it through Task Pilot by stable `PLAN-xx`, `GAP-xx`, and `CONFLICT-xx` IDs. Creating, selecting, revising, closing, and superseding a plan never writes Task Markdown. Every plan write requires the current plan revision and stops if the file was edited outside Task Pilot. Replanning starts from current canonical Tasks and marks the previous plan `superseded`.
 
@@ -175,29 +181,29 @@ Adding, removing, renaming, or deleting a Context label follows the existing [La
 - Unrelated Task content and properties are preserved.
 - Task Pilot never changes Manual order as a side effect of review or planning.
 - An effort estimate is advisory. This iteration does not store actual duration, learn personal velocity, or present an estimate as measured fact.
-- Accepting a capacity plan is read-only and does not imply approval of any Task-change proposal.
+- Following a free-time suggestion is read-only and does not imply approval of any Task-change proposal.
 - Context labels remain user-controlled Labels. TaskMate does not reserve the entire `context/` namespace or prevent manual edits.
 
 If some writes in an approved batch fail, Task Pilot identifies which Tasks succeeded and failed and does not claim atomic success or silently retry destructive changes. A retry must recheck current files and avoid duplicating an already applied change.
 
 ## Processing flow
 
-1. Distinguish a backlog review, a read-only capacity plan, and an explicitly requested Source-note import; resolve the scope of each.
+1. Distinguish a backlog review, a plan, a read-only free-time Task suggestion, and an explicitly requested Source-note import; ask once when a request fits both a plan and a suggestion; resolve the scope of each.
 2. When Source notes are requested, show the selected eligible paths, then complete coverage review and approval.
 3. Load the canonical incomplete Tasks and summarize the review population without changing it.
 4. Collect only missing planning constraints and derive evidence-labeled effort ranges.
 5. Generate reasoned date, priority, and Context-label proposals for a requested backlog review.
 6. Let the user revise, approve, reject, or defer proposals, including safe batch decisions.
 7. Recheck current files, apply only approved changes, and validate the saved Markdown.
-8. Build a read-only capacity plan from the current canonical Tasks and display the capacity calculation, reasons, estimates, and inferences.
+8. For a free-time request, build a read-only suggestion from the current canonical Tasks and display the time calculation, reasons, estimates, and inferences.
 
-Backlog-review mutations use persisted, reviewable [Task change Proposals](task-change-review/README.md) containing typed ChangeSets and complete before/after Markdown evidence. Capacity plans remain conversation output and read-only. Source-note imports use their own persisted Import reviews. Canonical Task Markdown remains the only Task master data.
+Backlog-review mutations use persisted, reviewable [Task change Proposals](task-change-review/README.md) containing typed ChangeSets and complete before/after Markdown evidence. Free-time suggestions remain conversation output and read-only; plans are separate rolling-plan artifacts. Source-note imports use their own persisted Import reviews. Canonical Task Markdown remains the only Task master data.
 
 ## Failure handling and limitations
 
-- If available time is missing for a capacity plan, Task Pilot asks for it or clearly labels a plan as unbounded.
-- If estimates exceed the available time, Task Pilot reduces the plan or asks which constraint to relax; it does not hide the overflow.
-- If a Task has no credible estimate, it remains visible as needing clarification but is not silently packed into a bounded plan.
+- If available time is missing for a free-time suggestion, Task Pilot asks for it or clearly labels the suggestion as unbounded.
+- If estimates exceed the available time, Task Pilot reduces the suggestion or asks which constraint to relax; it does not hide the overflow.
+- If a Task has no credible estimate, it remains visible as needing clarification but is not silently packed into a bounded suggestion.
 - If no Task credibly matches a requested context, Task Pilot reports that result and may offer clearly marked near matches.
 - If two proposals conflict, neither is written until the conflict is resolved.
 - A changed or unreadable Task is reported and omitted from mutation; other independent proposals may continue after the user sees the partial scope.
@@ -220,8 +226,8 @@ All criteria below are implemented on the current branch. Semantic judgment stil
 - PLAN-09: Planning and review leave Manual order unchanged.
 - PLAN-10: Zero matches and partial write failures are reported accurately without fabricated success.
 - PLAN-11: A normal planning request does not scan or import Source notes; an explicit Source-note request shows the selected eligible paths before extraction.
-- PLAN-12: Accepting a capacity plan changes no Task fields; date, priority, and Context-label changes require separate approval.
-- PLAN-13: Every effort range exposes its evidence basis, and an unestimable Task is not silently included in a bounded plan.
+- PLAN-12: Following a free-time suggestion changes no Task fields; date, priority, and Context-label changes require separate approval.
+- PLAN-13: Every effort range exposes its evidence basis, and an unestimable Task is not silently included in a bounded suggestion.
 - PLAN-14: A 50-Task review groups only identical visible changes, lets the user inspect every member, and leaves clarification items unchanged.
 - PLAN-15: Without future-capacity evidence, the review does not assign arbitrary future dates or priorities to clear an old backlog.
 - PLAN-16: Candidate selection follows must-consider, feasibility, and multi-signal comparison stages; a conflict between schedule and Priority is explained or returned to the user instead of resolved by a hidden fixed precedence.
@@ -238,8 +244,9 @@ All criteria below are implemented on the current branch. Semantic judgment stil
 - PLAN-27: Each item names the Task change review that includes it, states readably why a review left it out, or says it was revised after its review.
 - PLAN-28: After selecting a base, or a revision that leaves a confirmed working plan, Task Pilot reports that only the plan file changed and asks whether to create the Task change review; it creates the Proposal only after a yes.
 - PLAN-29: A planning request that names a period, such as 「今週の計画を立てて」, starts Task Pilot without naming it, and import requests still start it.
+- PLAN-30: A planning request that includes days after today creates a rolling plan, a request about free time now gives a free-time Task suggestion that writes no file, and a request that fits both, such as 「計画して」 or 「今日の計画を立てて」, gets one clarifying question before either is built.
 
-Automated evidence: [planning behavior tests](../../../skills/taskpilot/tests/test_planning_store.py), [rolling-plan tests](../../../skills/taskpilot/tests/test_rolling_plan.py) for PLAN-17 through PLAN-27, and [Task store tests](../../../skills/taskpilot/tests/test_todo_store.py). The deterministic planning tests cover 50-Task grouping, stale and partial writes, 20% capacity arithmetic, upper-bound packing, Context evidence, read-only plans, estimate clarification, and schedule/Priority conflict disclosure. They cannot prove that an agent's semantic estimates or reasons are good; the visible user review remains required. PLAN-28 and PLAN-29 depend on agent behavior and are verified manually in Codex and Claude Code.
+Automated evidence: [planning behavior tests](../../../skills/taskpilot/tests/test_planning_store.py), [rolling-plan tests](../../../skills/taskpilot/tests/test_rolling_plan.py) for PLAN-17 through PLAN-27, and [Task store tests](../../../skills/taskpilot/tests/test_todo_store.py). The deterministic planning tests cover 50-Task grouping, stale and partial writes, 20% capacity arithmetic, upper-bound packing, Context evidence, read-only suggestions, estimate clarification, and schedule/Priority conflict disclosure. They cannot prove that an agent's semantic estimates or reasons are good; the visible user review remains required. PLAN-28 through PLAN-30 depend on agent behavior and are verified manually in Codex and Claude Code.
 
 ## Out of scope for this iteration
 
@@ -250,7 +257,7 @@ Automated evidence: [planning behavior tests](../../../skills/taskpilot/tests/te
 - calendar integration or automatic free-time detection;
 - scheduled morning planning or unsolicited break notifications;
 - persistence of actual duration or automatic learning from completion history;
-- persisting conversation capacity plans, effort estimates, or custom Context-label dictionaries into Task Markdown (rolling plans are separate artifacts);
+- persisting free-time suggestions, effort estimates, or custom Context-label dictionaries into Task Markdown (rolling plans are separate artifacts);
 - automatic discovery and import of recently edited Source notes without an explicit request;
 - fully automatic Task mutation without review;
 - bulk merge, split, rename, completion, or deletion during backlog review;
@@ -259,7 +266,7 @@ Automated evidence: [planning behavior tests](../../../skills/taskpilot/tests/te
 
 ## Implemented RFC
 
-The rolling-plan part of [RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md), [Issue #60](https://github.com/tempu-village/taskmate/issues/60), is implemented as described in [Maintaining a rolling plan](#maintaining-a-rolling-plan); the conversation capacity plan above remains available for a single bounded window. The rest of the RFC, the Import review and the shared review list, is described in the [Source-note import](source-import.md) and [Task change review](task-change-review/README.md) Features.
+The rolling-plan part of [RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md), [Issue #60](https://github.com/tempu-village/taskmate/issues/60), is implemented as described in [Maintaining a rolling plan](#maintaining-a-rolling-plan); the conversation capacity plan it kept is now the [free-time Task suggestion](#suggesting-tasks-for-free-time) ([Issue #98](https://github.com/tempu-village/taskmate/issues/98)). The rest of the RFC, the Import review and the shared review list, is described in the [Source-note import](source-import.md) and [Task change review](task-change-review/README.md) Features.
 
 The change display and output language of rolling plans follow [Show what plans and reviews change](../rfcs/show-plan-and-review-changes.md), [Issue #82](https://github.com/tempu-village/taskmate/issues/82), whose [interactive mockup](../rfcs/assets/plan-review-change-display.html) records the options compared.
 
@@ -282,7 +289,7 @@ The change display and output language of rolling plans follow [Show what plans 
 
 > 翻訳状態：`ai-translated`。英語版が正本です。
 
-承認：2026年10月11日の製品レビューで採用済み。実装：現在のブランチへ実装済みで、[Issue #52](https://github.com/tempu-village/taskmate/issues/52)、計画は[Issue #60](https://github.com/tempu-village/taskmate/issues/60)、計画の変更表示と言語は[Issue #82](https://github.com/tempu-village/taskmate/issues/82)、計画依頼での起動は[Issue #95](https://github.com/tempu-village/taskmate/issues/95)、レビューへの引き継ぎは[Issue #96](https://github.com/tempu-village/taskmate/issues/96)で追跡します。対応リリースはまだ特定していません。
+承認：2026年10月11日の製品レビューで採用済み。実装：現在のブランチへ実装済みで、[Issue #52](https://github.com/tempu-village/taskmate/issues/52)、計画は[Issue #60](https://github.com/tempu-village/taskmate/issues/60)、計画の変更表示と言語は[Issue #82](https://github.com/tempu-village/taskmate/issues/82)、計画依頼での起動は[Issue #95](https://github.com/tempu-village/taskmate/issues/95)、レビューへの引き継ぎは[Issue #96](https://github.com/tempu-village/taskmate/issues/96)、依頼の振り分けと空き時間のTask提案は[Issue #98](https://github.com/tempu-village/taskmate/issues/98)で追跡します。対応リリースはまだ特定していません。
 
 ### 目的と範囲
 
@@ -302,13 +309,19 @@ TaskMateの見える状態管理は単純なままにします。Taskは未完�
 
 ### 対象となる利用者体験
 
-利用者は「Taskを整理して」「予定日を過ぎたTaskを見直して」「今日は2時間使えるので計画して」「30分でできることを探して」「今週の計画を立てて」のように依頼できます。期間を含む計画依頼なら、Task Pilotの名前を出さなくても起動します。AgentはSkillを判断で選ぶため、「計画して」「Plan my week」のようなごく短い依頼では一般的な返答になることがあります。Task Pilotの名前を添えれば必ず起動します。
+利用者は「Taskを整理して」「予定日を過ぎたTaskを見直して」「今日は2時間あるけど何ができる？」「30分でできることを探して」「今週の計画を立てて」のように依頼できます。期間を含む計画依頼なら、Task Pilotの名前を出さなくても起動します。AgentはSkillを判断で選ぶため、「計画して」「Plan my week」のようなごく短い依頼では一般的な返答になることがあります。Task Pilotの名前を添えれば必ず起動します。
+
+計画は常に[ローリング計画](#見直せる計画を保つ)です。[空き時間のTask提案](#空き時間に合わせてtaskを提案する)は計画ではなく、ファイルを書かず日付も付けません。Task Pilotは依頼の言葉で選びます。
+
+- 今週・来週・今後数日など、今日より後の日を含む計画依頼はローリング計画を作ります。
+- 時間の長さや短い休憩など、今の空き時間についての依頼は空き時間のTask提案を返します。
+- 「計画して」「今日の計画を立てて」のようにどちらにも合う依頼は、Task Pilotを名指ししていても1回だけ尋ねます。今の空き時間にやるTaskを提案するか、今日以降の未完了Taskをすべて割り振る計画を作るかです。答えを聞くまでどちらも作りません。
 
 Task Pilotは最初に、対象となる未完了Taskを要約します。依頼に応じて、Scheduled、予定日超過、今日、Unplanned、要確認の件数を示します。対象が0件なら、該当Taskがないことを伝え、書き込みません。
 
 結果に実質的な影響があり、まだ分からない制約だけを質問します。利用可能時間、固定予定、余白、現在の体力・集中力、使える端末や場所、優先したいProjectなどです。一般人口の平均余暇時間を本人の空き時間の代わりには使いません。
 
-バックログ見直しと時間ベース計画は別の操作で、同時に依頼することもできます。バックログ見直しは正式Taskの変更案を作ります。時間ベース計画は現在の正式Taskから候補を選ぶ読み取り専用の操作です。計画の承認や実行だけでは、Taskの日付、優先度、ラベル、完了状態を変更しません。変更には、別に見えるTask変更案への承認が必要です。
+バックログ見直しと空き時間のTask提案は別の操作で、同時に依頼することもできます。バックログ見直しは正式Taskの変更案を作ります。空き時間のTask提案は現在の正式Taskから候補を選ぶ読み取り専用の操作です。提案や計画に従うだけでは、Taskの日付、優先度、ラベル、完了状態を変更しません。変更には、別に見えるTask変更案への承認が必要です。
 
 ### 既存Taskの見直し
 
@@ -330,7 +343,7 @@ Taskの日付は実行予定日です。この提案では別の締切フィー�
 
 取り込み対象にできるSource noteは、TaskMate設定で選ばれたフォルダー内の通常ノート、または`taskmate-source: true`を持つノートです。選択フォルダー内でも`taskmate-source: false`なら除外します。Task、Project、Proposal、Obsidian設定フォルダーは、[Source-note import](source-import.md)の定義どおり対象外です。
 
-通常のバックログ見直しと時間ベース計画は、正式Taskだけを読みます。最近編集したノートを黙って探索・取り込みしません。Source noteの取り込みは、利用者が対象ノートを名前で指定した場合、名前付きフォルダーや最近の期間などの範囲を明示してSource noteを含めるよう依頼した場合、または既存のcoverage reviewを続ける場合だけ実行します。抽出前に対象ノートのパスを示し、利用者は長期的な対象設定を変えずに今回の対象から外せます。
+通常のバックログ見直し、計画、空き時間のTask提案は、正式Taskだけを読みます。最近編集したノートを黙って探索・取り込みしません。Source noteの取り込みは、利用者が対象ノートを名前で指定した場合、名前付きフォルダーや最近の期間などの範囲を明示してSource noteを含めるよう依頼した場合、または既存のcoverage reviewを続ける場合だけ実行します。抽出前に対象ノートのパスを示し、利用者は長期的な対象設定を変えずに今回の対象から外せます。
 
 選ばれたSource noteには既存のcoverage reviewを使います。すべての行動候補をTask作成、統合、明示除外のいずれかへ割り当て、承認された提案だけを正式Taskにします。計画には既存Taskと新しく承認されたTaskを使い、未承認提案は含めません。明示依頼なしで最近編集したノートを自動発見・取り込みする機能は今回の対象外です。
 
@@ -349,15 +362,15 @@ AI推測では、5〜15分、15〜30分、30〜60分、60〜120分のような�
 
 各見積もりには、利用者指定、Task本文の根拠、Task Pilotの推測のどれかを表示します。利用者による修正は現在の計画セッションで優先します。今回は見積もりをTask Markdownへ保存せず、セッションをまたいで修正値を記憶しません。
 
-### 利用可能時間に基づく計画
+### 空き時間に合わせてTaskを提案する
 
-「2時間使える」のように正味時間が示された場合は、そのまま使います。「13:00〜17:00」のように時刻範囲が示された場合は、その中の固定予定を一度だけ差し引きます。その後、計画用の余白を確保します。初期値は残り時間の20%を1分単位で切り捨てた値で、利用者へ表示し、変更または解除できます。一般人口の平均余暇時間は使いません。
+空き時間のTask提案は、利用者が今持っている空き時間についての依頼に答えます。「2時間使える」のように正味時間が示された場合は、そのまま使います。「13:00〜17:00」のように時刻範囲が示された場合は、その中の固定予定を一度だけ差し引きます。その後、余白を確保します。初期値は残り時間の20%を1分単位で切り捨てた値で、利用者へ表示し、変更または解除できます。一般人口の平均余暇時間は使いません。
 
-選んだTaskの見積もり上限の合計が、余白を引いた計画可能時間を超えない場合だけ、正式な計画内に含めます。楽観的な下限なら入るTaskは、計画内ではなく「近い候補」として分けて表示します。Task件数は固定しません。
+選んだTaskの見積もり上限の合計が、余白を引いた時間を超えない場合だけ、提案に含めます。楽観的な下限なら入るTaskは、提案内ではなく「近い候補」として分けて表示します。Task件数は固定しません。
 
 各Taskには、推定であることを明記した所要時間の幅、今選んだ理由、根拠となる日付・優先度・Project・Context、Context判断が推測かどうかを示します。「最初に着手」「次に着手」「短い空き時間向け」のように表示できますが、これらは保存状態ではありません。Manual orderは変更しません。
 
-不確実な見積もりを含む計画も提示できますが、不確実性を見せます。信頼できる計画を作れなければ、精密さを捏造せず、必要最小限の制約を確認します。
+不確実な見積もりを含む提案もできますが、不確実性を見せます。信頼できる提案を作れなければ、精密さを捏造せず、必要最小限の制約を確認します。
 
 Task Pilotは一つの固定順位ではなく、三段階で作業を選びます。
 
@@ -371,11 +384,11 @@ Task Pilotは一つの固定順位ではなく、三段階で作業を選びま�
 
 利用者は時間に加え、必要なら端末、場所、状況、体力を指定できます。Task Pilotは一致するContext labelを優先します。ラベルがないTaskでも、内容から明らかに適していれば候補にできますが、推測であることを示します。
 
-Context labelがないだけでTaskを除外しません。固定3件ではなく、時間内で信頼できる件数を返します。ただし「PC必須」と書かれたTaskに対するphone-only依頼のように、Task本文と明確に矛盾する場合は計画から除外します。今回のイテレーションでは、休憩を自動検出したり利用者へ割り込んだりしません。
+Context labelがないだけでTaskを除外しません。固定3件ではなく、時間内で信頼できる件数を返します。ただし「PC必須」と書かれたTaskに対するphone-only依頼のように、Task本文と明確に矛盾する場合は提案から除外します。今回のイテレーションでは、休憩を自動検出したり利用者へ割り込んだりしません。
 
 ### 見直せる計画を保つ
 
-今日より先まで未完了Taskをすべて割り当てたいとき、Task Pilotは計画IDごとに1つの計画Markdownを`planFolder`（既定は`TaskMate/Plans`、Source探索の対象外）へ書きます。計画には、示した前提を使える推奨案と、Taskに明示された情報だけを使う根拠案があります。どちらの案も、正式な未完了Taskをすべてちょうど1回ずつ、計画済み・`GAP`・`CONFLICT`のいずれかとして載せます。作業は今日と、利用者が容量を承認した将来の日付にだけ置き、全Taskが載るまで期間を延ばします。Taskに既にある日付は強い制約で、容量のために動かす場合は元の日付と理由を示します。
+計画は常にローリング計画です。Task Pilotは計画IDごとに1つの計画Markdownを`planFolder`（既定は`TaskMate/Plans`、Source探索の対象外）へ書きます。計画には、示した前提を使える推奨案と、Taskに明示された情報だけを使う根拠案があります。どちらの案も、正式な未完了Taskをすべてちょうど1回ずつ、計画済み・`GAP`・`CONFLICT`のいずれかとして載せます。作業は今日と、利用者が容量を承認した将来の日付にだけ置き、全Taskが載るまで期間を延ばします。Taskに既にある日付は強い制約で、容量のために動かす場合は元の日付と理由を示します。
 
 利用者はどちらか一方の案を作業中の計画として選び、`PLAN-xx`・`GAP-xx`・`CONFLICT-xx`のIDを使ってTask Pilotで修正します。計画の作成、選択、修正、終了、置き換えではTaskのMarkdownを書き換えません。計画への書き込みには今の版番号が必要で、Task Pilotの外で編集されていれば止まります。計画の作り直しは今の正式なTaskから始め、前の計画を`superseded`にします。
 
@@ -427,29 +440,29 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 - 無関係な本文とPropertyを保持します。
 - 見直しや計画の副作用でManual orderを変更しません。
 - 所要時間は助言用の推定です。今回は実績時間の保存、個人速度の学習、実測値のような表示を行いません。
-- 時間ベース計画の承認は読み取り専用で、Task変更案への承認を意味しません。
+- 空き時間のTask提案に従うことは読み取り専用で、Task変更案への承認を意味しません。
 - Context labelは利用者が管理するLabelです。TaskMateが`context/`名前空間全体を予約したり、手編集を禁止したりしません。
 
 一括変更の一部に失敗した場合は、成功・失敗したTaskを区別し、全体成功と報告しません。再試行時は現在のファイルを再確認し、適用済み変更を重複させません。
 
 ### 処理の流れ
 
-1. バックログ見直し、読み取り専用の時間ベース計画、明示依頼されたSource note取り込みを区別し、それぞれの範囲を決める。
+1. バックログ見直し、計画、読み取り専用の空き時間のTask提案、明示依頼されたSource note取り込みを区別し、計画と提案のどちらにも合う依頼は1回だけ尋ね、それぞれの範囲を決める。
 2. Source noteが指定された場合は対象となる適格なパスを示し、coverage reviewと承認を完了する。
 3. 正式な未完了Taskを読み、変更前に全体を要約する。
 4. 不足している計画制約だけを集め、根拠を示した所要時間幅を作る。
 5. バックログ見直しが依頼された場合、理由付きの日付、優先度、Context label変更案を作る。
 6. 利用者が修正、承認、却下、先送りし、安全な一括判断も行えるようにする。
 7. 現在のファイルを再確認し、承認分だけ反映してMarkdownを検証する。
-8. 現在の正式Taskから読み取り専用の時間ベース計画を作り、時間計算、理由、見積もり、推測を表示する。
+8. 空き時間の依頼では、現在の正式Taskから読み取り専用の提案を作り、時間計算、理由、見積もり、推測を表示する。
 
-バックログ変更は、型付きChangeSetと変更前後Markdown全文を含む永続化されたレビュー可能な[Task change Proposal](task-change-review/README.md)を使います。時間ベース計画は引き続き対話内だけの読み取り専用です。Source note取り込みは、それ専用の永続的な取り込みレビューを使い、正式なTask MarkdownだけをTaskの正本とします。
+バックログ変更は、型付きChangeSetと変更前後Markdown全文を含む永続化されたレビュー可能な[Task change Proposal](task-change-review/README.md)を使います。空き時間のTask提案は引き続き対話内だけの読み取り専用で、計画は別ファイルのローリング計画です。Source note取り込みは、それ専用の永続的な取り込みレビューを使い、正式なTask MarkdownだけをTaskの正本とします。
 
 ### 失敗時と制限
 
-- 時間ベース計画に利用可能時間がなければ質問するか、上限なしの計画であることを明示します。
+- 空き時間のTask提案に利用可能時間がなければ質問するか、上限なしの提案であることを明示します。
 - 見積もりが利用可能時間を超えたらTaskを減らすか、緩める制約を確認し、超過を隠しません。
-- 信頼できる見積もりを作れないTaskは要確認として表示に残しますが、時間上限のある計画へ黙って詰め込みません。
+- 信頼できる見積もりを作れないTaskは要確認として表示に残しますが、時間上限のある提案へ黙って詰め込みません。
 - 指定Contextに確実に合うTaskがなければ、その結果を伝え、必要なら近い候補を明確に区別します。
 - 提案同士が競合したら解決まで書き込みません。
 - 変更済みまたは読めないTaskは変更対象から外して報告します。利用者が部分範囲を確認した後、独立した他の提案は続行できます。
@@ -472,8 +485,8 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 - PLAN-09：計画と見直しでManual orderを変えない。
 - PLAN-10：対象0件と一部書き込み失敗を正確に報告し、成功を捏造しない。
 - PLAN-11：通常の計画依頼ではSource noteを探索・取り込みせず、Source noteを明示依頼した場合は抽出前に対象となる適格なパスを示す。
-- PLAN-12：時間ベース計画の承認ではTaskの項目を変更せず、日付、優先度、Context labelの変更には別の承認を必要とする。
-- PLAN-13：すべての見積もり幅に根拠種別を表示し、見積もれないTaskを時間上限のある計画へ黙って含めない。
+- PLAN-12：空き時間のTask提案に従ってもTaskの項目を変更せず、日付、優先度、Context labelの変更には別の承認を必要とする。
+- PLAN-13：すべての見積もり幅に根拠種別を表示し、見積もれないTaskを時間上限のある提案へ黙って含めない。
 - PLAN-14：50件の見直しでは同じ変更だけを見える形でまとめ、全対象を確認でき、要確認項目は変更しない。
 - PLAN-15：将来の作業容量を示す根拠がなければ、古いバックログを片付けるためだけの将来日付や優先度を付けない。
 - PLAN-16：候補選択を「最初に必ず考慮・実行可能性・複数情報の比較」の三段階で行い、予定日とPriorityの競合を非表示の固定順位で解決せず、説明または利用者確認へ戻す。
@@ -490,8 +503,9 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 - PLAN-27：各項目に、含めたTask変更レビュー、レビューに含めなかった理由、またはレビュー後に修正したことを読める言葉で示す。
 - PLAN-28：案の選択、または確定した作業計画が残る修正の後、計画ファイルだけが変わったことを伝えてTask変更レビューを作るか尋ね、「はい」の後にだけProposalを作る。
 - PLAN-29：「今週の計画を立てて」のように期間を含む計画依頼で、名前を出さなくてもTask Pilotが起動し、取り込み依頼でも引き続き起動する。
+- PLAN-30：今日より後の日を含む計画依頼はローリング計画を作り、今の空き時間についての依頼はファイルを書かない空き時間のTask提案を返し、「計画して」「今日の計画を立てて」のようにどちらにも合う依頼はどちらかを作る前に1回だけ尋ねる。
 
-自動根拠は[planning挙動テスト](../../../skills/taskpilot/tests/test_planning_store.py)、PLAN-17〜27の[計画ファイルのテスト](../../../skills/taskpilot/tests/test_rolling_plan.py)、[Task storeテスト](../../../skills/taskpilot/tests/test_todo_store.py)です。50件のグループ化、変更競合と一部失敗、20%余白、上限による容量判定、Context根拠、読み取り専用計画、見積もり要確認、予定日とPriorityの競合表示を検証します。Agentによる意味上の見積もりや理由の品質は決定的テストだけでは証明できないため、見える利用者レビューを必須とします。PLAN-28とPLAN-29はAgentの挙動に依存するため、CodexとClaude Codeで手動確認します。
+自動根拠は[planning挙動テスト](../../../skills/taskpilot/tests/test_planning_store.py)、PLAN-17〜27の[計画ファイルのテスト](../../../skills/taskpilot/tests/test_rolling_plan.py)、[Task storeテスト](../../../skills/taskpilot/tests/test_todo_store.py)です。50件のグループ化、変更競合と一部失敗、20%余白、上限による容量判定、Context根拠、読み取り専用の提案、見積もり要確認、予定日とPriorityの競合表示を検証します。Agentによる意味上の見積もりや理由の品質は決定的テストだけでは証明できないため、見える利用者レビューを必須とします。PLAN-28〜30はAgentの挙動に依存するため、CodexとClaude Codeで手動確認します。
 
 ### 今回のイテレーションの対象外
 
@@ -502,7 +516,7 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 - カレンダー連携や空き時間の自動検出
 - 朝の自動計画や休憩中の自動通知
 - 実績時間の保存や完了履歴からの自動学習
-- 会話での時間ベース計画、所要時間見積もり、カスタムContext label意味辞書をTaskのMarkdownへ保存すること（見直せる計画は別ファイル）
+- 空き時間のTask提案、所要時間見積もり、カスタムContext label意味辞書をTaskのMarkdownへ保存すること（見直せる計画は別ファイル）
 - 明示依頼なしで最近編集したSource noteを自動発見・取り込みすること
 - レビューなしの完全自動Task変更
 - バックログ見直しでの一括統合、分割、改名、完了、削除
@@ -511,7 +525,7 @@ Context labelの追加、削除、改名は既存の[Labels](labels.md)に従い
 
 ### 実装済みのRFC
 
-[RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md)のうち計画部分（[Issue #60](https://github.com/tempu-village/taskmate/issues/60)）は、上の「見直せる計画を保つ」のとおり実装済みです。1回分の時間に合わせる会話での計画も引き続き使えます。RFCの残り（取り込みレビューと共通のレビュー一覧）は、[Source-note import](source-import.md)と[Task change review](task-change-review/README.md)のFeatureに記載しています。
+[RFC 0033](../rfcs/0033-add-reviewable-rolling-plans-and-source-candidate-reviews.md)のうち計画部分（[Issue #60](https://github.com/tempu-village/taskmate/issues/60)）は、上の「見直せる計画を保つ」のとおり実装済みです。RFCが残した会話での時間ベース計画は、現在の[空き時間のTask提案](#空き時間に合わせてtaskを提案する)です（[Issue #98](https://github.com/tempu-village/taskmate/issues/98)）。RFCの残り（取り込みレビューと共通のレビュー一覧）は、[Source-note import](source-import.md)と[Task change review](task-change-review/README.md)のFeatureに記載しています。
 
 計画の変更表示と出力言語は[Show what plans and reviews change](../rfcs/show-plan-and-review-changes.md)（[Issue #82](https://github.com/tempu-village/taskmate/issues/82)）に従います。比べた選択肢は[試作](../rfcs/assets/plan-review-change-display.html)に残しています。
 

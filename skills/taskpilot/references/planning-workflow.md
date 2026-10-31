@@ -1,6 +1,16 @@
-# Backlog review and capacity-planning workflow
+# Backlog review, planning, and free-time suggestion workflow
 
-Use this workflow for on-demand Task review and planning. It does not replace the Source-note coverage workflow. A normal review or plan reads canonical Tasks only; invoke Source-note import separately and plan with promoted Tasks only.
+Use this workflow for on-demand Task review, plans, and free-time Task suggestions. It does not replace the Source-note coverage workflow. A normal review, plan, or suggestion reads canonical Tasks only; invoke Source-note import separately and plan with promoted Tasks only.
+
+## Route the request
+
+A plan is always a rolling plan (section 6). A free-time Task suggestion (section 5) is not a plan: it writes no file and sets no date. Choose by the request's wording:
+
+- A planning request that includes days after today, such as this week, next week, or the coming days (for example 「今週の計画を立てて」 or "plan next week"), creates a rolling plan.
+- A request about free time now, such as a duration or a short break (for example 「30分でできることある？」 or 「今ちょっと空いた」), gives a free-time Task suggestion.
+- A request that fits both, such as 「計画して」 or 「今日の計画を立てて」, including one that names Task Pilot, gets one question in the TaskMate output language: suggest Tasks for the free time now, or create a plan that places every incomplete Task from today onward. Build neither before the answer.
+
+Call the free-time output a suggestion, never a plan, when you report it.
 
 When the user explicitly requests Source-note import, resolve only eligible notes under the requested bounded rule, show their Vault-relative paths before reading them for candidate extraction, and let the user remove notes from the run without changing the long-term allowlist. Then follow [import-workflow.md](import-workflow.md) and [import-review-workflow.md](import-review-workflow.md).
 
@@ -72,9 +82,9 @@ For each candidate, use this evidence order:
 
 Inference must use 5–15, 15–30, 30–60, or 60–120 minutes. Include inherent setup and transition work and exclude elapsed waiting. Work over 120 minutes needs `largeAccepted: true`. Estimates and corrections remain in the current interaction and are not written to Task Markdown.
 
-## 5. Build a read-only capacity plan
+## 5. Suggest Tasks for free time
 
-Supply net available minutes. If the user gives a clock interval, subtract fixed commitments once before writing `availableMinutes`. `bufferPercent` defaults to 20 and may be changed by the user.
+A free-time Task suggestion picks Tasks that fit the free time the user has now. It is read-only conversation output. Supply net available minutes. If the user gives a clock interval, subtract fixed commitments once before writing `availableMinutes`. `bufferPercent` defaults to 20 and may be changed by the user.
 
 The caller performs the semantic three-stage comparison:
 
@@ -113,11 +123,11 @@ Run:
 python3 scripts/planning_store.py --vault <vault> plan --request <request.json>
 ```
 
-The command reserves the displayed buffer, packs only upper bounds into `planned`, separates lower-bound-only fits into `nearMatches`, and leaves constraint conflicts in `omitted`. `needsBreakdown` and unresolved choices appear in `needsClarification`. It never writes Task Markdown.
+The command reserves the displayed buffer, packs only upper bounds into `planned` (the suggested Tasks), separates lower-bound-only fits into `nearMatches`, and leaves constraint conflicts in `omitted`. `needsBreakdown` and unresolved choices appear in `needsClarification`. It never writes Task Markdown.
 
-## 6. Maintain a rolling plan
+## 6. Make and maintain a plan (rolling plan)
 
-Use a rolling plan when the user wants every incomplete Task accounted for across today and future days. It is a separate Markdown artifact, not a Task change: creating, selecting, revising, closing, and superseding it never writes Task Markdown. Run `inspect` first and plan only canonical incomplete Tasks; never include pending Import candidates.
+Use a rolling plan for every plan, as routed in "Route the request": it accounts for every incomplete Task across today and future days. It is a separate Markdown artifact, not a Task change: creating, selecting, revising, closing, and superseding it never writes Task Markdown. Run `inspect` first and plan only canonical incomplete Tasks; never include pending Import candidates.
 
 The helper writes the plan's headings and fixed phrases in the language reported by `python3 scripts/todo_store.py --vault <vault> language`. When it reports `unknown`, ask the user which language to use and pass it as `rolling_plan.py --vault <vault> --language ja|en <command>`; the helper refuses to write without it, and TaskMate's setting always wins when it decides the language. Write every reason, summary and gap or conflict reason you supply in that language too.
 

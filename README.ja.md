@@ -3,7 +3,7 @@
 [English](README.md) | 日本語
 
 <!-- translation-status: ai-translated -->
-<!-- translation-source-sha256: 2d3f3695ee1feac4b4d9e25208d97a981a610727a20616ba2ec0663c1f37eabe -->
+<!-- translation-source-sha256: 4f15e32845049f94fbc9eb34482a91d43b9b87f4ecdae8b4ad1206d74e43159a -->
 
 > 翻訳状態：`ai-translated`
 >
@@ -182,17 +182,18 @@ Vaultをエージェントのワークスペースとして開き、次のよう
 $taskpilot Review the selected source notes and stage every Task candidate for review in TaskMate.
 ```
 
-バックログ見直しや時間ベース計画では、操作内容に加え、分かる場合は利用可能時間やContextを指定します。
+バックログ見直し、計画、空き時間のTask提案では、操作内容に加え、分かる場合は利用可能時間やContextを指定します。
 
 ```text
 $taskpilot Review my stale Tasks and propose safe date, Priority, and Context-label changes.
-$taskpilot I have two hours. Build a realistic plan without changing my Tasks.
+$taskpilot Plan this week without changing my Tasks.
+$taskpilot I have two hours. What can I do now?
 $taskpilot Find work for a 30-minute phone-only break.
 ```
 
 Task Pilotは提案フォルダへレビューのファイルを1つ保存してTaskMateで開き、この段階では正式なタスクを作成しません。未レビューのレビューを一覧にする**TaskMate: レビューを開く**からも開けます。候補はそれぞれ、元の文を引用したカードになります。必要ならカードを編集し、作成、統合、除外、保留のいずれかを選んでから、**判断を反映…**を選びます。TaskMateは確定するまでタスクを変更せず、差分を開いていない統合には追加の確認を求め、ソースノートの候補がすべて反映されたときにそのノートへ取り込み履歴を記録します。完了したレビューは`TaskMate/Proposals/History`へ移動し、削除するまで残ります。詳しい手順は[ソースノートを確認してTaskを作る](docs/user/how-to/import-source-notes.md)を参照してください。
 
-バックログ変更も書き込み前に提示します。時間ベース計画は読み取り専用で、表示される初期20%の余白と所要時間の上限を使い、新しいTask状態やManual orderの変更を行いません。「後で」はPendingやWaitingを追加せず、日付を外します。
+バックログ変更も書き込み前に提示します。計画は常に`TaskMate/Plans`に保存するローリング計画です。空き時間のTask提案は読み取り専用でファイルを書かず、表示される初期20%の余白と所要時間の上限を使い、新しいTask状態やManual orderの変更を行いません。「計画して」のようにどちらとも取れる依頼では、Task Pilotが1回だけ尋ねます。「後で」はPendingやWaitingを追加せず、日付を外します。
 
 必要に応じて**設定 → TaskMate → 提案フォルダ**から保存先を変更できます。提案フォルダは承認の境界であり、セキュリティ用サンドボックスではなく、対象ノートの許可範囲を広げません。
 
