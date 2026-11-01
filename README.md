@@ -2,9 +2,11 @@
 
 English | [日本語](README.ja.md)
 
-TaskMate is a simple, local-first task manager for Obsidian. It provides a focused Todoist-style interface while keeping every task and project in readable Markdown inside your vault.
+TaskMate is a simple, local-first task manager for Obsidian users who want a focused Todoist-style task list without leaving their vault. Every task and project stays in readable Markdown that you own.
 
-TaskMate also includes Task Pilot, an optional portable agent skill. Task Pilot turns explicitly selected notes into reviewable proposals and creates or updates tasks only after you decide what to accept.
+TaskMate also includes Task Pilot, an optional AI agent skill. It turns notes you select into task suggestions and plans, and changes no task until you approve them in a TaskMate review.
+
+![TaskMate task list in Obsidian, showing Overdue, Today and Later sections with priorities, projects and labels](docs/assets/readme/task-list.png)
 
 ## Why TaskMate
 
@@ -13,6 +15,37 @@ TaskMate also includes Task Pilot, an optional portable agent skill. Task Pilot 
 - Keep tasks inspectable, portable, and editable as Markdown.
 - Use the plugin without creating a TaskMate account or hosted database.
 - Review AI-generated proposals before they become canonical tasks.
+
+## Install
+
+TaskMate is not yet listed in the Obsidian Community directory, so install it from a GitHub Release (0.7.0 or later). Desktop and Android Obsidian are verified; iOS has not yet been verified.
+
+1. Open the [TaskMate Releases page](https://github.com/tempu-village/taskmate/releases) and download these three assets from the same version:
+
+   ```text
+   main.js
+   manifest.json
+   styles.css
+   ```
+
+2. Create `<vault>/.obsidian/plugins/taskmate/` and place the three files directly inside it.
+3. Restart Obsidian and enable TaskMate under **Settings → Community plugins**.
+
+To update, back up the vault, disable TaskMate, replace all three files with assets from one newer Release, and enable TaskMate again. Do not mix files from different versions.
+
+To run an unpublished build, see [Install a development build](docs/operations/development-install.md).
+
+## Quick start
+
+For a guided first exercise, see [Your first TaskMate task](docs/user/getting-started.md). Goal-specific instructions are in [user guides](docs/user/README.md).
+
+1. [Install](#install) and enable TaskMate.
+2. Open the command palette and run **TaskMate: Open task list**.
+3. Select **+ Add**, enter a title, and save the task.
+4. Use the Date screen to view Scheduled, All, or No date tasks. Use Adjust to filter or select the current list.
+5. Select **Settings → TaskMate → Language** to choose Auto, English, or 日本語.
+
+The language change updates TaskMate views and settings immediately. Reload the plugin to update command names and the ribbon tooltip.
 
 ## Current features
 
@@ -33,121 +66,34 @@ TaskMate also includes Task Pilot, an optional portable agent skill. Task Pilot 
 - Explicit AI source folders with per-note include and exclude overrides
 - Staged proposal review before an agent may create, merge, or exclude an action
 
-## Quick start
+## Install and use Task Pilot
 
-For a guided first exercise, see [Your first TaskMate task](docs/user/getting-started.md). Goal-specific instructions are in [user guides](docs/user/README.md).
+Task Pilot is optional; the plugin works without it. Task Pilot runs in an Agent Skills-compatible AI client, such as Codex, with your vault open as its workspace. It reads only the notes you select, saves its suggestions as a review or a plan in the vault, and never changes a task by itself: every change waits until you approve it in TaskMate.
 
-1. Install and enable TaskMate.
-2. Open the command palette and run **TaskMate: Open task list**.
-3. Select **+ Add**, enter a title, and save the task.
-4. Use the Date screen to view Scheduled, All, or No date tasks. Use Adjust to filter or select the current list.
-5. Select **Settings → TaskMate → Language** to choose Auto, English, or 日本語.
+![An Import review in TaskMate: each candidate Task shows its date, priority, project and Steps, the source note it came from, and Create, Hold and Edit controls](docs/assets/readme/review.png)
 
-The language change updates TaskMate views and settings immediately. Reload the plugin to update command names and the ribbon tooltip.
+To install it, copy the `skills/taskpilot` folder from this repository into your client's skills folder, for example `~/.agents/skills/taskpilot`.
 
-## Install from a GitHub Release
+You do not need to name Task Pilot. Ask for what you want in everyday words:
 
-TaskMate is not yet listed in the Obsidian Community directory. When a GitHub Release is available, open the [TaskMate Releases page](https://github.com/tempu-village/taskmate/releases) and download these three assets from the same version:
+> Plan my TaskMate tasks for this week.
+
+To name it explicitly, or for a specific operation, start with `$taskpilot`:
 
 ```text
-main.js
-manifest.json
-styles.css
+$taskpilot Review the selected source notes and stage every Task candidate for review in TaskMate.
+$taskpilot Review my stale Tasks and propose safe date, Priority, and Context-label changes.
+$taskpilot I have two hours. What can I do now?
+$taskpilot Find work for a 30-minute phone-only break.
 ```
 
-Create `<vault>/.obsidian/plugins/taskmate/`, place the three files directly inside it, restart Obsidian, and enable TaskMate under **Settings → Community plugins**.
+Task Pilot saves one review file in the proposal folder, opens it in TaskMate, and creates no Task at this stage; you can also run **TaskMate: Open reviews**, which lists every pending review. Each candidate is a card that quotes its source sentences. Edit a card when needed, choose to create, merge, exclude, or hold it, and then select **Apply decisions…**. TaskMate changes no Task before you confirm, asks for an extra confirmation for merges whose diff you did not open, and records the import on a source note once all of its candidates are applied. Completed reviews move to `TaskMate/Proposals/History` and remain there until you delete them. See [Review source notes and create Tasks](docs/user/how-to/import-source-notes.md) for the full steps.
 
-To update a manual installation, back up the vault, disable TaskMate, replace all three files with assets from one newer Release, and enable TaskMate again. Do not mix files from different versions.
+Backlog changes are also shown before writing. A plan is always a rolling plan saved under `TaskMate/Plans`. A free-time Task suggestion is read-only, writes no file, uses a visible 20% default buffer and upper effort estimates, and never adds Task statuses or changes Manual order. A request that asks for a plan, such as “Plan today”, always gets a rolling plan; Task Pilot asks once only when a request names neither a plan nor free time. “Do later” removes the date instead of adding a Pending or Waiting state.
 
-## Install from a local build
+Change the proposal location under **Settings → TaskMate → Proposal folder** when needed. The proposal folder is an approval boundary, not a security sandbox, and does not expand the source-note allowlist.
 
-TaskMate is not yet listed in the Obsidian Community directory. Build it from this repository:
-
-```bash
-npm install
-npm run typecheck
-npm test
-npm run build
-```
-
-Copy these files into `<vault>/.obsidian/plugins/taskmate/`:
-
-```text
-main.js
-manifest.json
-styles.css
-```
-
-Restart Obsidian, open **Settings → Community plugins**, and enable TaskMate. Open it from the ribbon icon or run **TaskMate: Open task list** from the command palette.
-
-## Use TaskMate on desktop and Android with Obsidian Sync
-
-TaskMate can run on desktop and Android before it is listed in the Community directory. This procedure uses the official paid Obsidian Sync service; TaskMate itself does not provide or charge for synchronization.
-
-### 1. Enable plugin synchronization
-
-On both desktop and Android:
-
-1. Open **Settings → Sync**.
-2. Open **Vault configuration sync**.
-3. Enable `Installed community plugin list`.
-4. Enable `Active community plugin list`.
-
-Enabling `Active community plugin list` also synchronizes the enabled or disabled state of community plugins other than TaskMate.
-
-### 2. Place TaskMate in the desktop vault
-
-Put the local build in the actual vault connected to Obsidian Sync:
-
-```text
-Synced vault/
-└─ .obsidian/
-   └─ plugins/
-      └─ taskmate/
-         ├─ main.js
-         ├─ manifest.json
-         └─ styles.css
-```
-
-Keep all three files directly inside the same `taskmate` folder:
-
-```text
-Correct:   .obsidian/plugins/taskmate/manifest.json
-Incorrect: .obsidian/plugins/taskmate/taskmate/manifest.json
-```
-
-Restart desktop Obsidian and enable TaskMate under **Settings → Community plugins**.
-
-### 3. Load the synchronized plugin on Android
-
-1. Wait until desktop Obsidian reports **Fully Synced**.
-2. Open the same remote vault on Android.
-3. Wait until Android Obsidian reports **Fully Synced**.
-4. Open **Settings → Community plugins**.
-5. Select **Installed plugins** to make Android load the synchronized plugin list.
-6. If TaskMate is disabled, enable it. If it is already enabled, disable it once and then enable it again.
-
-Waiting for synchronization alone may update the plugin files without reloading the TaskMate code that is already running. The verified Android procedure keeps Obsidian open and reloads TaskMate by disabling and re-enabling the plugin after synchronization. A full restart of Android Obsidian is not required for this procedure.
-
-### 4. Update both devices
-
-For development installs, the repository provides a local deployment command. On the first run, pass the absolute path to the synchronized vault:
-
-```bash
-npm run deploy -- /absolute/path/to/synced-vault
-```
-
-The path is stored in a Git-ignored local file. Later updates require one command:
-
-```bash
-npm run deploy
-```
-
-The command runs type checking, tests, and a production build before replacing `main.js`, `manifest.json`, and `styles.css` in the desktop vault. After desktop and Android both report **Fully Synced**, open the Android installed-plugin list, disable TaskMate, and enable it again. Synchronization updates the files, while this plugin reload activates the new code.
-
-This synchronization procedure has been confirmed with desktop Obsidian, Android Obsidian, official Obsidian Sync, and an unpublished TaskMate build. iOS has not yet been tested.
-
-## Select notes for Task Pilot
+### Select notes for Task Pilot
 
 Run **TaskMate: Include current folder as an AI source**, or add one vault-relative folder per line under **Settings → TaskMate → AI source folders**.
 
@@ -159,36 +105,6 @@ taskmate-source: false # exclude this note from an included folder
 ```
 
 Processed source notes receive `taskmate-import-*` provenance properties. A content hash lets Task Pilot detect a later edit without treating its own metadata as a user change.
-
-## Install and use Task Pilot
-
-The plugin works without Task Pilot. To use AI-assisted task extraction, install `skills/taskpilot` in an Agent Skills-compatible client. During local development:
-
-```bash
-mkdir -p "$HOME/.agents/skills"
-ln -s "$(pwd)/skills/taskpilot" "$HOME/.agents/skills/taskpilot"
-```
-
-Open the vault as the agent workspace and ask:
-
-```text
-$taskpilot Review the selected source notes and stage every Task candidate for review in TaskMate.
-```
-
-For backlog review, a plan, or a free-time Task suggestion, ask for the operation and give the available time or Context when known:
-
-```text
-$taskpilot Review my stale Tasks and propose safe date, Priority, and Context-label changes.
-$taskpilot Plan this week without changing my Tasks.
-$taskpilot I have two hours. What can I do now?
-$taskpilot Find work for a 30-minute phone-only break.
-```
-
-Task Pilot saves one review file in the proposal folder, opens it in TaskMate, and creates no Task at this stage; you can also run **TaskMate: Open reviews**, which lists every pending review. Each candidate is a card that quotes its source sentences. Edit a card when needed, choose to create, merge, exclude, or hold it, and then select **Apply decisions…**. TaskMate changes no Task before you confirm, asks for an extra confirmation for merges whose diff you did not open, and records the import on a source note once all of its candidates are applied. Completed reviews move to `TaskMate/Proposals/History` and remain there until you delete them. See [Review source notes and create Tasks](docs/user/how-to/import-source-notes.md) for the full steps.
-
-Backlog changes are also shown before writing. A plan is always a rolling plan saved under `TaskMate/Plans`. A free-time Task suggestion is read-only, writes no file, uses a visible 20% default buffer and upper effort estimates, and never adds Task statuses or changes Manual order. A request that asks for a plan, such as “Plan today”, always gets a rolling plan; Task Pilot asks once only when a request names neither a plan nor free time. “Do later” removes the date instead of adding a Pending or Waiting state.
-
-Change the proposal location under **Settings → TaskMate → Proposal folder** when needed. The proposal folder is an approval boundary, not a security sandbox, and does not expand the source-note allowlist.
 
 ## Storage, privacy, and permissions
 
@@ -211,13 +127,16 @@ Review these claims against the release build before public release. Back up the
 - Simultaneous offline edits on multiple devices may be handled as conflicts by the vault synchronization provider.
 - The Android workflow has been tested; iOS has not yet been tested.
 - Command names and the ribbon tooltip require a plugin reload after changing the TaskMate language.
-- TaskMate is not yet distributed through the Obsidian Community directory.
 
 ## Troubleshooting
 
 See [Troubleshooting](docs/user/troubleshooting.md) for recovery guidance. When reporting a bug, include the TaskMate version, Obsidian version, operating system, reproduction steps, and a sanitized example task when relevant. Do not publish private vault content.
 
-## Translation workflow
+## Development
+
+Contributors start at [CONTRIBUTING](CONTRIBUTING.md). To build and run an unpublished version, including the Obsidian Sync procedure for desktop and Android, see [Install a development build](docs/operations/development-install.md).
+
+### Translation workflow
 
 English is the canonical source and fallback for TaskMate UI and user documentation.
 
@@ -230,7 +149,7 @@ English is the canonical source and fallback for TaskMate UI and user documentat
 
 Do not add a feature specification only to Japanese. Update English first, then translate it. Keep code, commands, paths, property names, IDs, and URLs unchanged unless the localized UI intentionally uses a translated command label.
 
-## Development and verification
+### Verification
 
 ```bash
 npm run typecheck
