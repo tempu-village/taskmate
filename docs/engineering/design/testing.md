@@ -20,6 +20,10 @@ git diff --check
 
 [package.json](../../../package.json) owns scripts and dependencies; [CI](../../../.github/workflows/ci.yml) selects Node 22 and Python 3.11. These are CI choices, not a newly declared minimum runtime policy. Builds produce `main.js`; never edit it manually. For manual installation into a disposable Vault, follow [Install a development build](../../operations/development-install.md), which also links Task Pilot. UI automation is optional evidence, not a plugin dependency.
 
+## Desktop E2E
+
+`npm run test:e2e` drives the real Obsidian desktop app; it runs in CI as a separate job. See [Desktop E2E tests](desktop-e2e.md).
+
 ## Acceptance map
 
 | Contract | Automated evidence | Additional manual evidence |
@@ -72,5 +76,7 @@ PLAN-01〜27はplanning・計画ファイル・proposal・storeのPythonテス�
 既知の不足：Source探索の対象外読み取り、複数ファイル反映のクラッシュ復旧、今回未実施の実機確認を区別します。iOSは未検証です。CONFLICT-04は、Stepを追加して保存した後の未変更再保存を対象とするrepository回帰テストで確認します。
 
 今回の文書整合では、ADR 0023と実装・テストに従い一覧の100書記素上限を統一し、検索のStep本文対象、完了済み表示の選択を補いました。コードの挙動は変更していません。
+
+デスクトップE2E（`npm run test:e2e`）は本物のObsidianを操作し、CIでは別ジョブで動きます。詳細は[Desktop E2E tests](desktop-e2e.md)を参照します。
 
 使い捨てVaultで初回体験後、複数メモからステージ・部分承認・保留・除外・全件判断・再実行を確認し、期待値と実測をPRに残します。
