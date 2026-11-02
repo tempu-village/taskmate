@@ -3,15 +3,17 @@
 [English](README.md) | 日本語
 
 <!-- translation-status: ai-translated -->
-<!-- translation-source-sha256: 0a066fe373d109a84a4a962c95cca2e2ed08c893ed826b1cc6cd31e2bd61b648 -->
+<!-- translation-source-sha256: d9a543ac1597cd4844706be8a3e5a37136c21ff8c4616de3c10270e5afca1b14 -->
 
 > 翻訳状態：`ai-translated`
 >
 > この日本語版は英語版を原本としてAIで翻訳されています。現在は人間による全文確認を完了していません。内容が異なる場合は英語版を正式な情報として扱ってください。
 
-TaskMateは、Obsidian向けのシンプルなローカルファーストのタスク管理ツールです。すべてのタスクとプロジェクトをVault内の読みやすいMarkdownとして保ちながら、Todoistのように目的を絞ったインターフェースを提供します。
+TaskMateは、Vaultを離れずにTodoistのような目的を絞ったタスク一覧を使いたいObsidian利用者向けの、シンプルでローカルファーストなタスク管理ツールです。すべてのタスクとプロジェクトは、自分で持てる読みやすいMarkdownとして残ります。
 
-TaskMateには、任意で使用できるポータブルなエージェントスキル、Task Pilotも含まれます。Task Pilotは、明示的に選択したノートから確認可能な提案を作成し、採用する内容をユーザーが判断した後にだけタスクを作成または更新します。
+TaskMateには、任意で使えるAIエージェントスキル、Task Pilotも含まれます。選んだノートからタスクの候補や計画を作り、TaskMateのレビューで承認するまでタスクを変更しません。
+
+![Obsidianで開いたTaskMateのタスク一覧。期限切れ・今日・明日以降のセクションに、優先度、プロジェクト、ラベル付きのタスクが並んでいる](docs/assets/readme/task-list.png)
 
 ## TaskMateを選ぶ理由
 
@@ -20,6 +22,37 @@ TaskMateには、任意で使用できるポータブルなエージェントス
 - タスクを確認・移行・編集可能なMarkdownとして保持できます。
 - TaskMateアカウントやホストされたデータベースを作成せずにプラグインを使用できます。
 - AIが生成した提案を正式なタスクにする前に確認できます。
+
+## インストール
+
+TaskMateはまだObsidian Community directoryに掲載されていないため、GitHub Release（0.7.0以降）から入れます。PC版とAndroid版のObsidianで確認済みで、iOSはまだ確認していません。
+
+1. [TaskMate Releasesページ](https://github.com/tempu-village/taskmate/releases)を開き、同じバージョンの次の3ファイルをダウンロードします。
+
+   ```text
+   main.js
+   manifest.json
+   styles.css
+   ```
+
+2. `<vault>/.obsidian/plugins/taskmate/`を作成し、3ファイルをその直下へ置きます。
+3. Obsidianを再起動し、**設定 → コミュニティプラグイン**からTaskMateを有効にします。
+
+更新する場合は、Vaultをバックアップし、TaskMateを無効にして、1つの新しいReleaseに含まれる3ファイルをすべて置き換えてから、TaskMateを再び有効にします。異なるバージョンのファイルを混在させないでください。
+
+未公開のビルドを動かす場合は、[開発ビルドを入れる](docs/operations/development-install.md)を参照してください。
+
+## クイックスタート
+
+初回の練習は[最初のTaskMateタスク](docs/user/getting-started.md)、目的別の操作は[利用者向けガイド](docs/user/README.md)を参照してください。
+
+1. TaskMateを[インストール](#インストール)して有効にします。
+2. コマンドパレットを開き、**TaskMate: タスク一覧を開く**を実行します。
+3. **＋ 追加**を選択し、タイトルを入力してタスクを保存します。
+4. 日付画面で予定、すべて、日付なしのタスクを表示します。現在の一覧を絞り込む、または選択するには調整メニューを使います。
+5. **設定 → TaskMate → 言語**で、自動、English、日本語のいずれかを選択します。
+
+言語を変更するとTaskMateのビューと設定画面はすぐに更新されます。コマンド名とリボンの説明を更新するには、プラグインを再読み込みしてください。
 
 ## 現在の機能
 
@@ -40,121 +73,34 @@ TaskMateには、任意で使用できるポータブルなエージェントス
 - AI対象フォルダと、ノートごとの追加・除外指定
 - エージェントが行動を作成・統合・除外する前の段階的な提案確認
 
-## クイックスタート
+## Task Pilotをインストールして使用する
 
-初回の練習は[最初のTaskMateタスク](docs/user/getting-started.md)、目的別の操作は[利用者向けガイド](docs/user/README.md)を参照してください。
+Task Pilotは任意で、プラグインはTask Pilotなしでも動作します。Task Pilotは、VaultをワークスペースとしてCodexなどのAgent Skills互換AIクライアントで動きます。選んだノートだけを読み、提案をレビューまたは計画としてVaultへ保存し、自分でタスクを変更することはありません。変更はすべて、TaskMateで承認するまで待ちます。
 
-1. TaskMateをインストールして有効にします。
-2. コマンドパレットを開き、**TaskMate: タスク一覧を開く**を実行します。
-3. **＋ 追加**を選択し、タイトルを入力してタスクを保存します。
-4. 日付画面で予定、すべて、日付なしのタスクを表示します。現在の一覧を絞り込む、または選択するには調整メニューを使います。
-5. **設定 → TaskMate → 言語**で、自動、English、日本語のいずれかを選択します。
+![TaskMateの取り込みレビュー。候補のタスクごとに日付、優先度、プロジェクト、ステップ、元のノートと、作成・保留・編集の操作が表示されている](docs/assets/readme/review.png)
 
-言語を変更するとTaskMateのビューと設定画面はすぐに更新されます。コマンド名とリボンの説明を更新するには、プラグインを再読み込みしてください。
+インストールするには、このリポジトリの`skills/taskpilot`フォルダを、クライアントのskillsフォルダ（例：`~/.agents/skills/taskpilot`）へコピーします。
 
-## GitHub Releaseからインストールする
+Task Pilotの名前を出す必要はありません。普段の言葉で頼めます。
 
-TaskMateは、まだObsidian Community directoryに掲載されていません。GitHub Releaseが利用できる場合は、[TaskMate Releasesページ](https://github.com/tempu-village/taskmate/releases)を開き、同じバージョンの次の3ファイルをダウンロードします。
+> 今週の計画を立てて
+
+明示的に呼び出す場合や特定の操作を頼む場合は、`$taskpilot`から始めます。
 
 ```text
-main.js
-manifest.json
-styles.css
+$taskpilot Review the selected source notes and stage every Task candidate for review in TaskMate.
+$taskpilot Review my stale Tasks and propose safe date, Priority, and Context-label changes.
+$taskpilot I have two hours. What can I do now?
+$taskpilot Find work for a 30-minute phone-only break.
 ```
 
-`<vault>/.obsidian/plugins/taskmate/`を作成し、3ファイルをその直下へ置き、Obsidianを再起動して、**設定 → コミュニティプラグイン**からTaskMateを有効にします。
+Task Pilotは提案フォルダへレビューのファイルを1つ保存してTaskMateで開き、この段階では正式なタスクを作成しません。未レビューのレビューを一覧にする**TaskMate: レビューを開く**からも開けます。候補はそれぞれ、元の文を引用したカードになります。必要ならカードを編集し、作成、統合、除外、保留のいずれかを選んでから、**判断を反映…**を選びます。TaskMateは確定するまでタスクを変更せず、差分を開いていない統合には追加の確認を求め、ソースノートの候補がすべて反映されたときにそのノートへ取り込み履歴を記録します。完了したレビューは`TaskMate/Proposals/History`へ移動し、削除するまで残ります。詳しい手順は[ソースノートを確認してTaskを作る](docs/user/how-to/import-source-notes.md)を参照してください。
 
-手動インストールを更新する場合は、Vaultをバックアップし、TaskMateを無効にして、1つの新しいReleaseに含まれる3ファイルをすべて置き換えてから、TaskMateを再び有効にします。異なるバージョンのファイルを混在させないでください。
+バックログ変更も書き込み前に提示します。計画は常に`TaskMate/Plans`に保存するローリング計画です。空き時間のTask提案は読み取り専用でファイルを書かず、表示される初期20%の余白と所要時間の上限を使い、新しいTask状態やManual orderの変更を行いません。「計画して」のように計画を頼む依頼は常にローリング計画になり、計画も空き時間も名指ししない依頼でだけTask Pilotが1回尋ねます。「後で」はPendingやWaitingを追加せず、日付を外します。
 
-## ローカルビルドからインストールする
+必要に応じて**設定 → TaskMate → 提案フォルダ**から保存先を変更できます。提案フォルダは承認の境界であり、セキュリティ用サンドボックスではなく、対象ノートの許可範囲を広げません。
 
-TaskMateは、まだObsidian Community directoryに掲載されていません。このリポジトリからビルドします。
-
-```bash
-npm install
-npm run typecheck
-npm test
-npm run build
-```
-
-次のファイルを`<vault>/.obsidian/plugins/taskmate/`へコピーします。
-
-```text
-main.js
-manifest.json
-styles.css
-```
-
-Obsidianを再起動し、**設定 → コミュニティプラグイン**を開いてTaskMateを有効にします。リボンアイコンから開くか、コマンドパレットで**TaskMate: タスク一覧を開く**を実行します。
-
-## Obsidian SyncでPCとAndroidから使用する
-
-TaskMateは、Community directoryへ掲載される前でもPCとAndroidで動作します。この手順では、公式の有料サービスであるObsidian Syncを使用します。TaskMate自体は同期機能を提供せず、同期料金も請求しません。
-
-### 1. プラグインの同期を有効にする
-
-PCとAndroidの両方で次の操作をします。
-
-1. **設定 → Sync**を開きます。
-2. **保管庫設定の同期（Vault configuration sync）**を開きます。
-3. `Installed community plugin list`を有効にします。
-4. `Active community plugin list`を有効にします。
-
-`Active community plugin list`を有効にすると、TaskMate以外のコミュニティプラグインについても有効・無効状態が同期されます。
-
-### 2. PC側のVaultへTaskMateを配置する
-
-Obsidian Syncに接続している実際のVaultへローカルビルドを配置します。
-
-```text
-Synced vault/
-└─ .obsidian/
-   └─ plugins/
-      └─ taskmate/
-         ├─ main.js
-         ├─ manifest.json
-         └─ styles.css
-```
-
-3ファイルは同じ`taskmate`フォルダの直下に置きます。
-
-```text
-Correct:   .obsidian/plugins/taskmate/manifest.json
-Incorrect: .obsidian/plugins/taskmate/taskmate/manifest.json
-```
-
-PC版Obsidianを再起動し、**設定 → コミュニティプラグイン**でTaskMateを有効にします。
-
-### 3. Androidで同期されたプラグインを読み込む
-
-1. PC版Obsidianが**Fully Synced**と表示するまで待ちます。
-2. Androidで同じリモートVaultを開きます。
-3. Android版Obsidianが**Fully Synced**と表示するまで待ちます。
-4. **設定 → コミュニティプラグイン**を開きます。
-5. **インストール済みプラグイン（Installed plugins）**を押して、同期されたプラグイン一覧をAndroidに読み込ませます。
-6. TaskMateが無効な場合は有効にします。すでに有効な場合は、一度無効にしてから再び有効にします。
-
-同期を待つだけでは、プラグインのファイルが更新されても、実行中のTaskMateコードが再読み込みされない場合があります。確認済みのAndroid手順では、Obsidianを起動したまま、同期後にTaskMateを無効化して再び有効化することで再読み込みします。この手順ではAndroid版Obsidianの完全再起動は不要です。
-
-### 4. 両方の端末を更新する
-
-開発用インストールでは、リポジトリに含まれるローカル配布コマンドを使用できます。初回は、同期中Vaultの絶対パスを渡します。
-
-```bash
-npm run deploy -- /absolute/path/to/synced-vault
-```
-
-パスはGit管理から除外されたローカルファイルへ保存されます。2回目以降は1つのコマンドで更新できます。
-
-```bash
-npm run deploy
-```
-
-このコマンドは型チェック、テスト、本番ビルドを実行してから、PC側Vaultの`main.js`、`manifest.json`、`styles.css`を置き換えます。PCとAndroidの両方で**Fully Synced**になった後、Androidのインストール済みプラグイン一覧を開き、TaskMateを一度無効にして再び有効にしてください。同期でファイルが更新され、このプラグイン再読み込みで新しいコードが有効になります。
-
-この同期手順は、PC版Obsidian、Android版Obsidian、公式Obsidian Sync、未公開のTaskMateビルドの組み合わせで確認済みです。iOSはまだ確認していません。
-
-## Task Pilotの対象ノートを選択する
+### Task Pilotの対象ノートを選択する
 
 **TaskMate: 現在のフォルダをAI対象にする**を実行するか、**設定 → TaskMate → AI対象フォルダ**でVaultからの相対パスを1行に1フォルダ入力します。
 
@@ -166,36 +112,6 @@ taskmate-source: false # exclude this note from an included folder
 ```
 
 処理済みの対象ノートには、出所を示す`taskmate-import-*`プロパティが追加されます。コンテンツハッシュにより、Task Pilot自身が追加したメタデータをユーザーの変更と誤認せず、後から行われた編集を検出できます。
-
-## Task Pilotをインストールして使用する
-
-プラグインはTask Pilotなしでも動作します。AIによるタスク抽出を使用する場合は、Agent Skills互換クライアントへ`skills/taskpilot`をインストールします。ローカル開発中は次のようにします。
-
-```bash
-mkdir -p "$HOME/.agents/skills"
-ln -s "$(pwd)/skills/taskpilot" "$HOME/.agents/skills/taskpilot"
-```
-
-Vaultをエージェントのワークスペースとして開き、次のように依頼します。
-
-```text
-$taskpilot Review the selected source notes and stage every Task candidate for review in TaskMate.
-```
-
-バックログ見直し、計画、空き時間のTask提案では、操作内容に加え、分かる場合は利用可能時間やContextを指定します。
-
-```text
-$taskpilot Review my stale Tasks and propose safe date, Priority, and Context-label changes.
-$taskpilot Plan this week without changing my Tasks.
-$taskpilot I have two hours. What can I do now?
-$taskpilot Find work for a 30-minute phone-only break.
-```
-
-Task Pilotは提案フォルダへレビューのファイルを1つ保存してTaskMateで開き、この段階では正式なタスクを作成しません。未レビューのレビューを一覧にする**TaskMate: レビューを開く**からも開けます。候補はそれぞれ、元の文を引用したカードになります。必要ならカードを編集し、作成、統合、除外、保留のいずれかを選んでから、**判断を反映…**を選びます。TaskMateは確定するまでタスクを変更せず、差分を開いていない統合には追加の確認を求め、ソースノートの候補がすべて反映されたときにそのノートへ取り込み履歴を記録します。完了したレビューは`TaskMate/Proposals/History`へ移動し、削除するまで残ります。詳しい手順は[ソースノートを確認してTaskを作る](docs/user/how-to/import-source-notes.md)を参照してください。
-
-バックログ変更も書き込み前に提示します。計画は常に`TaskMate/Plans`に保存するローリング計画です。空き時間のTask提案は読み取り専用でファイルを書かず、表示される初期20%の余白と所要時間の上限を使い、新しいTask状態やManual orderの変更を行いません。「計画して」のように計画を頼む依頼は常にローリング計画になり、計画も空き時間も名指ししない依頼でだけTask Pilotが1回尋ねます。「後で」はPendingやWaitingを追加せず、日付を外します。
-
-必要に応じて**設定 → TaskMate → 提案フォルダ**から保存先を変更できます。提案フォルダは承認の境界であり、セキュリティ用サンドボックスではなく、対象ノートの許可範囲を広げません。
 
 ## 保存場所、プライバシー、権限
 
@@ -218,13 +134,16 @@ Task Pilotは提案フォルダへレビューのファイルを1つ保存して
 - 複数端末で同時にオフライン編集した場合、Vaultの同期サービスによって競合として処理される可能性があります。
 - Androidでの手順は確認済みですが、iOSはまだ確認していません。
 - TaskMateの言語変更後、コマンド名とリボンの説明を更新するにはプラグインの再読み込みが必要です。
-- TaskMateはまだObsidian Community directoryから配布されていません。
 
 ## トラブルシューティング
 
 復旧方法は[トラブルシューティング](docs/user/troubleshooting.md)を参照してください。バグを報告する際は、TaskMateのバージョン、Obsidianのバージョン、OS、再現手順、必要に応じて個人情報を除いたタスク例を含めてください。Vault内の非公開情報を公開しないでください。
 
-## 翻訳ワークフロー
+## 開発
+
+貢献する方は[CONTRIBUTING](CONTRIBUTING.md)から始めてください。未公開版のビルドと実行、PCとAndroidでのObsidian Sync手順は[開発ビルドを入れる](docs/operations/development-install.md)を参照してください。
+
+### 翻訳ワークフロー
 
 TaskMateのUIと利用者向け文書では、英語を正式な原本およびフォールバックとします。
 
@@ -237,7 +156,7 @@ TaskMateのUIと利用者向け文書では、英語を正式な原本および�
 
 日本語だけに機能仕様を追加しないでください。最初に英語を更新し、その後で翻訳します。コード、コマンド、パス、プロパティ名、ID、URLは、ローカライズされたUIで意図的に翻訳済みコマンド名を示す場合を除いて変更しません。
 
-## 開発と検証
+### 検証
 
 ```bash
 npm run typecheck

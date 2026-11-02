@@ -1,6 +1,6 @@
 # Your first TaskMate task
 
-This tutorial teaches creating, editing and completing one practice Task. Use a disposable Vault with TaskMate enabled. If it is not installed, follow [manual installation](../../README.md#install-from-a-local-build) first. UI names below use English; Japanese equivalents are in the reference section.
+This tutorial teaches creating, editing and completing one practice Task. Use a disposable Vault with TaskMate enabled. If it is not installed, follow [manual installation](../../README.md#install) first. UI names below use English; Japanese equivalents are in the reference section.
 
 ## Create and inspect
 
@@ -24,7 +24,7 @@ You have exercised the Task lifecycle. Continue with [filtering and ordering](ho
 
 > 翻訳状態：`ai-translated`。英語版が正本です。
 
-このTutorialでは練習用タスクを1件作成・編集・完了します。使い捨てVaultでTaskMateを有効にしてください。未導入なら先に[手動導入](../../README.md#install-from-a-local-build)を行います。
+このTutorialでは練習用タスクを1件作成・編集・完了します。使い捨てVaultでTaskMateを有効にしてください。未導入なら先に[手動導入](../../README.md#install)を行います。
 
 ### 作成して確認する
 
