@@ -4850,6 +4850,59 @@ Sortable.mount(new AutoScrollPlugin());
 Sortable.mount(Remove, Revert);
 var sortable_esm_default = Sortable;
 
+// src/task-list/drag-auto-scroll.ts
+var MINIMUM_ZONE = 64;
+var MAXIMUM_ZONE = 96;
+var RELATIVE_ZONE = 0.15;
+var MAXIMUM_SPEED = 720;
+var PLATEAU_INSET = 12;
+var MAXIMUM_FRAME_MS = 50;
+function clamp(value, minimum, maximum) {
+  return Math.min(Math.max(value, minimum), maximum);
+}
+function dragAutoScrollZone(height) {
+  return clamp(Math.max(0, height) * RELATIVE_ZONE, MINIMUM_ZONE, MAXIMUM_ZONE);
+}
+function calculateDragAutoScroll(input) {
+  const zone = dragAutoScrollZone(input.bounds.height);
+  const topDistance = input.pointerY - input.bounds.top;
+  const bottomDistance = input.bounds.bottom - input.pointerY;
+  let direction = 0;
+  let edgeDistance = zone;
+  if (topDistance < zone) {
+    direction = -1;
+    edgeDistance = topDistance;
+  } else if (bottomDistance < zone) {
+    direction = 1;
+    edgeDistance = bottomDistance;
+  }
+  if (direction === 0) return { delta: 0, speed: 0, zone };
+  const progress = clamp((zone - edgeDistance) / Math.max(1, zone - PLATEAU_INSET), 0, 1);
+  const speed = direction * MAXIMUM_SPEED * progress * progress;
+  const elapsedSeconds = clamp(input.elapsedMs, 0, MAXIMUM_FRAME_MS) / 1e3;
+  const requestedDelta = speed * elapsedSeconds;
+  const maximumScrollTop = Math.max(0, input.maximumScrollTop);
+  const scrollTop = clamp(input.scrollTop, 0, maximumScrollTop);
+  const clampedDelta = clamp(requestedDelta, -scrollTop, maximumScrollTop - scrollTop);
+  const delta = clampedDelta === 0 ? 0 : clampedDelta;
+  return { delta, speed, zone };
+}
+function pointerClientY(...events) {
+  for (const event of events) {
+    if (!event) continue;
+    if ("touches" in event) {
+      const touchEvent = event;
+      const touch = touchEvent.touches[0] ?? touchEvent.changedTouches[0];
+      if (touch && Number.isFinite(touch.clientY)) return touch.clientY;
+    }
+    if ("clientY" in event) {
+      const clientY = event.clientY;
+      if (Number.isFinite(clientY)) return clientY;
+    }
+  }
+  return null;
+}
+
 // src/task-list/task-list-renderer.ts
 var TASK_LIST_TITLE_CHARACTER_LIMIT = 100;
 var taskTitleSegmenter = typeof Intl.Segmenter === "function" ? new Intl.Segmenter(void 0, { granularity: "grapheme" }) : null;
@@ -4969,6 +5022,11 @@ function renderTaskList(container, model, copy, dispatch) {
     }
     section.rows.forEach((row) => renderRow(list, row, model.selectionMode, copy, controller.signal, dispatch));
   });
+  const scrollRegion = container.closest(".taskmate-scroll-region");
+  let lastAutoScrollAt = null;
+  const resetAutoScroll = () => {
+    lastAutoScrollAt = null;
+  };
   const sortable = sortable_esm_default.create(list, {
     animation: 140,
     handle: ".taskmate-task-body",
@@ -4979,7 +5037,35 @@ function renderTaskList(container, model, copy, dispatch) {
     delay: 250,
     delayOnTouchOnly: true,
     touchStartThreshold: 4,
+    ...scrollRegion ? {
+      scroll: scrollRegion,
+      scrollSensitivity: 96,
+      scrollSpeed: 10,
+      forceAutoScrollFallback: true,
+      bubbleScroll: false,
+      scrollFn: (_offsetX, _offsetY, originalEvent, touchEvent) => {
+        const pointerY = pointerClientY(touchEvent, originalEvent);
+        if (pointerY === null) {
+          resetAutoScroll();
+          return;
+        }
+        const now = performance.now();
+        const elapsedSinceLastCall = lastAutoScrollAt === null ? 0 : now - lastAutoScrollAt;
+        const elapsedMs = elapsedSinceLastCall > 100 ? 0 : elapsedSinceLastCall;
+        lastAutoScrollAt = now;
+        const delta = calculateDragAutoScroll({
+          bounds: scrollRegion.getBoundingClientRect(),
+          pointerY,
+          elapsedMs,
+          scrollTop: scrollRegion.scrollTop,
+          maximumScrollTop: scrollRegion.scrollHeight - scrollRegion.clientHeight
+        }).delta;
+        if (delta !== 0) scrollRegion.scrollTop += delta;
+      }
+    } : {},
+    onStart: resetAutoScroll,
     onEnd: (event) => {
+      resetAutoScroll();
       if (event.oldIndex === event.newIndex) return;
       const orderedIds = Array.from(list.querySelectorAll(".taskmate-task")).map((element4) => element4.dataset.taskId ?? "");
       const taskId = event.item.dataset.taskId ?? "";
@@ -4995,6 +5081,7 @@ function renderTaskList(container, model, copy, dispatch) {
   });
   return {
     destroy() {
+      resetAutoScroll();
       controller.abort();
       sortable.destroy();
     }

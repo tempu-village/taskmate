@@ -48,6 +48,7 @@ Do not move an RFC directly from proposal to current authority. For example, RFC
 | [Conversational Task capture](add-conversational-task-capture.md) | draft | — (not implemented) |
 | [Screen capture and E2E in real Obsidian](add-real-obsidian-ui-verification.md) | draft | [Desktop E2E tests](../design/desktop-e2e.md) |
 | [Show what plans and reviews change](show-plan-and-review-changes.md) | implemented | [Task Pilot planning](../features/task-pilot-planning.md), [Task change review](../features/task-change-review/README.md), [Task change Proposal format](../specifications/task-change-proposal-format.md) |
+| [Edge auto-scroll for Manual reordering](add-edge-auto-scroll-to-manual-task-reordering.md) | implemented | [Filtering and sorting](../features/filtering-and-sorting.md) |
 | [Reproducible development environment](document-reproducible-development-environment.md) | draft | [Testing design](../design/testing.md) |
 | [Minimal view presentation seam](establish-minimal-view-presentation-seam.md) | implemented | [Architecture design](../design/architecture.md) |
 | [Sorting and editor sizing](improve-sorting-and-task-editor-sizing.md) | implemented | [Filtering and sorting](../features/filtering-and-sorting.md) |

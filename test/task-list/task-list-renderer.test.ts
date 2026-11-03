@@ -56,6 +56,7 @@ describe("task-list renderer", () => {
 
   it("renders rows and dispatches user intent without performing persistence", () => {
     const container = document.createElement("div");
+    container.className = "taskmate-scroll-region";
     document.body.append(container);
     const dispatch = vi.fn();
     renderTaskList(container, model, copy, dispatch);
@@ -78,7 +79,12 @@ describe("task-list renderer", () => {
       filter: ".taskmate-label-overflow-toggle",
       preventOnFilter: false,
       delay: 250,
-      delayOnTouchOnly: true
+      delayOnTouchOnly: true,
+      scroll: expect.any(HTMLElement),
+      scrollSensitivity: 96,
+      forceAutoScrollFallback: true,
+      bubbleScroll: false,
+      scrollFn: expect.any(Function)
     }));
   });
 
@@ -170,5 +176,54 @@ describe("task-list renderer", () => {
     container.querySelector<HTMLButtonElement>(".taskmate-title")?.click();
     expect(sortableDestroy).toHaveBeenCalledOnce();
     expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it("does not target the document when no Task result scroller exists", () => {
+    const container = document.createElement("div");
+    renderTaskList(container, model, copy, vi.fn());
+    expect(sortableCreate).toHaveBeenCalledWith(expect.any(HTMLElement), expect.not.objectContaining({
+      scroll: expect.anything()
+    }));
+  });
+
+  it("applies variable auto-scroll to the Task result region and resets timing after drop", () => {
+    const container = document.createElement("div");
+    container.className = "taskmate-scroll-region";
+    Object.defineProperties(container, {
+      clientHeight: { value: 600 },
+      scrollHeight: { value: 1200 }
+    });
+    container.scrollTop = 100;
+    container.getBoundingClientRect = () => ({
+      top: 100,
+      bottom: 700,
+      height: 600,
+      left: 0,
+      right: 320,
+      width: 320,
+      x: 0,
+      y: 100,
+      toJSON: () => ({})
+    });
+    renderTaskList(container, model, copy, vi.fn());
+    const calls = sortableCreate.mock.calls as unknown as Array<[HTMLElement, {
+      scrollFn?: (offsetX: number, offsetY: number, originalEvent: Event, touchEvent: TouchEvent, target: HTMLElement) => void;
+      onEnd?: (event: { oldIndex?: number; newIndex?: number }) => void;
+    }]>;
+    const options = calls[0]?.[1];
+    const now = vi.spyOn(performance, "now")
+      .mockReturnValueOnce(100)
+      .mockReturnValueOnce(116)
+      .mockReturnValueOnce(200);
+    const pointer = { clientY: 700 } as MouseEvent;
+
+    options?.scrollFn?.(0, 10, pointer, pointer as unknown as TouchEvent, container);
+    expect(container.scrollTop).toBe(100);
+    options?.scrollFn?.(0, 10, pointer, pointer as unknown as TouchEvent, container);
+    expect(container.scrollTop).toBeCloseTo(111.52);
+    options?.onEnd?.({ oldIndex: 0, newIndex: 0 });
+    options?.scrollFn?.(0, 10, pointer, pointer as unknown as TouchEvent, container);
+    expect(container.scrollTop).toBeCloseTo(111.52);
+    now.mockRestore();
   });
 });

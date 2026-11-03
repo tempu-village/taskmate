@@ -1,4 +1,5 @@
 import Sortable from "sortablejs";
+import { calculateDragAutoScroll, pointerClientY } from "./drag-auto-scroll";
 import type { TaskListModel, TaskListRow, TaskListSectionId } from "./task-list-model";
 import { summarizeLabels } from "../labels/label-summary";
 
@@ -171,6 +172,13 @@ export function renderTaskList(
     section.rows.forEach((row) => renderRow(list, row, model.selectionMode, copy, controller.signal, dispatch));
   });
 
+  const scrollRegion = container.closest<HTMLElement>(".taskmate-scroll-region");
+  let lastAutoScrollAt: number | null = null;
+
+  const resetAutoScroll = (): void => {
+    lastAutoScrollAt = null;
+  };
+
   const sortable = Sortable.create(list, {
     animation: 140,
     handle: ".taskmate-task-body",
@@ -181,7 +189,40 @@ export function renderTaskList(
     delay: 250,
     delayOnTouchOnly: true,
     touchStartThreshold: 4,
+    ...(scrollRegion ? {
+      scroll: scrollRegion,
+      scrollSensitivity: 96,
+      scrollSpeed: 10,
+      forceAutoScrollFallback: true,
+      bubbleScroll: false,
+      scrollFn: (
+        _offsetX: number,
+        _offsetY: number,
+        originalEvent: Event,
+        touchEvent: TouchEvent
+      ): void => {
+        const pointerY = pointerClientY(touchEvent, originalEvent);
+        if (pointerY === null) {
+          resetAutoScroll();
+          return;
+        }
+        const now = performance.now();
+        const elapsedSinceLastCall = lastAutoScrollAt === null ? 0 : now - lastAutoScrollAt;
+        const elapsedMs = elapsedSinceLastCall > 100 ? 0 : elapsedSinceLastCall;
+        lastAutoScrollAt = now;
+        const delta = calculateDragAutoScroll({
+          bounds: scrollRegion.getBoundingClientRect(),
+          pointerY,
+          elapsedMs,
+          scrollTop: scrollRegion.scrollTop,
+          maximumScrollTop: scrollRegion.scrollHeight - scrollRegion.clientHeight
+        }).delta;
+        if (delta !== 0) scrollRegion.scrollTop += delta;
+      }
+    } : {}),
+    onStart: resetAutoScroll,
     onEnd: (event) => {
+      resetAutoScroll();
       if (event.oldIndex === event.newIndex) return;
       const orderedIds = Array.from(list.querySelectorAll<HTMLElement>(".taskmate-task"))
         .map((element) => element.dataset.taskId ?? "");
@@ -199,6 +240,7 @@ export function renderTaskList(
 
   return {
     destroy(): void {
+      resetAutoScroll();
       controller.abort();
       sortable.destroy();
     }
