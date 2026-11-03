@@ -258,7 +258,6 @@ export const ja = {
   "taskModal.titlePlaceholder": "やること",
   "taskModal.date": "予定日",
   "taskModal.deadline": "締め切り",
-  "taskModal.addDeadline": "締め切りを追加",
   "taskModal.removeDeadline": "締め切りを外す",
   "tasks.reminder": "通知あり",
   "taskModal.time": "時刻",

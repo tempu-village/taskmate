@@ -1413,7 +1413,6 @@ var en = {
   "taskModal.titlePlaceholder": "What needs to be done?",
   "taskModal.date": "Scheduled",
   "taskModal.deadline": "Deadline",
-  "taskModal.addDeadline": "Add deadline",
   "taskModal.removeDeadline": "Remove deadline",
   "tasks.reminder": "Reminder",
   "taskModal.time": "Time",
@@ -1785,7 +1784,6 @@ var ja = {
   "taskModal.titlePlaceholder": "\u3084\u308B\u3053\u3068",
   "taskModal.date": "\u4E88\u5B9A\u65E5",
   "taskModal.deadline": "\u7DE0\u3081\u5207\u308A",
-  "taskModal.addDeadline": "\u7DE0\u3081\u5207\u308A\u3092\u8FFD\u52A0",
   "taskModal.removeDeadline": "\u7DE0\u3081\u5207\u308A\u3092\u5916\u3059",
   "tasks.reminder": "\u901A\u77E5\u3042\u308A",
   "taskModal.time": "\u6642\u523B",
@@ -5567,11 +5565,23 @@ function addEmbeddedLabel2(setting, label) {
   });
   setting.controlEl.prepend(labelEl);
 }
+var DEADLINE_ICON = "taskmate-calendar-target";
+(0, import_obsidian12.addIcon)(DEADLINE_ICON, `<g transform="scale(4.1667)" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><circle cx="18" cy="18" r="4"/><circle cx="18" cy="18" r="1"/></g>`);
 function embedDateLabel(input, label) {
   const wrapper = createDiv({ cls: "taskmate-embedded-date" });
   input.replaceWith(wrapper);
   wrapper.createSpan({ text: label, cls: "taskmate-embedded-field-label", attr: { "aria-hidden": "true" } });
+  const marker = wrapper.createSpan({ cls: "taskmate-embedded-date-icon", attr: { "aria-hidden": "true" } });
+  (0, import_obsidian12.setIcon)(marker, "calendar");
   wrapper.appendChild(input);
+  wrapper.addEventListener("click", (event) => {
+    if (event.target.closest("button")) return;
+    input.focus();
+    try {
+      input.showPicker();
+    } catch {
+    }
+  });
   return wrapper;
 }
 var TaskModal = class extends import_obsidian12.Modal {
@@ -5748,45 +5758,32 @@ var TaskModal = class extends import_obsidian12.Modal {
     refreshScheduleControls();
     const deadlineSetting = new import_obsidian12.Setting(fields).setName(t("taskModal.deadline"));
     deadlineSetting.settingEl.addClass("taskmate-deadline-setting");
-    decorateField2(deadlineSetting, "calendar-x", t("taskModal.deadline"));
-    const addDeadline = deadlineSetting.controlEl.createEl("button", {
-      text: t("taskModal.addDeadline"),
-      cls: "taskmate-deadline-add",
-      attr: { type: "button" }
-    });
+    decorateField2(deadlineSetting, DEADLINE_ICON, t("taskModal.deadline"));
     let deadlineInput;
-    let deadlineField;
+    let removeDeadline;
     deadlineSetting.addText((text3) => {
       text3.inputEl.type = "date";
       text3.inputEl.addClass("taskmate-date-input");
       text3.inputEl.setAttribute("aria-label", t("taskModal.deadline"));
       deadlineInput = text3.inputEl;
-      deadlineField = embedDateLabel(text3.inputEl, t("taskModal.deadline"));
+      const field = embedDateLabel(text3.inputEl, t("taskModal.deadline"));
+      removeDeadline = field.createEl("button", {
+        cls: "taskmate-date-clear clickable-icon",
+        attr: { type: "button", "aria-label": t("taskModal.removeDeadline") }
+      });
+      (0, import_obsidian12.setIcon)(removeDeadline, "x");
       text3.setValue(this.draft.deadline ?? "").onChange((value) => {
         this.draft.deadline = value || null;
+        removeDeadline.toggle(this.draft.deadline !== null);
       });
-    });
-    const removeDeadline = deadlineSetting.controlEl.createEl("button", {
-      text: t("taskModal.removeDeadline"),
-      cls: "taskmate-deadline-remove",
-      attr: { type: "button" }
-    });
-    const showDeadline = (visible) => {
-      addDeadline.toggle(!visible);
-      deadlineField.toggle(visible);
-      removeDeadline.toggle(visible);
-    };
-    addDeadline.addEventListener("click", () => {
-      showDeadline(true);
-      deadlineInput.focus();
     });
     removeDeadline.addEventListener("click", () => {
       this.draft.deadline = null;
       deadlineInput.value = "";
-      showDeadline(false);
-      addDeadline.focus();
+      removeDeadline.toggle(false);
+      deadlineInput.focus();
     });
-    showDeadline(this.draft.deadline !== null);
+    removeDeadline.toggle(this.draft.deadline !== null);
     const projectSetting = new import_obsidian12.Setting(fields).setName(t("taskModal.project"));
     decorateField2(projectSetting, "folder", t("taskModal.project"));
     addEmbeddedLabel2(projectSetting, t("taskModal.project"));
