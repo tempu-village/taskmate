@@ -288,7 +288,8 @@ describe("mobile layout", () => {
     expect(taskModalSource).toContain('addClass("taskmate-embedded-select")');
     expect(taskModalSource).toContain('embedDateLabel(text.inputEl, t("taskModal.date"))');
     expect(taskModalSource).toContain('embedDateLabel(text.inputEl, t("taskModal.deadline"))');
-    expect(taskModalSource).toContain('showDeadline(this.draft.deadline !== null)');
+    expect(taskModalSource).toContain('decorateField(deadlineSetting, DEADLINE_ICON');
+    expect(declarations(".taskmate-embedded-date")).toMatch(/width\s*:\s*100%\s*;/);
     expect(taskModalSource).toContain('window.matchMedia("(max-width: 700px)").matches');
 
     expect(declarations(".taskmate-compact-setting")).toMatch(/display\s*:\s*grid\s*;/);

@@ -1,4 +1,4 @@
-import { App, Modal, Setting, setIcon } from "obsidian";
+import { App, Modal, Setting, addIcon, setIcon } from "obsidian";
 import Sortable from "sortablejs";
 import type { Project, Task, TaskDraft } from "../tasks/domain";
 import { todayKey } from "../tasks/domain";
@@ -41,12 +41,31 @@ function addEmbeddedLabel(setting: Setting, label: string): void {
   setting.controlEl.prepend(labelEl);
 }
 
-/** Wraps a date input with a persistent in-field label so Scheduled and Deadline stay distinguishable. */
+// A calendar with a target, so Deadline reads differently from the scheduled-date calendar.
+const DEADLINE_ICON = "taskmate-calendar-target";
+addIcon(DEADLINE_ICON, `<g transform="scale(4.1667)" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><circle cx="18" cy="18" r="4"/><circle cx="18" cy="18" r="1"/></g>`);
+
+/**
+ * Lays out a date input as a bordered field with a persistent label above a calendar marker, so
+ * Scheduled and Deadline stay distinguishable. The native picker indicator is hidden, so the whole
+ * field opens the picker instead.
+ */
 function embedDateLabel(input: HTMLInputElement, label: string): HTMLElement {
   const wrapper = createDiv({ cls: "taskmate-embedded-date" });
   input.replaceWith(wrapper);
   wrapper.createSpan({ text: label, cls: "taskmate-embedded-field-label", attr: { "aria-hidden": "true" } });
+  const marker = wrapper.createSpan({ cls: "taskmate-embedded-date-icon", attr: { "aria-hidden": "true" } });
+  setIcon(marker, "calendar");
   wrapper.appendChild(input);
+  wrapper.addEventListener("click", (event) => {
+    if ((event.target as HTMLElement).closest("button")) return;
+    input.focus();
+    try {
+      input.showPicker();
+    } catch {
+      // Some hosts open the picker only from a direct tap on the input, which still works.
+    }
+  });
   return wrapper;
 }
 
@@ -158,46 +177,32 @@ export class TaskModal extends Modal {
 
     const deadlineSetting = new Setting(fields).setName(t("taskModal.deadline"));
     deadlineSetting.settingEl.addClass("taskmate-deadline-setting");
-    decorateField(deadlineSetting, "calendar-x", t("taskModal.deadline"));
-    // Most Tasks have no deadline, so the field stays collapsed until the user adds one.
-    const addDeadline = deadlineSetting.controlEl.createEl("button", {
-      text: t("taskModal.addDeadline"),
-      cls: "taskmate-deadline-add",
-      attr: { type: "button" }
-    });
+    decorateField(deadlineSetting, DEADLINE_ICON, t("taskModal.deadline"));
     let deadlineInput!: HTMLInputElement;
-    let deadlineField!: HTMLElement;
+    let removeDeadline!: HTMLButtonElement;
     deadlineSetting.addText((text) => {
       text.inputEl.type = "date";
       text.inputEl.addClass("taskmate-date-input");
       text.inputEl.setAttribute("aria-label", t("taskModal.deadline"));
       deadlineInput = text.inputEl;
-      deadlineField = embedDateLabel(text.inputEl, t("taskModal.deadline"));
+      const field = embedDateLabel(text.inputEl, t("taskModal.deadline"));
+      removeDeadline = field.createEl("button", {
+        cls: "taskmate-date-clear clickable-icon",
+        attr: { type: "button", "aria-label": t("taskModal.removeDeadline") }
+      });
+      setIcon(removeDeadline, "x");
       text.setValue(this.draft.deadline ?? "").onChange((value) => {
         this.draft.deadline = value || null;
+        removeDeadline.toggle(this.draft.deadline !== null);
       });
-    });
-    const removeDeadline = deadlineSetting.controlEl.createEl("button", {
-      text: t("taskModal.removeDeadline"),
-      cls: "taskmate-deadline-remove",
-      attr: { type: "button" }
-    });
-    const showDeadline = (visible: boolean) => {
-      addDeadline.toggle(!visible);
-      deadlineField.toggle(visible);
-      removeDeadline.toggle(visible);
-    };
-    addDeadline.addEventListener("click", () => {
-      showDeadline(true);
-      deadlineInput.focus();
     });
     removeDeadline.addEventListener("click", () => {
       this.draft.deadline = null;
       deadlineInput.value = "";
-      showDeadline(false);
-      addDeadline.focus();
+      removeDeadline.toggle(false);
+      deadlineInput.focus();
     });
-    showDeadline(this.draft.deadline !== null);
+    removeDeadline.toggle(this.draft.deadline !== null);
 
     const projectSetting = new Setting(fields).setName(t("taskModal.project"));
     decorateField(projectSetting, "folder", t("taskModal.project"));

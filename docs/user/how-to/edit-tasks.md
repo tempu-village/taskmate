@@ -4,7 +4,7 @@ Prerequisite: a Task created with [getting started](../getting-started.md).
 
 ## Set a scheduled date and a deadline
 
-Use **Scheduled** for the day you plan to work on the Task and **Deadline** for the hard date it must be finished by. To set a deadline, choose **Add deadline**; **Remove deadline** clears it. They are independent: moving the scheduled date to replan your work keeps the Deadline, and a missed Deadline stays marked as **Deadline passed** in every list until you complete the Task. Clearing one value never removes the other. A Task with only a Deadline stays in Unplanned until you give it a scheduled date.
+Use **Scheduled** for the day you plan to work on the Task and **Deadline** for the hard date it must be finished by. Choose the × in the Deadline field to clear it. They are independent: moving the scheduled date to replan your work keeps the Deadline, and a missed Deadline stays marked as **Deadline passed** in every list until you complete the Task. Clearing one value never removes the other. A Task with only a Deadline stays in Unplanned until you give it a scheduled date.
 
 ## Add supporting Steps
 
@@ -32,7 +32,7 @@ Open its editor, use **Delete** in the footer and confirm only if the Task shoul
 
 ### 予定日と締め切りを設定する
 
-「予定日」には作業する予定の日を、「締め切り」には必ず終える必要がある日を入力します。締め切りは「締め切りを追加」で設定し、「締め切りを外す」で解除します。二つは独立しており、計画の見直しで予定日を動かしても締め切りは変わりません。過ぎた締め切りは、タスクを完了するまでどの一覧でも「締め切り超過」と表示されます。片方を解除してももう片方は残ります。締め切りだけのタスクは、予定日を付けるまで未計画に表示されます。
+「予定日」には作業する予定の日を、「締め切り」には必ず終える必要がある日を入力します。締め切りは欄の×で解除します。二つは独立しており、計画の見直しで予定日を動かしても締め切りは変わりません。過ぎた締め切りは、タスクを完了するまでどの一覧でも「締め切り超過」と表示されます。片方を解除してももう片方は残ります。締め切りだけのタスクは、予定日を付けるまで未計画に表示されます。
 
 ### ステップを追加する
 

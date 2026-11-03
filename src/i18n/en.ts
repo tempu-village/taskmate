@@ -254,7 +254,6 @@ export const en = {
   "taskModal.titlePlaceholder": "What needs to be done?",
   "taskModal.date": "Scheduled",
   "taskModal.deadline": "Deadline",
-  "taskModal.addDeadline": "Add deadline",
   "taskModal.removeDeadline": "Remove deadline",
   "taskModal.project": "Project",
   "taskModal.unassigned": "Unassigned",
