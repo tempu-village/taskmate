@@ -174,49 +174,6 @@ export class TaskModal extends Modal {
     });
     refreshDateSelection();
 
-    const deadlineSetting = new Setting(fields).setName(t("taskModal.deadline"));
-    deadlineSetting.settingEl.addClass("taskmate-deadline-setting");
-    decorateField(deadlineSetting, "calendar-x", t("taskModal.deadline"));
-    // Most Tasks have no deadline, so the field stays collapsed until the user adds one.
-    const addDeadline = deadlineSetting.controlEl.createEl("button", {
-      text: t("taskModal.addDeadline"),
-      cls: "taskmate-deadline-add",
-      attr: { type: "button" }
-    });
-    let deadlineInput!: HTMLInputElement;
-    let deadlineField!: HTMLElement;
-    deadlineSetting.addText((text) => {
-      text.inputEl.type = "date";
-      text.inputEl.addClass("taskmate-date-input");
-      text.inputEl.setAttribute("aria-label", t("taskModal.deadline"));
-      deadlineInput = text.inputEl;
-      deadlineField = embedDateLabel(text.inputEl, t("taskModal.deadline"));
-      text.setValue(this.draft.deadline ?? "").onChange((value) => {
-        this.draft.deadline = value || null;
-      });
-    });
-    const removeDeadline = deadlineSetting.controlEl.createEl("button", {
-      text: t("taskModal.removeDeadline"),
-      cls: "taskmate-deadline-remove",
-      attr: { type: "button" }
-    });
-    const showDeadline = (visible: boolean) => {
-      addDeadline.toggle(!visible);
-      deadlineField.toggle(visible);
-      removeDeadline.toggle(visible);
-    };
-    addDeadline.addEventListener("click", () => {
-      showDeadline(true);
-      deadlineInput.focus();
-    });
-    removeDeadline.addEventListener("click", () => {
-      this.draft.deadline = null;
-      deadlineInput.value = "";
-      showDeadline(false);
-      addDeadline.focus();
-    });
-    showDeadline(this.draft.deadline !== null);
-
     const timeSetting = new Setting(fields).setName(t("taskModal.time"));
     timeSetting.settingEl.addClass("taskmate-time-setting");
     decorateField(timeSetting, "clock", t("taskModal.time"));
@@ -292,6 +249,49 @@ export class TaskModal extends Modal {
     };
     onDateChange = refreshScheduleControls;
     refreshScheduleControls();
+
+    const deadlineSetting = new Setting(fields).setName(t("taskModal.deadline"));
+    deadlineSetting.settingEl.addClass("taskmate-deadline-setting");
+    decorateField(deadlineSetting, "calendar-x", t("taskModal.deadline"));
+    // Most Tasks have no deadline, so the field stays collapsed until the user adds one.
+    const addDeadline = deadlineSetting.controlEl.createEl("button", {
+      text: t("taskModal.addDeadline"),
+      cls: "taskmate-deadline-add",
+      attr: { type: "button" }
+    });
+    let deadlineInput!: HTMLInputElement;
+    let deadlineField!: HTMLElement;
+    deadlineSetting.addText((text) => {
+      text.inputEl.type = "date";
+      text.inputEl.addClass("taskmate-date-input");
+      text.inputEl.setAttribute("aria-label", t("taskModal.deadline"));
+      deadlineInput = text.inputEl;
+      deadlineField = embedDateLabel(text.inputEl, t("taskModal.deadline"));
+      text.setValue(this.draft.deadline ?? "").onChange((value) => {
+        this.draft.deadline = value || null;
+      });
+    });
+    const removeDeadline = deadlineSetting.controlEl.createEl("button", {
+      text: t("taskModal.removeDeadline"),
+      cls: "taskmate-deadline-remove",
+      attr: { type: "button" }
+    });
+    const showDeadline = (visible: boolean) => {
+      addDeadline.toggle(!visible);
+      deadlineField.toggle(visible);
+      removeDeadline.toggle(visible);
+    };
+    addDeadline.addEventListener("click", () => {
+      showDeadline(true);
+      deadlineInput.focus();
+    });
+    removeDeadline.addEventListener("click", () => {
+      this.draft.deadline = null;
+      deadlineInput.value = "";
+      showDeadline(false);
+      addDeadline.focus();
+    });
+    showDeadline(this.draft.deadline !== null);
 
     const projectSetting = new Setting(fields).setName(t("taskModal.project"));
     decorateField(projectSetting, "folder", t("taskModal.project"));
