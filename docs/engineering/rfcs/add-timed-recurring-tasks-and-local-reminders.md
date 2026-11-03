@@ -97,7 +97,7 @@ Implemented in the pull request linked below. The maintainer delegated the open 
 - Current specification: [Task file format](../specifications/task-file-format.md), [Task Pilot schema](../../../skills/taskpilot/references/task-schema.md)
 - Current design: [Architecture](../design/architecture.md)
 - ADRs: None
-- Implementation pull request: pending
+- Implementation pull request: [#114](https://github.com/tempu-village/taskmate/pull/114)
 - Release: None
 - Verification evidence: [schedule tests](../../../test/tasks/schedule.test.ts), [reminder tests](../../../test/tasks/reminders.test.ts), [repository tests](../../../test/tasks/repository-conflicts.test.ts), [Task Pilot store tests](../../../skills/taskpilot/tests/test_todo_store.py); device verification pending
 
