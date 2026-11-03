@@ -1,5 +1,5 @@
-import { groupScheduledTasks, sortTasks } from "../tasks/domain";
-import type { Project, SortDirection, SortMode, Task } from "../tasks/domain";
+import { deadlineState, groupScheduledTasks, sortTasks, todayKey } from "../tasks/domain";
+import type { DeadlineState, Project, SortDirection, SortMode, Task } from "../tasks/domain";
 
 export type TaskListGrouping = "flat" | "scheduled";
 export type TaskListSectionId = "default" | "overdue" | "today" | "later";
@@ -9,6 +9,8 @@ export interface TaskListRow {
   title: string;
   completed: boolean;
   date: string | null;
+  deadline: string | null;
+  deadlineState: DeadlineState;
   priority: Task["priority"];
   projectName: string | null;
   labels: string[];
@@ -39,12 +41,14 @@ export interface TaskListModelInput {
   today?: string;
 }
 
-function toRow(task: Task, projectNames: Map<string, string>): TaskListRow {
+function toRow(task: Task, projectNames: Map<string, string>, today: string): TaskListRow {
   return {
     id: task.id,
     title: task.title,
     completed: task.completed,
     date: task.date,
+    deadline: task.deadline,
+    deadlineState: deadlineState(task, today),
     priority: task.priority,
     projectName: task.projectId ? projectNames.get(task.projectId) ?? null : null,
     labels: [...task.labels],
@@ -54,10 +58,11 @@ function toRow(task: Task, projectNames: Map<string, string>): TaskListRow {
 
 export function buildTaskListModel(input: TaskListModelInput): TaskListModel {
   const projectNames = new Map(input.projects.map((project) => [project.id, project.name]));
+  const today = input.today ?? todayKey();
   const selectionMode = input.selectionMode ?? false;
   const selectedIds = input.selectedIds ?? new Set<string>();
   const toSortedRows = (tasks: Task[]) => sortTasks(tasks, input.sortMode, input.sortDirection)
-    .map((task) => ({ ...toRow(task, projectNames), selected: selectedIds.has(task.id) }));
+    .map((task) => ({ ...toRow(task, projectNames, today), selected: selectedIds.has(task.id) }));
 
   if (input.grouping === "flat") {
     return {

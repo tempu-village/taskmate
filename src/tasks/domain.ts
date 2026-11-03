@@ -21,6 +21,7 @@ export interface Task {
   title: string;
   completed: boolean;
   date: string | null;
+  deadline: string | null;
   priority: Priority | null;
   labels: string[];
   projectId: string | null;
@@ -37,6 +38,7 @@ export interface Task {
 export interface TaskDraft {
   title: string;
   date: string | null;
+  deadline: string | null;
   priority: Priority | null;
   labels: string[];
   projectId: string | null;
@@ -68,6 +70,16 @@ export function addDays(dateKey: string, amount: number): string {
   const date = new Date(year, month - 1, day);
   date.setDate(date.getDate() + amount);
   return localDateParts(date);
+}
+
+export type DeadlineState = "none" | "overdue" | "today" | "upcoming";
+
+export function deadlineState(task: Pick<Task, "deadline" | "completed">, today = todayKey()): DeadlineState {
+  if (!task.deadline) return "none";
+  if (task.completed) return "upcoming";
+  if (task.deadline < today) return "overdue";
+  if (task.deadline === today) return "today";
+  return "upcoming";
 }
 
 export function taskMatchesView(task: Task, view: SmartView, today = todayKey(), includeCompleted = false): boolean {

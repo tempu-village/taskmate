@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filterTasks, groupScheduledTasks, sortTasks, taskMatchesView } from "../../src/tasks/domain";
+import { deadlineState, filterTasks, groupScheduledTasks, sortTasks, taskMatchesView } from "../../src/tasks/domain";
 import type { Project, Task } from "../../src/tasks/domain";
 import { encodeTask, encodeTaskPreservingProperties, legacyTaskFileName, nextAvailableTaskFileName, parseTaskMarkdown, taskFileName } from "../../src/tasks/markdown";
 import { encodeProject, parseProjectMarkdown, projectFileName } from "../../src/projects/project-markdown";
@@ -12,6 +12,7 @@ function task(overrides: Partial<Task> = {}): Task {
     title: "One",
     completed: false,
     date: null,
+    deadline: null,
     priority: null,
     labels: [],
     projectId: null,
@@ -176,6 +177,53 @@ describe("task Markdown", () => {
 
   it("still recognizes the former short-ID filename during migration", () => {
     expect(legacyTaskFileName("見積書を送る", "12345678-abcd")).toBe("見積書を送る--12345678.md");
+  });
+});
+
+describe("deadlines", () => {
+  const today = "2026-10-14";
+
+  it("round trips every combination of scheduled date and deadline", () => {
+    for (const [date, deadline] of [[null, null], ["2026-10-15", null], [null, "2026-10-12"], ["2026-10-15", "2026-10-12"]] as const) {
+      const original = task({ date, deadline });
+      expect(parseTaskMarkdown(original.path, encodeTask(original))).toEqual(original);
+    }
+  });
+
+  it("reads a legacy Task with only date without inventing a deadline", () => {
+    const legacy = encodeTask(task({ date: "2026-10-15" })).replace("deadline: null\n", "");
+    expect(legacy).not.toContain("deadline:");
+    const parsed = parseTaskMarkdown("Todo/Tasks/one.md", legacy);
+    expect(parsed?.date).toBe("2026-10-15");
+    expect(parsed?.deadline).toBeNull();
+    expect(encodeTaskPreservingProperties(parsed!, legacy)).toContain("deadline: null");
+  });
+
+  it("keeps the deadline when only the scheduled date is rewritten", () => {
+    const original = encodeTask(task({ date: "2026-10-15", deadline: "2026-10-12" }));
+    const parsed = parseTaskMarkdown("Todo/Tasks/one.md", original)!;
+    const rescheduled = encodeTaskPreservingProperties({ ...parsed, date: "2026-10-16" }, original);
+    expect(parseTaskMarkdown("Todo/Tasks/one.md", rescheduled)).toMatchObject({ date: "2026-10-16", deadline: "2026-10-12" });
+  });
+
+  it("keeps a missed deadline overdue whatever the scheduled date is", () => {
+    for (const date of [null, today, "2026-10-20", "2026-10-01"]) {
+      expect(deadlineState(task({ date, deadline: "2026-10-12" }), today)).toBe("overdue");
+    }
+    expect(deadlineState(task({ deadline: today }), today)).toBe("today");
+    expect(deadlineState(task({ deadline: "2026-10-20" }), today)).toBe("upcoming");
+    expect(deadlineState(task({ deadline: "2026-10-12", completed: true }), today)).toBe("upcoming");
+    expect(deadlineState(task(), today)).toBe("none");
+  });
+
+  it("groups Scheduled by date and leaves deadline-only Tasks in Unplanned", () => {
+    const deadlineOnly = task({ id: "deadline-only", deadline: "2026-10-12" });
+    const rescheduled = task({ id: "rescheduled", date: "2026-10-20", deadline: "2026-10-12" });
+    expect(taskMatchesView(deadlineOnly, "scheduled", today)).toBe(false);
+    expect(taskMatchesView(deadlineOnly, "unplanned", today)).toBe(true);
+    const groups = groupScheduledTasks([deadlineOnly, rescheduled], today);
+    expect(groups.overdue).toEqual([]);
+    expect(groups.later.map((item) => item.id)).toEqual(["rescheduled"]);
   });
 });
 
