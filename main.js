@@ -5346,7 +5346,7 @@ var TaskModal = class extends import_obsidian11.Modal {
     refreshDateSelection();
     const deadlineSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.deadline"));
     deadlineSetting.settingEl.addClass("taskmate-deadline-setting");
-    decorateField2(deadlineSetting, "flag", t("taskModal.deadline"));
+    decorateField2(deadlineSetting, "calendar-x", t("taskModal.deadline"));
     deadlineSetting.addText((text3) => {
       text3.inputEl.type = "date";
       text3.inputEl.addClass("taskmate-date-input");

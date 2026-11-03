@@ -148,7 +148,7 @@ export class TaskModal extends Modal {
 
     const deadlineSetting = new Setting(fields).setName(t("taskModal.deadline"));
     deadlineSetting.settingEl.addClass("taskmate-deadline-setting");
-    decorateField(deadlineSetting, "flag", t("taskModal.deadline"));
+    decorateField(deadlineSetting, "calendar-x", t("taskModal.deadline"));
     deadlineSetting.addText((text) => {
       text.inputEl.type = "date";
       text.inputEl.addClass("taskmate-date-input");
