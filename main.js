@@ -1184,8 +1184,10 @@ var en = {
   "taskModal.editTitle": "Edit task",
   "taskModal.title": "Title",
   "taskModal.titlePlaceholder": "What needs to be done?",
-  "taskModal.date": "Date",
+  "taskModal.date": "Scheduled",
   "taskModal.deadline": "Deadline",
+  "taskModal.addDeadline": "Add deadline",
+  "taskModal.removeDeadline": "Remove deadline",
   "taskModal.project": "Project",
   "taskModal.unassigned": "Unassigned",
   "taskModal.priority": "Priority",
@@ -1527,8 +1529,10 @@ var ja = {
   "taskModal.editTitle": "\u30BF\u30B9\u30AF\u3092\u7DE8\u96C6",
   "taskModal.title": "\u30BF\u30A4\u30C8\u30EB",
   "taskModal.titlePlaceholder": "\u3084\u308B\u3053\u3068",
-  "taskModal.date": "\u65E5\u4ED8",
+  "taskModal.date": "\u4E88\u5B9A\u65E5",
   "taskModal.deadline": "\u7DE0\u3081\u5207\u308A",
+  "taskModal.addDeadline": "\u7DE0\u3081\u5207\u308A\u3092\u8FFD\u52A0",
+  "taskModal.removeDeadline": "\u7DE0\u3081\u5207\u308A\u3092\u5916\u3059",
   "taskModal.project": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8",
   "taskModal.unassigned": "\u672A\u6240\u5C5E",
   "taskModal.priority": "\u512A\u5148\u5EA6",
@@ -2681,7 +2685,7 @@ function buildTaskListModel(input) {
   };
 }
 
-// node_modules/sortablejs/modular/sortable.esm.js
+// ../../../../../../../Users/dev/Development/taskmate-workspace/taskmate/.claude/worktrees/ci-duplicate-runs-8f745e/node_modules/sortablejs/modular/sortable.esm.js
 function _defineProperty(e, r, t) {
   return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
     value: t,
@@ -5248,6 +5252,13 @@ function addEmbeddedLabel2(setting, label) {
   });
   setting.controlEl.prepend(labelEl);
 }
+function embedDateLabel(input, label) {
+  const wrapper = createDiv({ cls: "taskmate-embedded-date" });
+  input.replaceWith(wrapper);
+  wrapper.createSpan({ text: label, cls: "taskmate-embedded-field-label", attr: { "aria-hidden": "true" } });
+  wrapper.appendChild(input);
+  return wrapper;
+}
 var TaskModal = class extends import_obsidian11.Modal {
   constructor(app, task, projects, labelOptions, defaultProjectId, availableRegion, i18n, onSave, onDelete = null) {
     super(app);
@@ -5338,6 +5349,7 @@ var TaskModal = class extends import_obsidian11.Modal {
       text3.inputEl.addClass("taskmate-date-input");
       text3.inputEl.setAttribute("aria-label", t("taskModal.date"));
       dateInput = text3.inputEl;
+      embedDateLabel(text3.inputEl, t("taskModal.date"));
       text3.setValue(this.draft.date ?? "").onChange((value) => {
         this.draft.date = value || null;
         refreshDateSelection();
@@ -5347,14 +5359,44 @@ var TaskModal = class extends import_obsidian11.Modal {
     const deadlineSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.deadline"));
     deadlineSetting.settingEl.addClass("taskmate-deadline-setting");
     decorateField2(deadlineSetting, "calendar-x", t("taskModal.deadline"));
+    const addDeadline = deadlineSetting.controlEl.createEl("button", {
+      text: t("taskModal.addDeadline"),
+      cls: "taskmate-deadline-add",
+      attr: { type: "button" }
+    });
+    let deadlineInput;
+    let deadlineField;
     deadlineSetting.addText((text3) => {
       text3.inputEl.type = "date";
       text3.inputEl.addClass("taskmate-date-input");
       text3.inputEl.setAttribute("aria-label", t("taskModal.deadline"));
+      deadlineInput = text3.inputEl;
+      deadlineField = embedDateLabel(text3.inputEl, t("taskModal.deadline"));
       text3.setValue(this.draft.deadline ?? "").onChange((value) => {
         this.draft.deadline = value || null;
       });
     });
+    const removeDeadline = deadlineSetting.controlEl.createEl("button", {
+      text: t("taskModal.removeDeadline"),
+      cls: "taskmate-deadline-remove",
+      attr: { type: "button" }
+    });
+    const showDeadline = (visible) => {
+      addDeadline.toggle(!visible);
+      deadlineField.toggle(visible);
+      removeDeadline.toggle(visible);
+    };
+    addDeadline.addEventListener("click", () => {
+      showDeadline(true);
+      deadlineInput.focus();
+    });
+    removeDeadline.addEventListener("click", () => {
+      this.draft.deadline = null;
+      deadlineInput.value = "";
+      showDeadline(false);
+      addDeadline.focus();
+    });
+    showDeadline(this.draft.deadline !== null);
     const projectSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.project"));
     decorateField2(projectSetting, "folder", t("taskModal.project"));
     addEmbeddedLabel2(projectSetting, t("taskModal.project"));
@@ -6490,7 +6532,7 @@ function isDesktopObsidian() {
 // src/reviews/task-change/proposal-repository.ts
 var import_obsidian15 = require("obsidian");
 
-// node_modules/diff/libesm/diff/base.js
+// ../../../../../../../Users/dev/Development/taskmate-workspace/taskmate/.claude/worktrees/ci-duplicate-runs-8f745e/node_modules/diff/libesm/diff/base.js
 var Diff = class {
   diff(oldStr, newStr, options = {}) {
     let callback;
@@ -6692,7 +6734,7 @@ var Diff = class {
   }
 };
 
-// node_modules/diff/libesm/util/string.js
+// ../../../../../../../Users/dev/Development/taskmate-workspace/taskmate/.claude/worktrees/ci-duplicate-runs-8f745e/node_modules/diff/libesm/util/string.js
 function hasOnlyWinLineEndings(string) {
   return string.includes("\r\n") && !string.startsWith("\n") && !string.match(/[^\r]\n/);
 }
@@ -6700,7 +6742,7 @@ function hasOnlyUnixLineEndings(string) {
   return !string.includes("\r\n") && string.includes("\n");
 }
 
-// node_modules/diff/libesm/diff/line.js
+// ../../../../../../../Users/dev/Development/taskmate-workspace/taskmate/.claude/worktrees/ci-duplicate-runs-8f745e/node_modules/diff/libesm/diff/line.js
 var LineDiff = class extends Diff {
   constructor() {
     super(...arguments);
@@ -6748,7 +6790,7 @@ function tokenize(value, options) {
   return retLines;
 }
 
-// node_modules/diff/libesm/patch/line-endings.js
+// ../../../../../../../Users/dev/Development/taskmate-workspace/taskmate/.claude/worktrees/ci-duplicate-runs-8f745e/node_modules/diff/libesm/patch/line-endings.js
 function unixToWin(patch) {
   if (Array.isArray(patch)) {
     return patch.map((p) => unixToWin(p));
@@ -6780,7 +6822,7 @@ function isWin(patch) {
   })));
 }
 
-// node_modules/diff/libesm/patch/parse.js
+// ../../../../../../../Users/dev/Development/taskmate-workspace/taskmate/.claude/worktrees/ci-duplicate-runs-8f745e/node_modules/diff/libesm/patch/parse.js
 function parsePatch(uniDiff) {
   const diffstr = uniDiff.split(/\n/), list = [];
   let i = 0;
@@ -6885,7 +6927,7 @@ function parsePatch(uniDiff) {
   return list;
 }
 
-// node_modules/diff/libesm/util/distance-iterator.js
+// ../../../../../../../Users/dev/Development/taskmate-workspace/taskmate/.claude/worktrees/ci-duplicate-runs-8f745e/node_modules/diff/libesm/util/distance-iterator.js
 function distance_iterator_default(start, minLine, maxLine) {
   let wantForward = true, backwardExhausted = false, forwardExhausted = false, localOffset = 1;
   return function iterator() {
@@ -6914,7 +6956,7 @@ function distance_iterator_default(start, minLine, maxLine) {
   };
 }
 
-// node_modules/diff/libesm/patch/apply.js
+// ../../../../../../../Users/dev/Development/taskmate-workspace/taskmate/.claude/worktrees/ci-duplicate-runs-8f745e/node_modules/diff/libesm/patch/apply.js
 function applyPatch(source, patch, options = {}) {
   let patches;
   if (typeof patch === "string") {
@@ -7063,7 +7105,7 @@ function applyStructuredPatch(source, patch, options = {}) {
   return resultLines.join("\n");
 }
 
-// node_modules/diff/libesm/patch/create.js
+// ../../../../../../../Users/dev/Development/taskmate-workspace/taskmate/.claude/worktrees/ci-duplicate-runs-8f745e/node_modules/diff/libesm/patch/create.js
 function structuredPatch(oldFileName, newFileName, oldStr, newStr, oldHeader, newHeader, options) {
   let optionsObj;
   if (!options) {

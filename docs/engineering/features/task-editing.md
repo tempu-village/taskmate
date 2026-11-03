@@ -11,7 +11,7 @@ Each Task is stored as one Markdown file. Its frontmatter contains a stable UUID
 
 Task filenames are readable and derived from the title. The stable ID is not exposed in the filename. Renaming a Task title may rename its file without changing its identity.
 
-The Task editor supports title, date, Project, Priority, Labels, ordered Steps, and notes. It uses distinct leading icons as compact visual landmarks instead of separate external text-label rows. Title is a visually multi-line, auto-growing field so a long value can be reviewed and edited without horizontal panning; visual wrapping does not add line breaks to the stored Task title. Project and Priority remain on separate rows and keep small persistent property names inside their selectors. Date shortcuts provide Today, Tomorrow, 7 days later, and No date, followed by a custom date field. A separate Deadline field sets or clears the hard deadline; changing Date never changes Deadline, and changing Deadline never changes Date. The primary save action is visible when the editor opens on mobile, and opening Add Task on mobile does not automatically focus Title or open the keyboard.
+The Task editor supports title, date, Project, Priority, Labels, ordered Steps, and notes. It uses distinct leading icons as compact visual landmarks instead of separate external text-label rows. Title is a visually multi-line, auto-growing field so a long value can be reviewed and edited without horizontal panning; visual wrapping does not add line breaks to the stored Task title. Project and Priority remain on separate rows and keep small persistent property names inside their selectors. The two date inputs keep small persistent in-field labels, Scheduled and Deadline. Scheduled-date shortcuts provide Today, Tomorrow, 7 days later, and No date, followed by a custom date field. A Task without a deadline shows only an Add deadline button; it reveals the Deadline field, and Remove deadline clears it and collapses the row ([ADR 0029](../adr/0029-label-scheduled-and-deadline-fields-and-collapse-deadline.md)); changing Date never changes Deadline, and changing Deadline never changes Date. The primary save action is visible when the editor opens on mobile, and opening Add Task on mobile does not automatically focus Title or open the keyboard.
 
 Selecting a Task title opens its editor. Completion is available in the Task row. Single-task deletion is in the editor footer and requires confirmation.
 
@@ -60,7 +60,7 @@ Automated evidence: [task-title.test.ts](../../../test/tasks/task-title.test.ts)
 
 タスクのファイル名は読みやすく、タスク名から生成します。安定IDはファイル名に出しません。タスク名を変更してファイル名が変わっても、タスクの同一性は変わりません。
 
-タスク編集画面では、タスク名、日付、プロジェクト、優先度、ラベル、順序付きステップ、メモを扱います。外側の説明文字を行ごとに置く代わりに、形の異なる先頭アイコンをコンパクトな目印として使います。プロジェクトと優先度は別々の行にし、選択欄内へ小さい項目名を常に表示します。日付の候補として、今日、明日、7日後、日付なしを表示し、その下に任意の日付欄を設けます。別の「締め切り」欄で締め切りを設定・解除できます。日付を変えても締め切りは変わらず、締め切りを変えても日付は変わりません。モバイルで編集画面を開いた時点から主要な保存操作を利用でき、追加画面を開いただけではタイトルへ自動フォーカスせず、キーボードも表示しません。
+タスク編集画面では、タスク名、日付、プロジェクト、優先度、ラベル、順序付きステップ、メモを扱います。外側の説明文字を行ごとに置く代わりに、形の異なる先頭アイコンをコンパクトな目印として使います。プロジェクトと優先度は別々の行にし、選択欄内へ小さい項目名を常に表示します。2つの日付欄には「予定日」「締め切り」の名札を欄内に常に表示します。予定日の候補として、今日、明日、7日後、日付なしを表示し、その下に任意の日付欄を設けます。締め切りがないタスクでは「締め切りを追加」だけを表示し、押すと締め切り欄が開きます。「締め切りを外す」で解除して閉じます。日付を変えても締め切りは変わらず、締め切りを変えても日付は変わりません。モバイルで編集画面を開いた時点から主要な保存操作を利用でき、追加画面を開いただけではタイトルへ自動フォーカスせず、キーボードも表示しません。
 
 タスク名の入力欄は複数行へ自動拡張しますが、保存するタイトルは一行です。タスク名から編集し、行のチェックで完了にします。単一タスクの削除は編集フッターにあり、確認が必要です。
 
