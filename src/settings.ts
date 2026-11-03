@@ -1,6 +1,7 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import type TaskMatePlugin from "./main";
 import type { LanguagePreference, SupportedLocale } from "./i18n";
+import { requestSystemNotificationPermission, systemNotificationState } from "./reminders/reminder-notifier";
 
 export interface TaskMateSettings {
   language: LanguagePreference;
@@ -12,6 +13,7 @@ export interface TaskMateSettings {
   recentSearches: string[];
   recentLabels: string[];
   favoriteLabels: string[];
+  systemNotifications: boolean;
   // The language Auto resolves to in the desktop Obsidian app, recorded for Task Pilot. Only the desktop app writes it.
   desktopLanguage?: SupportedLocale;
   // The loaded plugin version and the Import review schema versions it reads, recorded at load for Task Pilot's
@@ -33,7 +35,8 @@ export const DEFAULT_SETTINGS: TaskMateSettings = {
   includeSourceSubfolders: true,
   recentSearches: [],
   recentLabels: [],
-  favoriteLabels: []
+  favoriteLabels: [],
+  systemNotifications: false
 };
 
 export class TaskMateSettingTab extends PluginSettingTab {
@@ -106,5 +109,25 @@ export class TaskMateSettingTab extends PluginSettingTab {
         this.plugin.settings.includeSourceSubfolders = value;
         await this.plugin.saveSettings();
       }));
+
+    const notificationState = systemNotificationState();
+    const notifications = new Setting(containerEl)
+      .setName(t("settings.systemNotifications"))
+      .setDesc(notificationState === "unavailable"
+        ? t("settings.systemNotificationsUnavailable")
+        : notificationState === "denied"
+          ? `${t("settings.systemNotificationsDescription")} ${t("settings.systemNotificationsDenied")}`
+          : t("settings.systemNotificationsDescription"));
+    if (notificationState !== "unavailable") {
+      notifications.addToggle((toggle) => toggle
+        .setValue(this.plugin.settings.systemNotifications && notificationState === "granted")
+        .setDisabled(notificationState === "denied")
+        .onChange(async (value) => {
+          const permission = value ? await requestSystemNotificationPermission() : notificationState;
+          this.plugin.settings.systemNotifications = value && permission === "granted";
+          await this.plugin.saveSettings();
+          this.display();
+        }));
+    }
   }
 }

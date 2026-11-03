@@ -18,6 +18,7 @@ import type { ReviewLocation, ReviewReference } from "./reviews/shared/review-ca
 import { buildReviewIndex } from "./reviews/shared/review-index";
 import type { ReviewIndexDetails, ReviewIndexItem } from "./reviews/shared/review-index";
 import { REVIEW_INDEX_VIEW_TYPE, ReviewIndexView } from "./reviews/shared/review-index-view";
+import { ReminderNotifier } from "./reminders/reminder-notifier";
 
 export default class TaskMatePlugin extends Plugin {
   settings: TaskMateSettings = DEFAULT_SETTINGS;
@@ -26,6 +27,7 @@ export default class TaskMatePlugin extends Plugin {
   proposals!: TaskChangeProposalRepository;
   importReviews!: ImportReviewRepository;
   reviewCatalog!: ReviewCatalog;
+  reminders!: ReminderNotifier;
   private refreshTimer: number | null = null;
 
   async onload(): Promise<void> {
@@ -37,6 +39,14 @@ export default class TaskMatePlugin extends Plugin {
     this.proposals = new TaskChangeProposalRepository(this.app, () => this.settings.proposalFolder, this.repository);
     this.importReviews = new ImportReviewRepository(this.app, () => this.settings.proposalFolder, this.repository);
     this.reviewCatalog = new ReviewCatalog(this.app, () => this.settings.proposalFolder);
+    this.reminders = new ReminderNotifier({
+      app: this.app,
+      loadTasks: () => this.repository.list(),
+      translate: () => this.i18n().t,
+      systemNotificationsEnabled: () => this.settings.systemNotifications,
+      registerInterval: (id) => this.registerInterval(id),
+      registerDomEvent: (target, type, listener) => this.registerDomEvent(target, type, listener)
+    });
     try {
       const migrated = await this.repository.migrateLegacyFileNames();
       if (migrated > 0) new Notice(t("notice.migratedTaskNames", { count: migrated }));
@@ -95,6 +105,7 @@ export default class TaskMatePlugin extends Plugin {
       if (this.refreshTimer !== null) window.clearTimeout(this.refreshTimer);
       this.refreshTimer = window.setTimeout(() => {
         this.refreshViews();
+        if (file.path.startsWith(taskPrefix)) void this.reminders.check();
         for (const leaf of this.app.workspace.getLeavesOfType(TASK_CHANGE_REVIEW_VIEW_TYPE)) {
           if (leaf.view instanceof TaskChangeReviewView) leaf.view.requestRender();
         }
@@ -110,6 +121,7 @@ export default class TaskMatePlugin extends Plugin {
     this.registerEvent(this.app.vault.on("modify", (file) => { if (file instanceof TFile) scheduleRefresh(file); }));
     this.registerEvent(this.app.vault.on("delete", (file) => { if (file instanceof TFile) scheduleRefresh(file); }));
     this.registerEvent(this.app.vault.on("rename", (file) => { if (file instanceof TFile) scheduleRefresh(file); }));
+    this.app.workspace.onLayoutReady(() => this.reminders.start());
   }
 
   onunload(): void {

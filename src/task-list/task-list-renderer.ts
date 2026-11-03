@@ -1,4 +1,5 @@
 import Sortable from "sortablejs";
+import type { RepeatRule } from "../tasks/schedule";
 import type { TaskListModel, TaskListRow, TaskListSectionId } from "./task-list-model";
 import { summarizeLabels } from "../labels/label-summary";
 
@@ -17,6 +18,8 @@ export interface TaskListCopy {
   hideExtraLabels: string;
   deadline: (date: string) => string;
   deadlineOverdue: (date: string) => string;
+  repeat: (rule: RepeatRule) => string;
+  reminder: string;
   sectionTitles: Record<Exclude<TaskListSectionId, "default">, string>;
 }
 
@@ -111,11 +114,13 @@ function renderRow(
   }, { signal });
 
   const metadata = appendElement(body, "div", { className: "taskmate-metadata" });
-  if (row.date) appendElement(metadata, "span", { text: row.date });
+  if (row.date) appendElement(metadata, "span", { text: row.time ? `${row.date} ${row.time}` : row.date });
   if (row.deadline) appendElement(metadata, "span", {
     text: row.deadlineState === "overdue" ? copy.deadlineOverdue(row.deadline) : copy.deadline(row.deadline),
     className: `taskmate-deadline is-${row.deadlineState}`
   });
+  if (row.repeat) appendElement(metadata, "span", { text: copy.repeat(row.repeat), className: "taskmate-repeat" });
+  if (row.reminder !== null && row.time) appendElement(metadata, "span", { text: copy.reminder, className: "taskmate-reminder" });
   if (row.priority) appendElement(metadata, "span", {
     text: `P${row.priority}`,
     className: `taskmate-priority taskmate-priority-${row.priority}`

@@ -13,6 +13,9 @@ id: "stable-id"
 completed: false
 date: "2026-09-12"
 deadline: "2026-09-15"
+time: "09:30"
+repeat: "weekly"
+reminder: 15
 priority: 1
 labels: ["仕事", "連絡"]
 project: "project-stable-id"
@@ -35,7 +38,9 @@ source-note: "Notes/meeting.md"
 Optional context or acceptance details.
 ```
 
-`date` is the optional scheduled date: the day the user plans to work on the Task. `deadline` is the optional hard deadline: an external or consequential due date. Both use `YYYY-MM-DD` and are independent; a Task may have neither, either, or both. Rescheduling changes only `date` and never changes or clears `deadline`; change `deadline` only when the user explicitly asks. Never infer a `deadline` from an existing `date`. Files without `deadline` are valid and read as `null`. Use `--date` and `--deadline` with `create` or `update`; `none` clears either value. `priority` is `1`, `2`, `3`, or `null`; 1 is highest. `labels` is an inline JSON string array with no more than 500 distinct labels exposed by the plugin. `project` is a project ID or `null`, never a display name. `completed-at` is an ISO timestamp when completed and `null` otherwise. `rank` is the single global manual order; automatic sorting is display-only and must not rewrite it.
+`date` is the optional scheduled date: the day the user plans to work on the Task. `deadline` is the optional hard deadline: an external or consequential due date. Both use `YYYY-MM-DD` and are independent; a Task may have neither, either, or both. Rescheduling changes only `date` and never changes or clears `deadline`; change `deadline` only when the user explicitly asks. Never infer a `deadline` from an existing `date`. Files without `deadline` are valid and read as `null`. Use `--date` and `--deadline` with `create` or `update`; `none` clears either value.
+
+`time`, `repeat`, and `reminder` are optional and omitted when unset. `time` is a 24-hour local `HH:MM` evaluated in the device's current time zone and requires `date`. `repeat` is `daily`, `weekly`, `monthly`, `yearly`, or `every N days|weeks|months|years` with N from 1 to 99, and requires `date`. `reminder` is minutes before `time`: `0`, `5`, `15`, `30`, `60`, or `1440`, and requires `time`. Preserve unreadable values as written. Use `--time`, `--repeat`, and `--reminder` with `create` or `update`; `none` clears a value on `update`. Running `complete` on a recurring task does not complete it: it advances `date` by the rule from the current `date` (clamping month ends), moves `deadline` by the same number of days, and reopens Steps. Run it once per occurrence. Reminders are delivered only by the TaskMate plugin. `priority` is `1`, `2`, `3`, or `null`; 1 is highest. `labels` is an inline JSON string array with no more than 500 distinct labels exposed by the plugin. `project` is a project ID or `null`, never a display name. `completed-at` is an ISO timestamp when completed and `null` otherwise. `rank` is the single global manual order; automatic sorting is display-only and must not rewrite it.
 
 Older files with `important: true` are read as priority 1 for migration compatibility. New writes must use `priority`.
 

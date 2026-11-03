@@ -1,6 +1,8 @@
 import { App, Modal } from "obsidian";
 import type { Project } from "../tasks/domain";
 import type { I18n, TranslationKey } from "../i18n";
+import { formatRepeat } from "../tasks/schedule";
+import type { RepeatRule } from "../tasks/schedule";
 import type { EditableTaskField, TaskConflictChoice } from "../tasks/task-edit-merge";
 import type { TaskSaveConflict } from "../tasks/repository";
 
@@ -8,6 +10,9 @@ const FIELD_LABEL_KEYS = {
   title: "taskModal.title",
   date: "taskModal.date",
   deadline: "taskModal.deadline",
+  time: "taskModal.time",
+  repeat: "taskModal.repeat",
+  reminder: "taskModal.reminder",
   priority: "taskModal.priority",
   labels: "taskModal.labels",
   projectId: "taskModal.project",
@@ -108,6 +113,7 @@ export class TaskConflictModal extends Modal {
     if (field === "priority" && typeof value === "number") {
       return this.i18n.t("filter.priorityValue", { priority: value });
     }
+    if (field === "repeat" && value !== null && typeof value === "object") return formatRepeat(value as RepeatRule) ?? "";
     if (field === "steps" && Array.isArray(value)) {
       return value.length > 0 ? value.map((step) => {
         const item = step as { text?: string; completed?: boolean; date?: string | null };

@@ -6,6 +6,10 @@ Prerequisite: a Task created with [getting started](../getting-started.md).
 
 Use **Date** for the day you plan to work on the Task and **Deadline** for the hard date it must be finished by. They are independent: moving Date to replan your work keeps the Deadline, and a missed Deadline stays marked as **Deadline passed** in every list until you complete the Task. Clear either field to remove only that value. A Task with only a Deadline stays in Unplanned until you give it a Date.
 
+## Set a time, repeat or reminder
+
+After setting a Date, choose a **Time** and, if the work repeats, a **Repeat** interval such as every 2 weeks. With a Time set, choose a **Reminder**. Checking a repeating Task moves it to its next date instead of completing it. Reminders appear only while Obsidian is open on that device; to also get system notifications, enable **System notifications** in TaskMate settings. Reminders missed while Obsidian was closed are listed when it opens. See [Schedules and reminders](../../engineering/features/schedules-and-reminders.md).
+
 ## Add supporting Steps
 
 Open the Task by its title. In Steps, use **Add**, enter a Step title and optional date, then save the Step. Repeat for another Step. Change completion in the Step list and drag the content area to reorder (hold briefly on touch). Save the parent Task to persist its edited Steps. To remove a Step, open that Step's editor and choose its Delete action.
@@ -33,6 +37,10 @@ Open its editor, use **Delete** in the footer and confirm only if the Task shoul
 ### 予定日と締め切りを設定する
 
 「日付」には作業する予定の日を、「締め切り」には必ず終える必要がある日を入力します。二つは独立しており、計画の見直しで日付を動かしても締め切りは変わりません。過ぎた締め切りは、タスクを完了するまでどの一覧でも「締め切り超過」と表示されます。片方の欄を空にすると、その値だけを解除します。締め切りだけのタスクは、日付を付けるまで未計画に表示されます。
+
+### 時刻・繰り返し・通知を設定する
+
+日付を設定した後に「時刻」を選び、繰り返す作業なら「繰り返し」で2週間ごとなどの間隔を選びます。時刻があれば「通知」を選べます。繰り返しタスクにチェックを入れると、完了せず次の日付へ進みます。通知はその端末でObsidianを開いている間だけ表示します。システム通知も受け取るには、TaskMateの設定で「システム通知」を有効にします。Obsidianを閉じている間に過ぎた通知は、次に開いたときに一覧表示します。
 
 ### ステップを追加する
 

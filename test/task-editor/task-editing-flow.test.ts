@@ -91,6 +91,9 @@ function task(id: string, overrides: Partial<Task> = {}): Task {
     completed: false,
     date: null,
     deadline: null,
+    time: null,
+    repeat: null,
+    reminder: null,
     priority: null,
     labels: [],
     projectId: null,
@@ -115,7 +118,7 @@ const project: Project = {
   lastUsedAt: null
 };
 
-const draft: TaskDraft = { title: "Edited", date: null, deadline: null, priority: null, labels: ["home"], projectId: "project-home", steps: [], notes: "" };
+const draft: TaskDraft = { title: "Edited", date: null, deadline: null, time: null, repeat: null, reminder: null, priority: null, labels: ["home"], projectId: "project-home", steps: [], notes: "" };
 
 function session(base: Task): TaskEditSession {
   return { taskId: base.id, openingPath: base.path, baseTask: base, baseContent: "" };

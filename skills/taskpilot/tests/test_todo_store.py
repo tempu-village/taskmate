@@ -155,6 +155,67 @@ class TodoStoreTest(unittest.TestCase):
         self.assertIn("custom: keep", text)
         self.assertTrue(self.run_store("validate")["valid"])
 
+    def test_time_repeat_and_reminder_round_trip_and_clear(self):
+        created = self.run_store(
+            "create", "--title", "Water plants", "--date", "2026-10-14", "--time", "07:30",
+            "--repeat", "Every 2 Weeks", "--reminder", "15",
+        )
+        self.assertEqual((created["time"], created["repeat"], created["reminder"]), ("07:30", "every 2 weeks", 15))
+        text = (self.vault / created["path"]).read_text(encoding="utf-8")
+        self.assertIn('time: "07:30"\nrepeat: "every 2 weeks"\nreminder: 15', text)
+        listed = next(task for task in self.run_store("list") if task["id"] == created["id"])
+        self.assertEqual((listed["time"], listed["repeat"], listed["reminder"]), ("07:30", "every 2 weeks", 15))
+
+        cleared = self.run_store("update", "--id", created["id"], "--reminder", "none", "--time", "none", "--repeat", "none")
+        self.assertEqual((cleared["time"], cleared["repeat"], cleared["reminder"]), (None, None, None))
+        text = (self.vault / cleared["path"]).read_text(encoding="utf-8")
+        self.assertNotRegex(text, r"(?m)^(time|repeat|reminder):")
+
+    def test_date_only_task_writes_no_schedule_lines(self):
+        created = self.run_store("create", "--title", "Plain", "--date", "2026-10-14")
+        text = (self.vault / created["path"]).read_text(encoding="utf-8")
+        self.assertNotRegex(text, r"(?m)^(time|repeat|reminder):")
+
+    def test_schedule_values_are_validated(self):
+        for arguments, message in [
+            (["--time", "07:30"], "time and repeat require a date"),
+            (["--date", "2026-10-14", "--time", "7:30"], "time must be HH:MM"),
+            (["--date", "2026-10-14", "--repeat", "every weekday"], "repeat must be"),
+            (["--date", "2026-10-14", "--reminder", "15"], "reminder requires a time"),
+        ]:
+            result = subprocess.run(
+                [sys.executable, str(SCRIPT), "--vault", str(self.vault), "create", "--title", "Invalid", *arguments],
+                capture_output=True, text=True,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn(message, result.stderr)
+
+    def test_unreadable_schedule_values_are_kept_as_written(self):
+        self.write_note(
+            "TaskMate/Tasks/Odd.md",
+            "---\ntype: todo\nid: odd\ncompleted: false\ndate: \"2026-10-14\"\nrepeat: \"every weekday\"\n---\n\n# Odd\n",
+        )
+        listed = next(task for task in self.run_store("list") if task["id"] == "odd")
+        self.assertIsNone(listed["repeat"])
+        self.run_store("update", "--id", "odd", "--notes", "Edited")
+        text = (self.vault / "TaskMate/Tasks/Odd.md").read_text(encoding="utf-8")
+        self.assertIn('repeat: "every weekday"', text)
+
+    def test_completing_a_recurring_task_advances_it(self):
+        created = self.run_store(
+            "create", "--title", "Pay rent", "--date", "2026-01-31", "--deadline", "2026-02-02",
+            "--repeat", "monthly", "--steps-json", json.dumps([{"text": "Transfer", "completed": True, "date": None}]),
+        )
+        self.write_note(created["path"], (self.vault / created["path"]).read_text(encoding="utf-8").replace("type: todo", "type: todo\ncustom: keep"))
+        advanced = self.run_store("complete", "--id", created["id"])
+        self.assertFalse(advanced["completed"])
+        self.assertIsNone(advanced["completed-at"])
+        self.assertEqual((advanced["date"], advanced["deadline"]), ("2026-02-28", "2026-03-02"))
+        self.assertEqual(advanced["steps"], [{"text": "Transfer", "completed": False, "date": None}])
+        text = (self.vault / created["path"]).read_text(encoding="utf-8")
+        self.assertIn("custom: keep", text)
+        self.assertEqual(len(list((self.vault / "TaskMate/Tasks").glob("*.md"))), 1)
+
     def test_steps_round_trip_and_reorder(self):
         steps = [
             {"text": "Reserve hotel", "completed": False, "date": "2026-10-01"},

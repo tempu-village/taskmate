@@ -22,6 +22,7 @@ import type { TaskListModel } from "./task-list-model";
 import { renderTaskList as renderTaskListDom } from "./task-list-renderer";
 import type { RenderedTaskList, TaskListAction, TaskListCopy } from "./task-list-renderer";
 import { TaskEditingFlow } from "../task-editor/task-editing-flow";
+import { repeatLabel } from "../task-editor/schedule-labels";
 import { TaskFilterState } from "./task-filter-state";
 import { TaskSelection } from "./task-selection";
 import { captureTaskListScrollTop, restoreTaskListScrollTop } from "./scroll-position";
@@ -443,6 +444,8 @@ export class TodoListView extends ItemView {
       hideExtraLabels: t("tasks.hideExtraLabels"),
       deadline: (date) => t("tasks.deadline", { date }),
       deadlineOverdue: (date) => t("tasks.deadlineOverdue", { date }),
+      repeat: (rule) => repeatLabel(t, rule),
+      reminder: t("tasks.reminder"),
       sectionTitles: {
         overdue: t("view.overdue"),
         today: t("view.today"),

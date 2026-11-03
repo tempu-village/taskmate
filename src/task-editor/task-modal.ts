@@ -13,6 +13,9 @@ import { normalizeTaskTitleInput } from "../tasks/task-title";
 import { moveTaskStep, stepDateState } from "../tasks/task-steps";
 import { normalizeTaskSteps } from "../tasks/task-body";
 import { StepModal } from "./step-modal";
+import { MAXIMUM_REPEAT_INTERVAL, REMINDER_OFFSETS } from "../tasks/schedule";
+import type { ReminderOffset, RepeatUnit } from "../tasks/schedule";
+import { reminderLabel, repeatLabel } from "./schedule-labels";
 
 const DATE_SUGGESTION_KEYS = {
   today: "date.today",
@@ -20,6 +23,16 @@ const DATE_SUGGESTION_KEYS = {
   "seven-days": "date.sevenDays",
   none: "date.none"
 } satisfies Record<ReturnType<typeof taskDateSuggestions>[number]["id"], TranslationKey>;
+
+function normalizeSchedule(draft: TaskDraft): TaskDraft {
+  const time = draft.date ? draft.time : null;
+  return {
+    ...draft,
+    time,
+    repeat: draft.date ? draft.repeat : null,
+    reminder: time ? draft.reminder : null
+  };
+}
 
 function decorateField(setting: Setting, icon: string, accessibleName: string): void {
   setting.settingEl.addClass("taskmate-compact-setting");
@@ -64,6 +77,9 @@ export class TaskModal extends Modal {
       title: task?.title ?? "",
       date: task?.date ?? null,
       deadline: task?.deadline ?? null,
+      time: task?.time ?? null,
+      repeat: task?.repeat ?? null,
+      reminder: task?.reminder ?? null,
       priority: task?.priority ?? null,
       labels: task?.labels ?? [],
       projectId: task?.projectId ?? defaultProjectId,
@@ -113,7 +129,9 @@ export class TaskModal extends Modal {
     const datePresets = dateSetting.controlEl.createDiv({ cls: "taskmate-date-presets" });
     const dateButtons: HTMLButtonElement[] = [];
     let dateInput: HTMLInputElement;
+    let onDateChange = (): void => undefined;
     const refreshDateSelection = () => {
+      onDateChange();
       for (const button of dateButtons) {
         const selected = button.dataset.date === (this.draft.date ?? "");
         button.toggleClass("is-active", selected);
@@ -157,6 +175,82 @@ export class TaskModal extends Modal {
         this.draft.deadline = value || null;
       });
     });
+
+    const timeSetting = new Setting(fields).setName(t("taskModal.time"));
+    timeSetting.settingEl.addClass("taskmate-time-setting");
+    decorateField(timeSetting, "clock", t("taskModal.time"));
+    let timeInput!: HTMLInputElement;
+    timeSetting.addText((text) => {
+      text.inputEl.type = "time";
+      text.inputEl.addClass("taskmate-date-input");
+      text.inputEl.setAttribute("aria-label", t("taskModal.time"));
+      timeInput = text.inputEl;
+      text.setValue(this.draft.time ?? "").onChange((value) => {
+        this.draft.time = value || null;
+        refreshScheduleControls();
+      });
+    });
+
+    const repeatSetting = new Setting(fields).setName(t("taskModal.repeat"));
+    repeatSetting.settingEl.addClass("taskmate-repeat-setting");
+    decorateField(repeatSetting, "repeat", t("taskModal.repeat"));
+    let repeatUnit!: HTMLSelectElement;
+    let repeatInterval!: HTMLInputElement;
+    const readRepeat = (): void => {
+      const unit = repeatUnit.value as RepeatUnit | "";
+      const interval = Math.min(MAXIMUM_REPEAT_INTERVAL, Math.max(1, Math.trunc(Number(repeatInterval.value)) || 1));
+      this.draft.repeat = unit ? { unit, interval } : null;
+      repeatInterval.hidden = !unit;
+    };
+    repeatSetting.addText((text) => {
+      text.inputEl.type = "number";
+      text.inputEl.min = "1";
+      text.inputEl.max = String(MAXIMUM_REPEAT_INTERVAL);
+      text.inputEl.inputMode = "numeric";
+      text.inputEl.addClass("taskmate-repeat-interval");
+      text.inputEl.setAttribute("aria-label", t("taskModal.repeatInterval"));
+      repeatInterval = text.inputEl;
+      text.setValue(String(this.draft.repeat?.interval ?? 1)).onChange(readRepeat);
+    });
+    repeatSetting.addDropdown((dropdown) => {
+      dropdown.selectEl.setAttribute("aria-label", t("taskModal.repeat"));
+      repeatUnit = dropdown.selectEl;
+      dropdown.addOption("", t("repeat.none"));
+      for (const unit of ["day", "week", "month", "year"] as const) {
+        dropdown.addOption(unit, repeatLabel(t, { unit, interval: 1 }));
+      }
+      dropdown.setValue(this.draft.repeat?.unit ?? "").onChange(readRepeat);
+    });
+    repeatInterval.hidden = !this.draft.repeat;
+
+    const reminderSetting = new Setting(fields).setName(t("taskModal.reminder"));
+    reminderSetting.settingEl.addClass("taskmate-reminder-setting");
+    decorateField(reminderSetting, "bell", t("taskModal.reminder"));
+    let reminderSelect!: HTMLSelectElement;
+    reminderSetting.addDropdown((dropdown) => {
+      dropdown.selectEl.setAttribute("aria-label", t("taskModal.reminder"));
+      reminderSelect = dropdown.selectEl;
+      dropdown.addOption("", t("reminder.none"));
+      for (const offset of REMINDER_OFFSETS) dropdown.addOption(String(offset), reminderLabel(t, offset));
+      dropdown.setValue(this.draft.reminder === null ? "" : String(this.draft.reminder)).onChange((value) => {
+        this.draft.reminder = value === "" ? null : Number(value) as ReminderOffset;
+      });
+    });
+    const scheduleHint = fields.createDiv({ cls: "setting-item-description taskmate-schedule-hint" });
+
+    // Time and repeat need a date; a reminder needs a date and a time. Unusable values are kept in the
+    // draft while the user edits and dropped on save.
+    const refreshScheduleControls = (): void => {
+      const hasDate = this.draft.date !== null;
+      timeInput.disabled = !hasDate;
+      repeatUnit.disabled = !hasDate;
+      repeatInterval.disabled = !hasDate;
+      reminderSelect.disabled = !hasDate || this.draft.time === null;
+      scheduleHint.setText(!hasDate ? t("taskModal.scheduleNeedsDate") : this.draft.time === null ? t("taskModal.reminderNeedsTime") : "");
+      scheduleHint.hidden = hasDate && this.draft.time !== null;
+    };
+    onDateChange = refreshScheduleControls;
+    refreshScheduleControls();
 
     const projectSetting = new Setting(fields).setName(t("taskModal.project"));
     decorateField(projectSetting, "folder", t("taskModal.project"));
@@ -421,7 +515,7 @@ export class TaskModal extends Modal {
       this.draft.steps = normalizeTaskSteps(this.draft.steps);
       save.disabled = true;
       try {
-        if (await this.onSave(this.draft)) this.close();
+        if (await this.onSave(normalizeSchedule(this.draft))) this.close();
       } finally {
         save.disabled = false;
       }

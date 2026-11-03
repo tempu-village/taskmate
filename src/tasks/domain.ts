@@ -1,3 +1,5 @@
+import type { ReminderOffset, RepeatRule } from "./schedule";
+
 export type SmartView = "scheduled" | "all" | "unplanned";
 
 export type SortMode = "manual" | "date" | "priority" | "created";
@@ -22,6 +24,9 @@ export interface Task {
   completed: boolean;
   date: string | null;
   deadline: string | null;
+  time: string | null;
+  repeat: RepeatRule | null;
+  reminder: ReminderOffset | null;
   priority: Priority | null;
   labels: string[];
   projectId: string | null;
@@ -39,6 +44,9 @@ export interface TaskDraft {
   title: string;
   date: string | null;
   deadline: string | null;
+  time: string | null;
+  repeat: RepeatRule | null;
+  reminder: ReminderOffset | null;
   priority: Priority | null;
   labels: string[];
   projectId: string | null;
@@ -123,6 +131,14 @@ export function groupScheduledTasks(tasks: Task[], today = todayKey(), includeCo
   };
 }
 
+// Within one date, untimed Tasks come first, then timed Tasks by local time.
+function compareTime(a: string | null, b: string | null, directed: (comparison: number) => number): number {
+  if (a === b) return 0;
+  if (a === null) return directed(-1);
+  if (b === null) return directed(1);
+  return directed(a.localeCompare(b));
+}
+
 export function sortTasks(tasks: Task[], mode: SortMode, direction: SortDirection = "asc"): Task[] {
   const result = [...tasks];
   const rankThenCreated = (a: Task, b: Task) => a.rank - b.rank || a.createdAt.localeCompare(b.createdAt);
@@ -136,7 +152,9 @@ export function sortTasks(tasks: Task[], mode: SortMode, direction: SortDirectio
 
   switch (mode) {
     case "date":
-      return result.sort((a, b) => compareNullable(a.date, b.date, (left, right) => left.localeCompare(right)) || rankThenCreated(a, b));
+      return result.sort((a, b) => compareNullable(a.date, b.date, (left, right) => left.localeCompare(right))
+        || compareTime(a.time, b.time, directed)
+        || rankThenCreated(a, b));
     case "priority":
       return result.sort((a, b) => compareNullable(a.priority, b.priority, (left, right) => left - right) || rankThenCreated(a, b));
     case "created":
