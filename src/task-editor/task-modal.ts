@@ -88,8 +88,8 @@ export class TaskModal extends Modal {
       titleInput.wrap = "soft";
       titleInput.setAttribute("aria-label", t("taskModal.title"));
       const resizeTitleInput = () => {
-        titleInput.style.height = "auto";
-        titleInput.style.height = `${titleInput.scrollHeight}px`;
+        titleInput.setCssStyles({ height: "auto" });
+        titleInput.setCssStyles({ height: `${titleInput.scrollHeight}px` });
       };
       text.setPlaceholder(t("taskModal.titlePlaceholder")).setValue(this.draft.title).onChange((value) => {
         const normalized = normalizeTaskTitleInput(value);

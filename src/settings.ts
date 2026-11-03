@@ -45,7 +45,6 @@ export class TaskMateSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     const { t } = this.plugin.i18n();
     containerEl.empty();
-    containerEl.createEl("h2", { text: "TaskMate" });
 
     new Setting(containerEl)
       .setName(t("settings.language"))

@@ -750,7 +750,6 @@ var TaskMateSettingTab = class extends import_obsidian3.PluginSettingTab {
     const { containerEl } = this;
     const { t } = this.plugin.i18n();
     containerEl.empty();
-    containerEl.createEl("h2", { text: "TaskMate" });
     new import_obsidian3.Setting(containerEl).setName(t("settings.language")).setDesc(t("settings.languageDescription")).addDropdown((dropdown) => dropdown.addOption("auto", t("settings.languageAuto")).addOption("en", t("settings.languageEnglish")).addOption("ja", t("settings.languageJapanese")).setValue(this.plugin.settings.language).onChange(async (value) => {
       this.plugin.settings.language = value;
       await this.plugin.saveSettings();
@@ -5264,8 +5263,8 @@ var TaskModal = class extends import_obsidian11.Modal {
       titleInput.wrap = "soft";
       titleInput.setAttribute("aria-label", t("taskModal.title"));
       const resizeTitleInput = () => {
-        titleInput.style.height = "auto";
-        titleInput.style.height = `${titleInput.scrollHeight}px`;
+        titleInput.setCssStyles({ height: "auto" });
+        titleInput.setCssStyles({ height: `${titleInput.scrollHeight}px` });
       };
       text3.setPlaceholder(t("taskModal.titlePlaceholder")).setValue(this.draft.title).onChange((value) => {
         const normalized = normalizeTaskTitleInput(value);
