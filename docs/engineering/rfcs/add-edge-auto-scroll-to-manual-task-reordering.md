@@ -133,7 +133,7 @@ Accepted and implemented. Keep SortableJS and use its supported AutoScroll exten
 - Current specification: None
 - Current design: [Testing](../design/testing.md)
 - ADRs: [ADR 0009](../adr/0009-separate-navigation-from-scrollable-content.md)
-- Implementation pull request: None
+- Implementation pull request: [#112](https://github.com/tempu-village/taskmate/pull/112)
 - Release: None
 - Verification evidence: [drag-auto-scroll.test.ts](../../../test/task-list/drag-auto-scroll.test.ts), [task-list-renderer.test.ts](../../../test/task-list/task-list-renderer.test.ts); Android device verification pending
 - Research: [Aceituno et al., The design, use, and performance of edge-scrolling techniques](https://doi.org/10.1016/j.ijhcs.2016.08.001)
