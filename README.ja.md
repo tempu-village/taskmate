@@ -3,7 +3,7 @@
 [English](README.md) | 日本語
 
 <!-- translation-status: ai-translated -->
-<!-- translation-source-sha256: d9a543ac1597cd4844706be8a3e5a37136c21ff8c4616de3c10270e5afca1b14 -->
+<!-- translation-source-sha256: 36afd2a849e9404f127067b377300d236d083d7b2bf0d2ecc452f5839102a840 -->
 
 > 翻訳状態：`ai-translated`
 >
@@ -25,7 +25,16 @@ TaskMateには、任意で使えるAIエージェントスキル、Task Pilotも
 
 ## インストール
 
-TaskMateはまだObsidian Community directoryに掲載されていないため、GitHub Release（0.7.0以降）から入れます。PC版とAndroid版のObsidianで確認済みで、iOSはまだ確認していません。
+TaskMateはObsidian Community directoryに掲載されています。PC版とAndroid版のObsidianで確認済みで、iOSはまだ確認していません。
+
+1. Obsidianで**設定 → コミュニティプラグイン**を開き、**閲覧**を選びます。Obsidianに求められた場合は、先にコミュニティプラグインを有効にします。
+2. **TaskMate**を検索し、**インストール**を選んでから**有効化**を選びます。
+
+[TaskMateの掲載ページ](https://community.obsidian.md/plugins/taskmate)を開き、**Add to Obsidian**を選んで入れることもできます。更新するには、**設定 → コミュニティプラグイン**で**更新を確認**を選びます。
+
+### GitHub Releaseから手動で入れる
+
+Community directoryを使えない場合は、この方法で入れます。
 
 1. [TaskMate Releasesページ](https://github.com/tempu-village/taskmate/releases)を開き、同じバージョンの次の3ファイルをダウンロードします。
 
@@ -38,7 +47,7 @@ TaskMateはまだObsidian Community directoryに掲載されていないため�
 2. `<vault>/.obsidian/plugins/taskmate/`を作成し、3ファイルをその直下へ置きます。
 3. Obsidianを再起動し、**設定 → コミュニティプラグイン**からTaskMateを有効にします。
 
-更新する場合は、Vaultをバックアップし、TaskMateを無効にして、1つの新しいReleaseに含まれる3ファイルをすべて置き換えてから、TaskMateを再び有効にします。異なるバージョンのファイルを混在させないでください。
+手動で入れたTaskMateを更新する場合は、Vaultをバックアップし、TaskMateを無効にして、1つの新しいReleaseに含まれる3ファイルをすべて置き換えてから、TaskMateを再び有効にします。異なるバージョンのファイルを混在させないでください。
 
 未公開のビルドを動かす場合は、[開発ビルドを入れる](docs/operations/development-install.md)を参照してください。
 

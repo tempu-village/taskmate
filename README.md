@@ -18,7 +18,16 @@ TaskMate also includes Task Pilot, an optional AI agent skill. It turns notes yo
 
 ## Install
 
-TaskMate is not yet listed in the Obsidian Community directory, so install it from a GitHub Release (0.7.0 or later). Desktop and Android Obsidian are verified; iOS has not yet been verified.
+TaskMate is listed in the Obsidian Community directory. Desktop and Android Obsidian are verified; iOS has not yet been verified.
+
+1. In Obsidian, open **Settings → Community plugins** and select **Browse**. Turn on community plugins first if Obsidian asks.
+2. Search for **TaskMate**, select **Install**, and then select **Enable**.
+
+You can also open the [TaskMate listing](https://community.obsidian.md/plugins/taskmate) and select **Add to Obsidian**. To update, select **Check for updates** under **Settings → Community plugins**.
+
+### Install manually from a GitHub Release
+
+Use this method when the Community directory is not available to you.
 
 1. Open the [TaskMate Releases page](https://github.com/tempu-village/taskmate/releases) and download these three assets from the same version:
 
@@ -31,7 +40,7 @@ TaskMate is not yet listed in the Obsidian Community directory, so install it fr
 2. Create `<vault>/.obsidian/plugins/taskmate/` and place the three files directly inside it.
 3. Restart Obsidian and enable TaskMate under **Settings → Community plugins**.
 
-To update, back up the vault, disable TaskMate, replace all three files with assets from one newer Release, and enable TaskMate again. Do not mix files from different versions.
+To update a manual installation, back up the vault, disable TaskMate, replace all three files with assets from one newer Release, and enable TaskMate again. Do not mix files from different versions.
 
 To run an unpublished build, see [Install a development build](docs/operations/development-install.md).
 
