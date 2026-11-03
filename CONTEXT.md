@@ -20,12 +20,20 @@ _Avoid_: Subtask, child Task, checklist Task
 A built-in projection of tasks selected by a fixed date or completion rule.
 _Avoid_: Filter, saved search
 
+**Scheduled date**:
+The optional `date` on which the user plans to work on a Task. It is a personal plan and may be moved freely.
+_Avoid_: Due date
+
+**Deadline**:
+The optional hard `deadline` by which a Task must be finished because of an external or consequential commitment. It is independent of the scheduled date, changes only by explicit decision, and stays visibly overdue until the Task is completed.
+_Avoid_: Due date, date
+
 **Scheduled**:
-An incomplete task with a date. The Scheduled smart view groups these tasks into Overdue, Today, and Later.
+An incomplete task with a scheduled date. The Scheduled smart view groups these tasks into Overdue, Today, and Later.
 _Avoid_: Upcoming, future tasks
 
 **Unplanned**:
-An incomplete task without a date.
+An incomplete task without a scheduled date. It may still have a deadline.
 _Avoid_: Inbox, unscheduled bucket
 
 **Source note**:

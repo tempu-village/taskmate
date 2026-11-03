@@ -98,6 +98,7 @@ var TASK_PROPERTY_LINES = {
   id: (task) => `id: ${scalar(task.id)}`,
   completed: (task) => `completed: ${scalar(task.completed)}`,
   date: (task) => `date: ${scalar(task.date)}`,
+  deadline: (task) => `deadline: ${scalar(task.deadline)}`,
   priority: (task) => `priority: ${scalar(task.priority)}`,
   labels: (task) => `labels: ${JSON.stringify(task.labels)}`,
   project: (task) => `project: ${scalar(task.projectId)}`,
@@ -156,6 +157,7 @@ function parseTaskMarkdown(path, content) {
     title,
     completed: properties2.completed === true,
     date: typeof properties2.date === "string" ? properties2.date : null,
+    deadline: typeof properties2.deadline === "string" ? properties2.deadline : null,
     priority: properties2.priority === 1 || properties2.priority === 2 || properties2.priority === 3 ? properties2.priority : properties2.important === true ? 1 : null,
     labels: Array.isArray(properties2.labels) ? properties2.labels.filter((label) => typeof label === "string") : [],
     projectId: typeof properties2.project === "string" ? properties2.project : null,
@@ -218,6 +220,7 @@ function taskFromDraft(id, path, draft, rank, now) {
     title: draft.title.trim(),
     completed: false,
     date: draft.date,
+    deadline: draft.deadline,
     priority: draft.priority,
     labels: draft.labels,
     projectId: draft.projectId,
@@ -252,6 +255,7 @@ function legacyTaskFileName(title, id) {
 var EDITABLE_TASK_FIELDS = [
   "title",
   "date",
+  "deadline",
   "priority",
   "labels",
   "projectId",
@@ -807,6 +811,13 @@ function addDays(dateKey, amount) {
   date.setDate(date.getDate() + amount);
   return localDateParts(date);
 }
+function deadlineState(task, today = todayKey()) {
+  if (!task.deadline) return "none";
+  if (task.completed) return "upcoming";
+  if (task.deadline < today) return "overdue";
+  if (task.deadline === today) return "today";
+  return "upcoming";
+}
 function taskMatchesView(task, view, today = todayKey(), includeCompleted = false) {
   if (task.completed && !includeCompleted) return false;
   switch (view) {
@@ -1167,11 +1178,14 @@ var en = {
   "tasks.moreLabels": "{count} more",
   "tasks.moreLabelsAriaLabel": "Show {count} more labels",
   "tasks.hideExtraLabels": "Hide extra labels",
+  "tasks.deadline": "Deadline {date}",
+  "tasks.deadlineOverdue": "Deadline passed {date}",
   "taskModal.addTitle": "Add task",
   "taskModal.editTitle": "Edit task",
   "taskModal.title": "Title",
   "taskModal.titlePlaceholder": "What needs to be done?",
   "taskModal.date": "Date",
+  "taskModal.deadline": "Deadline",
   "taskModal.project": "Project",
   "taskModal.unassigned": "Unassigned",
   "taskModal.priority": "Priority",
@@ -1507,11 +1521,14 @@ var ja = {
   "tasks.moreLabels": "\u307B\u304B{count}\u4EF6",
   "tasks.moreLabelsAriaLabel": "\u6B8B\u308A{count}\u4EF6\u306E\u30E9\u30D9\u30EB\u3092\u8868\u793A",
   "tasks.hideExtraLabels": "\u8FFD\u52A0\u306E\u30E9\u30D9\u30EB\u3092\u9589\u3058\u308B",
+  "tasks.deadline": "\u7DE0\u3081\u5207\u308A {date}",
+  "tasks.deadlineOverdue": "\u7DE0\u3081\u5207\u308A\u8D85\u904E {date}",
   "taskModal.addTitle": "\u30BF\u30B9\u30AF\u3092\u8FFD\u52A0",
   "taskModal.editTitle": "\u30BF\u30B9\u30AF\u3092\u7DE8\u96C6",
   "taskModal.title": "\u30BF\u30A4\u30C8\u30EB",
   "taskModal.titlePlaceholder": "\u3084\u308B\u3053\u3068",
   "taskModal.date": "\u65E5\u4ED8",
+  "taskModal.deadline": "\u7DE0\u3081\u5207\u308A",
   "taskModal.project": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8",
   "taskModal.unassigned": "\u672A\u6240\u5C5E",
   "taskModal.priority": "\u512A\u5148\u5EA6",
@@ -2626,12 +2643,14 @@ async function changeLabelAcrossTasks(repository, tasks, preferences, label, cha
 }
 
 // src/task-list/task-list-model.ts
-function toRow(task, projectNames) {
+function toRow(task, projectNames, today) {
   return {
     id: task.id,
     title: task.title,
     completed: task.completed,
     date: task.date,
+    deadline: task.deadline,
+    deadlineState: deadlineState(task, today),
     priority: task.priority,
     projectName: task.projectId ? projectNames.get(task.projectId) ?? null : null,
     labels: [...task.labels],
@@ -2640,9 +2659,10 @@ function toRow(task, projectNames) {
 }
 function buildTaskListModel(input) {
   const projectNames = new Map(input.projects.map((project) => [project.id, project.name]));
+  const today = input.today ?? todayKey();
   const selectionMode = input.selectionMode ?? false;
   const selectedIds = input.selectedIds ?? /* @__PURE__ */ new Set();
-  const toSortedRows = (tasks) => sortTasks(tasks, input.sortMode, input.sortDirection).map((task) => ({ ...toRow(task, projectNames), selected: selectedIds.has(task.id) }));
+  const toSortedRows = (tasks) => sortTasks(tasks, input.sortMode, input.sortDirection).map((task) => ({ ...toRow(task, projectNames, today), selected: selectedIds.has(task.id) }));
   if (input.grouping === "flat") {
     return {
       grouping: "flat",
@@ -4917,6 +4937,10 @@ function renderRow(list, row, selectionMode, copy, signal, dispatch) {
   }, { signal });
   const metadata = appendElement(body, "div", { className: "taskmate-metadata" });
   if (row.date) appendElement(metadata, "span", { text: row.date });
+  if (row.deadline) appendElement(metadata, "span", {
+    text: row.deadlineState === "overdue" ? copy.deadlineOverdue(row.deadline) : copy.deadline(row.deadline),
+    className: `taskmate-deadline is-${row.deadlineState}`
+  });
   if (row.priority) appendElement(metadata, "span", {
     text: `P${row.priority}`,
     className: `taskmate-priority taskmate-priority-${row.priority}`
@@ -5009,6 +5033,7 @@ var import_obsidian9 = require("obsidian");
 var FIELD_LABEL_KEYS = {
   title: "taskModal.title",
   date: "taskModal.date",
+  deadline: "taskModal.deadline",
   priority: "taskModal.priority",
   labels: "taskModal.labels",
   projectId: "taskModal.project",
@@ -5236,6 +5261,7 @@ var TaskModal = class extends import_obsidian11.Modal {
     this.draft = {
       title: task?.title ?? "",
       date: task?.date ?? null,
+      deadline: task?.deadline ?? null,
       priority: task?.priority ?? null,
       labels: task?.labels ?? [],
       projectId: task?.projectId ?? defaultProjectId,
@@ -5318,6 +5344,17 @@ var TaskModal = class extends import_obsidian11.Modal {
       });
     });
     refreshDateSelection();
+    const deadlineSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.deadline"));
+    deadlineSetting.settingEl.addClass("taskmate-deadline-setting");
+    decorateField2(deadlineSetting, "flag", t("taskModal.deadline"));
+    deadlineSetting.addText((text3) => {
+      text3.inputEl.type = "date";
+      text3.inputEl.addClass("taskmate-date-input");
+      text3.inputEl.setAttribute("aria-label", t("taskModal.deadline"));
+      text3.setValue(this.draft.deadline ?? "").onChange((value) => {
+        this.draft.deadline = value || null;
+      });
+    });
     const projectSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.project"));
     decorateField2(projectSetting, "folder", t("taskModal.project"));
     addEmbeddedLabel2(projectSetting, t("taskModal.project"));
@@ -6152,6 +6189,8 @@ var TodoListView = class extends import_obsidian13.ItemView {
       moreLabels: (count) => t("tasks.moreLabels", { count }),
       moreLabelsAriaLabel: (count) => t("tasks.moreLabelsAriaLabel", { count }),
       hideExtraLabels: t("tasks.hideExtraLabels"),
+      deadline: (date) => t("tasks.deadline", { date }),
+      deadlineOverdue: (date) => t("tasks.deadlineOverdue", { date }),
       sectionTitles: {
         overdue: t("view.overdue"),
         today: t("view.today"),
@@ -8776,6 +8815,7 @@ var ImportReviewRepository = class {
     const taskDraft = {
       title: draft.title,
       date: draft.date,
+      deadline: null,
       priority: draft.priority,
       labels: [...draft.labels],
       projectId: draft.project,

@@ -2,6 +2,10 @@
 
 Prerequisite: a Task created with [getting started](../getting-started.md).
 
+## Set a scheduled date and a deadline
+
+Use **Date** for the day you plan to work on the Task and **Deadline** for the hard date it must be finished by. They are independent: moving Date to replan your work keeps the Deadline, and a missed Deadline stays marked as **Deadline passed** in every list until you complete the Task. Clear either field to remove only that value. A Task with only a Deadline stays in Unplanned until you give it a Date.
+
 ## Add supporting Steps
 
 Open the Task by its title. In Steps, use **Add**, enter a Step title and optional date, then save the Step. Repeat for another Step. Change completion in the Step list and drag the content area to reorder (hold briefly on touch). Save the parent Task to persist its edited Steps. To remove a Step, open that Step's editor and choose its Delete action.
@@ -25,6 +29,10 @@ Open its editor, use **Delete** in the footer and confirm only if the Task shoul
 > 翻訳状態：`ai-translated`。英語版が正本です。
 
 前提は[初回体験](../getting-started.md)で作成したタスクです。
+
+### 予定日と締め切りを設定する
+
+「日付」には作業する予定の日を、「締め切り」には必ず終える必要がある日を入力します。二つは独立しており、計画の見直しで日付を動かしても締め切りは変わりません。過ぎた締め切りは、タスクを完了するまでどの一覧でも「締め切り超過」と表示されます。片方の欄を空にすると、その値だけを解除します。締め切りだけのタスクは、日付を付けるまで未計画に表示されます。
 
 ### ステップを追加する
 

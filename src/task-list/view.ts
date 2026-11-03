@@ -441,6 +441,8 @@ export class TodoListView extends ItemView {
       moreLabels: (count) => t("tasks.moreLabels", { count }),
       moreLabelsAriaLabel: (count) => t("tasks.moreLabelsAriaLabel", { count }),
       hideExtraLabels: t("tasks.hideExtraLabels"),
+      deadline: (date) => t("tasks.deadline", { date }),
+      deadlineOverdue: (date) => t("tasks.deadlineOverdue", { date }),
       sectionTitles: {
         overdue: t("view.overdue"),
         today: t("view.today"),

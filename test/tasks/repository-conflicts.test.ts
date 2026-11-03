@@ -13,6 +13,7 @@ function task(overrides: Partial<Task> = {}): Task {
     title: "One",
     completed: false,
     date: null,
+    deadline: null,
     priority: null,
     labels: ["work"],
     projectId: null,
@@ -32,6 +33,7 @@ function draft(base: Task, overrides: Partial<TaskDraft> = {}): TaskDraft {
   return {
     title: base.title,
     date: base.date,
+    deadline: base.deadline,
     priority: base.priority,
     labels: [...base.labels],
     projectId: base.projectId,

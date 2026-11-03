@@ -12,6 +12,7 @@ type: todo
 id: "stable-id"
 completed: false
 date: "2026-09-12"
+deadline: "2026-09-15"
 priority: 1
 labels: ["仕事", "連絡"]
 project: "project-stable-id"
@@ -34,7 +35,7 @@ source-note: "Notes/meeting.md"
 Optional context or acceptance details.
 ```
 
-Use one `date` with `YYYY-MM-DD` semantics. `priority` is `1`, `2`, `3`, or `null`; 1 is highest. `labels` is an inline JSON string array with no more than 500 distinct labels exposed by the plugin. `project` is a project ID or `null`, never a display name. `completed-at` is an ISO timestamp when completed and `null` otherwise. `rank` is the single global manual order; automatic sorting is display-only and must not rewrite it.
+`date` is the optional scheduled date: the day the user plans to work on the Task. `deadline` is the optional hard deadline: an external or consequential due date. Both use `YYYY-MM-DD` and are independent; a Task may have neither, either, or both. Rescheduling changes only `date` and never changes or clears `deadline`; change `deadline` only when the user explicitly asks. Never infer a `deadline` from an existing `date`. Files without `deadline` are valid and read as `null`. Use `--date` and `--deadline` with `create` or `update`; `none` clears either value. `priority` is `1`, `2`, `3`, or `null`; 1 is highest. `labels` is an inline JSON string array with no more than 500 distinct labels exposed by the plugin. `project` is a project ID or `null`, never a display name. `completed-at` is an ISO timestamp when completed and `null` otherwise. `rank` is the single global manual order; automatic sorting is display-only and must not rewrite it.
 
 Older files with `important: true` are read as priority 1 for migration compatibility. New writes must use `priority`.
 

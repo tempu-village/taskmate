@@ -126,6 +126,35 @@ class TodoStoreTest(unittest.TestCase):
         cleared = self.run_store("update", "--id", created["id"], "--label", "")
         self.assertEqual(cleared["labels"], [])
 
+    def test_scheduled_date_and_deadline_round_trip_independently(self):
+        combinations = [(None, None), ("2026-10-15", None), (None, "2026-10-12"), ("2026-10-15", "2026-10-12")]
+        for index, (date, deadline) in enumerate(combinations):
+            arguments = ["create", "--title", f"Combination {index}"]
+            if date: arguments += ["--date", date]
+            if deadline: arguments += ["--deadline", deadline]
+            created = self.run_store(*arguments)
+            listed = next(task for task in self.run_store("list") if task["id"] == created["id"])
+            self.assertEqual((listed["date"], listed["deadline"]), (date, deadline))
+
+        both = next(task for task in self.run_store("list") if task["title"] == "Combination 3")
+        rescheduled = self.run_store("update", "--id", both["id"], "--date", "2026-10-16")
+        self.assertEqual((rescheduled["date"], rescheduled["deadline"]), ("2026-10-16", "2026-10-12"))
+        unscheduled = self.run_store("update", "--id", both["id"], "--date", "none")
+        self.assertEqual((unscheduled["date"], unscheduled["deadline"]), (None, "2026-10-12"))
+        moved_deadline = self.run_store("update", "--id", both["id"], "--deadline", "none")
+        self.assertEqual((moved_deadline["date"], moved_deadline["deadline"]), (None, None))
+
+    def test_legacy_task_with_only_date_gets_no_invented_deadline(self):
+        self.write_note("TaskMate/Tasks/Legacy.md", "---\ntype: todo\nid: legacy\ncompleted: false\ndate: \"2026-10-15\"\ncustom: keep\n---\n\n# Legacy\n")
+        listed = next(task for task in self.run_store("list") if task["id"] == "legacy")
+        self.assertEqual((listed["date"], listed["deadline"]), ("2026-10-15", None))
+        self.run_store("update", "--id", "legacy", "--title", "Legacy task")
+        text = next((self.vault / "TaskMate/Tasks").glob("Legacy*.md")).read_text(encoding="utf-8")
+        self.assertIn("deadline: null", text)
+        self.assertIn('date: "2026-10-15"', text)
+        self.assertIn("custom: keep", text)
+        self.assertTrue(self.run_store("validate")["valid"])
+
     def test_steps_round_trip_and_reorder(self):
         steps = [
             {"text": "Reserve hotel", "completed": False, "date": "2026-10-01"},

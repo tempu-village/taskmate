@@ -8,6 +8,7 @@ const TASK_PROPERTY_LINES = {
   id: (task: Task) => `id: ${scalar(task.id)}`,
   completed: (task: Task) => `completed: ${scalar(task.completed)}`,
   date: (task: Task) => `date: ${scalar(task.date)}`,
+  deadline: (task: Task) => `deadline: ${scalar(task.deadline)}`,
   priority: (task: Task) => `priority: ${scalar(task.priority)}`,
   labels: (task: Task) => `labels: ${JSON.stringify(task.labels)}`,
   project: (task: Task) => `project: ${scalar(task.projectId)}`,
@@ -73,6 +74,7 @@ export function parseTaskMarkdown(path: string, content: string): Task | null {
     title,
     completed: properties.completed === true,
     date: typeof properties.date === "string" ? properties.date : null,
+    deadline: typeof properties.deadline === "string" ? properties.deadline : null,
     priority: properties.priority === 1 || properties.priority === 2 || properties.priority === 3
       ? properties.priority as Priority
       : properties.important === true ? 1 : null,
@@ -130,6 +132,7 @@ export function taskFromDraft(id: string, path: string, draft: TaskDraft, rank: 
     title: draft.title.trim(),
     completed: false,
     date: draft.date,
+    deadline: draft.deadline,
     priority: draft.priority,
     labels: draft.labels,
     projectId: draft.projectId,

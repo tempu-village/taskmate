@@ -148,6 +148,7 @@ export class ImportReviewRepository {
     const taskDraft: TaskDraft = {
       title: draft.title,
       date: draft.date,
+      deadline: null,
       priority: draft.priority,
       labels: [...draft.labels],
       projectId: draft.project,

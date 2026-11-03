@@ -506,6 +506,8 @@
 }
 .taskmate-priority { font-weight: 700; }
 .taskmate-priority-1 { color: var(--color-red); }
+.taskmate-deadline.is-overdue { color: var(--color-red); font-weight: var(--font-semibold); }
+.taskmate-deadline.is-today { color: var(--color-orange); }
 .taskmate-priority-2 { color: var(--color-orange); }
 .taskmate-priority-3 { color: var(--color-blue); }
 .taskmate-more { color: var(--text-muted); padding: 0.5rem; }

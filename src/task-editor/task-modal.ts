@@ -63,6 +63,7 @@ export class TaskModal extends Modal {
     this.draft = {
       title: task?.title ?? "",
       date: task?.date ?? null,
+      deadline: task?.deadline ?? null,
       priority: task?.priority ?? null,
       labels: task?.labels ?? [],
       projectId: task?.projectId ?? defaultProjectId,
@@ -144,6 +145,18 @@ export class TaskModal extends Modal {
       });
     });
     refreshDateSelection();
+
+    const deadlineSetting = new Setting(fields).setName(t("taskModal.deadline"));
+    deadlineSetting.settingEl.addClass("taskmate-deadline-setting");
+    decorateField(deadlineSetting, "flag", t("taskModal.deadline"));
+    deadlineSetting.addText((text) => {
+      text.inputEl.type = "date";
+      text.inputEl.addClass("taskmate-date-input");
+      text.inputEl.setAttribute("aria-label", t("taskModal.deadline"));
+      text.setValue(this.draft.deadline ?? "").onChange((value) => {
+        this.draft.deadline = value || null;
+      });
+    });
 
     const projectSetting = new Setting(fields).setName(t("taskModal.project"));
     decorateField(projectSetting, "folder", t("taskModal.project"));
