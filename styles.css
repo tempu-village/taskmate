@@ -1036,6 +1036,21 @@
   white-space: nowrap;
 }
 .taskmate-date-input { width: 100%; margin-top: 0.35rem; }
+.taskmate-embedded-date { position: relative; margin-top: 0.35rem; }
+.taskmate-embedded-date .taskmate-date-input {
+  margin-top: 0;
+  min-height: 54px;
+  padding-top: 1rem;
+}
+.taskmate-deadline-add,
+.taskmate-deadline-remove {
+  min-height: 44px;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--text-accent);
+}
+.taskmate-deadline-remove { color: var(--text-muted); font-size: var(--font-ui-small); }
 .taskmate-suggestion-chip {
   display: inline-flex;
   align-items: center;

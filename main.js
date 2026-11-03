@@ -1411,15 +1411,17 @@ var en = {
   "taskModal.editTitle": "Edit task",
   "taskModal.title": "Title",
   "taskModal.titlePlaceholder": "What needs to be done?",
-  "taskModal.date": "Date",
+  "taskModal.date": "Scheduled",
   "taskModal.deadline": "Deadline",
+  "taskModal.addDeadline": "Add deadline",
+  "taskModal.removeDeadline": "Remove deadline",
   "tasks.reminder": "Reminder",
   "taskModal.time": "Time",
   "taskModal.repeat": "Repeat",
   "taskModal.repeatInterval": "Repeat interval",
   "taskModal.reminder": "Reminder",
-  "taskModal.scheduleNeedsDate": "Set a date to add a time or repeat.",
-  "taskModal.reminderNeedsTime": "Set a date and time to add a reminder.",
+  "taskModal.scheduleNeedsDate": "Set a scheduled date to add a time or repeat.",
+  "taskModal.reminderNeedsTime": "Set a scheduled date and time to add a reminder.",
   "repeat.none": "Does not repeat",
   "repeat.day": "Every {count} day(s)",
   "repeat.week": "Every {count} week(s)",
@@ -1781,15 +1783,17 @@ var ja = {
   "taskModal.editTitle": "\u30BF\u30B9\u30AF\u3092\u7DE8\u96C6",
   "taskModal.title": "\u30BF\u30A4\u30C8\u30EB",
   "taskModal.titlePlaceholder": "\u3084\u308B\u3053\u3068",
-  "taskModal.date": "\u65E5\u4ED8",
+  "taskModal.date": "\u4E88\u5B9A\u65E5",
   "taskModal.deadline": "\u7DE0\u3081\u5207\u308A",
+  "taskModal.addDeadline": "\u7DE0\u3081\u5207\u308A\u3092\u8FFD\u52A0",
+  "taskModal.removeDeadline": "\u7DE0\u3081\u5207\u308A\u3092\u5916\u3059",
   "tasks.reminder": "\u901A\u77E5\u3042\u308A",
   "taskModal.time": "\u6642\u523B",
   "taskModal.repeat": "\u7E70\u308A\u8FD4\u3057",
   "taskModal.repeatInterval": "\u7E70\u308A\u8FD4\u3057\u306E\u9593\u9694",
   "taskModal.reminder": "\u901A\u77E5",
-  "taskModal.scheduleNeedsDate": "\u6642\u523B\u3084\u7E70\u308A\u8FD4\u3057\u3092\u8A2D\u5B9A\u3059\u308B\u306B\u306F\u65E5\u4ED8\u3092\u8A2D\u5B9A\u3057\u307E\u3059\u3002",
-  "taskModal.reminderNeedsTime": "\u901A\u77E5\u3092\u8A2D\u5B9A\u3059\u308B\u306B\u306F\u65E5\u4ED8\u3068\u6642\u523B\u3092\u8A2D\u5B9A\u3057\u307E\u3059\u3002",
+  "taskModal.scheduleNeedsDate": "\u6642\u523B\u3084\u7E70\u308A\u8FD4\u3057\u3092\u8A2D\u5B9A\u3059\u308B\u306B\u306F\u4E88\u5B9A\u65E5\u3092\u8A2D\u5B9A\u3057\u307E\u3059\u3002",
+  "taskModal.reminderNeedsTime": "\u901A\u77E5\u3092\u8A2D\u5B9A\u3059\u308B\u306B\u306F\u4E88\u5B9A\u65E5\u3068\u6642\u523B\u3092\u8A2D\u5B9A\u3057\u307E\u3059\u3002",
   "repeat.none": "\u7E70\u308A\u8FD4\u3055\u306A\u3044",
   "repeat.day": "{count}\u65E5\u3054\u3068",
   "repeat.week": "{count}\u9031\u9593\u3054\u3068",
@@ -5563,6 +5567,13 @@ function addEmbeddedLabel2(setting, label) {
   });
   setting.controlEl.prepend(labelEl);
 }
+function embedDateLabel(input, label) {
+  const wrapper = createDiv({ cls: "taskmate-embedded-date" });
+  input.replaceWith(wrapper);
+  wrapper.createSpan({ text: label, cls: "taskmate-embedded-field-label", attr: { "aria-hidden": "true" } });
+  wrapper.appendChild(input);
+  return wrapper;
+}
 var TaskModal = class extends import_obsidian12.Modal {
   constructor(app, task, projects, labelOptions, defaultProjectId, availableRegion, i18n, onSave, onDelete = null) {
     super(app);
@@ -5658,6 +5669,7 @@ var TaskModal = class extends import_obsidian12.Modal {
       text3.inputEl.addClass("taskmate-date-input");
       text3.inputEl.setAttribute("aria-label", t("taskModal.date"));
       dateInput = text3.inputEl;
+      embedDateLabel(text3.inputEl, t("taskModal.date"));
       text3.setValue(this.draft.date ?? "").onChange((value) => {
         this.draft.date = value || null;
         refreshDateSelection();
@@ -5667,14 +5679,44 @@ var TaskModal = class extends import_obsidian12.Modal {
     const deadlineSetting = new import_obsidian12.Setting(fields).setName(t("taskModal.deadline"));
     deadlineSetting.settingEl.addClass("taskmate-deadline-setting");
     decorateField2(deadlineSetting, "calendar-x", t("taskModal.deadline"));
+    const addDeadline = deadlineSetting.controlEl.createEl("button", {
+      text: t("taskModal.addDeadline"),
+      cls: "taskmate-deadline-add",
+      attr: { type: "button" }
+    });
+    let deadlineInput;
+    let deadlineField;
     deadlineSetting.addText((text3) => {
       text3.inputEl.type = "date";
       text3.inputEl.addClass("taskmate-date-input");
       text3.inputEl.setAttribute("aria-label", t("taskModal.deadline"));
+      deadlineInput = text3.inputEl;
+      deadlineField = embedDateLabel(text3.inputEl, t("taskModal.deadline"));
       text3.setValue(this.draft.deadline ?? "").onChange((value) => {
         this.draft.deadline = value || null;
       });
     });
+    const removeDeadline = deadlineSetting.controlEl.createEl("button", {
+      text: t("taskModal.removeDeadline"),
+      cls: "taskmate-deadline-remove",
+      attr: { type: "button" }
+    });
+    const showDeadline = (visible) => {
+      addDeadline.toggle(!visible);
+      deadlineField.toggle(visible);
+      removeDeadline.toggle(visible);
+    };
+    addDeadline.addEventListener("click", () => {
+      showDeadline(true);
+      deadlineInput.focus();
+    });
+    removeDeadline.addEventListener("click", () => {
+      this.draft.deadline = null;
+      deadlineInput.value = "";
+      showDeadline(false);
+      addDeadline.focus();
+    });
+    showDeadline(this.draft.deadline !== null);
     const timeSetting = new import_obsidian12.Setting(fields).setName(t("taskModal.time"));
     timeSetting.settingEl.addClass("taskmate-time-setting");
     decorateField2(timeSetting, "clock", t("taskModal.time"));
