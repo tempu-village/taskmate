@@ -28,3 +28,34 @@ jobs:
       - run: npm run validate:localization
       - run: python3 scripts/validate_docs.py
       - run: npm run validate:release
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      # Key the Obsidian download cache on the versions wdio.conf.mts resolves.
+      - name: Resolve Obsidian versions
+        run: |
+          npx tsx wdio.conf.mts | grep 'obsidian-cache-key:' > obsidian-versions-lock.txt
+          rm -rf .obsidian-cache
+      - uses: actions/cache@v4
+        with:
+          path: .obsidian-cache
+          key: obsidian-cache-${{ runner.os }}-${{ hashFiles('obsidian-versions-lock.txt') }}
+      # Linux runners have no display; start Xvfb and a window manager for Obsidian.
+      - name: Start virtual display
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -q -y xvfb herbstluftwm
+          echo "DISPLAY=:99" >> "$GITHUB_ENV"
+          Xvfb :99 -screen 0 1280x1024x24 +extension GLX -noreset &
+          sleep 1
+          DISPLAY=:99 herbstluftwm &
+          sleep 1
+      - run: npm run test:e2e
