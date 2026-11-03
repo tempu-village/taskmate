@@ -838,7 +838,7 @@
   color: var(--text-muted);
 }
 .taskmate-field-icon svg { width: 18px; height: 18px; }
-.taskmate-embedded-select { position: relative; }
+.taskmate-embedded-select { position: relative; width: 100%; }
 .taskmate-embedded-field-label {
   position: absolute;
   z-index: 1;
@@ -850,10 +850,18 @@
   pointer-events: none;
 }
 .taskmate-embedded-select select {
+  flex: 1 1 auto;
   width: 100%;
+  max-width: none;
   min-height: 54px;
   padding-top: 1rem;
+  padding-left: 1rem;
+  border: var(--input-border-width, 1px) solid var(--background-modifier-border);
+  border-radius: var(--input-radius, 8px);
+  background-color: var(--background-modifier-form-field);
+  box-shadow: none;
 }
+.taskmate-embedded-select .taskmate-embedded-field-label { top: 0.5rem; left: 1rem; }
 .taskmate-title-setting .setting-item-control,
 .taskmate-notes-setting .setting-item-control {
   width: 100%;
