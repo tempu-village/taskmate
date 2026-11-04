@@ -10,6 +10,10 @@ const viewSource = readFileSync(
   fileURLToPath(new URL("../src/task-list/view.ts", import.meta.url)),
   "utf8"
 );
+const pluginSource = readFileSync(
+  fileURLToPath(new URL("../src/main.ts", import.meta.url)),
+  "utf8"
+);
 const taskModalSource = readFileSync(
   fileURLToPath(new URL("../src/task-editor/task-modal.ts", import.meta.url)),
   "utf8"
@@ -165,6 +169,17 @@ describe("mobile layout", () => {
       viewSource.indexOf("private async openFilterModal")
     );
     expect(selectionToolbar).toContain("preserveScroll: true");
+  });
+
+  it("keeps the dropped position visible after a Manual reorder", () => {
+    const reorderAction = viewSource.slice(
+      viewSource.indexOf('if (action.type === "reorder")'),
+      viewSource.indexOf("const task = tasksById.get(action.taskId)")
+    );
+    expect(reorderAction).toContain("this.requestRender({ preserveScroll: true })");
+
+    const refreshViews = pluginSource.slice(pluginSource.indexOf("refreshViews(): void"));
+    expect(refreshViews.slice(0, refreshViews.indexOf("\n  }\n"))).toContain("requestRender({ preserveScroll: true })");
   });
 
   it("avoids Android WebView's native search-input focus behavior", () => {
