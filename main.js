@@ -2683,7 +2683,7 @@ function buildTaskListModel(input) {
   };
 }
 
-// ../../../../../../../Users/dev/Development/taskmate-workspace/taskmate/.claude/worktrees/ci-duplicate-runs-8f745e/node_modules/sortablejs/modular/sortable.esm.js
+// node_modules/sortablejs/modular/sortable.esm.js
 function _defineProperty(e, r, t) {
   return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
     value: t,
@@ -4872,6 +4872,80 @@ Sortable.mount(new AutoScrollPlugin());
 Sortable.mount(Remove, Revert);
 var sortable_esm_default = Sortable;
 
+// src/task-list/drag-auto-scroll.ts
+var MAXIMUM_ZONE = 192;
+var RELATIVE_ZONE = 0.3;
+var DRAG_AUTO_SCROLL_MAXIMUM_ZONE = MAXIMUM_ZONE;
+var ENTRY_SPEED = 200;
+var MAXIMUM_SPEED = 1e3;
+var PLATEAU_INSET = 20;
+var MAXIMUM_FRAME_MS = 50;
+function clamp(value, minimum, maximum) {
+  return Math.min(Math.max(value, minimum), maximum);
+}
+function dragAutoScrollZone(height) {
+  return Math.min(Math.max(0, height) * RELATIVE_ZONE, MAXIMUM_ZONE);
+}
+function calculateDragAutoScroll(input) {
+  const zone = dragAutoScrollZone(input.bounds.height);
+  const topDistance = input.pointerY - input.bounds.top;
+  const bottomDistance = input.bounds.bottom - input.pointerY;
+  let direction = 0;
+  let edgeDistance = zone;
+  if (topDistance < zone) {
+    direction = -1;
+    edgeDistance = topDistance;
+  } else if (bottomDistance < zone) {
+    direction = 1;
+    edgeDistance = bottomDistance;
+  }
+  if (direction === 0) return { delta: 0, speed: 0, zone };
+  const progress = clamp((zone - edgeDistance) / Math.max(1, zone - PLATEAU_INSET), 0, 1);
+  const speed = direction * (ENTRY_SPEED + (MAXIMUM_SPEED - ENTRY_SPEED) * progress);
+  const elapsedSeconds = clamp(input.elapsedMs, 0, MAXIMUM_FRAME_MS) / 1e3;
+  const requestedDelta = speed * elapsedSeconds;
+  const maximumScrollTop = Math.max(0, input.maximumScrollTop);
+  const scrollTop = clamp(input.scrollTop, 0, maximumScrollTop);
+  const clampedDelta = clamp(requestedDelta, -scrollTop, maximumScrollTop - scrollTop);
+  const delta = clampedDelta === 0 ? 0 : clampedDelta;
+  return { delta, speed, zone };
+}
+function pointerClientPoint(...events) {
+  for (const event of events) {
+    if (!event) continue;
+    if ("touches" in event) {
+      const touchEvent = event;
+      const touch = touchEvent.touches[0] ?? touchEvent.changedTouches[0];
+      if (touch && Number.isFinite(touch.clientX) && Number.isFinite(touch.clientY)) {
+        return { x: touch.clientX, y: touch.clientY };
+      }
+    }
+    if ("clientY" in event) {
+      const { clientX, clientY } = event;
+      if (Number.isFinite(clientX) && Number.isFinite(clientY)) return { x: clientX, y: clientY };
+    }
+  }
+  return null;
+}
+function pointerClientY(...events) {
+  for (const event of events) {
+    if (!event) continue;
+    if ("touches" in event) {
+      const touchEvent = event;
+      const touch = touchEvent.touches[0] ?? touchEvent.changedTouches[0];
+      if (touch && Number.isFinite(touch.clientY)) return touch.clientY;
+    }
+    if ("clientY" in event) {
+      const clientY = event.clientY;
+      if (Number.isFinite(clientY)) return clientY;
+    }
+  }
+  return null;
+}
+function isPointOutsideBounds(point, bounds) {
+  return point.x < bounds.left || point.x > bounds.right || point.y < bounds.top || point.y > bounds.bottom;
+}
+
 // src/task-list/task-list-renderer.ts
 var TASK_LIST_TITLE_CHARACTER_LIMIT = 100;
 var taskTitleSegmenter = typeof Intl.Segmenter === "function" ? new Intl.Segmenter(void 0, { granularity: "grapheme" }) : null;
@@ -4987,14 +5061,50 @@ function renderTaskList(container, model, copy, dispatch) {
   }
   model.sections.forEach((section) => {
     if (section.id !== "default") {
-      appendElement(list, "div", {
+      const heading = appendElement(list, "div", {
         className: `taskmate-task-section-heading is-${section.id}`,
         text: copy.sectionTitles[section.id],
         attributes: { role: "heading", "aria-level": "3" }
       });
+      heading.dataset.section = section.id;
     }
-    section.rows.forEach((row) => renderRow(list, row, model.selectionMode, copy, controller.signal, dispatch));
+    section.rows.forEach((row) => {
+      renderRow(list, row, model.selectionMode, copy, controller.signal, dispatch);
+      if (list.lastElementChild instanceof HTMLElement) list.lastElementChild.dataset.section = section.id;
+    });
   });
+  const scrollRegion = container.closest(".taskmate-scroll-region");
+  let lastAutoScrollAt = null;
+  const resetAutoScroll = () => {
+    lastAutoScrollAt = null;
+  };
+  let lastDragPoint = null;
+  let nativeDrag = false;
+  let droppedInsideRegion = false;
+  const trackDragPoint = (event) => {
+    lastDragPoint = pointerClientPoint(event) ?? lastDragPoint;
+  };
+  const markDrop = (event) => {
+    droppedInsideRegion = event.target instanceof Node && scrollRegion?.contains(event.target) === true;
+  };
+  const dragPointEvents = ["dragover", "pointermove", "touchmove", "mousemove"];
+  const stopTrackingDragPoint = () => {
+    for (const type of dragPointEvents) document.removeEventListener(type, trackDragPoint, true);
+    document.removeEventListener("drop", markDrop, true);
+  };
+  const startTrackingDragPoint = (startEvent) => {
+    lastDragPoint = null;
+    nativeDrag = startEvent?.type === "dragstart";
+    droppedInsideRegion = false;
+    const options = { capture: true, passive: true, signal: controller.signal };
+    for (const type of dragPointEvents) document.addEventListener(type, trackDragPoint, options);
+    document.addEventListener("drop", markDrop, options);
+  };
+  const droppedOutsideRegion = () => {
+    if (!scrollRegion) return false;
+    if (nativeDrag) return !droppedInsideRegion;
+    return lastDragPoint !== null && isPointOutsideBounds(lastDragPoint, scrollRegion.getBoundingClientRect());
+  };
   const sortable = sortable_esm_default.create(list, {
     animation: 140,
     handle: ".taskmate-task-body",
@@ -5005,8 +5115,51 @@ function renderTaskList(container, model, copy, dispatch) {
     delay: 250,
     delayOnTouchOnly: true,
     touchStartThreshold: 4,
+    ...scrollRegion ? {
+      scroll: scrollRegion,
+      scrollSensitivity: DRAG_AUTO_SCROLL_MAXIMUM_ZONE,
+      scrollSpeed: 10,
+      forceAutoScrollFallback: true,
+      bubbleScroll: false,
+      scrollFn: (_offsetX, _offsetY, originalEvent, touchEvent) => {
+        const pointerY = pointerClientY(touchEvent, originalEvent);
+        if (pointerY === null) {
+          resetAutoScroll();
+          return;
+        }
+        const now = performance.now();
+        const elapsedSinceLastCall = lastAutoScrollAt === null ? 0 : now - lastAutoScrollAt;
+        const elapsedMs = elapsedSinceLastCall > 100 ? 0 : elapsedSinceLastCall;
+        lastAutoScrollAt = now;
+        const delta = calculateDragAutoScroll({
+          bounds: scrollRegion.getBoundingClientRect(),
+          pointerY,
+          elapsedMs,
+          scrollTop: scrollRegion.scrollTop,
+          maximumScrollTop: scrollRegion.scrollHeight - scrollRegion.clientHeight
+        }).delta;
+        if (delta !== 0) scrollRegion.scrollTop += delta;
+      }
+    } : {},
+    onStart: (event) => {
+      resetAutoScroll();
+      startTrackingDragPoint(event?.originalEvent);
+    },
+    // Sections come from Task dates and a drop changes only the manual rank,
+    // so a Task cannot be moved into another section.
+    onMove: (event) => sectionAt(event.related, event.willInsertAfter) === event.dragged.dataset.section,
     onEnd: (event) => {
+      resetAutoScroll();
+      stopTrackingDragPoint();
+      const outside = droppedOutsideRegion();
       if (event.oldIndex === event.newIndex) return;
+      const itemSection = event.item.dataset.section;
+      const pointSection = lastDragPoint ? sectionAtPoint(list, event.item, lastDragPoint) : void 0;
+      const crossedSection = precedingSection(event.item) !== itemSection || pointSection !== void 0 && pointSection !== itemSection;
+      if (outside || crossedSection) {
+        restoreDraggedItem(list, event.item, event.oldIndex);
+        return;
+      }
       const orderedIds = Array.from(list.querySelectorAll(".taskmate-task")).map((element4) => element4.dataset.taskId ?? "");
       const taskId = event.item.dataset.taskId ?? "";
       const newIndex2 = orderedIds.indexOf(taskId);
@@ -5021,10 +5174,36 @@ function renderTaskList(container, model, copy, dispatch) {
   });
   return {
     destroy() {
+      resetAutoScroll();
+      stopTrackingDragPoint();
       controller.abort();
       sortable.destroy();
     }
   };
+}
+function restoreDraggedItem(list, item, oldIndex2) {
+  if (oldIndex2 === void 0) return;
+  const siblings = Array.from(list.children).filter((child) => child !== item);
+  list.insertBefore(item, siblings[oldIndex2] ?? null);
+}
+function isSectionHeading(element4) {
+  return element4 instanceof HTMLElement && element4.classList.contains("taskmate-task-section-heading");
+}
+function precedingSection(element4) {
+  for (let sibling = element4.previousElementSibling; sibling; sibling = sibling.previousElementSibling) {
+    if (isSectionHeading(sibling)) return sibling.dataset.section;
+  }
+  return "default";
+}
+function sectionAt(related, insertAfter) {
+  if (isSectionHeading(related) && !insertAfter) return precedingSection(related);
+  return related.dataset.section;
+}
+function sectionAtPoint(list, item, point) {
+  const target = list.ownerDocument.elementFromPoint?.(point.x, point.y);
+  const element4 = target?.closest(".taskmate-task, .taskmate-task-section-heading");
+  if (!element4 || !list.contains(element4) || element4 === item) return void 0;
+  return element4.dataset.section;
 }
 
 // src/task-editor/task-editing-flow.ts
@@ -6254,7 +6433,7 @@ var TodoListView = class extends import_obsidian13.ItemView {
   async handleTaskListAction(action, tasksById) {
     if (action.type === "reorder") {
       await this.plugin.repository.reorder(action.taskId, action.previousId, action.nextId);
-      this.requestRender();
+      this.requestRender({ preserveScroll: true });
       return;
     }
     const task = tasksById.get(action.taskId);
@@ -6529,7 +6708,7 @@ function isDesktopObsidian() {
 // src/reviews/task-change/proposal-repository.ts
 var import_obsidian15 = require("obsidian");
 
-// ../../../../../../../Users/dev/Development/taskmate-workspace/taskmate/.claude/worktrees/ci-duplicate-runs-8f745e/node_modules/diff/libesm/diff/base.js
+// node_modules/diff/libesm/diff/base.js
 var Diff = class {
   diff(oldStr, newStr, options = {}) {
     let callback;
@@ -6731,7 +6910,7 @@ var Diff = class {
   }
 };
 
-// ../../../../../../../Users/dev/Development/taskmate-workspace/taskmate/.claude/worktrees/ci-duplicate-runs-8f745e/node_modules/diff/libesm/util/string.js
+// node_modules/diff/libesm/util/string.js
 function hasOnlyWinLineEndings(string) {
   return string.includes("\r\n") && !string.startsWith("\n") && !string.match(/[^\r]\n/);
 }
@@ -6739,7 +6918,7 @@ function hasOnlyUnixLineEndings(string) {
   return !string.includes("\r\n") && string.includes("\n");
 }
 
-// ../../../../../../../Users/dev/Development/taskmate-workspace/taskmate/.claude/worktrees/ci-duplicate-runs-8f745e/node_modules/diff/libesm/diff/line.js
+// node_modules/diff/libesm/diff/line.js
 var LineDiff = class extends Diff {
   constructor() {
     super(...arguments);
@@ -6787,7 +6966,7 @@ function tokenize(value, options) {
   return retLines;
 }
 
-// ../../../../../../../Users/dev/Development/taskmate-workspace/taskmate/.claude/worktrees/ci-duplicate-runs-8f745e/node_modules/diff/libesm/patch/line-endings.js
+// node_modules/diff/libesm/patch/line-endings.js
 function unixToWin(patch) {
   if (Array.isArray(patch)) {
     return patch.map((p) => unixToWin(p));
@@ -6819,7 +6998,7 @@ function isWin(patch) {
   })));
 }
 
-// ../../../../../../../Users/dev/Development/taskmate-workspace/taskmate/.claude/worktrees/ci-duplicate-runs-8f745e/node_modules/diff/libesm/patch/parse.js
+// node_modules/diff/libesm/patch/parse.js
 function parsePatch(uniDiff) {
   const diffstr = uniDiff.split(/\n/), list = [];
   let i = 0;
@@ -6924,7 +7103,7 @@ function parsePatch(uniDiff) {
   return list;
 }
 
-// ../../../../../../../Users/dev/Development/taskmate-workspace/taskmate/.claude/worktrees/ci-duplicate-runs-8f745e/node_modules/diff/libesm/util/distance-iterator.js
+// node_modules/diff/libesm/util/distance-iterator.js
 function distance_iterator_default(start, minLine, maxLine) {
   let wantForward = true, backwardExhausted = false, forwardExhausted = false, localOffset = 1;
   return function iterator() {
@@ -6953,7 +7132,7 @@ function distance_iterator_default(start, minLine, maxLine) {
   };
 }
 
-// ../../../../../../../Users/dev/Development/taskmate-workspace/taskmate/.claude/worktrees/ci-duplicate-runs-8f745e/node_modules/diff/libesm/patch/apply.js
+// node_modules/diff/libesm/patch/apply.js
 function applyPatch(source, patch, options = {}) {
   let patches;
   if (typeof patch === "string") {
@@ -7102,7 +7281,7 @@ function applyStructuredPatch(source, patch, options = {}) {
   return resultLines.join("\n");
 }
 
-// ../../../../../../../Users/dev/Development/taskmate-workspace/taskmate/.claude/worktrees/ci-duplicate-runs-8f745e/node_modules/diff/libesm/patch/create.js
+// node_modules/diff/libesm/patch/create.js
 function structuredPatch(oldFileName, newFileName, oldStr, newStr, oldHeader, newHeader, options) {
   let optionsObj;
   if (!options) {
@@ -9981,7 +10160,7 @@ var TaskMatePlugin = class extends import_obsidian21.Plugin {
   }
   refreshViews() {
     for (const leaf of this.app.workspace.getLeavesOfType(TODO_VIEW_TYPE)) {
-      if (leaf.view instanceof TodoListView) leaf.view.requestRender();
+      if (leaf.view instanceof TodoListView) leaf.view.requestRender({ preserveScroll: true });
     }
   }
   i18n() {

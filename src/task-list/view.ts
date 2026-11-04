@@ -471,7 +471,7 @@ export class TodoListView extends ItemView {
   private async handleTaskListAction(action: TaskListAction, tasksById: Map<string, Task>): Promise<void> {
     if (action.type === "reorder") {
       await this.plugin.repository.reorder(action.taskId, action.previousId, action.nextId);
-      this.requestRender();
+      this.requestRender({ preserveScroll: true });
       return;
     }
 
