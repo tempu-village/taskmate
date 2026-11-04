@@ -34,7 +34,7 @@ Platform and major-library designs support a distance-based, capped transfer fun
 
 - Move a Task to an off-screen Manual-order position in one continuous drag.
 - Give coarse touch input a reachable activation zone without sacrificing precise placement.
-- Start without a speed jump, accelerate predictably, cap speed, and stop immediately.
+- Start at a modest, immediately visible speed, accelerate predictably, cap speed, and stop immediately.
 - Retain a major maintained library for drag recognition, pointer tracking, hit testing, and cleanup.
 - Keep the TaskMate-owned speed calculation deterministic and independently testable.
 - Preserve normal touch scrolling before the existing 250 ms drag hold activates.
@@ -81,22 +81,22 @@ For every Task list, resolve the nearest `.taskmate-scroll-region` and pass it a
 Calculate top and bottom zones from the visible scroller:
 
 ```text
-zone = clamp(64 CSS px, 15% of scroller height, 96 CSS px)
+zone = min(30% of scroller height, 192 CSS px)
 ```
 
-The area between them is neutral. Use the scroller's current bounds, not the browser viewport. The 64–96 px range is an initial TaskMate calibration choice intended to be more reachable by a finger than SortableJS's 30 px default.
+The area between them is neutral. Use the scroller's current bounds, not the browser viewport. The first calibration, `clamp(64 CSS px, 15%, 96 CSS px)`, scrolled only very close to the edge on Android, so the zone was doubled. The 30% cap keeps the two zones within 60% of a short region so that picking up a Task does not start scrolling immediately.
 
 ### Transfer function
 
 Let `d` be pointer distance from the active edge:
 
 ```text
-progress = clamp((zone - d) / (zone - 12 CSS px), 0, 1)
-speed = direction * 720 CSS px/s * progress²
+progress = clamp((zone - d) / (zone - 20 CSS px), 0, 1)
+speed = direction * (200 + 800 * progress) CSS px/s
 delta = speed * min(elapsedSeconds, 0.05)
 ```
 
-Speed is zero at zone entry and quadratic toward the edge. It plateaus 12 px before the physical edge, avoiding pixel-level precision. A 50 ms elapsed-time cap prevents a resumed WebView from jumping. Apply an instant vertical delta; do not queue smooth-scroll animations.
+Speed starts at 200 CSS px/s on zone entry and grows linearly to 1000 CSS px/s, which it holds for the last 20 px before the physical edge. The first calibration started at zero with a quadratic curve and a 720 CSS px/s cap 12 px before the edge; on Android the outer half of the zone barely moved and a finger could not reach the cap, so the curve was simplified. A finger realistically stops about 20 px from the edge, so finer per-pixel shaping inside that band adds no control. A 50 ms elapsed-time cap prevents a resumed WebView from jumping. Apply an instant vertical delta; do not queue smooth-scroll animations.
 
 Do not add dwell-time acceleration initially. Device calibration should add it only if distance-based control remains too slow for long travel.
 
@@ -118,7 +118,7 @@ Android Obsidian verification must measure screen traversal time, one-row stoppi
 
 ## Open questions
 
-- Is 720 CSS px/s fast enough for long lists without impairing one-row placement on the target Android device?
+- Is 1000 CSS px/s fast enough for long lists without impairing one-row placement on the target Android device?
 - Does forced AutoScroll fallback interact correctly with `touch-action: manipulation` in Obsidian Android?
 - Should mouse input eventually use a smaller pointer-type-specific zone?
 
@@ -149,6 +149,6 @@ Accepted and implemented. Keep SortableJS and use its supported AutoScroll exten
 
 長いTask一覧をManual orderで並べ替える際、ドラッグ中の指をTask結果領域の上下端へ近づけると縦方向へ自動スクロールする提案です。メジャーライブラリであるSortableJSを継続利用し、標準AutoScrollへ`.taskmate-scroll-region`を明示します。ドラッグ認識、タッチ追跡、終了処理は自作せず、TaskMateは公開された`scrollFn`を介した距離連動の速度計算だけを所有します。
 
-研究では33実装の分析、214人の調査、4種類の速度変換の比較から、方式の違いが操作時間、行き過ぎ、負荷感、制御性、一貫性に影響することが示されています。このため固定速度ではなく、上下`clamp(64px, 高さの15%, 96px)`の感知領域、最大720 CSS px/sの二次加速、端から12px手前の最大速度、明確な停止条件を採用します。数値はAndroid版Obsidianで校正する初期値であり、研究上の標準値ではありません。
+研究では33実装の分析、214人の調査、4種類の速度変換の比較から、方式の違いが操作時間、行き過ぎ、負荷感、制御性、一貫性に影響することが示されています。このため固定速度ではなく、上下`min(高さの30%, 192px)`の感知領域、入った直後200 CSS px/sから最大1000 CSS px/sまでの直線的な加速、端から20px手前の最大速度、明確な停止条件を採用します。数値はAndroid版Obsidianで校正する初期値であり、研究上の標準値ではありません。
 
 SortableJSの既定値、固定速度だけの設定、別ライブラリへの全面移行、完全自作を比較し、既存ライブラリの公開拡張点を利用する案を採用しました。最大速度と`touch-action`の組み合わせはAndroid実機で確認し、必要なら後続で数値を調整します。

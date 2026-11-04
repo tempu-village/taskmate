@@ -1,5 +1,12 @@
 import Sortable from "sortablejs";
-import { calculateDragAutoScroll, pointerClientY } from "./drag-auto-scroll";
+import {
+  DRAG_AUTO_SCROLL_MAXIMUM_ZONE,
+  calculateDragAutoScroll,
+  isPointOutsideBounds,
+  pointerClientPoint,
+  pointerClientY,
+  type PointerClientPoint
+} from "./drag-auto-scroll";
 import type { TaskListModel, TaskListRow, TaskListSectionId } from "./task-list-model";
 import { summarizeLabels } from "../labels/label-summary";
 
@@ -163,13 +170,17 @@ export function renderTaskList(
 
   model.sections.forEach((section) => {
     if (section.id !== "default") {
-      appendElement(list, "div", {
+      const heading = appendElement(list, "div", {
         className: `taskmate-task-section-heading is-${section.id}`,
         text: copy.sectionTitles[section.id],
         attributes: { role: "heading", "aria-level": "3" }
       });
+      heading.dataset.section = section.id;
     }
-    section.rows.forEach((row) => renderRow(list, row, model.selectionMode, copy, controller.signal, dispatch));
+    section.rows.forEach((row) => {
+      renderRow(list, row, model.selectionMode, copy, controller.signal, dispatch);
+      if (list.lastElementChild instanceof HTMLElement) list.lastElementChild.dataset.section = section.id;
+    });
   });
 
   const scrollRegion = container.closest<HTMLElement>(".taskmate-scroll-region");
@@ -177,6 +188,38 @@ export function renderTaskList(
 
   const resetAutoScroll = (): void => {
     lastAutoScrollAt = null;
+  };
+
+  // SortableJS keeps the last hovered position even when the pointer leaves the list.
+  // Native HTML5 drags (desktop) stop reporting the pointer outside the window, so they
+  // count as inside only when a drop event lands in the Task results; touch fallback
+  // drags use the latest pointer position.
+  let lastDragPoint: PointerClientPoint | null = null;
+  let nativeDrag = false;
+  let droppedInsideRegion = false;
+  const trackDragPoint = (event: Event): void => {
+    lastDragPoint = pointerClientPoint(event) ?? lastDragPoint;
+  };
+  const markDrop = (event: Event): void => {
+    droppedInsideRegion = event.target instanceof Node && scrollRegion?.contains(event.target) === true;
+  };
+  const dragPointEvents = ["dragover", "pointermove", "touchmove", "mousemove"] as const;
+  const stopTrackingDragPoint = (): void => {
+    for (const type of dragPointEvents) document.removeEventListener(type, trackDragPoint, true);
+    document.removeEventListener("drop", markDrop, true);
+  };
+  const startTrackingDragPoint = (startEvent: Event | undefined): void => {
+    lastDragPoint = null;
+    nativeDrag = startEvent?.type === "dragstart";
+    droppedInsideRegion = false;
+    const options = { capture: true, passive: true, signal: controller.signal };
+    for (const type of dragPointEvents) document.addEventListener(type, trackDragPoint, options);
+    document.addEventListener("drop", markDrop, options);
+  };
+  const droppedOutsideRegion = (): boolean => {
+    if (!scrollRegion) return false;
+    if (nativeDrag) return !droppedInsideRegion;
+    return lastDragPoint !== null && isPointOutsideBounds(lastDragPoint, scrollRegion.getBoundingClientRect());
   };
 
   const sortable = Sortable.create(list, {
@@ -191,7 +234,7 @@ export function renderTaskList(
     touchStartThreshold: 4,
     ...(scrollRegion ? {
       scroll: scrollRegion,
-      scrollSensitivity: 96,
+      scrollSensitivity: DRAG_AUTO_SCROLL_MAXIMUM_ZONE,
       scrollSpeed: 10,
       forceAutoScrollFallback: true,
       bubbleScroll: false,
@@ -220,10 +263,29 @@ export function renderTaskList(
         if (delta !== 0) scrollRegion.scrollTop += delta;
       }
     } : {}),
-    onStart: resetAutoScroll,
+    onStart: (event) => {
+      resetAutoScroll();
+      // SortableJS passes the native dragstart or the touch/pointer event that started a fallback drag.
+      startTrackingDragPoint((event as (Sortable.SortableEvent & { originalEvent?: Event }) | undefined)?.originalEvent);
+    },
+    // Sections come from Task dates and a drop changes only the manual rank,
+    // so a Task cannot be moved into another section.
+    onMove: (event) => sectionAt(event.related, event.willInsertAfter) === event.dragged.dataset.section,
     onEnd: (event) => {
       resetAutoScroll();
+      stopTrackingDragPoint();
+      const outside = droppedOutsideRegion();
       if (event.oldIndex === event.newIndex) return;
+      const itemSection = event.item.dataset.section;
+      // A blocked move leaves the Task at its own section's edge, so the section under
+      // the release point also decides whether the drop is accepted.
+      const pointSection = lastDragPoint ? sectionAtPoint(list, event.item, lastDragPoint) : undefined;
+      const crossedSection = precedingSection(event.item) !== itemSection
+        || (pointSection !== undefined && pointSection !== itemSection);
+      if (outside || crossedSection) {
+        restoreDraggedItem(list, event.item, event.oldIndex);
+        return;
+      }
       const orderedIds = Array.from(list.querySelectorAll<HTMLElement>(".taskmate-task"))
         .map((element) => element.dataset.taskId ?? "");
       const taskId = (event.item as HTMLElement).dataset.taskId ?? "";
@@ -241,8 +303,38 @@ export function renderTaskList(
   return {
     destroy(): void {
       resetAutoScroll();
+      stopTrackingDragPoint();
       controller.abort();
       sortable.destroy();
     }
   };
+}
+
+function restoreDraggedItem(list: HTMLElement, item: HTMLElement, oldIndex: number | undefined): void {
+  if (oldIndex === undefined) return;
+  const siblings = Array.from(list.children).filter((child) => child !== item);
+  list.insertBefore(item, siblings[oldIndex] ?? null);
+}
+
+function isSectionHeading(element: Element): element is HTMLElement {
+  return element instanceof HTMLElement && element.classList.contains("taskmate-task-section-heading");
+}
+
+function precedingSection(element: Element): string | undefined {
+  for (let sibling = element.previousElementSibling; sibling; sibling = sibling.previousElementSibling) {
+    if (isSectionHeading(sibling)) return sibling.dataset.section;
+  }
+  return "default";
+}
+
+function sectionAt(related: HTMLElement, insertAfter: boolean | undefined): string | undefined {
+  if (isSectionHeading(related) && !insertAfter) return precedingSection(related);
+  return related.dataset.section;
+}
+
+function sectionAtPoint(list: HTMLElement, item: HTMLElement, point: PointerClientPoint): string | undefined {
+  const target = list.ownerDocument.elementFromPoint?.(point.x, point.y);
+  const element = target?.closest<HTMLElement>(".taskmate-task, .taskmate-task-section-heading");
+  if (!element || !list.contains(element) || element === item) return undefined;
+  return element.dataset.section;
 }

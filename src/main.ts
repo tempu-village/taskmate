@@ -195,7 +195,7 @@ export default class TaskMatePlugin extends Plugin {
 
   refreshViews(): void {
     for (const leaf of this.app.workspace.getLeavesOfType(TODO_VIEW_TYPE)) {
-      if (leaf.view instanceof TodoListView) leaf.view.requestRender();
+      if (leaf.view instanceof TodoListView) leaf.view.requestRender({ preserveScroll: true });
     }
   }
 

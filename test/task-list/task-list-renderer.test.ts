@@ -81,7 +81,7 @@ describe("task-list renderer", () => {
       delay: 250,
       delayOnTouchOnly: true,
       scroll: expect.any(HTMLElement),
-      scrollSensitivity: 96,
+      scrollSensitivity: 192,
       forceAutoScrollFallback: true,
       bubbleScroll: false,
       scrollFn: expect.any(Function)
@@ -220,10 +220,114 @@ describe("task-list renderer", () => {
     options?.scrollFn?.(0, 10, pointer, pointer as unknown as TouchEvent, container);
     expect(container.scrollTop).toBe(100);
     options?.scrollFn?.(0, 10, pointer, pointer as unknown as TouchEvent, container);
-    expect(container.scrollTop).toBeCloseTo(111.52);
+    expect(container.scrollTop).toBeCloseTo(116);
     options?.onEnd?.({ oldIndex: 0, newIndex: 0 });
     options?.scrollFn?.(0, 10, pointer, pointer as unknown as TouchEvent, container);
-    expect(container.scrollTop).toBeCloseTo(111.52);
+    expect(container.scrollTop).toBeCloseTo(116);
     now.mockRestore();
+  });
+
+  it("returns a Task to its original position when it is dropped outside the Task result region", () => {
+    const container = document.createElement("div");
+    container.className = "taskmate-scroll-region";
+    container.getBoundingClientRect = () => ({
+      top: 100, bottom: 700, height: 600, left: 0, right: 320, width: 320, x: 0, y: 100, toJSON: () => ({})
+    });
+    document.body.append(container);
+    const dispatch = vi.fn();
+    const rows = ["task-1", "task-2", "task-3"].map((id) => ({ ...model.sections[0].rows[0], id, title: id }));
+    renderTaskList(container, { ...model, sections: [{ id: "default", rows }] }, copy, dispatch);
+    const list = container.querySelector<HTMLElement>(".taskmate-task")?.parentElement as HTMLElement;
+    const options = (sortableCreate.mock.calls as unknown as Array<[HTMLElement, {
+      onStart?: (event: { originalEvent: Event }) => void;
+      onEnd?: (event: { item: HTMLElement; oldIndex?: number; newIndex?: number }) => void;
+    }]>)[0]?.[1];
+    const order = (): string[] => Array.from(list.querySelectorAll<HTMLElement>(".taskmate-task"))
+      .map((element) => element.dataset.taskId ?? "");
+    const moveFirstTaskToEnd = (start: Event, during: () => void): void => {
+      const item = list.querySelector<HTMLElement>('[data-task-id="task-1"]') as HTMLElement;
+      options?.onStart?.({ originalEvent: start });
+      list.append(item);
+      during();
+      options?.onEnd?.({ item, oldIndex: 0, newIndex: 2 });
+    };
+    const touchDrag = (pointerY: number): void => moveFirstTaskToEnd(new MouseEvent("mousedown"), () => {
+      document.dispatchEvent(new MouseEvent("mousemove", { clientX: 100, clientY: pointerY }));
+    });
+    const nativeDrag = (dropTarget: HTMLElement | null): void => moveFirstTaskToEnd(new Event("dragstart"), () => {
+      // A native drag stops reporting the pointer once it leaves the window, so its last position stays inside.
+      document.dispatchEvent(new MouseEvent("dragover", { clientX: 100, clientY: 650 }));
+      dropTarget?.dispatchEvent(new Event("drop", { bubbles: true }));
+    });
+
+    touchDrag(40);
+    expect(order()).toEqual(["task-1", "task-2", "task-3"]);
+    nativeDrag(null);
+    expect(order()).toEqual(["task-1", "task-2", "task-3"]);
+    nativeDrag(document.body);
+    expect(order()).toEqual(["task-1", "task-2", "task-3"]);
+    expect(dispatch).not.toHaveBeenCalled();
+
+    nativeDrag(list);
+    expect(order()).toEqual(["task-2", "task-3", "task-1"]);
+    expect(dispatch).toHaveBeenCalledWith({ type: "reorder", taskId: "task-1", previousId: "task-3", nextId: null });
+
+    dispatch.mockClear();
+    list.prepend(list.querySelector<HTMLElement>('[data-task-id="task-1"]') as HTMLElement);
+    touchDrag(650);
+    expect(order()).toEqual(["task-2", "task-3", "task-1"]);
+    expect(dispatch).toHaveBeenCalledWith({ type: "reorder", taskId: "task-1", previousId: "task-3", nextId: null });
+  });
+
+  it("keeps a Scheduled Task inside its date section", () => {
+    const container = document.createElement("div");
+    container.className = "taskmate-scroll-region";
+    document.body.append(container);
+    const dispatch = vi.fn();
+    const row = (id: string) => ({ ...model.sections[0].rows[0], id, title: id });
+    renderTaskList(container, {
+      ...model,
+      grouping: "scheduled",
+      sections: [
+        { id: "overdue", rows: [row("overdue-1"), row("overdue-2")] },
+        { id: "later", rows: [row("later-1"), row("later-2")] }
+      ]
+    }, copy, dispatch);
+    const list = container.querySelector<HTMLElement>(".taskmate-list") as HTMLElement;
+    const options = (sortableCreate.mock.calls as unknown as Array<[HTMLElement, {
+      onMove?: (event: { dragged: HTMLElement; related: HTMLElement; willInsertAfter?: boolean }) => boolean;
+      onEnd?: (event: { item: HTMLElement; oldIndex?: number; newIndex?: number }) => void;
+    }]>)[0]?.[1];
+    const task = (id: string) => list.querySelector<HTMLElement>(`[data-task-id="${id}"]`) as HTMLElement;
+    const laterHeading = list.querySelector<HTMLElement>(".taskmate-task-section-heading.is-later") as HTMLElement;
+    const order = (): string[] => Array.from(list.querySelectorAll<HTMLElement>(".taskmate-task"))
+      .map((element) => element.dataset.taskId ?? "");
+
+    expect(options?.onMove?.({ dragged: task("overdue-1"), related: task("overdue-2"), willInsertAfter: true })).toBe(true);
+    expect(options?.onMove?.({ dragged: task("overdue-1"), related: laterHeading, willInsertAfter: false })).toBe(true);
+    expect(options?.onMove?.({ dragged: task("overdue-1"), related: laterHeading, willInsertAfter: true })).toBe(false);
+    expect(options?.onMove?.({ dragged: task("overdue-1"), related: task("later-1"), willInsertAfter: false })).toBe(false);
+
+    const item = task("overdue-1");
+    list.append(item);
+    options?.onEnd?.({ item, oldIndex: 1, newIndex: 6 });
+    expect(order()).toEqual(["overdue-1", "overdue-2", "later-1", "later-2"]);
+    expect(dispatch).not.toHaveBeenCalled();
+    // A blocked move parks the Task at the end of its own section; releasing it over
+    // the next section must still return it instead of saving the parked position.
+    const onStart = (sortableCreate.mock.calls as unknown as Array<[HTMLElement, {
+      onStart?: (event: { originalEvent: Event }) => void;
+    }]>)[0]?.[1].onStart;
+    const elementFromPoint = vi.fn(() => task("later-1"));
+    Object.defineProperty(document, "elementFromPoint", { value: elementFromPoint, configurable: true });
+    onStart?.({ originalEvent: new Event("dragstart") });
+    task("overdue-2").after(item);
+    document.dispatchEvent(new MouseEvent("dragover", { clientX: 100, clientY: 400 }));
+    list.dispatchEvent(new Event("drop", { bubbles: true }));
+    options?.onEnd?.({ item, oldIndex: 1, newIndex: 2 });
+    expect(elementFromPoint).toHaveBeenCalledWith(100, 400);
+    expect(order()).toEqual(["overdue-1", "overdue-2", "later-1", "later-2"]);
+    expect(dispatch).not.toHaveBeenCalled();
+    Reflect.deleteProperty(document, "elementFromPoint");
   });
 });

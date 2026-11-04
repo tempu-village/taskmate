@@ -42,9 +42,9 @@ Task lists support Manual, Date, Priority, and Created sorting. Selecting an alr
 
 Task rows do not reserve horizontal space for visible drag handles. In Manual sorting, dragging the Task content reorders it directly, with a 250 ms hold required on touch devices. Checkbox and auxiliary controls retain their own actions. Multiple selection begins through the explicit Select Tasks action rather than a long press, and automatic sorting disables Task dragging.
 
-While a Task is being dragged in Manual sorting, holding the pointer near the top or bottom edge of the Task result region scrolls that region vertically. Each edge zone is 15% of the region height, between 64 and 96 CSS px. Speed starts at zero on entry, grows quadratically toward the edge, and reaches its 720 CSS px/s cap 12 px before the edge. Movement is based on elapsed time, continues while the pointer stays still in a zone, and stops in the neutral middle, at the scroll limit, or when the drag ends. The page outside the Task result region does not scroll.
+While a Task is being dragged in Manual sorting, holding the pointer near the top or bottom edge of the Task result region scrolls that region vertically. Each edge zone is 30% of the region height, up to 192 CSS px. Speed starts at 200 CSS px/s on entry, grows linearly toward the edge, and reaches its 1000 CSS px/s cap 20 px before the edge. Movement is based on elapsed time, continues while the pointer stays still in a zone, and stops in the neutral middle, at the scroll limit, or when the drag ends. The page outside the Task result region does not scroll. After the drop is saved, the list keeps the scroll position at which the Task was dropped. Releasing the Task outside the Task result region cancels the move and returns it to its original position.
 
-Scheduled keeps its section order fixed as Overdue, Today, and Later. Date sorting changes the task order within each section, and the interface explains this scope while Date sorting is active.
+Scheduled keeps its section order fixed as Overdue, Today, and Later. Sections come from Task dates and Manual dragging changes only the manual rank, so a Task can be dragged only within its own section; a drop in another section returns it to its original position. Date sorting changes the task order within each section, and the interface explains this scope while Date sorting is active.
 
 Manual order is one global sequence shared across Smart views and other Task lists. Dragging changes that sequence only in Manual sorting. Date, Priority, and Created sorting are display-only and do not rewrite the stored manual rank.
 
@@ -110,9 +110,9 @@ Automated evidence: [domain.test.ts](../../../test/tasks/domain.test.ts), [task-
 
 タスク行には、横幅を消費する見えるドラッグハンドルを置きません。手動順ではタスク本文を直接ドラッグして並べ替え、タッチ端末では250ミリ秒の長押しを必要とします。チェックボックスと補助操作はそれぞれ固有の操作を維持します。複数選択は長押しではなく、明示的な「タスクを選択」操作から開始し、自動並べ替え中はタスクのドラッグを無効にします。
 
-手動順でタスクをドラッグ中に、指やポインターをタスク結果領域の上端・下端付近に置くと、その領域が縦にスクロールします。端の感知領域は領域の高さの15%（64〜96 CSS px）です。入った直後は速度0で、端に近づくほど二次的に速くなり、端の12px手前で最大720 CSS px/sに達します。移動量は経過時間で計算し、感知領域内で指を止めても続き、中央へ戻す、スクロール端に達する、ドラッグを終えると止まります。タスク結果領域の外側の画面はスクロールしません。
+手動順でタスクをドラッグ中に、指やポインターをタスク結果領域の上端・下端付近に置くと、その領域が縦にスクロールします。端の感知領域は領域の高さの30%（最大192 CSS px）です。入った直後は200 CSS px/sで動き出し、端に近づくほど直線的に速くなり、端の20px手前で最大1000 CSS px/sに達します。移動量は経過時間で計算し、感知領域内で指を止めても続き、中央へ戻す、スクロール端に達する、ドラッグを終えると止まります。タスク結果領域の外側の画面はスクロールしません。ドロップを保存した後も、ドロップした時点のスクロール位置を保ちます。タスク結果領域の外で離すと移動を取り消し、元の位置に戻します。
 
-予定ビューでは、期限切れ、今日、明日以降のセクション順を固定します。日付順は各セクション内のタスク順を変更し、日付順が有効な間は画面にこの適用範囲を説明します。
+予定ビューでは、期限切れ、今日、明日以降のセクション順を固定します。日付順は各セクション内のタスク順を変更し、日付順が有効な間は画面にこの適用範囲を説明します。セクションはタスクの日付で決まり、手動のドラッグで変わるのは手動順位だけなので、タスクは自分のセクションの中でだけドラッグできます。別のセクションでドロップすると元の位置に戻します。
 
 手動順は、スマートビューや他のタスク一覧をまたいで共有する一つの並びです。ドラッグは手動並べ替えのときだけ、この並びを変更します。日付、優先度、作成日の並べ替えは表示だけに作用し、保存済みの手動順位を書き換えません。
 
