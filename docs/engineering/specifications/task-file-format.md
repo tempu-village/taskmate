@@ -14,7 +14,8 @@ This format applies only to canonical Tasks. Properties written on ordinary impo
 ## Properties and values
 
 - `completed` is boolean.
-- `date` is `YYYY-MM-DD` or absent/null according to the parser model.
+- `date` is the optional scheduled date (`YYYY-MM-DD` or absent/null): when the user plans to work on the Task.
+- `deadline` is the optional hard deadline (`YYYY-MM-DD` or absent/null). It is independent of `date`: writers MUST NOT change or clear it when only `date` changes, and MUST NOT infer it from `date`. Readers MUST treat an absent `deadline` as null; writers emit `deadline: null` when none is set.
 - `priority` is `1`, `2`, `3` or null; new writes MUST use `priority`. Readers MUST treat legacy `important: true` as priority 1.
 - `labels` is an inline JSON string array. The UI exposes at most 500 distinct labels.
 - `project` is a stable Project ID or null, never a display name.
@@ -42,6 +43,6 @@ See [domain round-trip tests](../../../test/tasks/domain.test.ts), [repository t
 
 > 翻訳状態：`ai-translated`。英語版が正本です。
 
-Taskは設定されたフォルダーのMarkdown一ファイルで、`type: todo`と安定した`id`を持ちます。IDはタイトルやファイル名の変更で変えず、旧`--<short-id>`形式も読み取ります。日付、priority、labels、project、rank、timestampは上記形式に従い、未知のfrontmatterを保持します。Stepsは親Task内の順序付き値で、親とは独立して完了できます。形式変更には互換性または移行判断とTypeScript・Python双方の検証が必要です。未確認のMarkdown保持保証は追加しません。
+Taskは設定されたフォルダーのMarkdown一ファイルで、`type: todo`と安定した`id`を持ちます。IDはタイトルやファイル名の変更で変えず、旧`--<short-id>`形式も読み取ります。`date`（予定日）と`deadline`（締め切り）は独立した任意の`YYYY-MM-DD`で、予定日の変更で締め切りを変えたり、`date`から締め切りを推測したりしません。`deadline`がない旧ファイルはnullとして読みます。日付、priority、labels、project、rank、timestampは上記形式に従い、未知のfrontmatterを保持します。Stepsは親Task内の順序付き値で、親とは独立して完了できます。形式変更には互換性または移行判断とTypeScript・Python双方の検証が必要です。未確認のMarkdown保持保証は追加しません。
 
 `taskmate-source`や`taskmate-import-*`は通常のソースノート用であり、正式TaskのPropertyではありません。詳しくは[Source note property format](source-note-properties.md)を参照してください。

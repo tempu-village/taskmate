@@ -25,6 +25,8 @@ const copy = {
   moreLabels: (count: number) => `${count} more`,
   moreLabelsAriaLabel: (count: number) => `Show ${count} more labels`,
   hideExtraLabels: "Hide extra labels",
+  deadline: (date: string) => `Deadline ${date}`,
+  deadlineOverdue: (date: string) => `Deadline passed ${date}`,
   sectionTitles: { overdue: "Overdue", today: "Today", later: "Later" }
 };
 
@@ -39,6 +41,8 @@ const model: TaskListModel = {
       title: "Test task",
       completed: false,
       date: "2026-09-19",
+      deadline: null,
+      deadlineState: "none",
       priority: 1,
       projectName: "Project",
       labels: ["label"],
@@ -166,6 +170,22 @@ describe("task-list renderer", () => {
 
     expect(container.querySelector(".taskmate-title")?.textContent)
       .toBe(`${"あ".repeat(99)}${familyEmoji}…`);
+  });
+
+  it("shows a deadline separately from the scheduled date and highlights a missed one", () => {
+    const container = document.createElement("div");
+    const row = model.sections[0].rows[0];
+    renderTaskList(container, {
+      ...model,
+      sections: [{ id: "default", rows: [
+        { ...row, id: "missed", date: "2026-10-20", deadline: "2026-10-12", deadlineState: "overdue" },
+        { ...row, id: "upcoming", date: null, deadline: "2026-10-30", deadlineState: "upcoming" }
+      ] }]
+    }, copy, vi.fn());
+    const deadlines = Array.from(container.querySelectorAll<HTMLElement>(".taskmate-deadline"));
+    expect(deadlines.map((element) => element.textContent)).toEqual(["Deadline passed 2026-10-12", "Deadline 2026-10-30"]);
+    expect(deadlines[0].classList.contains("is-overdue")).toBe(true);
+    expect(container.textContent).toContain("2026-10-20");
   });
 
   it("destroys renderer-owned resources", () => {

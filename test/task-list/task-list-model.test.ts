@@ -9,6 +9,7 @@ function task(overrides: Partial<Task> = {}): Task {
     title: "One",
     completed: false,
     date: null,
+    deadline: null,
     priority: null,
     labels: [],
     projectId: null,
@@ -56,6 +57,19 @@ describe("task-list presentation model", () => {
         expect.objectContaining({ id: "later", projectName: null })
       ]
     }]);
+  });
+
+  it("derives deadline state from the deadline rather than the scheduled date", () => {
+    const model = buildTaskListModel({
+      tasks: [task({ id: "missed", date: "2026-10-20", deadline: "2026-10-12" })],
+      projects: [project],
+      grouping: "flat",
+      sortMode: "manual",
+      sortDirection: "asc",
+      allowReorder: true,
+      today: "2026-10-14"
+    });
+    expect(model.sections[0].rows[0]).toMatchObject({ date: "2026-10-20", deadline: "2026-10-12", deadlineState: "overdue" });
   });
 
   it("keeps scheduled sections fixed while reversing date order within each section", () => {

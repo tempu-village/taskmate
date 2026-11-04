@@ -9,6 +9,7 @@ function task(id: string, labels: string[]): Task {
     title: id,
     completed: false,
     date: null,
+    deadline: null,
     priority: null,
     labels,
     projectId: null,

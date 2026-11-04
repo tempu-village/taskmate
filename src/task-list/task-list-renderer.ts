@@ -23,6 +23,8 @@ export interface TaskListCopy {
   moreLabels: (count: number) => string;
   moreLabelsAriaLabel: (count: number) => string;
   hideExtraLabels: string;
+  deadline: (date: string) => string;
+  deadlineOverdue: (date: string) => string;
   sectionTitles: Record<Exclude<TaskListSectionId, "default">, string>;
 }
 
@@ -118,6 +120,10 @@ function renderRow(
 
   const metadata = appendElement(body, "div", { className: "taskmate-metadata" });
   if (row.date) appendElement(metadata, "span", { text: row.date });
+  if (row.deadline) appendElement(metadata, "span", {
+    text: row.deadlineState === "overdue" ? copy.deadlineOverdue(row.deadline) : copy.deadline(row.deadline),
+    className: `taskmate-deadline is-${row.deadlineState}`
+  });
   if (row.priority) appendElement(metadata, "span", {
     text: `P${row.priority}`,
     className: `taskmate-priority taskmate-priority-${row.priority}`

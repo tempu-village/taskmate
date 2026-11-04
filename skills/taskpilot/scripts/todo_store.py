@@ -184,6 +184,7 @@ def parse_task(path: Path, vault: Path) -> Optional[Dict[str, Any]]:
         "title": heading,
         "completed": props.get("completed") is True,
         "date": props.get("date") if isinstance(props.get("date"), str) else None,
+        "deadline": props.get("deadline") if isinstance(props.get("deadline"), str) else None,
         "priority": priority,
         "labels": [label for label in labels if isinstance(label, str)] if isinstance(labels, list) else [],
         "project": props.get("project") if isinstance(props.get("project"), str) else None,
@@ -211,7 +212,7 @@ def quote(value: Any) -> str:
 
 
 def encode_task(task: Dict[str, Any]) -> str:
-    keys = ["id", "completed", "date", "priority", "labels", "project", "rank", "created-at", "updated-at", "completed-at", "source-note"]
+    keys = ["id", "completed", "date", "deadline", "priority", "labels", "project", "rank", "created-at", "updated-at", "completed-at", "source-note"]
     frontmatter = ["---", "type: todo"] + [f"{key}: {quote(task.get(key))}" for key in keys] + ["---"]
     body = encode_task_body(task.get("steps") or [], str(task.get("notes") or ""), str(task.get("step-section-remainder") or ""))
     suffix = f"\n\n{body}" if body else ""
@@ -220,7 +221,7 @@ def encode_task(task: Dict[str, Any]) -> str:
 
 def encode_task_preserving_properties(task: Dict[str, Any], current_text: str) -> str:
     lines, _ = split_document(current_text)
-    keys = ["id", "completed", "date", "priority", "labels", "project", "rank", "created-at", "updated-at", "completed-at", "source-note"]
+    keys = ["id", "completed", "date", "deadline", "priority", "labels", "project", "rank", "created-at", "updated-at", "completed-at", "source-note"]
     render = {"type": "type: todo", **{key: f"{key}: {quote(task.get(key))}" for key in keys}}
     emitted, output = set(), []
     for line in lines:
@@ -321,9 +322,9 @@ def now_iso() -> str:
     return dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def validate_date(value: Optional[str]) -> None:
+def validate_date(value: Optional[str], name: str = "date") -> None:
     if value is not None and not DATE_RE.fullmatch(value):
-        fail("date must be YYYY-MM-DD")
+        fail(f"{name} must be YYYY-MM-DD")
 
 
 def validate_priority(value: Optional[int]) -> None:
@@ -351,8 +352,10 @@ def create_task(vault: Path, override: Optional[str], draft: Dict[str, Any]) -> 
     if not title:
         fail("title is required")
     date = draft.get("date")
+    deadline = draft.get("deadline")
     priority = draft.get("priority")
     validate_date(date)
+    validate_date(deadline, "deadline")
     validate_priority(priority)
     folder = task_folder(vault, override)
     tasks = all_tasks(vault, override)
@@ -363,6 +366,7 @@ def create_task(vault: Path, override: Optional[str], draft: Dict[str, Any]) -> 
         "title": title,
         "completed": False,
         "date": date,
+        "deadline": deadline,
         "priority": priority,
         "labels": normalized_labels(draft.get("labels") or []),
         "project": draft.get("project"),
@@ -384,7 +388,7 @@ def create_task(vault: Path, override: Optional[str], draft: Dict[str, Any]) -> 
 
 def command_create(args: argparse.Namespace) -> None:
     result = create_task(args.vault, args.task_folder, {
-        "title": args.title, "date": args.date, "priority": args.priority,
+        "title": args.title, "date": args.date, "deadline": args.deadline, "priority": args.priority,
         "labels": args.label, "project": args.project,
         "source-note": args.source_note, "steps": args.steps_json or [], "notes": args.notes,
     })
@@ -400,7 +404,7 @@ def find_task(vault: Path, override: Optional[str], identifier: str) -> Tuple[Pa
 
 def update_task(vault: Path, override: Optional[str], identifier: str, patch: Dict[str, Any]) -> Dict[str, Any]:
     path, task = find_task(vault, override, identifier)
-    for key in ("title", "date", "priority", "project", "notes"):
+    for key in ("title", "date", "deadline", "priority", "project", "notes"):
         if key in patch:
             task[key] = patch[key]
     if "labels" in patch:
@@ -409,6 +413,7 @@ def update_task(vault: Path, override: Optional[str], identifier: str, patch: Di
     if not str(task["title"]).strip():
         fail("title is required")
     validate_date(task["date"])
+    validate_date(task["deadline"], "deadline")
     validate_priority(task["priority"])
     task["updated-at"] = now_iso()
     atomic_write(path, encode_task_preserving_properties(task, path.read_text(encoding="utf-8")))
@@ -425,6 +430,8 @@ def command_update(args: argparse.Namespace) -> None:
         patch["title"] = args.title
     if args.date is not None:
         patch["date"] = None if args.date == "none" else args.date
+    if args.deadline is not None:
+        patch["deadline"] = None if args.deadline == "none" else args.deadline
     if args.priority is not None:
         patch["priority"] = None if args.priority == "none" else int(args.priority)
     if args.label is not None:
@@ -562,6 +569,7 @@ def command_validate(args: argparse.Namespace) -> None:
             if not str(task["title"]).strip():
                 errors.append(f"{path.name}: empty title")
             validate_date(task["date"])
+            validate_date(task["deadline"], "deadline")
             validate_priority(task["priority"])
             if not isinstance(task["labels"], list) or any(not isinstance(label, str) for label in task["labels"]):
                 errors.append(f"{path.name}: labels must be a string array")
@@ -582,7 +590,8 @@ def parser() -> argparse.ArgumentParser:
 
     create = commands.add_parser("create")
     create.add_argument("--title", required=True)
-    create.add_argument("--date")
+    create.add_argument("--date", help="scheduled date YYYY-MM-DD")
+    create.add_argument("--deadline", help="hard deadline YYYY-MM-DD")
     create.add_argument("--priority", type=int, choices=(1, 2, 3))
     create.add_argument("--label", action="append", default=[])
     create.add_argument("--project")
@@ -594,7 +603,8 @@ def parser() -> argparse.ArgumentParser:
     update = commands.add_parser("update")
     update.add_argument("--id", required=True)
     update.add_argument("--title")
-    update.add_argument("--date", help="YYYY-MM-DD or none")
+    update.add_argument("--date", help="scheduled date YYYY-MM-DD or none")
+    update.add_argument("--deadline", help="hard deadline YYYY-MM-DD or none")
     update.add_argument("--priority", choices=("1", "2", "3", "none"))
     update.add_argument("--label", action="append", default=None, help="replace labels; repeat for multiple labels")
     update.add_argument("--project", help="project ID or none")

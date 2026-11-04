@@ -24,7 +24,7 @@ Accepted contracts describe intended guarantees; code shows observed behavior an
 ## Supported environments and limitations
 
 - Desktop and Android Obsidian are the verified environments. The code remains mobile-compatible, but iOS device behavior has not yet been verified.
-- TaskMate is not yet listed in the Obsidian Community directory.
+- TaskMate is listed in the [Obsidian Community directory](https://community.obsidian.md/plugins/taskmate); a GitHub Release remains the manual installation fallback.
 - Calendar, Kanban, recurrence, and reminders are not part of the current product.
 - TaskMate does not provide a synchronization service or remote conflict merging. It prevents silent overwrites of changes that have reached the local vault through guarded three-way comparison in the Task editor.
 - Task Pilot depends on the permissions and capabilities of its host agent client.
@@ -59,7 +59,7 @@ TaskMateはObsidian向けのローカルファースト・タスク管理機能�
 ## 対応環境と制限
 
 - デスクトップ版とAndroid版Obsidianが検証済み環境です。コードはモバイル互換を維持していますが、iOS実機の挙動はまだ検証していません。
-- TaskMateは、まだObsidian Communityディレクトリに掲載されていません。
+- TaskMateは[Obsidian Communityディレクトリ](https://community.obsidian.md/plugins/taskmate)に掲載されています。GitHub Releaseは手動インストール用の予備の方法として残ります。
 - カレンダー、カンバン、繰り返し、リマインダーは、現在の製品に含まれません。
 - TaskMateは同期サービスやリモート競合マージを提供しません。ローカルVaultへ届いた変更については、タスク編集画面の3方向比較で黙った上書きを防ぎます。
 - Task Pilotは、実行元のエージェントクライアントの権限と能力に依存します。

@@ -37,7 +37,8 @@ class MemoryVault {
 function baseTask(overrides: Partial<Task> = {}): Task {
   return {
     path: "TaskMate/Tasks/Example.md", id: "task-uuid", title: "Example", completed: false,
-    date: "2026-10-10", priority: null, labels: [], projectId: null, rank: 1024,
+    date: "2026-10-10",
+    deadline: null, priority: null, labels: [], projectId: null, rank: 1024,
     createdAt: "2026-10-01T00:00:00.000Z", updatedAt: "2026-10-01T00:00:00.000Z",
     completedAt: null, sourceNote: null, steps: [], stepSectionRemainder: "", notes: "Original", ...overrides
   };

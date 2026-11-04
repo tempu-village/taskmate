@@ -145,7 +145,7 @@ export class TaskRepository {
     return task;
   }
 
-  async update(task: Task, patch: Partial<Pick<Task, "title" | "date" | "priority" | "labels" | "projectId" | "steps" | "notes" | "completed" | "rank">>): Promise<Task> {
+  async update(task: Task, patch: Partial<Pick<Task, "title" | "date" | "deadline" | "priority" | "labels" | "projectId" | "steps" | "notes" | "completed" | "rank">>): Promise<Task> {
     const located = await this.locateTask(task.id, task.path);
     if (located.status === "identity-conflict") throw new DuplicateTaskIdError(located.conflict);
     if (located.status === "missing") throw new Error(`Task file not found: ${task.path}`);

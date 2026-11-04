@@ -36,6 +36,10 @@ Active filters remain in effect while navigating between Task-result screens. Th
 
 Selected Labels match any selected label; Priority and Label filters combine. Priority is optional: P1 is highest, followed by P2 and P3.
 
+### Deadlines
+
+Scheduled, Unplanned, Date sorting and the Overdue/Today/Later sections follow only the scheduled `date`. A Task with only a `deadline` therefore appears in Unplanned. Every Task row with a deadline shows it as a separate `Deadline` item; while the Task is incomplete and the deadline is before today, the item reads `Deadline passed` and is emphasized, regardless of the scheduled date. A deadline due today is also emphasized.
+
 ### Sorting
 
 Task lists support Manual, Date, Priority, and Created sorting. Selecting an already active automatic sort toggles ascending and descending order; the active button displays the direction.
@@ -54,6 +58,7 @@ Manual order is one global sequence shared across Smart views and other Task lis
 - LIST-02: Automatic sorting leaves manual ranks unchanged; Scheduled section order stays fixed.
 - LIST-03: Search includes Step text and returns full-title matches beyond the displayed prefix.
 - LIST-04: Manual-sort dragging auto-scrolls the Task result region only inside its edge zones, with capped, elapsed-time-based speed and cleanup on drop.
+- LIST-05: Scheduled grouping follows `date`; missed-deadline state follows `deadline` and survives rescheduling.
 
 Automated evidence: [domain.test.ts](../../../test/tasks/domain.test.ts), [task-filter-state.test.ts](../../../test/task-list/task-filter-state.test.ts), [task-list-model.test.ts](../../../test/task-list/task-list-model.test.ts), [drag-auto-scroll.test.ts](../../../test/task-list/drag-auto-scroll.test.ts), [task-list-renderer.test.ts](../../../test/task-list/task-list-renderer.test.ts). These tests cover selected behavior, not every UI scenario. Device checks and remaining gaps: [verification](../design/testing.md). Storage syntax: [Task Pilot schema](../../../skills/taskpilot/references/task-schema.md).
 
@@ -104,6 +109,10 @@ Automated evidence: [domain.test.ts](../../../test/tasks/domain.test.ts), [task-
 
 選択ラベルのいずれかに一致するタスクを表示し、優先度条件とは組み合わせます。優先度は任意でP1、P2、P3の順です。
 
+### 締め切り
+
+予定・未計画・日付の並べ替え・期限切れ/今日/明日以降の区分は、予定日`date`だけに従います。そのため`deadline`だけを持つタスクは未計画に表示されます。締め切りのあるタスク行には、予定日とは別の「締め切り」項目を表示します。未完了で締め切りが今日より前なら、予定日に関係なく「締め切り超過」と強調表示します。今日が締め切りの場合も強調します。
+
 ### 並べ替え
 
 タスク一覧は、手動、日付、優先度、作成日の並べ替えに対応します。有効な自動並べ替えをもう一度選ぶと昇順と降順が切り替わり、有効なボタンに方向を表示します。
@@ -122,3 +131,4 @@ Automated evidence: [domain.test.ts](../../../test/tasks/domain.test.ts), [task-
 - LIST-02: 自動並べ替えで手動順位を書き換えず、予定のセクション順を固定する。
 - LIST-03: ステップ本文と省略部分を含む全文タイトルで検索できる。
 - LIST-04: 手動順のドラッグ中、タスク結果領域の端の感知領域内だけで、上限付き・経過時間ベースの自動スクロールを行い、ドロップで停止する。
+- LIST-05: 予定の区分は`date`、締め切り超過の状態は`deadline`に従い、予定日を変えても超過表示は消えない。

@@ -7,6 +7,7 @@ import type { TaskSaveConflict } from "../tasks/repository";
 const FIELD_LABEL_KEYS = {
   title: "taskModal.title",
   date: "taskModal.date",
+  deadline: "taskModal.deadline",
   priority: "taskModal.priority",
   labels: "taskModal.labels",
   projectId: "taskModal.project",

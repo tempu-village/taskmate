@@ -10,6 +10,7 @@ function task(id: string, overrides: Partial<Task> = {}): Task {
     title: id,
     completed: false,
     date: null,
+    deadline: null,
     priority: null,
     labels: [],
     projectId: null,
