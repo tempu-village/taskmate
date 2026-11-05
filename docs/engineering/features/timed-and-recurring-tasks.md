@@ -12,7 +12,7 @@ A Task can have an optional local time and repeat rule, so planned and repeating
 
 ## User-visible behavior
 
-The Task editor shows Time and Repeat after Date and Deadline. Both are disabled until the Task has a Date, and a hint explains why. Repeat combines an interval from 1 to 99 with Does not repeat, day, week, month or year. Saving drops a Time or Repeat without a Date.
+The Task editor shows Time and Repeat after Date and Deadline. Time is chosen as an hour and a quarter-hour minute (00, 15, 30 or 45), and a stored minute outside those stays selectable; an × clears it. Both are disabled until the Task has a Date, and a hint explains why. Repeat combines an interval from 1 to 99 with Does not repeat, day, week, month or year. Saving drops a Time or Repeat without a Date.
 
 Task rows show the time after the date and the repeat rule.
 
@@ -65,7 +65,7 @@ Manual, pending: set, edit and clear each field with touch and keyboard on deskt
 
 > 翻訳状態：`ai-translated`。英語版が正本です。
 
-タスクに任意の時刻と繰り返しを設定できます。時刻はその日の作業のおおよその目安で、通知ではありません。編集画面では日付と締め切りの後に「時刻」「繰り返し」が並び、日付があるときだけ使えます。繰り返しは1〜99の間隔と日・週・月・年から選びます。一覧の行には時刻と繰り返しを表示します。通知は[#123](https://github.com/tempu-village/taskmate/issues/123)に分けて見送りました。
+タスクに任意の時刻と繰り返しを設定できます。時刻はその日の作業のおおよその目安で、通知ではありません。編集画面では日付と締め切りの後に「時刻」「繰り返し」が並び、時刻は「時」と15分刻みの「分」（00・15・30・45）で選び、×で消せます。保存済みのそれ以外の分も選べるまま残ります。日付があるときだけ使えます。繰り返しは1〜99の間隔と日・週・月・年から選びます。一覧の行には時刻と繰り返しを表示します。通知は[#123](https://github.com/tempu-village/taskmate/issues/123)に分けて見送りました。
 
 繰り返しタスクにチェックを入れると、完了せず次の回へ進みます。日付は現在の日付から間隔分進め、月末は短い月の末日に丸め、締め切りも同じ日数だけ動かし、ステップは未完了に戻します。ID、手動順、プロジェクト、ラベル、優先度、メモ、元ノートは保ち、ファイルは作りません。プラグインは表示時と同じ日付のときだけ進めるため、二重の完了は一度だけ反映されます。
 

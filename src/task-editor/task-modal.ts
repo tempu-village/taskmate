@@ -61,6 +61,17 @@ addIcon(DEADLINE_ICON, `<g transform="scale(4.1667)" fill="none" stroke="current
  * Scheduled and Deadline stay distinguishable. The native picker indicator is hidden, so the whole
  * field opens the picker instead.
  */
+const QUARTER_HOUR_MINUTES = ["00", "15", "30", "45"];
+// Symbols rather than copy, so they need no translation.
+const NO_HOUR = "--";
+const TIME_SEPARATOR = ":";
+
+/** Quarter-hour minutes, plus a stored minute outside them so editing never changes it silently. */
+export function timeMinuteOptions(storedMinute: string | null): string[] {
+  if (!storedMinute || QUARTER_HOUR_MINUTES.includes(storedMinute)) return QUARTER_HOUR_MINUTES;
+  return [...QUARTER_HOUR_MINUTES, storedMinute].sort();
+}
+
 function embedDateLabel(input: HTMLInputElement, label: string): HTMLElement {
   const wrapper = createDiv({ cls: "taskmate-embedded-date" });
   input.replaceWith(wrapper);
@@ -193,16 +204,40 @@ export class TaskModal extends Modal {
     const timeSetting = new Setting(fields).setName(t("taskModal.time"));
     timeSetting.settingEl.addClass("taskmate-time-setting");
     decorateField(timeSetting, "clock", t("taskModal.time"));
-    let timeInput!: HTMLInputElement;
-    timeSetting.addText((text) => {
-      text.inputEl.type = "time";
-      text.inputEl.addClass("taskmate-date-input");
-      text.inputEl.setAttribute("aria-label", t("taskModal.time"));
-      timeInput = text.inputEl;
-      text.setValue(this.draft.time ?? "").onChange((value) => {
-        this.draft.time = value || null;
-        refreshScheduleControls();
-      });
+    // Hour and minute lists replace the native time input, whose minute list ignores `step` in Obsidian.
+    // The time is a planning guide, so quarter hours are enough; another stored minute stays selectable.
+    const timeField = timeSetting.controlEl.createDiv({ cls: "taskmate-embedded-date taskmate-time-field" });
+    timeField.createSpan({ text: t("taskModal.time"), cls: "taskmate-embedded-field-label", attr: { "aria-hidden": "true" } });
+    setIcon(timeField.createSpan({ cls: "taskmate-embedded-date-icon", attr: { "aria-hidden": "true" } }), "clock");
+    const timeSelects = timeField.createDiv({ cls: "taskmate-time-selects" });
+    const hourSelect = timeSelects.createEl("select", { cls: "dropdown", attr: { "aria-label": t("taskModal.hour") } });
+    timeSelects.createSpan({ text: TIME_SEPARATOR, attr: { "aria-hidden": "true" } });
+    const minuteSelect = timeSelects.createEl("select", { cls: "dropdown", attr: { "aria-label": t("taskModal.minute") } });
+    hourSelect.createEl("option", { text: NO_HOUR, value: "" });
+    for (let hour = 0; hour < 24; hour++) {
+      const value = String(hour).padStart(2, "0");
+      hourSelect.createEl("option", { text: value, value });
+    }
+    const storedMinute = this.draft.time?.slice(3) ?? null;
+    for (const value of timeMinuteOptions(storedMinute)) minuteSelect.createEl("option", { text: value, value });
+    hourSelect.value = this.draft.time?.slice(0, 2) ?? "";
+    minuteSelect.value = storedMinute ?? "00";
+    const removeTime = timeField.createEl("button", {
+      cls: "taskmate-date-clear clickable-icon",
+      attr: { type: "button", "aria-label": t("taskModal.removeTime") }
+    });
+    setIcon(removeTime, "x");
+    const readTime = (): void => {
+      this.draft.time = hourSelect.value ? `${hourSelect.value}:${minuteSelect.value}` : null;
+      refreshScheduleControls();
+    };
+    hourSelect.addEventListener("change", readTime);
+    minuteSelect.addEventListener("change", readTime);
+    removeTime.addEventListener("click", () => {
+      hourSelect.value = "";
+      minuteSelect.value = "00";
+      readTime();
+      hourSelect.focus();
     });
 
     const repeatSetting = new Setting(fields).setName(t("taskModal.repeat"));
@@ -243,7 +278,9 @@ export class TaskModal extends Modal {
     // draft while the user edits and dropped on save.
     const refreshScheduleControls = (): void => {
       const hasDate = this.draft.date !== null;
-      timeInput.disabled = !hasDate;
+      hourSelect.disabled = !hasDate;
+      minuteSelect.disabled = !hasDate || this.draft.time === null;
+      removeTime.toggle(hasDate && this.draft.time !== null);
       repeatUnit.disabled = !hasDate;
       repeatInterval.disabled = !hasDate;
       scheduleHint.setText(hasDate ? "" : t("taskModal.scheduleNeedsDate"));

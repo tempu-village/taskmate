@@ -8,7 +8,7 @@ Use **Scheduled** for the day you plan to work on the Task and **Deadline** for 
 
 ## Set a time or repeat
 
-After setting a Date, choose a **Time** and, if the work repeats, a **Repeat** interval such as every 2 weeks. The Time is a guide for planning your day; TaskMate does not send reminders. Checking a repeating Task moves it to its next date instead of completing it. See [Timed and recurring Tasks](../../engineering/features/timed-and-recurring-tasks.md).
+After setting a Date, choose a **Time** as an hour and a quarter-hour minute (use × to clear it) and, if the work repeats, a **Repeat** interval such as every 2 weeks. The Time is a guide for planning your day; TaskMate does not send reminders. Checking a repeating Task moves it to its next date instead of completing it. See [Timed and recurring Tasks](../../engineering/features/timed-and-recurring-tasks.md).
 
 ## Add supporting Steps
 

@@ -1085,6 +1085,14 @@
   box-shadow: none;
 }
 .taskmate-embedded-date .taskmate-date-input::-webkit-calendar-picker-indicator { display: none; }
+.taskmate-time-selects {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.taskmate-time-selects select { min-width: 4.5rem; }
 .taskmate-date-clear {
   grid-column: 3;
   grid-row: 1 / 3;
