@@ -75,7 +75,7 @@ Date sorting compares `date`, then places untimed Tasks before timed Tasks of th
 
 ## Open questions
 
-- Weekday-set recurrence (for example Monday and Wednesday) is deferred to a separate Issue.
+- Weekday-set recurrence (for example Monday and Wednesday) is deferred to [#125](https://github.com/tempu-village/taskmate/issues/125).
 - Should a recurring Task record its last completion time?
 
 ## Decision / status
