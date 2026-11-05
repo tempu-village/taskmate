@@ -11,7 +11,7 @@ Status: Current. These tests drive the real Obsidian desktop app with the built 
 3. Installs this checkout's `main.js`, `manifest.json` and `styles.css` as a plugin.
 4. Opens a sandboxed copy of [the test Vault](../../../test/e2e/vaults/basic) and runs the specs.
 
-The first spec opens the TaskMate list, clicks the All tab by position (so it does not depend on UI language), and checks that the Vault's sample Task is shown.
+`task-list.e2e.ts` opens the TaskMate list, clicks the All tab by position (so it does not depend on UI language), and checks that the Vault's sample Task is shown. `schedule.e2e.ts` covers regressions for time and repeat: both are disabled with a hint while a Task has no date, completing a weekly Task advances its date and deadline by seven days and reopens its Steps, and date sort orders same-day Tasks untimed first, then by time.
 
 ## Why Obsidian is downloaded into the cache
 
@@ -35,6 +35,7 @@ The `e2e` job in [CI](../../../.github/workflows/ci.yml) runs on Ubuntu. Linux r
 - Import `browser`/`expect` from `@wdio/globals` and `describe`/`it` from `mocha`; globals are not injected.
 - Use `browser.executeObsidianCommand("taskmate:<command-id>")` to open UI, and `browser.executeObsidian(({ app }) => ...)` to read state. Functions passed to `executeObsidian` are serialized, so pass values as arguments instead of capturing them.
 - Select by stable class, role or attribute, not by translated text. WebdriverIO's `*=text` selector matches links only; assert on an element's text instead.
+- Use [test/e2e/helpers.ts](../../../test/e2e/helpers.ts) to build task Markdown, create, overwrite or read Vault files, open the All tab and find rows by `data-task-id`. Each spec file starts from a fresh copy of the test Vault, but tests in one file share it, so give each test's Tasks distinct ids.
 - Specs are typechecked by `npm run typecheck` through [test/e2e/tsconfig.json](../../../test/e2e/tsconfig.json).
 
 ## Not covered
@@ -48,7 +49,7 @@ The `e2e` job in [CI](../../../.github/workflows/ci.yml) runs on Ubuntu. Linux r
 
 > 翻訳状態：`ai-translated`。英語版が正本です。
 
-`npm run test:e2e`は、ビルド済みプラグインを入れた本物のObsidianデスクトップ版をWebdriverIOで操作します。最初のテストは一覧を開き、「すべて」タブを位置で選んでクリックし、テスト用Vaultのタスクが表示されることを確かめます。実行前に`npm run build`が必要です。
+`npm run test:e2e`は、ビルド済みプラグインを入れた本物のObsidianデスクトップ版をWebdriverIOで操作します。`task-list.e2e.ts`は一覧を開き、「すべて」タブを位置で選んでクリックし、テスト用Vaultのタスクが表示されることを確かめます。`schedule.e2e.ts`は時刻と繰り返しの回帰テストで、日付なしでは両方が無効で案内が出ること、毎週タスクの完了で予定日と締切が7日進みStepが未完了に戻ること、日付ソートで同じ日のタスクが時刻なし→時刻順に並ぶことを確かめます。共通処理は`test/e2e/helpers.ts`にあります。実行前に`npm run build`が必要です。
 
 インストール済みのObsidianは使わず、テスト用のObsidianを`.obsidian-cache/`へダウンロードします。こうすると、バージョンを固定して手元とCIで同じものを使え、普段のVault一覧・Syncのログイン・他のVaultに触れない独立した設定で起動できます。毎回ダウンロードし直さないよう保存しておき、このフォルダはGit管理外で、CIではキャッシュします。
 
