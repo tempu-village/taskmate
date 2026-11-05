@@ -14,6 +14,8 @@ function task(overrides: Partial<Task> = {}): Task {
     completed: false,
     date: null,
     deadline: null,
+    time: null,
+    repeat: null,
     priority: null,
     labels: ["work"],
     projectId: null,
@@ -34,6 +36,8 @@ function draft(base: Task, overrides: Partial<TaskDraft> = {}): TaskDraft {
     title: base.title,
     date: base.date,
     deadline: base.deadline,
+    time: base.time,
+    repeat: base.repeat,
     priority: base.priority,
     labels: [...base.labels],
     projectId: base.projectId,
@@ -277,5 +281,19 @@ describe("TaskRepository conflict guards", () => {
 
     expect(result.status).toBe("review-stale");
     expect(vault.files.get(base.path)!.content).toBe(beforeResolution);
+  });
+
+  it("advances a recurring Task once when its occurrence is completed", async () => {
+    const base = task({ date: "2026-10-14", deadline: "2026-10-15", repeat: { interval: 1, unit: "day" }, steps: [{ text: "Step", completed: true, date: null }] });
+    vault.put(base.path, encodeTask(base));
+    await repository.scan();
+
+    const advanced = await repository.update(base, { completed: true });
+    expect(advanced).toMatchObject({ completed: false, completedAt: null, date: "2026-10-15", deadline: "2026-10-16", rank: base.rank, notes: base.notes });
+    expect(advanced.steps).toEqual([{ text: "Step", completed: false, date: null }]);
+
+    const repeated = await repository.update(base, { completed: true });
+    expect(repeated.date).toBe("2026-10-15");
+    expect(parseTaskMarkdown(base.path, vault.files.get(base.path)!.content)).toMatchObject({ date: "2026-10-15", completed: false });
   });
 });

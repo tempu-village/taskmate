@@ -27,6 +27,7 @@ const copy = {
   hideExtraLabels: "Hide extra labels",
   deadline: (date: string) => `Deadline ${date}`,
   deadlineOverdue: (date: string) => `Deadline passed ${date}`,
+  repeat: (rule: { interval: number; unit: string }) => `Repeats every ${rule.interval} ${rule.unit}`,
   sectionTitles: { overdue: "Overdue", today: "Today", later: "Later" }
 };
 
@@ -42,6 +43,8 @@ const model: TaskListModel = {
       completed: false,
       date: "2026-09-19",
       deadline: null,
+      time: null,
+      repeat: null,
       deadlineState: "none",
       priority: 1,
       projectName: "Project",

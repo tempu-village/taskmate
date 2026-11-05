@@ -50,7 +50,7 @@ While a Task is being dragged in Manual sorting, holding the pointer near the to
 
 Scheduled keeps its section order fixed as Overdue, Today, and Later. Sections come from Task dates and Manual dragging changes only the manual rank, so a Task can be dragged only within its own section; a drop in another section returns it to its original position. Date sorting changes the task order within each section, and the interface explains this scope while Date sorting is active.
 
-Manual order is one global sequence shared across Smart views and other Task lists. Dragging changes that sequence only in Manual sorting. Date, Priority, and Created sorting are display-only and do not rewrite the stored manual rank.
+Manual order is one global sequence shared across Smart views and other Task lists. Dragging changes that sequence only in Manual sorting. Within one date, Date sorting puts untimed Tasks first and timed Tasks by time ([Timed and recurring Tasks](timed-and-recurring-tasks.md)). Date, Priority, and Created sorting are display-only and do not rewrite the stored manual rank.
 
 ## Acceptance and evidence
 
@@ -123,7 +123,7 @@ Automated evidence: [domain.test.ts](../../../test/tasks/domain.test.ts), [task-
 
 予定ビューでは、期限切れ、今日、明日以降のセクション順を固定します。日付順は各セクション内のタスク順を変更し、日付順が有効な間は画面にこの適用範囲を説明します。セクションはタスクの日付で決まり、手動のドラッグで変わるのは手動順位だけなので、タスクは自分のセクションの中でだけドラッグできます。別のセクションでドロップすると元の位置に戻します。
 
-手動順は、スマートビューや他のタスク一覧をまたいで共有する一つの並びです。ドラッグは手動並べ替えのときだけ、この並びを変更します。日付、優先度、作成日の並べ替えは表示だけに作用し、保存済みの手動順位を書き換えません。
+手動順は、スマートビューや他のタスク一覧をまたいで共有する一つの並びです。ドラッグは手動並べ替えのときだけ、この並びを変更します。日付の並べ替えでは、同じ日の中で時刻なしを先に、時刻ありを時刻順に並べます。日付、優先度、作成日の並べ替えは表示だけに作用し、保存済みの手動順位を書き換えません。
 
 ### 受け入れ条件
 

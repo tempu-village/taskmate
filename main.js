@@ -91,6 +91,169 @@ function encodeTaskBody(steps2, notes, stepSectionRemainder = "") {
 ${trimmedNotes}` : stepSection;
 }
 
+// src/tasks/domain.ts
+function localDateParts(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+function todayKey(now = /* @__PURE__ */ new Date()) {
+  return localDateParts(now);
+}
+function addDays(dateKey, amount) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  date.setDate(date.getDate() + amount);
+  return localDateParts(date);
+}
+function deadlineState(task, today = todayKey()) {
+  if (!task.deadline) return "none";
+  if (task.completed) return "upcoming";
+  if (task.deadline < today) return "overdue";
+  if (task.deadline === today) return "today";
+  return "upcoming";
+}
+function taskMatchesView(task, view, today = todayKey(), includeCompleted = false) {
+  if (task.completed && !includeCompleted) return false;
+  switch (view) {
+    case "scheduled":
+      return task.date !== null;
+    case "unplanned":
+      return task.date === null;
+    case "all":
+      return true;
+    default:
+      return false;
+  }
+}
+function filterTasks(tasks, view, filters, today) {
+  const needle = filters.search.trim().toLocaleLowerCase();
+  return tasks.filter((task) => {
+    if (!taskMatchesView(task, view, today, filters.includeCompleted)) return false;
+    if (filters.priorities.length > 0 && (task.priority === null || !filters.priorities.includes(task.priority))) return false;
+    if (filters.labels.length > 0 && !filters.labels.some((label) => task.labels.includes(label))) return false;
+    const stepText = task.steps.map((step) => step.text).join("\n");
+    return needle.length === 0 || `${task.title}
+${task.notes}
+${stepText}
+${task.labels.join(" ")}`.toLocaleLowerCase().includes(needle);
+  });
+}
+function groupScheduledTasks(tasks, today = todayKey(), includeCompleted = false) {
+  const scheduled = tasks.filter((task) => (includeCompleted || !task.completed) && task.date !== null);
+  return {
+    overdue: scheduled.filter((task) => task.date !== null && task.date < today),
+    today: scheduled.filter((task) => task.date === today),
+    later: scheduled.filter((task) => task.date !== null && task.date > today)
+  };
+}
+function compareTime(a, b, directed) {
+  if (a === b) return 0;
+  if (a === null) return directed(-1);
+  if (b === null) return directed(1);
+  return directed(a.localeCompare(b));
+}
+function sortTasks(tasks, mode, direction = "asc") {
+  const result = [...tasks];
+  const rankThenCreated = (a, b) => a.rank - b.rank || a.createdAt.localeCompare(b.createdAt);
+  const directed = (comparison) => direction === "asc" ? comparison : -comparison;
+  const compareNullable = (a, b, compare) => {
+    if (a === null && b === null) return 0;
+    if (a === null) return 1;
+    if (b === null) return -1;
+    return directed(compare(a, b));
+  };
+  switch (mode) {
+    case "date":
+      return result.sort((a, b) => compareNullable(a.date, b.date, (left, right) => left.localeCompare(right)) || compareTime(a.time, b.time, directed) || rankThenCreated(a, b));
+    case "priority":
+      return result.sort((a, b) => compareNullable(a.priority, b.priority, (left, right) => left - right) || rankThenCreated(a, b));
+    case "created":
+      return result.sort((a, b) => directed(a.createdAt.localeCompare(b.createdAt)) || rankThenCreated(a, b));
+    case "manual":
+      return result.sort(rankThenCreated);
+  }
+}
+
+// src/tasks/schedule.ts
+var MAXIMUM_REPEAT_INTERVAL = 99;
+var TIME = /^([01]\d|2[0-3]):([0-5]\d)$/;
+var DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+var REPEAT = /^every ([1-9]\d?) (day|week|month|year)s?$/;
+var MONTH_DAY = /^(.*) on (?:day ([1-9]|[12]\d|3[01])|(last) day)$/;
+var REPEAT_ALIASES = {
+  daily: { interval: 1, unit: "day" },
+  weekly: { interval: 1, unit: "week" },
+  monthly: { interval: 1, unit: "month" },
+  yearly: { interval: 1, unit: "year" }
+};
+function parseTime(value) {
+  return typeof value === "string" && TIME.test(value) ? value : null;
+}
+function parseRepeat(value) {
+  if (typeof value !== "string") return null;
+  let normalized = value.trim().toLowerCase();
+  const monthDayMatch = normalized.match(MONTH_DAY);
+  if (monthDayMatch) normalized = monthDayMatch[1];
+  const alias = REPEAT_ALIASES[normalized];
+  const match = alias ? null : normalized.match(REPEAT);
+  const rule = alias ? { ...alias } : match ? { interval: Number(match[1]), unit: match[2] } : null;
+  if (!rule || !monthDayMatch) return rule;
+  if (rule.unit !== "month") return null;
+  return { ...rule, monthDay: monthDayMatch[3] ? "last" : Number(monthDayMatch[2]) };
+}
+function formatRepeat(rule) {
+  if (!rule) return null;
+  const base = rule.interval === 1 ? { day: "daily", week: "weekly", month: "monthly", year: "yearly" }[rule.unit] : `every ${rule.interval} ${rule.unit}s`;
+  if (rule.unit !== "month" || rule.monthDay === void 0) return base;
+  return `${base} on ${rule.monthDay === "last" ? "last day" : `day ${rule.monthDay}`}`;
+}
+function anchorRepeat(rule, dateKey) {
+  if (!rule || rule.unit !== "month" || rule.monthDay !== void 0 || !dateKey || !DATE.test(dateKey)) return rule;
+  return { ...rule, monthDay: Number(dateKey.slice(8)) };
+}
+function daysInMonth(year, month) {
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+function addMonths(dateKey, amount, monthDay) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const index2 = year * 12 + (month - 1) + amount;
+  const nextYear = Math.floor(index2 / 12);
+  const nextMonth = index2 % 12 + 1;
+  const lastDay = daysInMonth(nextYear, nextMonth);
+  const nextDay = monthDay === "last" ? lastDay : Math.min(monthDay ?? day, lastDay);
+  return `${String(nextYear).padStart(4, "0")}-${String(nextMonth).padStart(2, "0")}-${String(nextDay).padStart(2, "0")}`;
+}
+function addRepeat(dateKey, rule) {
+  switch (rule.unit) {
+    case "day":
+      return addDays(dateKey, rule.interval);
+    case "week":
+      return addDays(dateKey, rule.interval * 7);
+    case "month":
+      return addMonths(dateKey, rule.interval, rule.monthDay);
+    case "year":
+      return addMonths(dateKey, rule.interval * 12);
+  }
+}
+function dayNumber(dateKey) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return Date.UTC(year, month - 1, day) / 864e5;
+}
+function shiftDate(dateKey, from, to) {
+  return addDays(dateKey, dayNumber(to) - dayNumber(from));
+}
+function nextOccurrence(task) {
+  if (!task.repeat || !task.date || !DATE.test(task.date)) return null;
+  const date = addRepeat(task.date, task.repeat);
+  return {
+    date,
+    deadline: task.deadline && DATE.test(task.deadline) ? shiftDate(task.deadline, task.date, date) : task.deadline,
+    steps: task.steps.map((step) => ({ ...step, completed: false }))
+  };
+}
+
 // src/tasks/markdown.ts
 var FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
 var TASK_PROPERTY_LINES = {
@@ -99,6 +262,8 @@ var TASK_PROPERTY_LINES = {
   completed: (task) => `completed: ${scalar(task.completed)}`,
   date: (task) => `date: ${scalar(task.date)}`,
   deadline: (task) => `deadline: ${scalar(task.deadline)}`,
+  time: (task) => task.time === null ? null : `time: ${scalar(task.time)}`,
+  repeat: (task) => task.repeat === null ? null : `repeat: ${scalar(formatRepeat(task.repeat))}`,
   priority: (task) => `priority: ${scalar(task.priority)}`,
   labels: (task) => `labels: ${JSON.stringify(task.labels)}`,
   project: (task) => `project: ${scalar(task.projectId)}`,
@@ -107,6 +272,10 @@ var TASK_PROPERTY_LINES = {
   "updated-at": (task) => `updated-at: ${scalar(task.updatedAt)}`,
   "completed-at": (task) => `completed-at: ${scalar(task.completedAt)}`,
   "source-note": (task) => `source-note: ${scalar(task.sourceNote)}`
+};
+var SCHEDULE_PROPERTY_PARSERS = {
+  time: parseTime,
+  repeat: parseRepeat
 };
 var LEGACY_TASK_PROPERTIES = /* @__PURE__ */ new Set(["important"]);
 function scalar(value) {
@@ -158,6 +327,8 @@ function parseTaskMarkdown(path, content) {
     completed: properties2.completed === true,
     date: typeof properties2.date === "string" ? properties2.date : null,
     deadline: typeof properties2.deadline === "string" ? properties2.deadline : null,
+    time: parseTime(properties2.time),
+    repeat: parseRepeat(properties2.repeat),
     priority: properties2.priority === 1 || properties2.priority === 2 || properties2.priority === 3 ? properties2.priority : properties2.important === true ? 1 : null,
     labels: Array.isArray(properties2.labels) ? properties2.labels.filter((label) => typeof label === "string") : [],
     projectId: typeof properties2.project === "string" ? properties2.project : null,
@@ -172,7 +343,8 @@ function parseTaskMarkdown(path, content) {
   };
 }
 function encodeTask(task) {
-  const frontmatter = ["---", ...Object.values(TASK_PROPERTY_LINES).map((line) => line(task)), "---"].join("\n");
+  const lines = Object.values(TASK_PROPERTY_LINES).map((line) => line(task)).filter((line) => line !== null);
+  const frontmatter = ["---", ...lines, "---"].join("\n");
   const body = encodeTaskBody(task.steps, task.notes, task.stepSectionRemainder);
   return `${frontmatter}
 
@@ -194,14 +366,21 @@ function encodeTaskPreservingProperties(task, currentContent) {
     }
     const render = TASK_PROPERTY_LINES[property];
     if (render) {
-      if (!emitted.has(property)) frontmatterLines.push(render(task));
+      const rendered = render(task);
+      const parseSchedule = SCHEDULE_PROPERTY_PARSERS[property];
+      const unreadable = rendered === null && parseSchedule !== void 0 && parseScalar(line.slice(line.indexOf(":") + 1)) !== null && parseSchedule(parseScalar(line.slice(line.indexOf(":") + 1))) === null;
+      if (!emitted.has(property)) {
+        if (unreadable) frontmatterLines.push(line);
+        else if (rendered !== null) frontmatterLines.push(rendered);
+      }
       emitted.add(property);
       continue;
     }
     if (!LEGACY_TASK_PROPERTIES.has(property)) frontmatterLines.push(line);
   }
   for (const [property, render] of Object.entries(TASK_PROPERTY_LINES)) {
-    if (!emitted.has(property)) frontmatterLines.push(render(task));
+    const rendered = render(task);
+    if (!emitted.has(property) && rendered !== null) frontmatterLines.push(rendered);
   }
   const body = encodeTaskBody(task.steps, task.notes, task.stepSectionRemainder);
   return `---
@@ -221,6 +400,8 @@ function taskFromDraft(id, path, draft, rank, now) {
     completed: false,
     date: draft.date,
     deadline: draft.deadline,
+    time: draft.time,
+    repeat: draft.repeat,
     priority: draft.priority,
     labels: draft.labels,
     projectId: draft.projectId,
@@ -256,6 +437,8 @@ var EDITABLE_TASK_FIELDS = [
   "title",
   "date",
   "deadline",
+  "time",
+  "repeat",
   "priority",
   "labels",
   "projectId",
@@ -405,6 +588,15 @@ var TaskRepository = class {
     await this.app.vault.process(file, (content) => {
       const current = parseTaskMarkdown(file.path, content);
       if (!current || current.id !== task.id) throw new Error(`Invalid task file: ${file.path}`);
+      const next = patch.completed === true && !current.completed ? nextOccurrence(current) : null;
+      if (next && current.date !== task.date) {
+        updated = current;
+        return content;
+      }
+      if (next) {
+        updated = { ...current, ...next, updatedAt: (/* @__PURE__ */ new Date()).toISOString() };
+        return encodeTaskPreservingProperties(updated, content);
+      }
       const completed = patch.completed ?? current.completed;
       updated = {
         ...current,
@@ -795,85 +987,6 @@ var import_obsidian13 = require("obsidian");
 // src/task-list/bulk-task-modal.ts
 var import_obsidian5 = require("obsidian");
 
-// src/tasks/domain.ts
-function localDateParts(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-function todayKey(now = /* @__PURE__ */ new Date()) {
-  return localDateParts(now);
-}
-function addDays(dateKey, amount) {
-  const [year, month, day] = dateKey.split("-").map(Number);
-  const date = new Date(year, month - 1, day);
-  date.setDate(date.getDate() + amount);
-  return localDateParts(date);
-}
-function deadlineState(task, today = todayKey()) {
-  if (!task.deadline) return "none";
-  if (task.completed) return "upcoming";
-  if (task.deadline < today) return "overdue";
-  if (task.deadline === today) return "today";
-  return "upcoming";
-}
-function taskMatchesView(task, view, today = todayKey(), includeCompleted = false) {
-  if (task.completed && !includeCompleted) return false;
-  switch (view) {
-    case "scheduled":
-      return task.date !== null;
-    case "unplanned":
-      return task.date === null;
-    case "all":
-      return true;
-    default:
-      return false;
-  }
-}
-function filterTasks(tasks, view, filters, today) {
-  const needle = filters.search.trim().toLocaleLowerCase();
-  return tasks.filter((task) => {
-    if (!taskMatchesView(task, view, today, filters.includeCompleted)) return false;
-    if (filters.priorities.length > 0 && (task.priority === null || !filters.priorities.includes(task.priority))) return false;
-    if (filters.labels.length > 0 && !filters.labels.some((label) => task.labels.includes(label))) return false;
-    const stepText = task.steps.map((step) => step.text).join("\n");
-    return needle.length === 0 || `${task.title}
-${task.notes}
-${stepText}
-${task.labels.join(" ")}`.toLocaleLowerCase().includes(needle);
-  });
-}
-function groupScheduledTasks(tasks, today = todayKey(), includeCompleted = false) {
-  const scheduled = tasks.filter((task) => (includeCompleted || !task.completed) && task.date !== null);
-  return {
-    overdue: scheduled.filter((task) => task.date !== null && task.date < today),
-    today: scheduled.filter((task) => task.date === today),
-    later: scheduled.filter((task) => task.date !== null && task.date > today)
-  };
-}
-function sortTasks(tasks, mode, direction = "asc") {
-  const result = [...tasks];
-  const rankThenCreated = (a, b) => a.rank - b.rank || a.createdAt.localeCompare(b.createdAt);
-  const directed = (comparison) => direction === "asc" ? comparison : -comparison;
-  const compareNullable = (a, b, compare) => {
-    if (a === null && b === null) return 0;
-    if (a === null) return 1;
-    if (b === null) return -1;
-    return directed(compare(a, b));
-  };
-  switch (mode) {
-    case "date":
-      return result.sort((a, b) => compareNullable(a.date, b.date, (left, right) => left.localeCompare(right)) || rankThenCreated(a, b));
-    case "priority":
-      return result.sort((a, b) => compareNullable(a.priority, b.priority, (left, right) => left - right) || rankThenCreated(a, b));
-    case "created":
-      return result.sort((a, b) => directed(a.createdAt.localeCompare(b.createdAt)) || rankThenCreated(a, b));
-    case "manual":
-      return result.sort(rankThenCreated);
-  }
-}
-
 // src/tasks/date-suggestions.ts
 function taskDateSuggestions(today = todayKey()) {
   return [
@@ -1186,7 +1299,25 @@ var en = {
   "taskModal.titlePlaceholder": "What needs to be done?",
   "taskModal.date": "Scheduled",
   "taskModal.deadline": "Deadline",
+  "taskModal.hour": "Hour",
+  "taskModal.minute": "Minute",
+  "taskModal.removeTime": "Remove time",
   "taskModal.removeDeadline": "Remove deadline",
+  "taskModal.time": "Time",
+  "taskModal.repeat": "Repeat",
+  "taskModal.repeatInterval": "Repeat interval",
+  "taskModal.scheduleNeedsDate": "Set a scheduled date to add a time or repeat.",
+  "repeat.none": "Does not repeat",
+  "repeat.day": "Every {count} day(s)",
+  "repeat.week": "Every {count} week(s)",
+  "repeat.month": "Every {count} month(s)",
+  "repeat.year": "Every {count} year(s)",
+  "repeat.daily": "Daily",
+  "repeat.weekly": "Weekly",
+  "repeat.monthly": "Monthly",
+  "repeat.yearly": "Yearly",
+  "repeat.monthEnd": "Monthly on the last day",
+  "repeat.monthsEnd": "Every {count} month(s) on the last day",
   "taskModal.project": "Project",
   "taskModal.unassigned": "Unassigned",
   "taskModal.priority": "Priority",
@@ -1530,7 +1661,25 @@ var ja = {
   "taskModal.titlePlaceholder": "\u3084\u308B\u3053\u3068",
   "taskModal.date": "\u4E88\u5B9A\u65E5",
   "taskModal.deadline": "\u7DE0\u3081\u5207\u308A",
+  "taskModal.hour": "\u6642",
+  "taskModal.minute": "\u5206",
+  "taskModal.removeTime": "\u6642\u523B\u3092\u5916\u3059",
   "taskModal.removeDeadline": "\u7DE0\u3081\u5207\u308A\u3092\u5916\u3059",
+  "taskModal.time": "\u6642\u523B",
+  "taskModal.repeat": "\u7E70\u308A\u8FD4\u3057",
+  "taskModal.repeatInterval": "\u7E70\u308A\u8FD4\u3057\u306E\u9593\u9694",
+  "taskModal.scheduleNeedsDate": "\u6642\u523B\u3084\u7E70\u308A\u8FD4\u3057\u3092\u8A2D\u5B9A\u3059\u308B\u306B\u306F\u4E88\u5B9A\u65E5\u3092\u8A2D\u5B9A\u3057\u307E\u3059\u3002",
+  "repeat.none": "\u7E70\u308A\u8FD4\u3055\u306A\u3044",
+  "repeat.day": "{count}\u65E5\u3054\u3068",
+  "repeat.week": "{count}\u9031\u9593\u3054\u3068",
+  "repeat.month": "{count}\u304B\u6708\u3054\u3068",
+  "repeat.year": "{count}\u5E74\u3054\u3068",
+  "repeat.daily": "\u6BCE\u65E5",
+  "repeat.weekly": "\u6BCE\u9031",
+  "repeat.monthly": "\u6BCE\u6708",
+  "repeat.yearly": "\u6BCE\u5E74",
+  "repeat.monthEnd": "\u6BCE\u6708\u672B",
+  "repeat.monthsEnd": "{count}\u304B\u6708\u3054\u3068\u306E\u6708\u672B",
   "taskModal.project": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8",
   "taskModal.unassigned": "\u672A\u6240\u5C5E",
   "taskModal.priority": "\u512A\u5148\u5EA6",
@@ -2653,6 +2802,8 @@ function toRow(task, projectNames, today) {
     date: task.date,
     deadline: task.deadline,
     deadlineState: deadlineState(task, today),
+    time: task.time,
+    repeat: task.repeat ? { ...task.repeat } : null,
     priority: task.priority,
     projectName: task.projectId ? projectNames.get(task.projectId) ?? null : null,
     labels: [...task.labels],
@@ -5012,11 +5163,12 @@ function renderRow(list, row, selectionMode, copy, signal, dispatch) {
     if (!selectionMode) void dispatch({ type: "open", taskId: row.id });
   }, { signal });
   const metadata = appendElement(body, "div", { className: "taskmate-metadata" });
-  if (row.date) appendElement(metadata, "span", { text: row.date });
+  if (row.date) appendElement(metadata, "span", { text: row.time ? `${row.date} ${row.time}` : row.date });
   if (row.deadline) appendElement(metadata, "span", {
     text: row.deadlineState === "overdue" ? copy.deadlineOverdue(row.deadline) : copy.deadline(row.deadline),
     className: `taskmate-deadline is-${row.deadlineState}`
   });
+  if (row.repeat) appendElement(metadata, "span", { text: copy.repeat(row.repeat), className: "taskmate-repeat" });
   if (row.priority) appendElement(metadata, "span", {
     text: `P${row.priority}`,
     className: `taskmate-priority taskmate-priority-${row.priority}`
@@ -5215,6 +5367,8 @@ var FIELD_LABEL_KEYS = {
   title: "taskModal.title",
   date: "taskModal.date",
   deadline: "taskModal.deadline",
+  time: "taskModal.time",
+  repeat: "taskModal.repeat",
   priority: "taskModal.priority",
   labels: "taskModal.labels",
   projectId: "taskModal.project",
@@ -5295,6 +5449,7 @@ var TaskConflictModal = class extends import_obsidian9.Modal {
     if (field === "priority" && typeof value === "number") {
       return this.i18n.t("filter.priorityValue", { priority: value });
     }
+    if (field === "repeat" && value !== null && typeof value === "object") return formatRepeat(value) ?? "";
     if (field === "steps" && Array.isArray(value)) {
       return value.length > 0 ? value.map((step) => {
         const item = step;
@@ -5404,6 +5559,18 @@ var StepModal = class extends import_obsidian10.Modal {
   }
 };
 
+// src/task-editor/schedule-labels.ts
+var SINGLE_REPEAT_KEYS = { day: "repeat.daily", week: "repeat.weekly", month: "repeat.monthly", year: "repeat.yearly" };
+var INTERVAL_REPEAT_KEYS = { day: "repeat.day", week: "repeat.week", month: "repeat.month", year: "repeat.year" };
+function repeatLabel(t, rule) {
+  if (!rule) return t("repeat.none");
+  if (rule.unit === "month" && rule.monthDay === "last") {
+    return rule.interval === 1 ? t("repeat.monthEnd") : t("repeat.monthsEnd", { count: rule.interval });
+  }
+  if (rule.interval === 1) return t(SINGLE_REPEAT_KEYS[rule.unit]);
+  return t(INTERVAL_REPEAT_KEYS[rule.unit], { count: rule.interval });
+}
+
 // src/task-editor/task-modal.ts
 var DATE_SUGGESTION_KEYS2 = {
   today: "date.today",
@@ -5411,6 +5578,13 @@ var DATE_SUGGESTION_KEYS2 = {
   "seven-days": "date.sevenDays",
   none: "date.none"
 };
+function normalizeSchedule(draft) {
+  return {
+    ...draft,
+    time: draft.date ? draft.time : null,
+    repeat: draft.date ? anchorRepeat(draft.repeat, draft.date) : null
+  };
+}
 function decorateField2(setting, icon, accessibleName) {
   setting.settingEl.addClass("taskmate-compact-setting");
   const marker = document.createElement("span");
@@ -5431,6 +5605,14 @@ function addEmbeddedLabel2(setting, label) {
 }
 var DEADLINE_ICON = "taskmate-calendar-target";
 (0, import_obsidian11.addIcon)(DEADLINE_ICON, `<g transform="scale(4.1667)" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 9V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h4"/><path d="M15 2v4"/><path d="M8 2v4"/><path d="M3 10h6"/><circle cx="17" cy="17" r="6"/><circle cx="17" cy="17" r="2.5"/><circle cx="17" cy="17" r="0.5" fill="currentColor"/></g>`);
+var MONTH_END_CHOICE = "month-end";
+var FIVE_MINUTES = Array.from({ length: 12 }, (_, index2) => String(index2 * 5).padStart(2, "0"));
+var HOURS = Array.from({ length: 24 }, (_, hour) => String(hour).padStart(2, "0"));
+var NO_TIME = "--:--";
+function timeMinuteOptions(storedMinute) {
+  if (!storedMinute || FIVE_MINUTES.includes(storedMinute)) return FIVE_MINUTES;
+  return [...FIVE_MINUTES, storedMinute].sort();
+}
 function embedDateLabel(input, label) {
   const wrapper = createDiv({ cls: "taskmate-embedded-date" });
   input.replaceWith(wrapper);
@@ -5462,6 +5644,8 @@ var TaskModal = class extends import_obsidian11.Modal {
       title: task?.title ?? "",
       date: task?.date ?? null,
       deadline: task?.deadline ?? null,
+      time: task?.time ?? null,
+      repeat: task?.repeat ?? null,
       priority: task?.priority ?? null,
       labels: task?.labels ?? [],
       projectId: task?.projectId ?? defaultProjectId,
@@ -5485,7 +5669,7 @@ var TaskModal = class extends import_obsidian11.Modal {
     decorateField2(titleSetting, "circle-check", t("taskModal.title"));
     titleSetting.addTextArea((text3) => {
       const titleInput = text3.inputEl;
-      titleInput.rows = 3;
+      titleInput.rows = 1;
       titleInput.wrap = "soft";
       titleInput.setAttribute("aria-label", t("taskModal.title"));
       const resizeTitleInput = () => {
@@ -5512,7 +5696,10 @@ var TaskModal = class extends import_obsidian11.Modal {
     const datePresets = dateSetting.controlEl.createDiv({ cls: "taskmate-date-presets" });
     const dateButtons = [];
     let dateInput;
+    let dateTimeRow;
+    let onDateChange = () => void 0;
     const refreshDateSelection = () => {
+      onDateChange();
       for (const button3 of dateButtons) {
         const selected = button3.dataset.date === (this.draft.date ?? "");
         button3.toggleClass("is-active", selected);
@@ -5538,13 +5725,76 @@ var TaskModal = class extends import_obsidian11.Modal {
       text3.inputEl.addClass("taskmate-date-input");
       text3.inputEl.setAttribute("aria-label", t("taskModal.date"));
       dateInput = text3.inputEl;
-      embedDateLabel(text3.inputEl, t("taskModal.date"));
+      const dateField = embedDateLabel(text3.inputEl, t("taskModal.date"));
+      dateTimeRow = dateSetting.controlEl.createDiv({ cls: "taskmate-date-time-row" });
+      dateTimeRow.appendChild(dateField);
       text3.setValue(this.draft.date ?? "").onChange((value) => {
         this.draft.date = value || null;
         refreshDateSelection();
       });
     });
     refreshDateSelection();
+    const timeField = dateTimeRow.createDiv({ cls: "taskmate-embedded-date taskmate-time-field" });
+    timeField.createSpan({ text: t("taskModal.time"), cls: "taskmate-embedded-field-label", attr: { "aria-hidden": "true" } });
+    (0, import_obsidian11.setIcon)(timeField.createSpan({ cls: "taskmate-embedded-date-icon", attr: { "aria-hidden": "true" } }), "clock");
+    const timeToggle = timeField.createEl("button", {
+      cls: "taskmate-time-toggle",
+      attr: { type: "button", "aria-label": t("taskModal.time"), "aria-expanded": "false" }
+    });
+    const timeValue = timeToggle.createSpan({ cls: "taskmate-time-value" });
+    (0, import_obsidian11.setIcon)(timeToggle.createSpan({ cls: "taskmate-time-chevron", attr: { "aria-hidden": "true" } }), "chevron-down");
+    const removeTime = timeField.createEl("button", {
+      cls: "taskmate-date-clear clickable-icon",
+      attr: { type: "button", "aria-label": t("taskModal.removeTime") }
+    });
+    (0, import_obsidian11.setIcon)(removeTime, "x");
+    const timePanel = dateSetting.controlEl.createDiv({ cls: "taskmate-time-panel" });
+    timePanel.hidden = true;
+    timePanel.createDiv({ text: t("taskModal.hour"), cls: "taskmate-time-panel-label" });
+    const hourGrid = timePanel.createDiv({ cls: "taskmate-time-grid", attr: { role: "group", "aria-label": t("taskModal.hour") } });
+    timePanel.createDiv({ text: t("taskModal.minute"), cls: "taskmate-time-panel-label" });
+    const minuteGrid = timePanel.createDiv({ cls: "taskmate-time-grid", attr: { role: "group", "aria-label": t("taskModal.minute") } });
+    const hourButtons = HOURS.map((hour) => hourGrid.createEl("button", { text: hour, attr: { type: "button" } }));
+    const minuteButtons = timeMinuteOptions(this.draft.time?.slice(3) ?? null).map((minute) => minuteGrid.createEl("button", { text: minute, attr: { type: "button" } }));
+    const setTimePanelOpen = (open) => {
+      timePanel.hidden = !open;
+      timeToggle.setAttribute("aria-expanded", String(open));
+      timeField.toggleClass("is-open", open);
+    };
+    const renderTime = () => {
+      const hour = this.draft.time?.slice(0, 2) ?? null;
+      const minute = this.draft.time?.slice(3) ?? null;
+      timeValue.setText(this.draft.time ?? NO_TIME);
+      for (const button3 of hourButtons) {
+        button3.toggleClass("is-active", button3.textContent === hour);
+        button3.setAttribute("aria-pressed", String(button3.textContent === hour));
+      }
+      for (const button3 of minuteButtons) {
+        button3.toggleClass("is-active", button3.textContent === minute);
+        button3.setAttribute("aria-pressed", String(button3.textContent === minute));
+        button3.disabled = hour === null;
+      }
+    };
+    for (const button3 of hourButtons) button3.addEventListener("click", () => {
+      this.draft.time = `${button3.textContent}:${this.draft.time?.slice(3) ?? "00"}`;
+      refreshScheduleControls();
+    });
+    for (const button3 of minuteButtons) button3.addEventListener("click", () => {
+      if (!this.draft.time) return;
+      this.draft.time = `${this.draft.time.slice(0, 2)}:${button3.textContent}`;
+      refreshScheduleControls();
+      setTimePanelOpen(false);
+      timeToggle.focus();
+    });
+    timeField.addEventListener("click", (event) => {
+      if (event.target.closest(".taskmate-date-clear") || timeToggle.disabled) return;
+      setTimePanelOpen(timePanel.hidden);
+    });
+    removeTime.addEventListener("click", () => {
+      this.draft.time = null;
+      refreshScheduleControls();
+      timeToggle.focus();
+    });
     const deadlineSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.deadline"));
     deadlineSetting.settingEl.addClass("taskmate-deadline-setting");
     decorateField2(deadlineSetting, DEADLINE_ICON, t("taskModal.deadline"));
@@ -5573,6 +5823,68 @@ var TaskModal = class extends import_obsidian11.Modal {
       deadlineInput.focus();
     });
     removeDeadline.toggle(this.draft.deadline !== null);
+    const repeatSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.repeat"));
+    repeatSetting.settingEl.addClass("taskmate-repeat-setting");
+    decorateField2(repeatSetting, "repeat", t("taskModal.repeat"));
+    repeatSetting.controlEl.createSpan({
+      text: t("taskModal.repeat"),
+      cls: "taskmate-embedded-field-label",
+      attr: { "aria-hidden": "true" }
+    });
+    let repeatUnit;
+    let repeatInterval;
+    const readRepeat = () => {
+      const choice = repeatUnit.value;
+      const unit = choice === MONTH_END_CHOICE ? "month" : choice;
+      const interval = Math.min(MAXIMUM_REPEAT_INTERVAL, Math.max(1, Math.trunc(Number(repeatInterval.value)) || 1));
+      const keptDay = typeof this.draft.repeat?.monthDay === "number" ? this.draft.repeat.monthDay : void 0;
+      this.draft.repeat = !unit ? null : choice === MONTH_END_CHOICE ? { unit, interval, monthDay: "last" } : unit === "month" && keptDay !== void 0 ? { unit, interval, monthDay: keptDay } : { unit, interval };
+      repeatInterval.hidden = !unit;
+    };
+    repeatSetting.addText((text3) => {
+      text3.inputEl.type = "number";
+      text3.inputEl.min = "1";
+      text3.inputEl.max = String(MAXIMUM_REPEAT_INTERVAL);
+      text3.inputEl.inputMode = "numeric";
+      text3.inputEl.addClass("taskmate-repeat-interval");
+      text3.inputEl.setAttribute("aria-label", t("taskModal.repeatInterval"));
+      repeatInterval = text3.inputEl;
+      text3.setValue(String(this.draft.repeat?.interval ?? 1)).onChange(readRepeat);
+    });
+    repeatSetting.addDropdown((dropdown) => {
+      dropdown.selectEl.setAttribute("aria-label", t("taskModal.repeat"));
+      repeatUnit = dropdown.selectEl;
+      dropdown.addOption("", t("repeat.none"));
+      for (const unit of ["day", "week", "month", "year"]) {
+        dropdown.addOption(unit, repeatLabel(t, { unit, interval: 1 }));
+        if (unit === "month") dropdown.addOption(MONTH_END_CHOICE, repeatLabel(t, { unit, interval: 1, monthDay: "last" }));
+      }
+      dropdown.setValue(this.draft.repeat?.monthDay === "last" ? MONTH_END_CHOICE : this.draft.repeat?.unit ?? "").onChange(readRepeat);
+    });
+    repeatInterval.hidden = !this.draft.repeat;
+    const scheduleHint = fields.createDiv({ cls: "setting-item-description taskmate-schedule-hint" });
+    const refreshScheduleControls = () => {
+      const hasDate = this.draft.date !== null;
+      timeToggle.disabled = !hasDate;
+      if (!hasDate) setTimePanelOpen(false);
+      removeTime.toggle(hasDate && this.draft.time !== null);
+      renderTime();
+      repeatUnit.disabled = !hasDate;
+      repeatInterval.disabled = !hasDate;
+      scheduleHint.setText(hasDate ? "" : t("taskModal.scheduleNeedsDate"));
+      scheduleHint.hidden = hasDate;
+    };
+    let anchoredDate = this.draft.date;
+    onDateChange = () => {
+      if (this.draft.date !== anchoredDate) {
+        anchoredDate = this.draft.date;
+        if (typeof this.draft.repeat?.monthDay === "number" && this.draft.date) {
+          this.draft.repeat = { ...this.draft.repeat, monthDay: Number(this.draft.date.slice(8)) };
+        }
+      }
+      refreshScheduleControls();
+    };
+    refreshScheduleControls();
     const projectSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.project"));
     decorateField2(projectSetting, "folder", t("taskModal.project"));
     addEmbeddedLabel2(projectSetting, t("taskModal.project"));
@@ -5820,7 +6132,7 @@ var TaskModal = class extends import_obsidian11.Modal {
       this.draft.steps = normalizeTaskSteps(this.draft.steps);
       save2.disabled = true;
       try {
-        if (await this.onSave(this.draft)) this.close();
+        if (await this.onSave(normalizeSchedule(this.draft))) this.close();
       } finally {
         save2.disabled = false;
       }
@@ -6409,6 +6721,7 @@ var TodoListView = class extends import_obsidian13.ItemView {
       hideExtraLabels: t("tasks.hideExtraLabels"),
       deadline: (date) => t("tasks.deadline", { date }),
       deadlineOverdue: (date) => t("tasks.deadlineOverdue", { date }),
+      repeat: (rule) => repeatLabel(t, rule),
       sectionTitles: {
         overdue: t("view.overdue"),
         today: t("view.today"),
@@ -8301,7 +8614,7 @@ function importReviewCompatibility(pluginVersion) {
   return { pluginVersion, importReviewSchemaVersions: [...SUPPORTED_SCHEMA_VERSIONS] };
 }
 var DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
-var DATE = /^\d{4}-\d{2}-\d{2}$/;
+var DATE2 = /^\d{4}-\d{2}-\d{2}$/;
 var SHA256 = /^[a-f0-9]{64}$/;
 var MERGE_FIELDS = ["title", "date", "priority", "labels", "project", "steps", "notes"];
 var IMMUTABLE_TASK_FIELDS = ["id", "completed", "rank", "createdAt", "completedAt", "sourceNote", "stepSectionRemainder"];
@@ -8516,7 +8829,7 @@ function assignMergeValue(task, field, value) {
       task.title = requiredText(value, "title");
       return;
     case "date":
-      if (value !== null && !(typeof value === "string" && DATE.test(value))) throw new Error("Merge date must be YYYY-MM-DD or null");
+      if (value !== null && !(typeof value === "string" && DATE2.test(value))) throw new Error("Merge date must be YYYY-MM-DD or null");
       task.date = value;
       return;
     case "priority":
@@ -8756,7 +9069,7 @@ function validateTaskDraft(value, path) {
   allowOnly(draft, ["title", "date", "priority", "labels", "project", "steps", "notes"], path);
   for (const field of ["title", "date", "priority", "labels", "project", "steps", "notes"]) if (!(field in draft)) invalid(path, `requires ${field}`);
   nonEmpty(draft.title, `${path}.title`);
-  if (draft.date !== null && !(typeof draft.date === "string" && DATE.test(draft.date))) invalid(`${path}.date`, "must be YYYY-MM-DD or null");
+  if (draft.date !== null && !(typeof draft.date === "string" && DATE2.test(draft.date))) invalid(`${path}.date`, "must be YYYY-MM-DD or null");
   if (draft.priority !== null && draft.priority !== 1 && draft.priority !== 2 && draft.priority !== 3) invalid(`${path}.priority`, "must be 1, 2, 3 or null");
   if (!isStringArray(draft.labels) || draft.labels.some((label) => !label) || new Set(draft.labels).size !== draft.labels.length) invalid(`${path}.labels`, "must be unique non-empty strings");
   if (draft.project !== null && typeof draft.project !== "string") invalid(`${path}.project`, "must be a string or null");
@@ -8770,7 +9083,7 @@ function validateSteps(value, path) {
     allowOnly(step, ["text", "completed", "date"], `${path}[${index2}]`);
     nonEmpty(step.text, `${path}[${index2}].text`);
     if (typeof step.completed !== "boolean") invalid(`${path}[${index2}].completed`, "must be a boolean");
-    if (step.date !== null && !(typeof step.date === "string" && DATE.test(step.date))) invalid(`${path}[${index2}].date`, "must be YYYY-MM-DD or null");
+    if (step.date !== null && !(typeof step.date === "string" && DATE2.test(step.date))) invalid(`${path}[${index2}].date`, "must be YYYY-MM-DD or null");
   });
 }
 function validateMergeTarget(value, path) {
@@ -9034,6 +9347,8 @@ var ImportReviewRepository = class {
       title: draft.title,
       date: draft.date,
       deadline: null,
+      time: null,
+      repeat: null,
       priority: draft.priority,
       labels: [...draft.labels],
       projectId: draft.project,
@@ -9160,7 +9475,7 @@ var import_obsidian18 = require("obsidian");
 
 // src/reviews/import/candidate-edit-form.ts
 var TASK_FIELDS = ["title", "date", "priority", "labels", "project", "steps", "notes"];
-var DATE2 = /^\d{4}-\d{2}-\d{2}$/;
+var DATE3 = /^\d{4}-\d{2}-\d{2}$/;
 var CANDIDATE_EDIT_FIELDS = [...TASK_FIELDS, "reason", "exclusionReason"];
 function candidateEditForm(candidate) {
   const merge = mergeTargetFields(candidate);
@@ -9254,7 +9569,7 @@ function steps(value, previous) {
   });
 }
 function validDate(value) {
-  if (!DATE2.test(value)) return false;
+  if (!DATE3.test(value)) return false;
   const date = /* @__PURE__ */ new Date(`${value}T00:00:00Z`);
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }

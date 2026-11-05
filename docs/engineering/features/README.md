@@ -12,6 +12,7 @@ Do not narrate source code line by line. Put strict contracts shared by multiple
 | [Projects](projects.md) | Accepted | Implemented |
 | [Labels](labels.md) | Accepted | Implemented |
 | [Navigation, filtering and sorting](filtering-and-sorting.md) | Accepted | Implemented |
+| [Timed and recurring Tasks](timed-and-recurring-tasks.md) | Accepted | Implemented; device verification pending |
 | [Mobile layout](mobile-layout.md) | Accepted | Implemented |
 | [Localization](localization.md) | Accepted | Implemented |
 | [Source-note import](source-import.md) | Accepted | Implemented |

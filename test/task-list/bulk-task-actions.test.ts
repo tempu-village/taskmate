@@ -11,6 +11,8 @@ function task(id: string, overrides: Partial<Task> = {}): Task {
     completed: false,
     date: "2026-09-19",
     deadline: null,
+    time: null,
+    repeat: null,
     priority: 1,
     labels: ["existing", "remove"],
     projectId: "project-old",

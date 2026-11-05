@@ -13,6 +13,9 @@ import { normalizeTaskTitleInput } from "../tasks/task-title";
 import { moveTaskStep, stepDateState } from "../tasks/task-steps";
 import { normalizeTaskSteps } from "../tasks/task-body";
 import { StepModal } from "./step-modal";
+import { MAXIMUM_REPEAT_INTERVAL, anchorRepeat } from "../tasks/schedule";
+import type { RepeatUnit } from "../tasks/schedule";
+import { repeatLabel } from "./schedule-labels";
 
 const DATE_SUGGESTION_KEYS = {
   today: "date.today",
@@ -20,6 +23,14 @@ const DATE_SUGGESTION_KEYS = {
   "seven-days": "date.sevenDays",
   none: "date.none"
 } satisfies Record<ReturnType<typeof taskDateSuggestions>[number]["id"], TranslationKey>;
+
+function normalizeSchedule(draft: TaskDraft): TaskDraft {
+  return {
+    ...draft,
+    time: draft.date ? draft.time : null,
+    repeat: draft.date ? anchorRepeat(draft.repeat, draft.date) : null
+  };
+}
 
 function decorateField(setting: Setting, icon: string, accessibleName: string): void {
   setting.settingEl.addClass("taskmate-compact-setting");
@@ -50,6 +61,19 @@ addIcon(DEADLINE_ICON, `<g transform="scale(4.1667)" fill="none" stroke="current
  * Scheduled and Deadline stay distinguishable. The native picker indicator is hidden, so the whole
  * field opens the picker instead.
  */
+// The repeat list offers month-end as its own choice; it is stored as a monthly rule on the last day.
+const MONTH_END_CHOICE = "month-end";
+const FIVE_MINUTES = Array.from({ length: 12 }, (_, index) => String(index * 5).padStart(2, "0"));
+const HOURS = Array.from({ length: 24 }, (_, hour) => String(hour).padStart(2, "0"));
+// A symbol rather than copy, so it needs no translation.
+const NO_TIME = "--:--";
+
+/** Five-minute steps, plus a stored minute outside them so editing never changes it silently. */
+export function timeMinuteOptions(storedMinute: string | null): string[] {
+  if (!storedMinute || FIVE_MINUTES.includes(storedMinute)) return FIVE_MINUTES;
+  return [...FIVE_MINUTES, storedMinute].sort();
+}
+
 function embedDateLabel(input: HTMLInputElement, label: string): HTMLElement {
   const wrapper = createDiv({ cls: "taskmate-embedded-date" });
   input.replaceWith(wrapper);
@@ -92,6 +116,8 @@ export class TaskModal extends Modal {
       title: task?.title ?? "",
       date: task?.date ?? null,
       deadline: task?.deadline ?? null,
+      time: task?.time ?? null,
+      repeat: task?.repeat ?? null,
       priority: task?.priority ?? null,
       labels: task?.labels ?? [],
       projectId: task?.projectId ?? defaultProjectId,
@@ -113,7 +139,7 @@ export class TaskModal extends Modal {
     decorateField(titleSetting, "circle-check", t("taskModal.title"));
     titleSetting.addTextArea((text) => {
       const titleInput = text.inputEl;
-      titleInput.rows = 3;
+      titleInput.rows = 1;
       titleInput.wrap = "soft";
       titleInput.setAttribute("aria-label", t("taskModal.title"));
       const resizeTitleInput = () => {
@@ -141,7 +167,10 @@ export class TaskModal extends Modal {
     const datePresets = dateSetting.controlEl.createDiv({ cls: "taskmate-date-presets" });
     const dateButtons: HTMLButtonElement[] = [];
     let dateInput: HTMLInputElement;
+    let dateTimeRow!: HTMLElement;
+    let onDateChange = (): void => undefined;
     const refreshDateSelection = () => {
+      onDateChange();
       for (const button of dateButtons) {
         const selected = button.dataset.date === (this.draft.date ?? "");
         button.toggleClass("is-active", selected);
@@ -167,13 +196,82 @@ export class TaskModal extends Modal {
       text.inputEl.addClass("taskmate-date-input");
       text.inputEl.setAttribute("aria-label", t("taskModal.date"));
       dateInput = text.inputEl;
-      embedDateLabel(text.inputEl, t("taskModal.date"));
+      // Scheduled and Time share one row, since a time belongs to the scheduled date.
+      const dateField = embedDateLabel(text.inputEl, t("taskModal.date"));
+      dateTimeRow = dateSetting.controlEl.createDiv({ cls: "taskmate-date-time-row" });
+      dateTimeRow.appendChild(dateField);
       text.setValue(this.draft.date ?? "").onChange((value) => {
         this.draft.date = value || null;
         refreshDateSelection();
       });
     });
     refreshDateSelection();
+
+    // A tap panel replaces the native time input, whose minute list ignores `step` in Obsidian. Hours and
+    // five-minute steps sit in grids so a time takes two taps without scrolling.
+    const timeField = dateTimeRow.createDiv({ cls: "taskmate-embedded-date taskmate-time-field" });
+    timeField.createSpan({ text: t("taskModal.time"), cls: "taskmate-embedded-field-label", attr: { "aria-hidden": "true" } });
+    setIcon(timeField.createSpan({ cls: "taskmate-embedded-date-icon", attr: { "aria-hidden": "true" } }), "clock");
+    const timeToggle = timeField.createEl("button", {
+      cls: "taskmate-time-toggle",
+      attr: { type: "button", "aria-label": t("taskModal.time"), "aria-expanded": "false" }
+    });
+    const timeValue = timeToggle.createSpan({ cls: "taskmate-time-value" });
+    setIcon(timeToggle.createSpan({ cls: "taskmate-time-chevron", attr: { "aria-hidden": "true" } }), "chevron-down");
+    const removeTime = timeField.createEl("button", {
+      cls: "taskmate-date-clear clickable-icon",
+      attr: { type: "button", "aria-label": t("taskModal.removeTime") }
+    });
+    setIcon(removeTime, "x");
+    const timePanel = dateSetting.controlEl.createDiv({ cls: "taskmate-time-panel" });
+    timePanel.hidden = true;
+    timePanel.createDiv({ text: t("taskModal.hour"), cls: "taskmate-time-panel-label" });
+    const hourGrid = timePanel.createDiv({ cls: "taskmate-time-grid", attr: { role: "group", "aria-label": t("taskModal.hour") } });
+    timePanel.createDiv({ text: t("taskModal.minute"), cls: "taskmate-time-panel-label" });
+    const minuteGrid = timePanel.createDiv({ cls: "taskmate-time-grid", attr: { role: "group", "aria-label": t("taskModal.minute") } });
+    const hourButtons = HOURS.map((hour) => hourGrid.createEl("button", { text: hour, attr: { type: "button" } }));
+    const minuteButtons = timeMinuteOptions(this.draft.time?.slice(3) ?? null)
+      .map((minute) => minuteGrid.createEl("button", { text: minute, attr: { type: "button" } }));
+    const setTimePanelOpen = (open: boolean): void => {
+      timePanel.hidden = !open;
+      timeToggle.setAttribute("aria-expanded", String(open));
+      timeField.toggleClass("is-open", open);
+    };
+    const renderTime = (): void => {
+      const hour = this.draft.time?.slice(0, 2) ?? null;
+      const minute = this.draft.time?.slice(3) ?? null;
+      timeValue.setText(this.draft.time ?? NO_TIME);
+      for (const button of hourButtons) {
+        button.toggleClass("is-active", button.textContent === hour);
+        button.setAttribute("aria-pressed", String(button.textContent === hour));
+      }
+      for (const button of minuteButtons) {
+        button.toggleClass("is-active", button.textContent === minute);
+        button.setAttribute("aria-pressed", String(button.textContent === minute));
+        button.disabled = hour === null;
+      }
+    };
+    for (const button of hourButtons) button.addEventListener("click", () => {
+      this.draft.time = `${button.textContent}:${this.draft.time?.slice(3) ?? "00"}`;
+      refreshScheduleControls();
+    });
+    for (const button of minuteButtons) button.addEventListener("click", () => {
+      if (!this.draft.time) return;
+      this.draft.time = `${this.draft.time.slice(0, 2)}:${button.textContent}`;
+      refreshScheduleControls();
+      setTimePanelOpen(false);
+      timeToggle.focus();
+    });
+    // The whole field opens and closes the panel; only the × keeps its own action.
+    timeField.addEventListener("click", (event) => {
+      if ((event.target as HTMLElement).closest(".taskmate-date-clear") || timeToggle.disabled) return;
+      setTimePanelOpen(timePanel.hidden);
+    });
+    removeTime.addEventListener("click", () => {
+      this.draft.time = null;
+      refreshScheduleControls();
+      timeToggle.focus();
+    });
 
     const deadlineSetting = new Setting(fields).setName(t("taskModal.deadline"));
     deadlineSetting.settingEl.addClass("taskmate-deadline-setting");
@@ -203,6 +301,80 @@ export class TaskModal extends Modal {
       deadlineInput.focus();
     });
     removeDeadline.toggle(this.draft.deadline !== null);
+
+    const repeatSetting = new Setting(fields).setName(t("taskModal.repeat"));
+    repeatSetting.settingEl.addClass("taskmate-repeat-setting");
+    decorateField(repeatSetting, "repeat", t("taskModal.repeat"));
+    repeatSetting.controlEl.createSpan({
+      text: t("taskModal.repeat"),
+      cls: "taskmate-embedded-field-label",
+      attr: { "aria-hidden": "true" }
+    });
+    let repeatUnit!: HTMLSelectElement;
+    let repeatInterval!: HTMLInputElement;
+    const readRepeat = (): void => {
+      const choice = repeatUnit.value;
+      const unit = (choice === MONTH_END_CHOICE ? "month" : choice) as RepeatUnit | "";
+      const interval = Math.min(MAXIMUM_REPEAT_INTERVAL, Math.max(1, Math.trunc(Number(repeatInterval.value)) || 1));
+      // A monthly rule keeps the day it already records; otherwise the scheduled date supplies it on save.
+      const keptDay = typeof this.draft.repeat?.monthDay === "number" ? this.draft.repeat.monthDay : undefined;
+      this.draft.repeat = !unit ? null
+        : choice === MONTH_END_CHOICE ? { unit, interval, monthDay: "last" }
+          : unit === "month" && keptDay !== undefined ? { unit, interval, monthDay: keptDay }
+            : { unit, interval };
+      repeatInterval.hidden = !unit;
+    };
+    repeatSetting.addText((text) => {
+      text.inputEl.type = "number";
+      text.inputEl.min = "1";
+      text.inputEl.max = String(MAXIMUM_REPEAT_INTERVAL);
+      text.inputEl.inputMode = "numeric";
+      text.inputEl.addClass("taskmate-repeat-interval");
+      text.inputEl.setAttribute("aria-label", t("taskModal.repeatInterval"));
+      repeatInterval = text.inputEl;
+      text.setValue(String(this.draft.repeat?.interval ?? 1)).onChange(readRepeat);
+    });
+    repeatSetting.addDropdown((dropdown) => {
+      dropdown.selectEl.setAttribute("aria-label", t("taskModal.repeat"));
+      repeatUnit = dropdown.selectEl;
+      dropdown.addOption("", t("repeat.none"));
+      for (const unit of ["day", "week", "month", "year"] as const) {
+        dropdown.addOption(unit, repeatLabel(t, { unit, interval: 1 }));
+        if (unit === "month") dropdown.addOption(MONTH_END_CHOICE, repeatLabel(t, { unit, interval: 1, monthDay: "last" }));
+      }
+      dropdown.setValue(this.draft.repeat?.monthDay === "last" ? MONTH_END_CHOICE : this.draft.repeat?.unit ?? "").onChange(readRepeat);
+    });
+    repeatInterval.hidden = !this.draft.repeat;
+
+    const scheduleHint = fields.createDiv({ cls: "setting-item-description taskmate-schedule-hint" });
+
+    // Time and repeat need a date. Unusable values are kept in the
+    // draft while the user edits and dropped on save.
+    const refreshScheduleControls = (): void => {
+      const hasDate = this.draft.date !== null;
+      timeToggle.disabled = !hasDate;
+      if (!hasDate) setTimePanelOpen(false);
+      removeTime.toggle(hasDate && this.draft.time !== null);
+      renderTime();
+      repeatUnit.disabled = !hasDate;
+      repeatInterval.disabled = !hasDate;
+      scheduleHint.setText(hasDate ? "" : t("taskModal.scheduleNeedsDate"));
+      scheduleHint.hidden = hasDate;
+    };
+    // Picking another date moves a monthly rule's day with it; opening the editor does not, so a 30th
+    // currently shown on 28 February keeps repeating on the 30th.
+    let anchoredDate = this.draft.date;
+    onDateChange = () => {
+      if (this.draft.date !== anchoredDate) {
+        anchoredDate = this.draft.date;
+        if (typeof this.draft.repeat?.monthDay === "number" && this.draft.date) {
+          this.draft.repeat = { ...this.draft.repeat, monthDay: Number(this.draft.date.slice(8)) };
+        }
+      }
+      refreshScheduleControls();
+    };
+    refreshScheduleControls();
+
 
     const projectSetting = new Setting(fields).setName(t("taskModal.project"));
     decorateField(projectSetting, "folder", t("taskModal.project"));
@@ -467,7 +639,7 @@ export class TaskModal extends Modal {
       this.draft.steps = normalizeTaskSteps(this.draft.steps);
       save.disabled = true;
       try {
-        if (await this.onSave(this.draft)) this.close();
+        if (await this.onSave(normalizeSchedule(this.draft))) this.close();
       } finally {
         save.disabled = false;
       }

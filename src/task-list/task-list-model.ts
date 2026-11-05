@@ -11,6 +11,8 @@ export interface TaskListRow {
   date: string | null;
   deadline: string | null;
   deadlineState: DeadlineState;
+  time: string | null;
+  repeat: Task["repeat"];
   priority: Task["priority"];
   projectName: string | null;
   labels: string[];
@@ -49,6 +51,8 @@ function toRow(task: Task, projectNames: Map<string, string>, today: string): Ta
     date: task.date,
     deadline: task.deadline,
     deadlineState: deadlineState(task, today),
+    time: task.time,
+    repeat: task.repeat ? { ...task.repeat } : null,
     priority: task.priority,
     projectName: task.projectId ? projectNames.get(task.projectId) ?? null : null,
     labels: [...task.labels],

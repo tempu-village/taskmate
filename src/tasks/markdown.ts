@@ -1,5 +1,6 @@
 import type { Priority, Task, TaskDraft } from "./domain";
 import { encodeTaskBody, parseTaskBody } from "./task-body";
+import { formatRepeat, parseRepeat, parseTime } from "./schedule";
 
 const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
 
@@ -9,6 +10,8 @@ const TASK_PROPERTY_LINES = {
   completed: (task: Task) => `completed: ${scalar(task.completed)}`,
   date: (task: Task) => `date: ${scalar(task.date)}`,
   deadline: (task: Task) => `deadline: ${scalar(task.deadline)}`,
+  time: (task: Task) => task.time === null ? null : `time: ${scalar(task.time)}`,
+  repeat: (task: Task) => task.repeat === null ? null : `repeat: ${scalar(formatRepeat(task.repeat))}`,
   priority: (task: Task) => `priority: ${scalar(task.priority)}`,
   labels: (task: Task) => `labels: ${JSON.stringify(task.labels)}`,
   project: (task: Task) => `project: ${scalar(task.projectId)}`,
@@ -17,7 +20,13 @@ const TASK_PROPERTY_LINES = {
   "updated-at": (task: Task) => `updated-at: ${scalar(task.updatedAt)}`,
   "completed-at": (task: Task) => `completed-at: ${scalar(task.completedAt)}`,
   "source-note": (task: Task) => `source-note: ${scalar(task.sourceNote)}`
-} satisfies Record<string, (task: Task) => string>;
+} satisfies Record<string, (task: Task) => string | null>;
+
+// Optional schedule properties are omitted when unset. An unreadable value is ignored and kept as written.
+const SCHEDULE_PROPERTY_PARSERS: Record<string, (value: unknown) => unknown> = {
+  time: parseTime,
+  repeat: parseRepeat
+};
 
 const LEGACY_TASK_PROPERTIES = new Set(["important"]);
 
@@ -75,6 +84,8 @@ export function parseTaskMarkdown(path: string, content: string): Task | null {
     completed: properties.completed === true,
     date: typeof properties.date === "string" ? properties.date : null,
     deadline: typeof properties.deadline === "string" ? properties.deadline : null,
+    time: parseTime(properties.time),
+    repeat: parseRepeat(properties.repeat),
     priority: properties.priority === 1 || properties.priority === 2 || properties.priority === 3
       ? properties.priority as Priority
       : properties.important === true ? 1 : null,
@@ -92,7 +103,8 @@ export function parseTaskMarkdown(path: string, content: string): Task | null {
 }
 
 export function encodeTask(task: Task): string {
-  const frontmatter = ["---", ...Object.values(TASK_PROPERTY_LINES).map((line) => line(task)), "---"].join("\n");
+  const lines = Object.values(TASK_PROPERTY_LINES).map((line) => line(task)).filter((line): line is string => line !== null);
+  const frontmatter = ["---", ...lines, "---"].join("\n");
   const body = encodeTaskBody(task.steps, task.notes, task.stepSectionRemainder);
   return `${frontmatter}\n\n# ${task.title.trim()}${body ? `\n\n${body}` : ""}\n`;
 }
@@ -111,14 +123,23 @@ export function encodeTaskPreservingProperties(task: Task, currentContent: strin
     }
     const render = TASK_PROPERTY_LINES[property as keyof typeof TASK_PROPERTY_LINES];
     if (render) {
-      if (!emitted.has(property)) frontmatterLines.push(render(task));
+      const rendered = render(task);
+      const parseSchedule = SCHEDULE_PROPERTY_PARSERS[property];
+      const unreadable = rendered === null && parseSchedule !== undefined
+        && parseScalar(line.slice(line.indexOf(":") + 1)) !== null
+        && parseSchedule(parseScalar(line.slice(line.indexOf(":") + 1))) === null;
+      if (!emitted.has(property)) {
+        if (unreadable) frontmatterLines.push(line);
+        else if (rendered !== null) frontmatterLines.push(rendered);
+      }
       emitted.add(property);
       continue;
     }
     if (!LEGACY_TASK_PROPERTIES.has(property)) frontmatterLines.push(line);
   }
   for (const [property, render] of Object.entries(TASK_PROPERTY_LINES)) {
-    if (!emitted.has(property)) frontmatterLines.push(render(task));
+    const rendered = render(task);
+    if (!emitted.has(property) && rendered !== null) frontmatterLines.push(rendered);
   }
 
   const body = encodeTaskBody(task.steps, task.notes, task.stepSectionRemainder);
@@ -133,6 +154,8 @@ export function taskFromDraft(id: string, path: string, draft: TaskDraft, rank: 
     completed: false,
     date: draft.date,
     deadline: draft.deadline,
+    time: draft.time,
+    repeat: draft.repeat,
     priority: draft.priority,
     labels: draft.labels,
     projectId: draft.projectId,

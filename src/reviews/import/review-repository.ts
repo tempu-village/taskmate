@@ -149,6 +149,8 @@ export class ImportReviewRepository {
       title: draft.title,
       date: draft.date,
       deadline: null,
+      time: null,
+      repeat: null,
       priority: draft.priority,
       labels: [...draft.labels],
       projectId: draft.project,

@@ -6,6 +6,10 @@ Prerequisite: a Task created with [getting started](../getting-started.md).
 
 Use **Scheduled** for the day you plan to work on the Task and **Deadline** for the hard date it must be finished by. Choose the × in the Deadline field to clear it. They are independent: moving the scheduled date to replan your work keeps the Deadline, and a missed Deadline stays marked as **Deadline passed** in every list until you complete the Task. Clearing one value never removes the other. A Task with only a Deadline stays in Unplanned until you give it a scheduled date.
 
+## Set a time or repeat
+
+After setting a Date, choose a **Time** by tapping an hour and then a five-minute step in its panel (use × to clear it) and, if the work repeats, a **Repeat** interval such as every 2 weeks. Choose **Monthly on the last day** for month-end work; a plain monthly Task keeps its day, so the 30th returns to the 30th after February. The Time is a guide for planning your day; TaskMate does not send reminders. Checking a repeating Task moves it to its next date instead of completing it. See [Timed and recurring Tasks](../../engineering/features/timed-and-recurring-tasks.md).
+
 ## Add supporting Steps
 
 Open the Task by its title. In Steps, use **Add**, enter a Step title and optional date, then save the Step. Repeat for another Step. Change completion in the Step list and drag the content area to reorder (hold briefly on touch). Save the parent Task to persist its edited Steps. To remove a Step, open that Step's editor and choose its Delete action.
@@ -33,6 +37,10 @@ Open its editor, use **Delete** in the footer and confirm only if the Task shoul
 ### 予定日と締め切りを設定する
 
 「予定日」には作業する予定の日を、「締め切り」には必ず終える必要がある日を入力します。締め切りは欄の×で解除します。二つは独立しており、計画の見直しで予定日を動かしても締め切りは変わりません。過ぎた締め切りは、タスクを完了するまでどの一覧でも「締め切り超過」と表示されます。片方を解除してももう片方は残ります。締め切りだけのタスクは、予定日を付けるまで未計画に表示されます。
+
+### 時刻・繰り返し・通知を設定する
+
+日付を設定した後に「時刻」を選び、繰り返す作業なら「繰り返し」で2週間ごとなどの間隔を選びます。時刻があれば「通知」を選べます。繰り返しタスクにチェックを入れると、完了せず次の日付へ進みます。通知はその端末でObsidianを開いている間だけ表示します。システム通知も受け取るには、TaskMateの設定で「システム通知」を有効にします。Obsidianを閉じている間に過ぎた通知は、次に開いたときに一覧表示します。
 
 ### ステップを追加する
 

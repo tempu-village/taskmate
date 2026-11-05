@@ -1,6 +1,7 @@
 import { App, normalizePath, TFile } from "obsidian";
 import type { Task, TaskDraft } from "./domain";
 import { encodeTask, encodeTaskPreservingProperties, legacyTaskFileName, nextAvailableTaskFileName, parseTaskMarkdown, taskFromDraft } from "./markdown";
+import { nextOccurrence } from "./schedule";
 import { applyTaskConflictChoices, compareTaskEdit } from "./task-edit-merge";
 import type { EditableTaskField, TaskConflictChoice, TaskEditComparison } from "./task-edit-merge";
 
@@ -145,7 +146,7 @@ export class TaskRepository {
     return task;
   }
 
-  async update(task: Task, patch: Partial<Pick<Task, "title" | "date" | "deadline" | "priority" | "labels" | "projectId" | "steps" | "notes" | "completed" | "rank">>): Promise<Task> {
+  async update(task: Task, patch: Partial<Pick<Task, "title" | "date" | "deadline" | "time" | "repeat" | "priority" | "labels" | "projectId" | "steps" | "notes" | "completed" | "rank">>): Promise<Task> {
     const located = await this.locateTask(task.id, task.path);
     if (located.status === "identity-conflict") throw new DuplicateTaskIdError(located.conflict);
     if (located.status === "missing") throw new Error(`Task file not found: ${task.path}`);
@@ -154,6 +155,17 @@ export class TaskRepository {
     await this.app.vault.process(file, (content) => {
       const current = parseTaskMarkdown(file.path, content);
       if (!current || current.id !== task.id) throw new Error(`Invalid task file: ${file.path}`);
+      // Completing a recurring occurrence advances the same Task instead of completing it.
+      // The occurrence must still be the one the caller saw, so a repeated completion is a no-op.
+      const next = patch.completed === true && !current.completed ? nextOccurrence(current) : null;
+      if (next && current.date !== task.date) {
+        updated = current;
+        return content;
+      }
+      if (next) {
+        updated = { ...current, ...next, updatedAt: new Date().toISOString() };
+        return encodeTaskPreservingProperties(updated, content);
+      }
       const completed = patch.completed ?? current.completed;
       updated = {
         ...current,

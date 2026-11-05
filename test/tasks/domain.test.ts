@@ -13,6 +13,8 @@ function task(overrides: Partial<Task> = {}): Task {
     completed: false,
     date: null,
     deadline: null,
+    time: null,
+    repeat: null,
     priority: null,
     labels: [],
     projectId: null,
