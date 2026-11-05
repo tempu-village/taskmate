@@ -181,6 +181,7 @@ var MAXIMUM_REPEAT_INTERVAL = 99;
 var TIME = /^([01]\d|2[0-3]):([0-5]\d)$/;
 var DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 var REPEAT = /^every ([1-9]\d?) (day|week|month|year)s?$/;
+var MONTH_DAY = /^(.*) on (?:day ([1-9]|[12]\d|3[01])|(last) day)$/;
 var REPEAT_ALIASES = {
   daily: { interval: 1, unit: "day" },
   weekly: { interval: 1, unit: "week" },
@@ -192,27 +193,36 @@ function parseTime(value) {
 }
 function parseRepeat(value) {
   if (typeof value !== "string") return null;
-  const normalized = value.trim().toLowerCase();
+  let normalized = value.trim().toLowerCase();
+  const monthDayMatch = normalized.match(MONTH_DAY);
+  if (monthDayMatch) normalized = monthDayMatch[1];
   const alias = REPEAT_ALIASES[normalized];
-  if (alias) return { ...alias };
-  const match = normalized.match(REPEAT);
-  if (!match) return null;
-  return { interval: Number(match[1]), unit: match[2] };
+  const match = alias ? null : normalized.match(REPEAT);
+  const rule = alias ? { ...alias } : match ? { interval: Number(match[1]), unit: match[2] } : null;
+  if (!rule || !monthDayMatch) return rule;
+  if (rule.unit !== "month") return null;
+  return { ...rule, monthDay: monthDayMatch[3] ? "last" : Number(monthDayMatch[2]) };
 }
 function formatRepeat(rule) {
   if (!rule) return null;
-  if (rule.interval === 1) return { day: "daily", week: "weekly", month: "monthly", year: "yearly" }[rule.unit];
-  return `every ${rule.interval} ${rule.unit}s`;
+  const base = rule.interval === 1 ? { day: "daily", week: "weekly", month: "monthly", year: "yearly" }[rule.unit] : `every ${rule.interval} ${rule.unit}s`;
+  if (rule.unit !== "month" || rule.monthDay === void 0) return base;
+  return `${base} on ${rule.monthDay === "last" ? "last day" : `day ${rule.monthDay}`}`;
+}
+function anchorRepeat(rule, dateKey) {
+  if (!rule || rule.unit !== "month" || rule.monthDay !== void 0 || !dateKey || !DATE.test(dateKey)) return rule;
+  return { ...rule, monthDay: Number(dateKey.slice(8)) };
 }
 function daysInMonth(year, month) {
   return new Date(Date.UTC(year, month, 0)).getUTCDate();
 }
-function addMonths(dateKey, amount) {
+function addMonths(dateKey, amount, monthDay) {
   const [year, month, day] = dateKey.split("-").map(Number);
   const index2 = year * 12 + (month - 1) + amount;
   const nextYear = Math.floor(index2 / 12);
   const nextMonth = index2 % 12 + 1;
-  const nextDay = Math.min(day, daysInMonth(nextYear, nextMonth));
+  const lastDay = daysInMonth(nextYear, nextMonth);
+  const nextDay = monthDay === "last" ? lastDay : Math.min(monthDay ?? day, lastDay);
   return `${String(nextYear).padStart(4, "0")}-${String(nextMonth).padStart(2, "0")}-${String(nextDay).padStart(2, "0")}`;
 }
 function addRepeat(dateKey, rule) {
@@ -222,7 +232,7 @@ function addRepeat(dateKey, rule) {
     case "week":
       return addDays(dateKey, rule.interval * 7);
     case "month":
-      return addMonths(dateKey, rule.interval);
+      return addMonths(dateKey, rule.interval, rule.monthDay);
     case "year":
       return addMonths(dateKey, rule.interval * 12);
   }
@@ -1289,6 +1299,9 @@ var en = {
   "taskModal.titlePlaceholder": "What needs to be done?",
   "taskModal.date": "Scheduled",
   "taskModal.deadline": "Deadline",
+  "taskModal.hour": "Hour",
+  "taskModal.minute": "Minute",
+  "taskModal.removeTime": "Remove time",
   "taskModal.removeDeadline": "Remove deadline",
   "taskModal.time": "Time",
   "taskModal.repeat": "Repeat",
@@ -1303,6 +1316,8 @@ var en = {
   "repeat.weekly": "Weekly",
   "repeat.monthly": "Monthly",
   "repeat.yearly": "Yearly",
+  "repeat.monthEnd": "Monthly on the last day",
+  "repeat.monthsEnd": "Every {count} month(s) on the last day",
   "taskModal.project": "Project",
   "taskModal.unassigned": "Unassigned",
   "taskModal.priority": "Priority",
@@ -1646,6 +1661,9 @@ var ja = {
   "taskModal.titlePlaceholder": "\u3084\u308B\u3053\u3068",
   "taskModal.date": "\u4E88\u5B9A\u65E5",
   "taskModal.deadline": "\u7DE0\u3081\u5207\u308A",
+  "taskModal.hour": "\u6642",
+  "taskModal.minute": "\u5206",
+  "taskModal.removeTime": "\u6642\u523B\u3092\u5916\u3059",
   "taskModal.removeDeadline": "\u7DE0\u3081\u5207\u308A\u3092\u5916\u3059",
   "taskModal.time": "\u6642\u523B",
   "taskModal.repeat": "\u7E70\u308A\u8FD4\u3057",
@@ -1660,6 +1678,8 @@ var ja = {
   "repeat.weekly": "\u6BCE\u9031",
   "repeat.monthly": "\u6BCE\u6708",
   "repeat.yearly": "\u6BCE\u5E74",
+  "repeat.monthEnd": "\u6BCE\u6708\u672B",
+  "repeat.monthsEnd": "{count}\u304B\u6708\u3054\u3068\u306E\u6708\u672B",
   "taskModal.project": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8",
   "taskModal.unassigned": "\u672A\u6240\u5C5E",
   "taskModal.priority": "\u512A\u5148\u5EA6",
@@ -5544,6 +5564,9 @@ var SINGLE_REPEAT_KEYS = { day: "repeat.daily", week: "repeat.weekly", month: "r
 var INTERVAL_REPEAT_KEYS = { day: "repeat.day", week: "repeat.week", month: "repeat.month", year: "repeat.year" };
 function repeatLabel(t, rule) {
   if (!rule) return t("repeat.none");
+  if (rule.unit === "month" && rule.monthDay === "last") {
+    return rule.interval === 1 ? t("repeat.monthEnd") : t("repeat.monthsEnd", { count: rule.interval });
+  }
   if (rule.interval === 1) return t(SINGLE_REPEAT_KEYS[rule.unit]);
   return t(INTERVAL_REPEAT_KEYS[rule.unit], { count: rule.interval });
 }
@@ -5559,7 +5582,7 @@ function normalizeSchedule(draft) {
   return {
     ...draft,
     time: draft.date ? draft.time : null,
-    repeat: draft.date ? draft.repeat : null
+    repeat: draft.date ? anchorRepeat(draft.repeat, draft.date) : null
   };
 }
 function decorateField2(setting, icon, accessibleName) {
@@ -5582,6 +5605,14 @@ function addEmbeddedLabel2(setting, label) {
 }
 var DEADLINE_ICON = "taskmate-calendar-target";
 (0, import_obsidian11.addIcon)(DEADLINE_ICON, `<g transform="scale(4.1667)" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 9V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h4"/><path d="M15 2v4"/><path d="M8 2v4"/><path d="M3 10h6"/><circle cx="17" cy="17" r="6"/><circle cx="17" cy="17" r="2.5"/><circle cx="17" cy="17" r="0.5" fill="currentColor"/></g>`);
+var MONTH_END_CHOICE = "month-end";
+var FIVE_MINUTES = Array.from({ length: 12 }, (_, index2) => String(index2 * 5).padStart(2, "0"));
+var HOURS = Array.from({ length: 24 }, (_, hour) => String(hour).padStart(2, "0"));
+var NO_TIME = "--:--";
+function timeMinuteOptions(storedMinute) {
+  if (!storedMinute || FIVE_MINUTES.includes(storedMinute)) return FIVE_MINUTES;
+  return [...FIVE_MINUTES, storedMinute].sort();
+}
 function embedDateLabel(input, label) {
   const wrapper = createDiv({ cls: "taskmate-embedded-date" });
   input.replaceWith(wrapper);
@@ -5638,7 +5669,7 @@ var TaskModal = class extends import_obsidian11.Modal {
     decorateField2(titleSetting, "circle-check", t("taskModal.title"));
     titleSetting.addTextArea((text3) => {
       const titleInput = text3.inputEl;
-      titleInput.rows = 3;
+      titleInput.rows = 1;
       titleInput.wrap = "soft";
       titleInput.setAttribute("aria-label", t("taskModal.title"));
       const resizeTitleInput = () => {
@@ -5665,6 +5696,7 @@ var TaskModal = class extends import_obsidian11.Modal {
     const datePresets = dateSetting.controlEl.createDiv({ cls: "taskmate-date-presets" });
     const dateButtons = [];
     let dateInput;
+    let dateTimeRow;
     let onDateChange = () => void 0;
     const refreshDateSelection = () => {
       onDateChange();
@@ -5693,69 +5725,76 @@ var TaskModal = class extends import_obsidian11.Modal {
       text3.inputEl.addClass("taskmate-date-input");
       text3.inputEl.setAttribute("aria-label", t("taskModal.date"));
       dateInput = text3.inputEl;
-      embedDateLabel(text3.inputEl, t("taskModal.date"));
+      const dateField = embedDateLabel(text3.inputEl, t("taskModal.date"));
+      dateTimeRow = dateSetting.controlEl.createDiv({ cls: "taskmate-date-time-row" });
+      dateTimeRow.appendChild(dateField);
       text3.setValue(this.draft.date ?? "").onChange((value) => {
         this.draft.date = value || null;
         refreshDateSelection();
       });
     });
     refreshDateSelection();
-    const timeSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.time"));
-    timeSetting.settingEl.addClass("taskmate-time-setting");
-    decorateField2(timeSetting, "clock", t("taskModal.time"));
-    let timeInput;
-    timeSetting.addText((text3) => {
-      text3.inputEl.type = "time";
-      text3.inputEl.addClass("taskmate-date-input");
-      text3.inputEl.setAttribute("aria-label", t("taskModal.time"));
-      timeInput = text3.inputEl;
-      text3.setValue(this.draft.time ?? "").onChange((value) => {
-        this.draft.time = value || null;
-        refreshScheduleControls();
-      });
+    const timeField = dateTimeRow.createDiv({ cls: "taskmate-embedded-date taskmate-time-field" });
+    timeField.createSpan({ text: t("taskModal.time"), cls: "taskmate-embedded-field-label", attr: { "aria-hidden": "true" } });
+    (0, import_obsidian11.setIcon)(timeField.createSpan({ cls: "taskmate-embedded-date-icon", attr: { "aria-hidden": "true" } }), "clock");
+    const timeToggle = timeField.createEl("button", {
+      cls: "taskmate-time-toggle",
+      attr: { type: "button", "aria-label": t("taskModal.time"), "aria-expanded": "false" }
     });
-    const repeatSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.repeat"));
-    repeatSetting.settingEl.addClass("taskmate-repeat-setting");
-    decorateField2(repeatSetting, "repeat", t("taskModal.repeat"));
-    let repeatUnit;
-    let repeatInterval;
-    const readRepeat = () => {
-      const unit = repeatUnit.value;
-      const interval = Math.min(MAXIMUM_REPEAT_INTERVAL, Math.max(1, Math.trunc(Number(repeatInterval.value)) || 1));
-      this.draft.repeat = unit ? { unit, interval } : null;
-      repeatInterval.hidden = !unit;
+    const timeValue = timeToggle.createSpan({ cls: "taskmate-time-value" });
+    (0, import_obsidian11.setIcon)(timeToggle.createSpan({ cls: "taskmate-time-chevron", attr: { "aria-hidden": "true" } }), "chevron-down");
+    const removeTime = timeField.createEl("button", {
+      cls: "taskmate-date-clear clickable-icon",
+      attr: { type: "button", "aria-label": t("taskModal.removeTime") }
+    });
+    (0, import_obsidian11.setIcon)(removeTime, "x");
+    const timePanel = dateSetting.controlEl.createDiv({ cls: "taskmate-time-panel" });
+    timePanel.hidden = true;
+    timePanel.createDiv({ text: t("taskModal.hour"), cls: "taskmate-time-panel-label" });
+    const hourGrid = timePanel.createDiv({ cls: "taskmate-time-grid", attr: { role: "group", "aria-label": t("taskModal.hour") } });
+    timePanel.createDiv({ text: t("taskModal.minute"), cls: "taskmate-time-panel-label" });
+    const minuteGrid = timePanel.createDiv({ cls: "taskmate-time-grid", attr: { role: "group", "aria-label": t("taskModal.minute") } });
+    const hourButtons = HOURS.map((hour) => hourGrid.createEl("button", { text: hour, attr: { type: "button" } }));
+    const minuteButtons = timeMinuteOptions(this.draft.time?.slice(3) ?? null).map((minute) => minuteGrid.createEl("button", { text: minute, attr: { type: "button" } }));
+    const setTimePanelOpen = (open) => {
+      timePanel.hidden = !open;
+      timeToggle.setAttribute("aria-expanded", String(open));
+      timeField.toggleClass("is-open", open);
     };
-    repeatSetting.addText((text3) => {
-      text3.inputEl.type = "number";
-      text3.inputEl.min = "1";
-      text3.inputEl.max = String(MAXIMUM_REPEAT_INTERVAL);
-      text3.inputEl.inputMode = "numeric";
-      text3.inputEl.addClass("taskmate-repeat-interval");
-      text3.inputEl.setAttribute("aria-label", t("taskModal.repeatInterval"));
-      repeatInterval = text3.inputEl;
-      text3.setValue(String(this.draft.repeat?.interval ?? 1)).onChange(readRepeat);
-    });
-    repeatSetting.addDropdown((dropdown) => {
-      dropdown.selectEl.setAttribute("aria-label", t("taskModal.repeat"));
-      repeatUnit = dropdown.selectEl;
-      dropdown.addOption("", t("repeat.none"));
-      for (const unit of ["day", "week", "month", "year"]) {
-        dropdown.addOption(unit, repeatLabel(t, { unit, interval: 1 }));
+    const renderTime = () => {
+      const hour = this.draft.time?.slice(0, 2) ?? null;
+      const minute = this.draft.time?.slice(3) ?? null;
+      timeValue.setText(this.draft.time ?? NO_TIME);
+      for (const button3 of hourButtons) {
+        button3.toggleClass("is-active", button3.textContent === hour);
+        button3.setAttribute("aria-pressed", String(button3.textContent === hour));
       }
-      dropdown.setValue(this.draft.repeat?.unit ?? "").onChange(readRepeat);
-    });
-    repeatInterval.hidden = !this.draft.repeat;
-    const scheduleHint = fields.createDiv({ cls: "setting-item-description taskmate-schedule-hint" });
-    const refreshScheduleControls = () => {
-      const hasDate = this.draft.date !== null;
-      timeInput.disabled = !hasDate;
-      repeatUnit.disabled = !hasDate;
-      repeatInterval.disabled = !hasDate;
-      scheduleHint.setText(hasDate ? "" : t("taskModal.scheduleNeedsDate"));
-      scheduleHint.hidden = hasDate;
+      for (const button3 of minuteButtons) {
+        button3.toggleClass("is-active", button3.textContent === minute);
+        button3.setAttribute("aria-pressed", String(button3.textContent === minute));
+        button3.disabled = hour === null;
+      }
     };
-    onDateChange = refreshScheduleControls;
-    refreshScheduleControls();
+    for (const button3 of hourButtons) button3.addEventListener("click", () => {
+      this.draft.time = `${button3.textContent}:${this.draft.time?.slice(3) ?? "00"}`;
+      refreshScheduleControls();
+    });
+    for (const button3 of minuteButtons) button3.addEventListener("click", () => {
+      if (!this.draft.time) return;
+      this.draft.time = `${this.draft.time.slice(0, 2)}:${button3.textContent}`;
+      refreshScheduleControls();
+      setTimePanelOpen(false);
+      timeToggle.focus();
+    });
+    timeField.addEventListener("click", (event) => {
+      if (event.target.closest(".taskmate-date-clear") || timeToggle.disabled) return;
+      setTimePanelOpen(timePanel.hidden);
+    });
+    removeTime.addEventListener("click", () => {
+      this.draft.time = null;
+      refreshScheduleControls();
+      timeToggle.focus();
+    });
     const deadlineSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.deadline"));
     deadlineSetting.settingEl.addClass("taskmate-deadline-setting");
     decorateField2(deadlineSetting, DEADLINE_ICON, t("taskModal.deadline"));
@@ -5784,6 +5823,68 @@ var TaskModal = class extends import_obsidian11.Modal {
       deadlineInput.focus();
     });
     removeDeadline.toggle(this.draft.deadline !== null);
+    const repeatSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.repeat"));
+    repeatSetting.settingEl.addClass("taskmate-repeat-setting");
+    decorateField2(repeatSetting, "repeat", t("taskModal.repeat"));
+    repeatSetting.controlEl.createSpan({
+      text: t("taskModal.repeat"),
+      cls: "taskmate-embedded-field-label",
+      attr: { "aria-hidden": "true" }
+    });
+    let repeatUnit;
+    let repeatInterval;
+    const readRepeat = () => {
+      const choice = repeatUnit.value;
+      const unit = choice === MONTH_END_CHOICE ? "month" : choice;
+      const interval = Math.min(MAXIMUM_REPEAT_INTERVAL, Math.max(1, Math.trunc(Number(repeatInterval.value)) || 1));
+      const keptDay = typeof this.draft.repeat?.monthDay === "number" ? this.draft.repeat.monthDay : void 0;
+      this.draft.repeat = !unit ? null : choice === MONTH_END_CHOICE ? { unit, interval, monthDay: "last" } : unit === "month" && keptDay !== void 0 ? { unit, interval, monthDay: keptDay } : { unit, interval };
+      repeatInterval.hidden = !unit;
+    };
+    repeatSetting.addText((text3) => {
+      text3.inputEl.type = "number";
+      text3.inputEl.min = "1";
+      text3.inputEl.max = String(MAXIMUM_REPEAT_INTERVAL);
+      text3.inputEl.inputMode = "numeric";
+      text3.inputEl.addClass("taskmate-repeat-interval");
+      text3.inputEl.setAttribute("aria-label", t("taskModal.repeatInterval"));
+      repeatInterval = text3.inputEl;
+      text3.setValue(String(this.draft.repeat?.interval ?? 1)).onChange(readRepeat);
+    });
+    repeatSetting.addDropdown((dropdown) => {
+      dropdown.selectEl.setAttribute("aria-label", t("taskModal.repeat"));
+      repeatUnit = dropdown.selectEl;
+      dropdown.addOption("", t("repeat.none"));
+      for (const unit of ["day", "week", "month", "year"]) {
+        dropdown.addOption(unit, repeatLabel(t, { unit, interval: 1 }));
+        if (unit === "month") dropdown.addOption(MONTH_END_CHOICE, repeatLabel(t, { unit, interval: 1, monthDay: "last" }));
+      }
+      dropdown.setValue(this.draft.repeat?.monthDay === "last" ? MONTH_END_CHOICE : this.draft.repeat?.unit ?? "").onChange(readRepeat);
+    });
+    repeatInterval.hidden = !this.draft.repeat;
+    const scheduleHint = fields.createDiv({ cls: "setting-item-description taskmate-schedule-hint" });
+    const refreshScheduleControls = () => {
+      const hasDate = this.draft.date !== null;
+      timeToggle.disabled = !hasDate;
+      if (!hasDate) setTimePanelOpen(false);
+      removeTime.toggle(hasDate && this.draft.time !== null);
+      renderTime();
+      repeatUnit.disabled = !hasDate;
+      repeatInterval.disabled = !hasDate;
+      scheduleHint.setText(hasDate ? "" : t("taskModal.scheduleNeedsDate"));
+      scheduleHint.hidden = hasDate;
+    };
+    let anchoredDate = this.draft.date;
+    onDateChange = () => {
+      if (this.draft.date !== anchoredDate) {
+        anchoredDate = this.draft.date;
+        if (typeof this.draft.repeat?.monthDay === "number" && this.draft.date) {
+          this.draft.repeat = { ...this.draft.repeat, monthDay: Number(this.draft.date.slice(8)) };
+        }
+      }
+      refreshScheduleControls();
+    };
+    refreshScheduleControls();
     const projectSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.project"));
     decorateField2(projectSetting, "folder", t("taskModal.project"));
     addEmbeddedLabel2(projectSetting, t("taskModal.project"));

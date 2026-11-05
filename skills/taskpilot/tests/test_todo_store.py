@@ -213,7 +213,27 @@ class TodoStoreTest(unittest.TestCase):
         self.assertEqual(advanced["steps"], [{"text": "Transfer", "completed": False, "date": None}])
         text = (self.vault / created["path"]).read_text(encoding="utf-8")
         self.assertIn("custom: keep", text)
+        self.assertEqual(self.run_store("complete", "--id", created["id"])["date"], "2026-03-31")
         self.assertEqual(len(list((self.vault / "TaskMate/Tasks").glob("*.md"))), 1)
+
+    def test_monthly_rules_keep_their_day_or_the_month_end(self):
+        thirtieth = self.run_store("create", "--title", "Invoice", "--date", "2026-01-30", "--repeat", "monthly")
+        self.assertEqual(thirtieth["repeat"], "monthly on day 30")
+        self.assertEqual(self.run_store("complete", "--id", thirtieth["id"])["date"], "2026-02-28")
+        self.assertEqual(self.run_store("complete", "--id", thirtieth["id"])["date"], "2026-03-30")
+        moved = self.run_store("update", "--id", thirtieth["id"], "--date", "2026-03-15")
+        self.assertEqual(moved["repeat"], "monthly on day 15")
+
+        month_end = self.run_store("create", "--title", "Close books", "--date", "2026-01-31", "--repeat", "Monthly on Last Day")
+        self.assertEqual(month_end["repeat"], "monthly on last day")
+        self.assertEqual(self.run_store("complete", "--id", month_end["id"])["date"], "2026-02-28")
+        self.assertEqual(self.run_store("complete", "--id", month_end["id"])["date"], "2026-03-31")
+
+        result = subprocess.run(
+            [sys.executable, str(SCRIPT), "--vault", str(self.vault), "create", "--title", "Bad", "--date", "2026-01-01", "--repeat", "weekly on day 3"],
+            capture_output=True, text=True,
+        )
+        self.assertNotEqual(result.returncode, 0)
 
     def test_steps_round_trip_and_reorder(self):
         steps = [

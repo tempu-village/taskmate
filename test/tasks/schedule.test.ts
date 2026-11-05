@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { Task } from "../../src/tasks/domain";
 import { sortTasks } from "../../src/tasks/domain";
 import { encodeTask, encodeTaskPreservingProperties, parseTaskMarkdown } from "../../src/tasks/markdown";
-import { addRepeat, formatRepeat, nextOccurrence, parseRepeat, parseTime } from "../../src/tasks/schedule";
+import { addRepeat, anchorRepeat, formatRepeat, nextOccurrence, parseRepeat, parseTime } from "../../src/tasks/schedule";
 
 function task(overrides: Partial<Task> = {}): Task {
   return {
@@ -46,12 +46,35 @@ describe("schedule values", () => {
     expect(formatRepeat({ interval: 2, unit: "week" })).toBe("every 2 weeks");
   });
 
-  it("adds calendar intervals and clamps month ends", () => {
+  it("adds calendar intervals and clamps a rule's day to shorter months", () => {
     expect(addRepeat("2026-10-30", { interval: 3, unit: "day" })).toBe("2026-11-02");
     expect(addRepeat("2026-12-29", { interval: 1, unit: "week" })).toBe("2027-01-05");
     expect(addRepeat("2026-01-31", { interval: 1, unit: "month" })).toBe("2026-02-28");
     expect(addRepeat("2027-11-30", { interval: 3, unit: "month" })).toBe("2028-02-29");
     expect(addRepeat("2028-02-29", { interval: 1, unit: "year" })).toBe("2029-02-28");
+  });
+
+  it("keeps a monthly rule on its recorded day or on the month end", () => {
+    const day30 = { interval: 1, unit: "month", monthDay: 30 } as const;
+    expect(addRepeat("2026-01-30", day30)).toBe("2026-02-28");
+    expect(addRepeat("2026-02-28", day30)).toBe("2026-03-30");
+    const monthEnd = { interval: 1, unit: "month", monthDay: "last" } as const;
+    expect(addRepeat("2026-01-31", monthEnd)).toBe("2026-02-28");
+    expect(addRepeat("2026-02-28", monthEnd)).toBe("2026-03-31");
+    expect(addRepeat("2026-03-31", monthEnd)).toBe("2026-04-30");
+    expect(addRepeat("2026-11-30", { interval: 3, unit: "month", monthDay: "last" })).toBe("2027-02-28");
+  });
+
+  it("reads, writes and anchors monthly days", () => {
+    expect(parseRepeat("monthly on day 30")).toEqual({ interval: 1, unit: "month", monthDay: 30 });
+    expect(parseRepeat("Every 2 Months on last day")).toEqual({ interval: 2, unit: "month", monthDay: "last" });
+    for (const invalid of ["monthly on day 32", "monthly on day 0", "weekly on day 3", "monthly on first day"]) expect(parseRepeat(invalid)).toBeNull();
+    expect(formatRepeat({ interval: 1, unit: "month", monthDay: "last" })).toBe("monthly on last day");
+    expect(formatRepeat({ interval: 3, unit: "month", monthDay: 15 })).toBe("every 3 months on day 15");
+    expect(parseRepeat("monthly")).toEqual({ interval: 1, unit: "month" });
+    expect(anchorRepeat({ interval: 1, unit: "month" }, "2026-01-30")).toEqual({ interval: 1, unit: "month", monthDay: 30 });
+    expect(anchorRepeat({ interval: 1, unit: "month", monthDay: 30 }, "2026-02-28")).toEqual({ interval: 1, unit: "month", monthDay: 30 });
+    expect(anchorRepeat({ interval: 1, unit: "week" }, "2026-01-30")).toEqual({ interval: 1, unit: "week" });
   });
 
   it("keeps calendar days across a daylight-saving change", () => {

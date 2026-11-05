@@ -32,7 +32,7 @@ A Task stores only a calendar `date` (and, since #51, an independent `deadline`)
 
 - Background or remote push delivery, cross-device deduplication, calendar synchronization, accounts, telemetry.
 - Electron, Node or private Obsidian APIs.
-- Weekday sets, "last day of month" rules, end dates or occurrence counts.
+- Weekday sets, end dates or occurrence counts.
 - Reminders, and recurrence on Steps.
 
 ## Alternatives considered
@@ -62,12 +62,12 @@ Deferred to [#123](https://github.com/tempu-village/taskmate/issues/123). A firs
 ### Representation
 
 - `time: "HH:MM"` — 24-hour local wall-clock time. Requires `date`. It is a guide for planning, not an alarm.
-- `repeat: "weekly"` or `repeat: "every 2 weeks"` — interval 1–99 of day, week, month or year. Requires `date`. Writers use the canonical spelling (`daily`, `weekly`, `monthly`, `yearly` for interval 1).
+- `repeat: "weekly"` or `repeat: "every 2 weeks"` — interval 1–99 of day, week, month or year. Requires `date`. Writers use the canonical spelling (`daily`, `weekly`, `monthly`, `yearly` for interval 1). A monthly rule may end with `on day D` or `on last day`, and writers record the day (`monthly on day 30`).
 - Each property is omitted when unset, so date-only Tasks are unchanged. An unreadable value is ignored for behavior and kept as written; clearing a readable value removes its line.
 
 ### Recurrence
 
-The next occurrence adds the interval to the current `date`, not to the completion day. Months and years keep the day of month and clamp to the month's last day (31 January → 28 February); later occurrences continue from the clamped day. Calendar arithmetic is date-only, so daylight-saving changes do not move dates. When a deadline exists, it moves by the same number of days. Steps are reopened. Completing writes the next occurrence instead of `completed: true`. The plugin only advances when the stored `date` still equals the date the caller saw, so a repeated completion is a no-op.
+The next occurrence adds the interval to the current `date`, not to the completion day. Months and years keep the day of month and clamp to the month's last day. During review the maintainer asked that month-end work stay on the month end without drifting. Continuing from the clamped `date` loses the original day (31 January → 28 February → 28 March), and inferring month-end from a last-day `date` turns a clamped 29th or 30th into month-end work. So a monthly rule records its day in `repeat` (`monthly on day 30`: 30 January → 28 February → 30 March), and the editor offers **Monthly on the last day** (`monthly on last day`: 31 January → 28 February → 31 March). Picking another date moves the recorded day; opening and saving keeps it. Yearly rules still clamp from the current date. Calendar arithmetic is date-only, so daylight-saving changes do not move dates. When a deadline exists, it moves by the same number of days. Steps are reopened. Completing writes the next occurrence instead of `completed: true`. The plugin only advances when the stored `date` still equals the date the caller saw, so a repeated completion is a no-op.
 
 ### Ordering
 
@@ -75,7 +75,7 @@ Date sorting compares `date`, then places untimed Tasks before timed Tasks of th
 
 ## Open questions
 
-- Should weekday-set recurrence (for example Monday, Wednesday, Friday) be added later?
+- Weekday-set recurrence (for example Monday and Wednesday) is deferred to [#125](https://github.com/tempu-village/taskmate/issues/125).
 - Should a recurring Task record its last completion time?
 
 ## Decision / status
@@ -101,7 +101,7 @@ Implemented in the pull request linked below. The maintainer delegated the open 
 
 タスクに任意の`time`（端末のローカル時刻`HH:MM`）と`repeat`（`daily`〜`yearly`または`every N days|weeks|months|years`、Nは1〜99）を追加します。時刻は計画の目安で、通知ではありません。未設定の項目は書かないため、日付だけのタスクは変わりません。読めない値は動作に使わず、書かれたまま残します。
 
-繰り返しタスクを完了すると、同じタスクを次の回へ進めます。次の日付は完了した日ではなく現在の`date`から計算し、月末は短い月の末日に丸めます。締め切りも同じ日数だけ動かし、ステップは未完了に戻します。プラグインは呼び出し側が見た日付と保存済みの日付が一致するときだけ進めるため、二重に完了しても一度しか進みません。
+繰り返しタスクを完了すると、同じタスクを次の回へ進めます。次の日付は完了した日ではなく現在の`date`から計算し、毎月の繰り返しは日を`repeat`に記録し（`monthly on day 30`：1月30日→2月28日→3月30日）、その日がない月だけ末日にします。編集画面には「毎月末」（`monthly on last day`：1月31日→2月28日→3月31日）も用意しました。丸めた日付から続けると元の日が失われるため、レビューでこの方式に決めました。締め切りも同じ日数だけ動かし、ステップは未完了に戻します。プラグインは呼び出し側が見た日付と保存済みの日付が一致するときだけ進めるため、二重に完了しても一度しか進みません。
 
 日付の並べ替えでは、同じ日の中で時刻なしのタスクを先に、時刻ありのタスクを時刻順に並べます。手動順は変えません。
 

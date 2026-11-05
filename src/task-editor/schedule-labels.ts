@@ -6,6 +6,9 @@ const INTERVAL_REPEAT_KEYS = { day: "repeat.day", week: "repeat.week", month: "r
 
 export function repeatLabel(t: Translate, rule: RepeatRule | null): string {
   if (!rule) return t("repeat.none");
+  if (rule.unit === "month" && rule.monthDay === "last") {
+    return rule.interval === 1 ? t("repeat.monthEnd") : t("repeat.monthsEnd", { count: rule.interval });
+  }
   if (rule.interval === 1) return t(SINGLE_REPEAT_KEYS[rule.unit]);
   return t(INTERVAL_REPEAT_KEYS[rule.unit], { count: rule.interval });
 }
