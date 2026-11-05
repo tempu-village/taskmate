@@ -137,7 +137,7 @@ export class TaskModal extends Modal {
     decorateField(titleSetting, "circle-check", t("taskModal.title"));
     titleSetting.addTextArea((text) => {
       const titleInput = text.inputEl;
-      titleInput.rows = 3;
+      titleInput.rows = 1;
       titleInput.wrap = "soft";
       titleInput.setAttribute("aria-label", t("taskModal.title"));
       const resizeTitleInput = () => {
@@ -165,6 +165,7 @@ export class TaskModal extends Modal {
     const datePresets = dateSetting.controlEl.createDiv({ cls: "taskmate-date-presets" });
     const dateButtons: HTMLButtonElement[] = [];
     let dateInput: HTMLInputElement;
+    let dateTimeRow!: HTMLElement;
     let onDateChange = (): void => undefined;
     const refreshDateSelection = () => {
       onDateChange();
@@ -193,7 +194,10 @@ export class TaskModal extends Modal {
       text.inputEl.addClass("taskmate-date-input");
       text.inputEl.setAttribute("aria-label", t("taskModal.date"));
       dateInput = text.inputEl;
-      embedDateLabel(text.inputEl, t("taskModal.date"));
+      // Scheduled and Time share one row, since a time belongs to the scheduled date.
+      const dateField = embedDateLabel(text.inputEl, t("taskModal.date"));
+      dateTimeRow = dateSetting.controlEl.createDiv({ cls: "taskmate-date-time-row" });
+      dateTimeRow.appendChild(dateField);
       text.setValue(this.draft.date ?? "").onChange((value) => {
         this.draft.date = value || null;
         refreshDateSelection();
@@ -201,12 +205,9 @@ export class TaskModal extends Modal {
     });
     refreshDateSelection();
 
-    const timeSetting = new Setting(fields).setName(t("taskModal.time"));
-    timeSetting.settingEl.addClass("taskmate-time-setting");
-    decorateField(timeSetting, "clock", t("taskModal.time"));
     // A tap panel replaces the native time input, whose minute list ignores `step` in Obsidian. Hours and
     // five-minute steps sit in grids so a time takes two taps without scrolling.
-    const timeField = timeSetting.controlEl.createDiv({ cls: "taskmate-embedded-date taskmate-time-field" });
+    const timeField = dateTimeRow.createDiv({ cls: "taskmate-embedded-date taskmate-time-field" });
     timeField.createSpan({ text: t("taskModal.time"), cls: "taskmate-embedded-field-label", attr: { "aria-hidden": "true" } });
     setIcon(timeField.createSpan({ cls: "taskmate-embedded-date-icon", attr: { "aria-hidden": "true" } }), "clock");
     const timeToggle = timeField.createEl("button", {
@@ -220,7 +221,7 @@ export class TaskModal extends Modal {
       attr: { type: "button", "aria-label": t("taskModal.removeTime") }
     });
     setIcon(removeTime, "x");
-    const timePanel = timeSetting.controlEl.createDiv({ cls: "taskmate-time-panel" });
+    const timePanel = dateSetting.controlEl.createDiv({ cls: "taskmate-time-panel" });
     timePanel.hidden = true;
     timePanel.createDiv({ text: t("taskModal.hour"), cls: "taskmate-time-panel-label" });
     const hourGrid = timePanel.createDiv({ cls: "taskmate-time-grid", attr: { role: "group", "aria-label": t("taskModal.hour") } });
@@ -270,9 +271,43 @@ export class TaskModal extends Modal {
       timeToggle.focus();
     });
 
+    const deadlineSetting = new Setting(fields).setName(t("taskModal.deadline"));
+    deadlineSetting.settingEl.addClass("taskmate-deadline-setting");
+    decorateField(deadlineSetting, DEADLINE_ICON, t("taskModal.deadline"));
+    let deadlineInput!: HTMLInputElement;
+    let removeDeadline!: HTMLButtonElement;
+    deadlineSetting.addText((text) => {
+      text.inputEl.type = "date";
+      text.inputEl.addClass("taskmate-date-input");
+      text.inputEl.setAttribute("aria-label", t("taskModal.deadline"));
+      deadlineInput = text.inputEl;
+      const field = embedDateLabel(text.inputEl, t("taskModal.deadline"));
+      removeDeadline = field.createEl("button", {
+        cls: "taskmate-date-clear clickable-icon",
+        attr: { type: "button", "aria-label": t("taskModal.removeDeadline") }
+      });
+      setIcon(removeDeadline, "x");
+      text.setValue(this.draft.deadline ?? "").onChange((value) => {
+        this.draft.deadline = value || null;
+        removeDeadline.toggle(this.draft.deadline !== null);
+      });
+    });
+    removeDeadline.addEventListener("click", () => {
+      this.draft.deadline = null;
+      deadlineInput.value = "";
+      removeDeadline.toggle(false);
+      deadlineInput.focus();
+    });
+    removeDeadline.toggle(this.draft.deadline !== null);
+
     const repeatSetting = new Setting(fields).setName(t("taskModal.repeat"));
     repeatSetting.settingEl.addClass("taskmate-repeat-setting");
     decorateField(repeatSetting, "repeat", t("taskModal.repeat"));
+    repeatSetting.controlEl.createSpan({
+      text: t("taskModal.repeat"),
+      cls: "taskmate-embedded-field-label",
+      attr: { "aria-hidden": "true" }
+    });
     let repeatUnit!: HTMLSelectElement;
     let repeatInterval!: HTMLInputElement;
     const readRepeat = (): void => {
@@ -320,34 +355,6 @@ export class TaskModal extends Modal {
     onDateChange = refreshScheduleControls;
     refreshScheduleControls();
 
-    const deadlineSetting = new Setting(fields).setName(t("taskModal.deadline"));
-    deadlineSetting.settingEl.addClass("taskmate-deadline-setting");
-    decorateField(deadlineSetting, DEADLINE_ICON, t("taskModal.deadline"));
-    let deadlineInput!: HTMLInputElement;
-    let removeDeadline!: HTMLButtonElement;
-    deadlineSetting.addText((text) => {
-      text.inputEl.type = "date";
-      text.inputEl.addClass("taskmate-date-input");
-      text.inputEl.setAttribute("aria-label", t("taskModal.deadline"));
-      deadlineInput = text.inputEl;
-      const field = embedDateLabel(text.inputEl, t("taskModal.deadline"));
-      removeDeadline = field.createEl("button", {
-        cls: "taskmate-date-clear clickable-icon",
-        attr: { type: "button", "aria-label": t("taskModal.removeDeadline") }
-      });
-      setIcon(removeDeadline, "x");
-      text.setValue(this.draft.deadline ?? "").onChange((value) => {
-        this.draft.deadline = value || null;
-        removeDeadline.toggle(this.draft.deadline !== null);
-      });
-    });
-    removeDeadline.addEventListener("click", () => {
-      this.draft.deadline = null;
-      deadlineInput.value = "";
-      removeDeadline.toggle(false);
-      deadlineInput.focus();
-    });
-    removeDeadline.toggle(this.draft.deadline !== null);
 
     const projectSetting = new Setting(fields).setName(t("taskModal.project"));
     decorateField(projectSetting, "folder", t("taskModal.project"));

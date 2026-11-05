@@ -287,7 +287,7 @@ describe("mobile layout", () => {
     expect(taskModalSource).toContain('event.key === "Enter"');
     const title = declarations(".taskmate-title-setting textarea");
     expect(title).toMatch(/width\s*:\s*100%\s*;/);
-    expect(title).toMatch(/min-height\s*:\s*4\.5rem\s*;/);
+    expect(title).toMatch(/min-height\s*:\s*44px\s*;/);
     const notes = declarations(".taskmate-notes-setting textarea");
     expect(notes).toMatch(/width\s*:\s*100%\s*;/);
     expect(notes).toMatch(/min-height\s*:\s*9rem\s*;/);

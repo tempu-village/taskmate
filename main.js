@@ -5651,7 +5651,7 @@ var TaskModal = class extends import_obsidian11.Modal {
     decorateField2(titleSetting, "circle-check", t("taskModal.title"));
     titleSetting.addTextArea((text3) => {
       const titleInput = text3.inputEl;
-      titleInput.rows = 3;
+      titleInput.rows = 1;
       titleInput.wrap = "soft";
       titleInput.setAttribute("aria-label", t("taskModal.title"));
       const resizeTitleInput = () => {
@@ -5678,6 +5678,7 @@ var TaskModal = class extends import_obsidian11.Modal {
     const datePresets = dateSetting.controlEl.createDiv({ cls: "taskmate-date-presets" });
     const dateButtons = [];
     let dateInput;
+    let dateTimeRow;
     let onDateChange = () => void 0;
     const refreshDateSelection = () => {
       onDateChange();
@@ -5706,17 +5707,16 @@ var TaskModal = class extends import_obsidian11.Modal {
       text3.inputEl.addClass("taskmate-date-input");
       text3.inputEl.setAttribute("aria-label", t("taskModal.date"));
       dateInput = text3.inputEl;
-      embedDateLabel(text3.inputEl, t("taskModal.date"));
+      const dateField = embedDateLabel(text3.inputEl, t("taskModal.date"));
+      dateTimeRow = dateSetting.controlEl.createDiv({ cls: "taskmate-date-time-row" });
+      dateTimeRow.appendChild(dateField);
       text3.setValue(this.draft.date ?? "").onChange((value) => {
         this.draft.date = value || null;
         refreshDateSelection();
       });
     });
     refreshDateSelection();
-    const timeSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.time"));
-    timeSetting.settingEl.addClass("taskmate-time-setting");
-    decorateField2(timeSetting, "clock", t("taskModal.time"));
-    const timeField = timeSetting.controlEl.createDiv({ cls: "taskmate-embedded-date taskmate-time-field" });
+    const timeField = dateTimeRow.createDiv({ cls: "taskmate-embedded-date taskmate-time-field" });
     timeField.createSpan({ text: t("taskModal.time"), cls: "taskmate-embedded-field-label", attr: { "aria-hidden": "true" } });
     (0, import_obsidian11.setIcon)(timeField.createSpan({ cls: "taskmate-embedded-date-icon", attr: { "aria-hidden": "true" } }), "clock");
     const timeToggle = timeField.createEl("button", {
@@ -5730,7 +5730,7 @@ var TaskModal = class extends import_obsidian11.Modal {
       attr: { type: "button", "aria-label": t("taskModal.removeTime") }
     });
     (0, import_obsidian11.setIcon)(removeTime, "x");
-    const timePanel = timeSetting.controlEl.createDiv({ cls: "taskmate-time-panel" });
+    const timePanel = dateSetting.controlEl.createDiv({ cls: "taskmate-time-panel" });
     timePanel.hidden = true;
     timePanel.createDiv({ text: t("taskModal.hour"), cls: "taskmate-time-panel-label" });
     const hourGrid = timePanel.createDiv({ cls: "taskmate-time-grid", attr: { role: "group", "aria-label": t("taskModal.hour") } });
@@ -5777,9 +5777,42 @@ var TaskModal = class extends import_obsidian11.Modal {
       refreshScheduleControls();
       timeToggle.focus();
     });
+    const deadlineSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.deadline"));
+    deadlineSetting.settingEl.addClass("taskmate-deadline-setting");
+    decorateField2(deadlineSetting, DEADLINE_ICON, t("taskModal.deadline"));
+    let deadlineInput;
+    let removeDeadline;
+    deadlineSetting.addText((text3) => {
+      text3.inputEl.type = "date";
+      text3.inputEl.addClass("taskmate-date-input");
+      text3.inputEl.setAttribute("aria-label", t("taskModal.deadline"));
+      deadlineInput = text3.inputEl;
+      const field = embedDateLabel(text3.inputEl, t("taskModal.deadline"));
+      removeDeadline = field.createEl("button", {
+        cls: "taskmate-date-clear clickable-icon",
+        attr: { type: "button", "aria-label": t("taskModal.removeDeadline") }
+      });
+      (0, import_obsidian11.setIcon)(removeDeadline, "x");
+      text3.setValue(this.draft.deadline ?? "").onChange((value) => {
+        this.draft.deadline = value || null;
+        removeDeadline.toggle(this.draft.deadline !== null);
+      });
+    });
+    removeDeadline.addEventListener("click", () => {
+      this.draft.deadline = null;
+      deadlineInput.value = "";
+      removeDeadline.toggle(false);
+      deadlineInput.focus();
+    });
+    removeDeadline.toggle(this.draft.deadline !== null);
     const repeatSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.repeat"));
     repeatSetting.settingEl.addClass("taskmate-repeat-setting");
     decorateField2(repeatSetting, "repeat", t("taskModal.repeat"));
+    repeatSetting.controlEl.createSpan({
+      text: t("taskModal.repeat"),
+      cls: "taskmate-embedded-field-label",
+      attr: { "aria-hidden": "true" }
+    });
     let repeatUnit;
     let repeatInterval;
     const readRepeat = () => {
@@ -5822,34 +5855,6 @@ var TaskModal = class extends import_obsidian11.Modal {
     };
     onDateChange = refreshScheduleControls;
     refreshScheduleControls();
-    const deadlineSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.deadline"));
-    deadlineSetting.settingEl.addClass("taskmate-deadline-setting");
-    decorateField2(deadlineSetting, DEADLINE_ICON, t("taskModal.deadline"));
-    let deadlineInput;
-    let removeDeadline;
-    deadlineSetting.addText((text3) => {
-      text3.inputEl.type = "date";
-      text3.inputEl.addClass("taskmate-date-input");
-      text3.inputEl.setAttribute("aria-label", t("taskModal.deadline"));
-      deadlineInput = text3.inputEl;
-      const field = embedDateLabel(text3.inputEl, t("taskModal.deadline"));
-      removeDeadline = field.createEl("button", {
-        cls: "taskmate-date-clear clickable-icon",
-        attr: { type: "button", "aria-label": t("taskModal.removeDeadline") }
-      });
-      (0, import_obsidian11.setIcon)(removeDeadline, "x");
-      text3.setValue(this.draft.deadline ?? "").onChange((value) => {
-        this.draft.deadline = value || null;
-        removeDeadline.toggle(this.draft.deadline !== null);
-      });
-    });
-    removeDeadline.addEventListener("click", () => {
-      this.draft.deadline = null;
-      deadlineInput.value = "";
-      removeDeadline.toggle(false);
-      deadlineInput.focus();
-    });
-    removeDeadline.toggle(this.draft.deadline !== null);
     const projectSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.project"));
     decorateField2(projectSetting, "folder", t("taskModal.project"));
     addEmbeddedLabel2(projectSetting, t("taskModal.project"));

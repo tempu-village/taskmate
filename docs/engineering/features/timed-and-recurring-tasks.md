@@ -12,7 +12,7 @@ A Task can have an optional local time and repeat rule, so planned and repeating
 
 ## User-visible behavior
 
-The Task editor shows Time and Repeat after Date and Deadline. Tapping anywhere on the Time field, which shows a chevron, opens or closes a tap panel with a 6-by-4 grid of hours and a grid of five-minute steps, so a time takes two taps without scrolling; a stored minute outside those steps stays selectable, and an × clears the time. Both are disabled until the Task has a Date, and a hint explains why. Repeat combines an interval from 1 to 99 with Does not repeat, day, week, month or year. Saving drops a Time or Repeat without a Date.
+The Task editor shows Time beside the scheduled Date, then Deadline, then Repeat. Tapping anywhere on the Time field, which shows a chevron, opens or closes a tap panel with a 6-by-4 grid of hours and a grid of five-minute steps, so a time takes two taps without scrolling; a stored minute outside those steps stays selectable, and an × clears the time. Both are disabled until the Task has a Date, and a hint explains why. Repeat combines an interval from 1 to 99 with Does not repeat, day, week, month or year. Saving drops a Time or Repeat without a Date.
 
 Task rows show the time after the date and the repeat rule.
 
@@ -65,7 +65,7 @@ Manual, pending: set, edit and clear each field with touch and keyboard on deskt
 
 > 翻訳状態：`ai-translated`。英語版が正本です。
 
-タスクに任意の時刻と繰り返しを設定できます。時刻はその日の作業のおおよその目安で、通知ではありません。編集画面では日付と締め切りの後に「時刻」「繰り返し」が並び、時刻は欄のどこを押しても開閉するパネル（欄に矢印を表示）で、6×4に並んだ「時」と5分刻みの「分」を2回タップして選び、×で消せます。保存済みのそれ以外の分も選べるまま残ります。日付があるときだけ使えます。繰り返しは1〜99の間隔と日・週・月・年から選びます。一覧の行には時刻と繰り返しを表示します。通知は[#123](https://github.com/tempu-village/taskmate/issues/123)に分けて見送りました。
+タスクに任意の時刻と繰り返しを設定できます。時刻はその日の作業のおおよその目安で、通知ではありません。編集画面では予定日の横に「時刻」、その下に「締め切り」「繰り返し」が並び、時刻は欄のどこを押しても開閉するパネル（欄に矢印を表示）で、6×4に並んだ「時」と5分刻みの「分」を2回タップして選び、×で消せます。保存済みのそれ以外の分も選べるまま残ります。日付があるときだけ使えます。繰り返しは1〜99の間隔と日・週・月・年から選びます。一覧の行には時刻と繰り返しを表示します。通知は[#123](https://github.com/tempu-village/taskmate/issues/123)に分けて見送りました。
 
 繰り返しタスクにチェックを入れると、完了せず次の回へ進みます。日付は現在の日付から間隔分進め、月末は短い月の末日に丸め、締め切りも同じ日数だけ動かし、ステップは未完了に戻します。ID、手動順、プロジェクト、ラベル、優先度、メモ、元ノートは保ち、ファイルは作りません。プラグインは表示時と同じ日付のときだけ進めるため、二重の完了は一度だけ反映されます。
 

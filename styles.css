@@ -869,7 +869,7 @@
 }
 .taskmate-title-setting textarea {
   width: 100%;
-  min-height: 4.5rem;
+  min-height: 44px;
   resize: none;
   overflow-y: hidden;
 }
@@ -1045,38 +1045,30 @@
 }
 .taskmate-date-input { width: 100%; margin-top: 0.35rem; }
 .taskmate-embedded-date {
+  position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  grid-template-rows: auto auto;
   align-items: center;
-  column-gap: 1rem;
-  row-gap: 0.2rem;
+  column-gap: 0.75rem;
   width: 100%;
+  min-height: 54px;
   margin-top: 0.35rem;
-  padding: 0.5rem 0.6rem 0.5rem 1rem;
+  padding: 1.1rem 0.6rem 0.3rem 1rem;
   border: var(--input-border-width, 1px) solid var(--background-modifier-border);
   border-radius: var(--input-radius, 8px);
   background: var(--background-modifier-form-field);
   cursor: text;
 }
 .taskmate-embedded-date:focus-within { border-color: var(--interactive-accent); }
-.taskmate-embedded-date .taskmate-embedded-field-label {
-  position: static;
-  grid-column: 1;
-  grid-row: 1;
-  justify-self: center;
-}
+.taskmate-embedded-date .taskmate-embedded-field-label { top: 0.5rem; left: 1rem; }
 .taskmate-embedded-date-icon {
   grid-column: 1;
-  grid-row: 2;
-  justify-self: center;
   display: inline-flex;
   color: var(--text-muted);
 }
-.taskmate-embedded-date-icon svg { width: 18px; height: 18px; }
+.taskmate-embedded-date-icon svg { width: 16px; height: 16px; }
 .taskmate-embedded-date .taskmate-date-input {
   grid-column: 2;
-  grid-row: 2;
   width: 100%;
   margin: 0;
   padding: 0;
@@ -1085,15 +1077,17 @@
   box-shadow: none;
 }
 .taskmate-embedded-date .taskmate-date-input::-webkit-calendar-picker-indicator { display: none; }
-.taskmate-time-setting .setting-item-control {
-  flex-wrap: wrap;
+.taskmate-date-time-row {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 0.35rem;
+  width: 100%;
 }
 .taskmate-time-field { cursor: pointer; }
 .taskmate-time-field:hover { border-color: var(--background-modifier-border-hover); }
 .taskmate-time-field.is-open { border-color: var(--interactive-accent); }
 .taskmate-time-field .taskmate-time-toggle {
   grid-column: 2;
-  grid-row: 2;
   justify-self: stretch;
   display: flex;
   align-items: center;
@@ -1143,7 +1137,6 @@
 }
 .taskmate-date-clear {
   grid-column: 3;
-  grid-row: 1 / 3;
   color: var(--text-muted);
 }
 .taskmate-suggestion-chip {
@@ -1261,4 +1254,30 @@
 
 .taskmate-conflict-actions {
   justify-content: flex-end;
+}
+
+/* Tighter rhythm in the Task editor; fields keep at least a 44px touch target. */
+.modal .taskmate-task-fields .setting-item.taskmate-compact-setting { padding-block: 0.45rem; }
+.modal .taskmate-task-fields .setting-item.taskmate-deadline-setting,
+.modal .taskmate-task-fields .setting-item.taskmate-repeat-setting { border-top: none; padding-top: 0; }
+.taskmate-repeat-setting .setting-item-control {
+  position: relative;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  min-height: 54px;
+  margin-top: 0.35rem;
+  padding: 1.1rem 0.6rem 0.3rem 1rem;
+  border: var(--input-border-width, 1px) solid var(--background-modifier-border);
+  border-radius: var(--input-radius, 8px);
+  background: var(--background-modifier-form-field);
+}
+.taskmate-repeat-setting .taskmate-embedded-field-label { top: 0.5rem; left: 1rem; }
+.taskmate-repeat-setting select,
+.taskmate-repeat-setting .taskmate-repeat-interval {
+  min-height: 0;
+  height: auto;
+  padding-block: 0;
+  border: none;
+  background-color: transparent;
+  box-shadow: none;
 }
