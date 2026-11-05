@@ -1088,16 +1088,31 @@
 .taskmate-time-setting .setting-item-control {
   flex-wrap: wrap;
 }
+.taskmate-time-field { cursor: pointer; }
+.taskmate-time-field:hover { border-color: var(--background-modifier-border-hover); }
+.taskmate-time-field.is-open { border-color: var(--interactive-accent); }
 .taskmate-time-field .taskmate-time-toggle {
   grid-column: 2;
   grid-row: 2;
-  justify-self: start;
+  justify-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
   padding: 0;
   border: none;
   background: transparent;
   box-shadow: none;
   font-variant-numeric: tabular-nums;
 }
+.taskmate-time-chevron {
+  display: inline-flex;
+  color: var(--text-muted);
+  transition: transform 0.15s ease;
+}
+.taskmate-time-chevron svg { width: 18px; height: 18px; }
+.taskmate-time-field.is-open .taskmate-time-chevron { transform: rotate(180deg); }
+.taskmate-time-field:has(.taskmate-time-toggle:disabled) { cursor: default; }
 .taskmate-time-panel {
   flex: 1 0 100%;
   width: 100%;

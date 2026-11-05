@@ -5723,6 +5723,8 @@ var TaskModal = class extends import_obsidian11.Modal {
       cls: "taskmate-time-toggle",
       attr: { type: "button", "aria-label": t("taskModal.time"), "aria-expanded": "false" }
     });
+    const timeValue = timeToggle.createSpan({ cls: "taskmate-time-value" });
+    (0, import_obsidian11.setIcon)(timeToggle.createSpan({ cls: "taskmate-time-chevron", attr: { "aria-hidden": "true" } }), "chevron-down");
     const removeTime = timeField.createEl("button", {
       cls: "taskmate-date-clear clickable-icon",
       attr: { type: "button", "aria-label": t("taskModal.removeTime") }
@@ -5739,11 +5741,12 @@ var TaskModal = class extends import_obsidian11.Modal {
     const setTimePanelOpen = (open) => {
       timePanel.hidden = !open;
       timeToggle.setAttribute("aria-expanded", String(open));
+      timeField.toggleClass("is-open", open);
     };
     const renderTime = () => {
       const hour = this.draft.time?.slice(0, 2) ?? null;
       const minute = this.draft.time?.slice(3) ?? null;
-      timeToggle.setText(this.draft.time ?? NO_TIME);
+      timeValue.setText(this.draft.time ?? NO_TIME);
       for (const button3 of hourButtons) {
         button3.toggleClass("is-active", button3.textContent === hour);
         button3.setAttribute("aria-pressed", String(button3.textContent === hour));
@@ -5765,7 +5768,10 @@ var TaskModal = class extends import_obsidian11.Modal {
       setTimePanelOpen(false);
       timeToggle.focus();
     });
-    timeToggle.addEventListener("click", () => setTimePanelOpen(timePanel.hidden));
+    timeField.addEventListener("click", (event) => {
+      if (event.target.closest(".taskmate-date-clear") || timeToggle.disabled) return;
+      setTimePanelOpen(timePanel.hidden);
+    });
     removeTime.addEventListener("click", () => {
       this.draft.time = null;
       refreshScheduleControls();

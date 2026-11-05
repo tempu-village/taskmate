@@ -213,6 +213,8 @@ export class TaskModal extends Modal {
       cls: "taskmate-time-toggle",
       attr: { type: "button", "aria-label": t("taskModal.time"), "aria-expanded": "false" }
     });
+    const timeValue = timeToggle.createSpan({ cls: "taskmate-time-value" });
+    setIcon(timeToggle.createSpan({ cls: "taskmate-time-chevron", attr: { "aria-hidden": "true" } }), "chevron-down");
     const removeTime = timeField.createEl("button", {
       cls: "taskmate-date-clear clickable-icon",
       attr: { type: "button", "aria-label": t("taskModal.removeTime") }
@@ -230,11 +232,12 @@ export class TaskModal extends Modal {
     const setTimePanelOpen = (open: boolean): void => {
       timePanel.hidden = !open;
       timeToggle.setAttribute("aria-expanded", String(open));
+      timeField.toggleClass("is-open", open);
     };
     const renderTime = (): void => {
       const hour = this.draft.time?.slice(0, 2) ?? null;
       const minute = this.draft.time?.slice(3) ?? null;
-      timeToggle.setText(this.draft.time ?? NO_TIME);
+      timeValue.setText(this.draft.time ?? NO_TIME);
       for (const button of hourButtons) {
         button.toggleClass("is-active", button.textContent === hour);
         button.setAttribute("aria-pressed", String(button.textContent === hour));
@@ -256,7 +259,11 @@ export class TaskModal extends Modal {
       setTimePanelOpen(false);
       timeToggle.focus();
     });
-    timeToggle.addEventListener("click", () => setTimePanelOpen(timePanel.hidden));
+    // The whole field opens and closes the panel; only the × keeps its own action.
+    timeField.addEventListener("click", (event) => {
+      if ((event.target as HTMLElement).closest(".taskmate-date-clear") || timeToggle.disabled) return;
+      setTimePanelOpen(timePanel.hidden);
+    });
     removeTime.addEventListener("click", () => {
       this.draft.time = null;
       refreshScheduleControls();
