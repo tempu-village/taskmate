@@ -1049,7 +1049,7 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  column-gap: 0.75rem;
+  column-gap: 0.5rem;
   width: 100%;
   min-height: 54px;
   margin-top: 0.35rem;
@@ -1077,9 +1077,14 @@
   box-shadow: none;
 }
 .taskmate-embedded-date .taskmate-date-input::-webkit-calendar-picker-indicator { display: none; }
+/* Desktop Obsidian pads dates for its hidden picker icon; the field has its own calendar marker. */
+body .modal .taskmate-embedded-date input[type="date"].taskmate-date-input:not([disabled]) { padding-inline: 0; text-align: left; }
+.taskmate-embedded-date .taskmate-date-input::-webkit-date-and-time-value { text-align: left; }
+.taskmate-embedded-date .taskmate-date-input::-webkit-datetime-edit { padding: 0; }
 .taskmate-date-time-row {
   display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  /* Time keeps room for its value, chevron and × on phones. */
+  grid-template-columns: minmax(0, 3fr) minmax(10rem, 2fr);
   gap: 0.35rem;
   width: 100%;
 }
@@ -1272,6 +1277,7 @@
   background: var(--background-modifier-form-field);
 }
 .taskmate-repeat-setting .taskmate-embedded-field-label { top: 0.5rem; left: 1rem; }
+.taskmate-repeat-setting select { padding-left: 0; }
 .taskmate-repeat-setting select,
 .taskmate-repeat-setting .taskmate-repeat-interval {
   min-height: 0;
