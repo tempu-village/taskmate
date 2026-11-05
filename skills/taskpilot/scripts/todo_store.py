@@ -14,7 +14,7 @@ import tempfile
 import unicodedata
 import uuid
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 
 FRONTMATTER_RE = re.compile(r"\A---\r?\n(.*?)\r?\n---(?:\r?\n|\Z)", re.DOTALL)
@@ -25,6 +25,10 @@ DUE_SUFFIX_RE = re.compile(r"^(.*?)(?:\s+<!-- due: (\d{4}-\d{2}-\d{2}) -->)\s*$"
 TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 REPEAT_RE = re.compile(r"^every ([1-9]\d?) (day|week|month|year)s?$")
 REPEAT_ALIASES = {"daily": (1, "day"), "weekly": (1, "week"), "monthly": (1, "month"), "yearly": (1, "year")}
+# A monthly rule may record the day it repeats on ("on day 30") or the month end ("on last day").
+MONTH_DAY_RE = re.compile(r"^(.*) on (?:day ([1-9]|[12]\d|3[01])|(last) day)$")
+# (interval, unit, month day): the month day is None, a day of month, or "last".
+RepeatRule = Tuple[int, str, Union[int, str, None]]
 # Optional schedule properties: omitted when unset, kept as written when unreadable.
 SCHEDULE_KEYS = ("time", "repeat")
 
@@ -33,30 +37,49 @@ def parse_time(value: Any) -> Optional[str]:
     return value if isinstance(value, str) and TIME_RE.fullmatch(value) else None
 
 
-def parse_repeat(value: Any) -> Optional[Tuple[int, str]]:
+def parse_repeat(value: Any) -> Optional[RepeatRule]:
     if not isinstance(value, str):
         return None
     normalized = value.strip().lower()
+    month_day = MONTH_DAY_RE.fullmatch(normalized)
+    if month_day:
+        normalized = month_day.group(1)
     if normalized in REPEAT_ALIASES:
-        return REPEAT_ALIASES[normalized]
-    match = REPEAT_RE.fullmatch(normalized)
-    return (int(match.group(1)), match.group(2)) if match else None
+        interval, unit = REPEAT_ALIASES[normalized]
+    else:
+        match = REPEAT_RE.fullmatch(normalized)
+        if not match:
+            return None
+        interval, unit = int(match.group(1)), match.group(2)
+    if not month_day:
+        return (interval, unit, None)
+    if unit != "month":
+        return None
+    return (interval, unit, "last" if month_day.group(3) else int(month_day.group(2)))
 
 
-def format_repeat(rule: Optional[Tuple[int, str]]) -> Optional[str]:
+def format_repeat(rule: Optional[RepeatRule]) -> Optional[str]:
     if rule is None:
         return None
-    interval, unit = rule
-    if interval == 1:
-        return {"day": "daily", "week": "weekly", "month": "monthly", "year": "yearly"}[unit]
-    return f"every {interval} {unit}s"
+    interval, unit, month_day = rule
+    base = {"day": "daily", "week": "weekly", "month": "monthly", "year": "yearly"}[unit] if interval == 1 else f"every {interval} {unit}s"
+    if unit != "month" or month_day is None:
+        return base
+    return f"{base} on {'last day' if month_day == 'last' else f'day {month_day}'}"
+
+
+def anchor_repeat(rule: Optional[RepeatRule], date: Any) -> Optional[RepeatRule]:
+    """Records the day a monthly rule repeats on, taken from the scheduled date when the rule has none."""
+    if rule is None or rule[1] != "month" or rule[2] is not None or not isinstance(date, str) or not is_calendar_date(date):
+        return rule
+    return (rule[0], rule[1], int(date[8:10]))
 
 
 SCHEDULE_PARSERS = {"time": parse_time, "repeat": parse_repeat}
 
 
-def add_repeat(date: str, rule: Tuple[int, str]) -> str:
-    interval, unit = rule
+def add_repeat(date: str, rule: RepeatRule) -> str:
+    interval, unit, month_day = rule
     current = dt.date.fromisoformat(date)
     if unit in ("day", "week"):
         return (current + dt.timedelta(days=interval * (7 if unit == "week" else 1))).isoformat()
@@ -65,9 +88,9 @@ def add_repeat(date: str, rule: Tuple[int, str]) -> str:
     year, month = divmod(index, 12)
     month += 1
     last_day = calendar.monthrange(year, month)[1]
-    # A month-end date stays on the month end (31 Jan -> 28 Feb -> 31 Mar); other days clamp to shorter months.
-    on_month_end = current.day == calendar.monthrange(current.year, current.month)[1]
-    return dt.date(year, month, last_day if on_month_end else min(current.day, last_day)).isoformat()
+    # The rule's day wins over the current date's, so a 30th clamped to 28 February returns to the 30th.
+    day = last_day if month_day == "last" else min(month_day if isinstance(month_day, int) else current.day, last_day)
+    return dt.date(year, month, day).isoformat()
 
 
 def next_occurrence(task: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -283,8 +306,9 @@ def validate_schedule(task: Dict[str, Any]) -> None:
     if task.get("repeat") is not None:
         rule = parse_repeat(task["repeat"])
         if rule is None:
-            fail("repeat must be daily, weekly, monthly, yearly, or 'every N days|weeks|months|years' with N from 1 to 99")
-        task["repeat"] = format_repeat(rule)
+            fail("repeat must be daily, weekly, monthly, yearly, or 'every N days|weeks|months|years' with N from 1 to 99, "
+                 "optionally followed by 'on day D' or 'on last day' for monthly rules")
+        task["repeat"] = format_repeat(anchor_repeat(rule, task.get("date")))
     if (task.get("time") is not None or task.get("repeat") is not None) and task.get("date") is None:
         fail("time and repeat require a date")
 
@@ -494,6 +518,10 @@ def update_task(vault: Path, override: Optional[str], identifier: str, patch: Di
     for key in ("title", "date", "deadline", "time", "repeat", "priority", "project", "notes"):
         if key in patch:
             task[key] = patch[key]
+    # A new date moves a monthly rule's recorded day with it, unless the patch sets the rule itself.
+    rule = parse_repeat(task.get("repeat"))
+    if "date" in patch and "repeat" not in patch and rule is not None and isinstance(rule[2], int):
+        task["repeat"] = format_repeat((rule[0], rule[1], None))
     if "labels" in patch:
         task["labels"] = normalized_labels(patch["labels"] or [])
     if "steps" in patch: task["steps"] = normalized_steps(patch["steps"] or [])
@@ -690,7 +718,7 @@ def parser() -> argparse.ArgumentParser:
     create.add_argument("--date", help="scheduled date YYYY-MM-DD")
     create.add_argument("--deadline", help="hard deadline YYYY-MM-DD")
     create.add_argument("--time", help="local time HH:MM; requires --date")
-    create.add_argument("--repeat", help="daily, weekly, monthly, yearly, or 'every N days|weeks|months|years'; requires --date")
+    create.add_argument("--repeat", help="daily, weekly, monthly, yearly, or 'every N days|weeks|months|years'; monthly rules may add 'on day D' or 'on last day'; requires --date")
     create.add_argument("--priority", type=int, choices=(1, 2, 3))
     create.add_argument("--label", action="append", default=[])
     create.add_argument("--project")
@@ -705,7 +733,7 @@ def parser() -> argparse.ArgumentParser:
     update.add_argument("--date", help="scheduled date YYYY-MM-DD or none")
     update.add_argument("--deadline", help="hard deadline YYYY-MM-DD or none")
     update.add_argument("--time", help="local time HH:MM or none")
-    update.add_argument("--repeat", help="daily, weekly, monthly, yearly, 'every N days|weeks|months|years', or none")
+    update.add_argument("--repeat", help="daily, weekly, monthly, yearly, 'every N days|weeks|months|years' (monthly rules may add 'on day D' or 'on last day'), or none")
     update.add_argument("--priority", choices=("1", "2", "3", "none"))
     update.add_argument("--label", action="append", default=None, help="replace labels; repeat for multiple labels")
     update.add_argument("--project", help="project ID or none")

@@ -13,7 +13,7 @@ import { normalizeTaskTitleInput } from "../tasks/task-title";
 import { moveTaskStep, stepDateState } from "../tasks/task-steps";
 import { normalizeTaskSteps } from "../tasks/task-body";
 import { StepModal } from "./step-modal";
-import { MAXIMUM_REPEAT_INTERVAL } from "../tasks/schedule";
+import { MAXIMUM_REPEAT_INTERVAL, anchorRepeat } from "../tasks/schedule";
 import type { RepeatUnit } from "../tasks/schedule";
 import { repeatLabel } from "./schedule-labels";
 
@@ -28,7 +28,7 @@ function normalizeSchedule(draft: TaskDraft): TaskDraft {
   return {
     ...draft,
     time: draft.date ? draft.time : null,
-    repeat: draft.date ? draft.repeat : null
+    repeat: draft.date ? anchorRepeat(draft.repeat, draft.date) : null
   };
 }
 
@@ -61,6 +61,8 @@ addIcon(DEADLINE_ICON, `<g transform="scale(4.1667)" fill="none" stroke="current
  * Scheduled and Deadline stay distinguishable. The native picker indicator is hidden, so the whole
  * field opens the picker instead.
  */
+// The repeat list offers month-end as its own choice; it is stored as a monthly rule on the last day.
+const MONTH_END_CHOICE = "month-end";
 const FIVE_MINUTES = Array.from({ length: 12 }, (_, index) => String(index * 5).padStart(2, "0"));
 const HOURS = Array.from({ length: 24 }, (_, hour) => String(hour).padStart(2, "0"));
 // A symbol rather than copy, so it needs no translation.
@@ -311,9 +313,15 @@ export class TaskModal extends Modal {
     let repeatUnit!: HTMLSelectElement;
     let repeatInterval!: HTMLInputElement;
     const readRepeat = (): void => {
-      const unit = repeatUnit.value as RepeatUnit | "";
+      const choice = repeatUnit.value;
+      const unit = (choice === MONTH_END_CHOICE ? "month" : choice) as RepeatUnit | "";
       const interval = Math.min(MAXIMUM_REPEAT_INTERVAL, Math.max(1, Math.trunc(Number(repeatInterval.value)) || 1));
-      this.draft.repeat = unit ? { unit, interval } : null;
+      // A monthly rule keeps the day it already records; otherwise the scheduled date supplies it on save.
+      const keptDay = typeof this.draft.repeat?.monthDay === "number" ? this.draft.repeat.monthDay : undefined;
+      this.draft.repeat = !unit ? null
+        : choice === MONTH_END_CHOICE ? { unit, interval, monthDay: "last" }
+          : unit === "month" && keptDay !== undefined ? { unit, interval, monthDay: keptDay }
+            : { unit, interval };
       repeatInterval.hidden = !unit;
     };
     repeatSetting.addText((text) => {
@@ -332,8 +340,9 @@ export class TaskModal extends Modal {
       dropdown.addOption("", t("repeat.none"));
       for (const unit of ["day", "week", "month", "year"] as const) {
         dropdown.addOption(unit, repeatLabel(t, { unit, interval: 1 }));
+        if (unit === "month") dropdown.addOption(MONTH_END_CHOICE, repeatLabel(t, { unit, interval: 1, monthDay: "last" }));
       }
-      dropdown.setValue(this.draft.repeat?.unit ?? "").onChange(readRepeat);
+      dropdown.setValue(this.draft.repeat?.monthDay === "last" ? MONTH_END_CHOICE : this.draft.repeat?.unit ?? "").onChange(readRepeat);
     });
     repeatInterval.hidden = !this.draft.repeat;
 
@@ -352,7 +361,18 @@ export class TaskModal extends Modal {
       scheduleHint.setText(hasDate ? "" : t("taskModal.scheduleNeedsDate"));
       scheduleHint.hidden = hasDate;
     };
-    onDateChange = refreshScheduleControls;
+    // Picking another date moves a monthly rule's day with it; opening the editor does not, so a 30th
+    // currently shown on 28 February keeps repeating on the 30th.
+    let anchoredDate = this.draft.date;
+    onDateChange = () => {
+      if (this.draft.date !== anchoredDate) {
+        anchoredDate = this.draft.date;
+        if (typeof this.draft.repeat?.monthDay === "number" && this.draft.date) {
+          this.draft.repeat = { ...this.draft.repeat, monthDay: Number(this.draft.date.slice(8)) };
+        }
+      }
+      refreshScheduleControls();
+    };
     refreshScheduleControls();
 
 

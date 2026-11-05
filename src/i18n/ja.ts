@@ -275,6 +275,8 @@ export const ja = {
   "repeat.weekly": "毎週",
   "repeat.monthly": "毎月",
   "repeat.yearly": "毎年",
+  "repeat.monthEnd": "毎月末",
+  "repeat.monthsEnd": "{count}か月ごとの月末",
   "taskModal.project": "プロジェクト",
   "taskModal.unassigned": "未所属",
   "taskModal.priority": "優先度",

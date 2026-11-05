@@ -8,7 +8,7 @@ Use **Scheduled** for the day you plan to work on the Task and **Deadline** for 
 
 ## Set a time or repeat
 
-After setting a Date, choose a **Time** by tapping an hour and then a five-minute step in its panel (use × to clear it) and, if the work repeats, a **Repeat** interval such as every 2 weeks. The Time is a guide for planning your day; TaskMate does not send reminders. Checking a repeating Task moves it to its next date instead of completing it. See [Timed and recurring Tasks](../../engineering/features/timed-and-recurring-tasks.md).
+After setting a Date, choose a **Time** by tapping an hour and then a five-minute step in its panel (use × to clear it) and, if the work repeats, a **Repeat** interval such as every 2 weeks. Choose **Monthly on the last day** for month-end work; a plain monthly Task keeps its day, so the 30th returns to the 30th after February. The Time is a guide for planning your day; TaskMate does not send reminders. Checking a repeating Task moves it to its next date instead of completing it. See [Timed and recurring Tasks](../../engineering/features/timed-and-recurring-tasks.md).
 
 ## Add supporting Steps
 

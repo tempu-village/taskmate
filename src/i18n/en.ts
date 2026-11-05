@@ -271,6 +271,8 @@ export const en = {
   "repeat.weekly": "Weekly",
   "repeat.monthly": "Monthly",
   "repeat.yearly": "Yearly",
+  "repeat.monthEnd": "Monthly on the last day",
+  "repeat.monthsEnd": "Every {count} month(s) on the last day",
   "taskModal.project": "Project",
   "taskModal.unassigned": "Unassigned",
   "taskModal.priority": "Priority",
