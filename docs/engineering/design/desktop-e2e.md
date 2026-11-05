@@ -35,7 +35,13 @@ The `e2e` job in [CI](../../../.github/workflows/ci.yml) runs on Ubuntu. Linux r
 - Import `browser`/`expect` from `@wdio/globals` and `describe`/`it` from `mocha`; globals are not injected.
 - Use `browser.executeObsidianCommand("taskmate:<command-id>")` to open UI, and `browser.executeObsidian(({ app }) => ...)` to read state. Functions passed to `executeObsidian` are serialized, so pass values as arguments instead of capturing them.
 - Select by stable class, role or attribute, not by translated text. WebdriverIO's `*=text` selector matches links only; assert on an element's text instead.
-- Use [test/e2e/helpers.ts](../../../test/e2e/helpers.ts) to build task Markdown, create, overwrite or read Vault files, open the All tab and find rows by `data-task-id`. Each spec file starts from a fresh copy of the test Vault, but tests in one file share it, so give each test's Tasks distinct ids.
+- Prefer the shared helpers in [test/e2e/helpers.ts](../../../test/e2e/helpers.ts) over writing `executeObsidian` calls in each spec:
+  - `taskMarkdown(fixture)` builds schema-valid task Markdown; `writeTask(fixture)` writes it to `TaskMate/Tasks/<id>.md` and returns the path.
+  - `writeVaultFile(path, content)` creates or overwrites any Vault file, and `readVaultFile(path)` reads one, through the Obsidian vault API.
+  - `openAllTab()` opens the TaskMate list and selects the All tab by position; `taskListView()` returns the list view.
+  - `taskRow(id)` finds a row by `data-task-id`, and `taskRowIds(prefix)` returns the displayed order of rows whose id starts with `prefix`.
+- When a new spec needs a setup, read or navigation step that other specs could reuse, add it to `helpers.ts` (and to the list above) instead of writing it inside the spec. Keep one-off assertions in the spec.
+- Each spec file starts from a fresh copy of the test Vault, but tests in one file share it, so give each test's Tasks distinct ids.
 - Specs are typechecked by `npm run typecheck` through [test/e2e/tsconfig.json](../../../test/e2e/tsconfig.json).
 
 ## Not covered
@@ -49,7 +55,18 @@ The `e2e` job in [CI](../../../.github/workflows/ci.yml) runs on Ubuntu. Linux r
 
 > 翻訳状態：`ai-translated`。英語版が正本です。
 
-`npm run test:e2e`は、ビルド済みプラグインを入れた本物のObsidianデスクトップ版をWebdriverIOで操作します。`task-list.e2e.ts`は一覧を開き、「すべて」タブを位置で選んでクリックし、テスト用Vaultのタスクが表示されることを確かめます。`schedule.e2e.ts`は時刻と繰り返しの回帰テストで、日付なしでは両方が無効で案内が出ること、毎週タスクの完了で予定日と締切が7日進みStepが未完了に戻ること、日付ソートで同じ日のタスクが時刻なし→時刻順に並ぶことを確かめます。共通処理は`test/e2e/helpers.ts`にあります。実行前に`npm run build`が必要です。
+`npm run test:e2e`は、ビルド済みプラグインを入れた本物のObsidianデスクトップ版をWebdriverIOで操作します。`task-list.e2e.ts`は一覧を開き、「すべて」タブを位置で選んでクリックし、テスト用Vaultのタスクが表示されることを確かめます。`schedule.e2e.ts`は時刻と繰り返しの回帰テストで、日付なしでは両方が無効で案内が出ること、毎週タスクの完了で予定日と締切が7日進みStepが未完了に戻ること、日付ソートで同じ日のタスクが時刻なし→時刻順に並ぶことを確かめます。
+
+specを書くときは、各specで`executeObsidian`を直接書かず、`test/e2e/helpers.ts`の共通処理を使います。
+
+- `taskMarkdown(fixture)`はスキーマに沿ったタスクMarkdownを作り、`writeTask(fixture)`はそれを`TaskMate/Tasks/<id>.md`に書き込んでパスを返します。
+- `writeVaultFile(path, content)`はVaultのファイルを作成または上書きし、`readVaultFile(path)`は読み取ります。どちらもObsidianのVault APIを使います。
+- `openAllTab()`は一覧を開いて「すべて」タブを位置で選び、`taskListView()`は一覧のビューを返します。
+- `taskRow(id)`は`data-task-id`で行を探し、`taskRowIds(prefix)`は`prefix`で始まるIDの行を表示順で返します。
+
+新しいspecで、ほかのspecでも使えそうな準備・読み取り・画面操作が必要になったら、spec内に書かず`helpers.ts`に追加し、上の一覧にも加えます。そのspecだけの確認はspec内に残します。
+
+テスト用Vaultはspecファイルごとに新しく複製されますが、同じファイル内のテストでは共有されるため、テストごとにタスクIDを変えてください。実行前に`npm run build`が必要です。
 
 インストール済みのObsidianは使わず、テスト用のObsidianを`.obsidian-cache/`へダウンロードします。こうすると、バージョンを固定して手元とCIで同じものを使え、普段のVault一覧・Syncのログイン・他のVaultに触れない独立した設定で起動できます。毎回ダウンロードし直さないよう保存しておき、このフォルダはGit管理外で、CIではキャッシュします。
 
