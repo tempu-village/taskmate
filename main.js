@@ -5588,12 +5588,12 @@ function addEmbeddedLabel2(setting, label) {
 }
 var DEADLINE_ICON = "taskmate-calendar-target";
 (0, import_obsidian11.addIcon)(DEADLINE_ICON, `<g transform="scale(4.1667)" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 9V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h4"/><path d="M15 2v4"/><path d="M8 2v4"/><path d="M3 10h6"/><circle cx="17" cy="17" r="6"/><circle cx="17" cy="17" r="2.5"/><circle cx="17" cy="17" r="0.5" fill="currentColor"/></g>`);
-var QUARTER_HOUR_MINUTES = ["00", "15", "30", "45"];
-var NO_HOUR = "--";
-var TIME_SEPARATOR = ":";
+var FIVE_MINUTES = Array.from({ length: 12 }, (_, index2) => String(index2 * 5).padStart(2, "0"));
+var HOURS = Array.from({ length: 24 }, (_, hour) => String(hour).padStart(2, "0"));
+var NO_TIME = "--:--";
 function timeMinuteOptions(storedMinute) {
-  if (!storedMinute || QUARTER_HOUR_MINUTES.includes(storedMinute)) return QUARTER_HOUR_MINUTES;
-  return [...QUARTER_HOUR_MINUTES, storedMinute].sort();
+  if (!storedMinute || FIVE_MINUTES.includes(storedMinute)) return FIVE_MINUTES;
+  return [...FIVE_MINUTES, storedMinute].sort();
 }
 function embedDateLabel(input, label) {
   const wrapper = createDiv({ cls: "taskmate-embedded-date" });
@@ -5719,35 +5719,57 @@ var TaskModal = class extends import_obsidian11.Modal {
     const timeField = timeSetting.controlEl.createDiv({ cls: "taskmate-embedded-date taskmate-time-field" });
     timeField.createSpan({ text: t("taskModal.time"), cls: "taskmate-embedded-field-label", attr: { "aria-hidden": "true" } });
     (0, import_obsidian11.setIcon)(timeField.createSpan({ cls: "taskmate-embedded-date-icon", attr: { "aria-hidden": "true" } }), "clock");
-    const timeSelects = timeField.createDiv({ cls: "taskmate-time-selects" });
-    const hourSelect = timeSelects.createEl("select", { cls: "dropdown", attr: { "aria-label": t("taskModal.hour") } });
-    timeSelects.createSpan({ text: TIME_SEPARATOR, attr: { "aria-hidden": "true" } });
-    const minuteSelect = timeSelects.createEl("select", { cls: "dropdown", attr: { "aria-label": t("taskModal.minute") } });
-    hourSelect.createEl("option", { text: NO_HOUR, value: "" });
-    for (let hour = 0; hour < 24; hour++) {
-      const value = String(hour).padStart(2, "0");
-      hourSelect.createEl("option", { text: value, value });
-    }
-    const storedMinute = this.draft.time?.slice(3) ?? null;
-    for (const value of timeMinuteOptions(storedMinute)) minuteSelect.createEl("option", { text: value, value });
-    hourSelect.value = this.draft.time?.slice(0, 2) ?? "";
-    minuteSelect.value = storedMinute ?? "00";
+    const timeToggle = timeField.createEl("button", {
+      cls: "taskmate-time-toggle",
+      attr: { type: "button", "aria-label": t("taskModal.time"), "aria-expanded": "false" }
+    });
     const removeTime = timeField.createEl("button", {
       cls: "taskmate-date-clear clickable-icon",
       attr: { type: "button", "aria-label": t("taskModal.removeTime") }
     });
     (0, import_obsidian11.setIcon)(removeTime, "x");
-    const readTime = () => {
-      this.draft.time = hourSelect.value ? `${hourSelect.value}:${minuteSelect.value}` : null;
-      refreshScheduleControls();
+    const timePanel = timeSetting.controlEl.createDiv({ cls: "taskmate-time-panel" });
+    timePanel.hidden = true;
+    timePanel.createDiv({ text: t("taskModal.hour"), cls: "taskmate-time-panel-label" });
+    const hourGrid = timePanel.createDiv({ cls: "taskmate-time-grid", attr: { role: "group", "aria-label": t("taskModal.hour") } });
+    timePanel.createDiv({ text: t("taskModal.minute"), cls: "taskmate-time-panel-label" });
+    const minuteGrid = timePanel.createDiv({ cls: "taskmate-time-grid", attr: { role: "group", "aria-label": t("taskModal.minute") } });
+    const hourButtons = HOURS.map((hour) => hourGrid.createEl("button", { text: hour, attr: { type: "button" } }));
+    const minuteButtons = timeMinuteOptions(this.draft.time?.slice(3) ?? null).map((minute) => minuteGrid.createEl("button", { text: minute, attr: { type: "button" } }));
+    const setTimePanelOpen = (open) => {
+      timePanel.hidden = !open;
+      timeToggle.setAttribute("aria-expanded", String(open));
     };
-    hourSelect.addEventListener("change", readTime);
-    minuteSelect.addEventListener("change", readTime);
+    const renderTime = () => {
+      const hour = this.draft.time?.slice(0, 2) ?? null;
+      const minute = this.draft.time?.slice(3) ?? null;
+      timeToggle.setText(this.draft.time ?? NO_TIME);
+      for (const button3 of hourButtons) {
+        button3.toggleClass("is-active", button3.textContent === hour);
+        button3.setAttribute("aria-pressed", String(button3.textContent === hour));
+      }
+      for (const button3 of minuteButtons) {
+        button3.toggleClass("is-active", button3.textContent === minute);
+        button3.setAttribute("aria-pressed", String(button3.textContent === minute));
+        button3.disabled = hour === null;
+      }
+    };
+    for (const button3 of hourButtons) button3.addEventListener("click", () => {
+      this.draft.time = `${button3.textContent}:${this.draft.time?.slice(3) ?? "00"}`;
+      refreshScheduleControls();
+    });
+    for (const button3 of minuteButtons) button3.addEventListener("click", () => {
+      if (!this.draft.time) return;
+      this.draft.time = `${this.draft.time.slice(0, 2)}:${button3.textContent}`;
+      refreshScheduleControls();
+      setTimePanelOpen(false);
+      timeToggle.focus();
+    });
+    timeToggle.addEventListener("click", () => setTimePanelOpen(timePanel.hidden));
     removeTime.addEventListener("click", () => {
-      hourSelect.value = "";
-      minuteSelect.value = "00";
-      readTime();
-      hourSelect.focus();
+      this.draft.time = null;
+      refreshScheduleControls();
+      timeToggle.focus();
     });
     const repeatSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.repeat"));
     repeatSetting.settingEl.addClass("taskmate-repeat-setting");
@@ -5783,9 +5805,10 @@ var TaskModal = class extends import_obsidian11.Modal {
     const scheduleHint = fields.createDiv({ cls: "setting-item-description taskmate-schedule-hint" });
     const refreshScheduleControls = () => {
       const hasDate = this.draft.date !== null;
-      hourSelect.disabled = !hasDate;
-      minuteSelect.disabled = !hasDate || this.draft.time === null;
+      timeToggle.disabled = !hasDate;
+      if (!hasDate) setTimePanelOpen(false);
       removeTime.toggle(hasDate && this.draft.time !== null);
+      renderTime();
       repeatUnit.disabled = !hasDate;
       repeatInterval.disabled = !hasDate;
       scheduleHint.setText(hasDate ? "" : t("taskModal.scheduleNeedsDate"));

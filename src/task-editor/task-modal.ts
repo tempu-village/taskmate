@@ -61,15 +61,15 @@ addIcon(DEADLINE_ICON, `<g transform="scale(4.1667)" fill="none" stroke="current
  * Scheduled and Deadline stay distinguishable. The native picker indicator is hidden, so the whole
  * field opens the picker instead.
  */
-const QUARTER_HOUR_MINUTES = ["00", "15", "30", "45"];
-// Symbols rather than copy, so they need no translation.
-const NO_HOUR = "--";
-const TIME_SEPARATOR = ":";
+const FIVE_MINUTES = Array.from({ length: 12 }, (_, index) => String(index * 5).padStart(2, "0"));
+const HOURS = Array.from({ length: 24 }, (_, hour) => String(hour).padStart(2, "0"));
+// A symbol rather than copy, so it needs no translation.
+const NO_TIME = "--:--";
 
-/** Quarter-hour minutes, plus a stored minute outside them so editing never changes it silently. */
+/** Five-minute steps, plus a stored minute outside them so editing never changes it silently. */
 export function timeMinuteOptions(storedMinute: string | null): string[] {
-  if (!storedMinute || QUARTER_HOUR_MINUTES.includes(storedMinute)) return QUARTER_HOUR_MINUTES;
-  return [...QUARTER_HOUR_MINUTES, storedMinute].sort();
+  if (!storedMinute || FIVE_MINUTES.includes(storedMinute)) return FIVE_MINUTES;
+  return [...FIVE_MINUTES, storedMinute].sort();
 }
 
 function embedDateLabel(input: HTMLInputElement, label: string): HTMLElement {
@@ -204,40 +204,63 @@ export class TaskModal extends Modal {
     const timeSetting = new Setting(fields).setName(t("taskModal.time"));
     timeSetting.settingEl.addClass("taskmate-time-setting");
     decorateField(timeSetting, "clock", t("taskModal.time"));
-    // Hour and minute lists replace the native time input, whose minute list ignores `step` in Obsidian.
-    // The time is a planning guide, so quarter hours are enough; another stored minute stays selectable.
+    // A tap panel replaces the native time input, whose minute list ignores `step` in Obsidian. Hours and
+    // five-minute steps sit in grids so a time takes two taps without scrolling.
     const timeField = timeSetting.controlEl.createDiv({ cls: "taskmate-embedded-date taskmate-time-field" });
     timeField.createSpan({ text: t("taskModal.time"), cls: "taskmate-embedded-field-label", attr: { "aria-hidden": "true" } });
     setIcon(timeField.createSpan({ cls: "taskmate-embedded-date-icon", attr: { "aria-hidden": "true" } }), "clock");
-    const timeSelects = timeField.createDiv({ cls: "taskmate-time-selects" });
-    const hourSelect = timeSelects.createEl("select", { cls: "dropdown", attr: { "aria-label": t("taskModal.hour") } });
-    timeSelects.createSpan({ text: TIME_SEPARATOR, attr: { "aria-hidden": "true" } });
-    const minuteSelect = timeSelects.createEl("select", { cls: "dropdown", attr: { "aria-label": t("taskModal.minute") } });
-    hourSelect.createEl("option", { text: NO_HOUR, value: "" });
-    for (let hour = 0; hour < 24; hour++) {
-      const value = String(hour).padStart(2, "0");
-      hourSelect.createEl("option", { text: value, value });
-    }
-    const storedMinute = this.draft.time?.slice(3) ?? null;
-    for (const value of timeMinuteOptions(storedMinute)) minuteSelect.createEl("option", { text: value, value });
-    hourSelect.value = this.draft.time?.slice(0, 2) ?? "";
-    minuteSelect.value = storedMinute ?? "00";
+    const timeToggle = timeField.createEl("button", {
+      cls: "taskmate-time-toggle",
+      attr: { type: "button", "aria-label": t("taskModal.time"), "aria-expanded": "false" }
+    });
     const removeTime = timeField.createEl("button", {
       cls: "taskmate-date-clear clickable-icon",
       attr: { type: "button", "aria-label": t("taskModal.removeTime") }
     });
     setIcon(removeTime, "x");
-    const readTime = (): void => {
-      this.draft.time = hourSelect.value ? `${hourSelect.value}:${minuteSelect.value}` : null;
-      refreshScheduleControls();
+    const timePanel = timeSetting.controlEl.createDiv({ cls: "taskmate-time-panel" });
+    timePanel.hidden = true;
+    timePanel.createDiv({ text: t("taskModal.hour"), cls: "taskmate-time-panel-label" });
+    const hourGrid = timePanel.createDiv({ cls: "taskmate-time-grid", attr: { role: "group", "aria-label": t("taskModal.hour") } });
+    timePanel.createDiv({ text: t("taskModal.minute"), cls: "taskmate-time-panel-label" });
+    const minuteGrid = timePanel.createDiv({ cls: "taskmate-time-grid", attr: { role: "group", "aria-label": t("taskModal.minute") } });
+    const hourButtons = HOURS.map((hour) => hourGrid.createEl("button", { text: hour, attr: { type: "button" } }));
+    const minuteButtons = timeMinuteOptions(this.draft.time?.slice(3) ?? null)
+      .map((minute) => minuteGrid.createEl("button", { text: minute, attr: { type: "button" } }));
+    const setTimePanelOpen = (open: boolean): void => {
+      timePanel.hidden = !open;
+      timeToggle.setAttribute("aria-expanded", String(open));
     };
-    hourSelect.addEventListener("change", readTime);
-    minuteSelect.addEventListener("change", readTime);
+    const renderTime = (): void => {
+      const hour = this.draft.time?.slice(0, 2) ?? null;
+      const minute = this.draft.time?.slice(3) ?? null;
+      timeToggle.setText(this.draft.time ?? NO_TIME);
+      for (const button of hourButtons) {
+        button.toggleClass("is-active", button.textContent === hour);
+        button.setAttribute("aria-pressed", String(button.textContent === hour));
+      }
+      for (const button of minuteButtons) {
+        button.toggleClass("is-active", button.textContent === minute);
+        button.setAttribute("aria-pressed", String(button.textContent === minute));
+        button.disabled = hour === null;
+      }
+    };
+    for (const button of hourButtons) button.addEventListener("click", () => {
+      this.draft.time = `${button.textContent}:${this.draft.time?.slice(3) ?? "00"}`;
+      refreshScheduleControls();
+    });
+    for (const button of minuteButtons) button.addEventListener("click", () => {
+      if (!this.draft.time) return;
+      this.draft.time = `${this.draft.time.slice(0, 2)}:${button.textContent}`;
+      refreshScheduleControls();
+      setTimePanelOpen(false);
+      timeToggle.focus();
+    });
+    timeToggle.addEventListener("click", () => setTimePanelOpen(timePanel.hidden));
     removeTime.addEventListener("click", () => {
-      hourSelect.value = "";
-      minuteSelect.value = "00";
-      readTime();
-      hourSelect.focus();
+      this.draft.time = null;
+      refreshScheduleControls();
+      timeToggle.focus();
     });
 
     const repeatSetting = new Setting(fields).setName(t("taskModal.repeat"));
@@ -278,9 +301,10 @@ export class TaskModal extends Modal {
     // draft while the user edits and dropped on save.
     const refreshScheduleControls = (): void => {
       const hasDate = this.draft.date !== null;
-      hourSelect.disabled = !hasDate;
-      minuteSelect.disabled = !hasDate || this.draft.time === null;
+      timeToggle.disabled = !hasDate;
+      if (!hasDate) setTimePanelOpen(false);
       removeTime.toggle(hasDate && this.draft.time !== null);
+      renderTime();
       repeatUnit.disabled = !hasDate;
       repeatInterval.disabled = !hasDate;
       scheduleHint.setText(hasDate ? "" : t("taskModal.scheduleNeedsDate"));

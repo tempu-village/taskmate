@@ -1085,14 +1085,47 @@
   box-shadow: none;
 }
 .taskmate-embedded-date .taskmate-date-input::-webkit-calendar-picker-indicator { display: none; }
-.taskmate-time-selects {
+.taskmate-time-setting .setting-item-control {
+  flex-wrap: wrap;
+}
+.taskmate-time-field .taskmate-time-toggle {
   grid-column: 2;
   grid-row: 2;
-  display: flex;
-  align-items: center;
+  justify-self: start;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  font-variant-numeric: tabular-nums;
+}
+.taskmate-time-panel {
+  flex: 1 0 100%;
+  width: 100%;
+  text-align: left;
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+}
+.taskmate-time-panel-label {
+  margin: 0.25rem 0;
+  color: var(--text-muted);
+  font-size: var(--font-smallest);
+}
+.taskmate-time-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 0.35rem;
 }
-.taskmate-time-selects select { min-width: 4.5rem; }
+.taskmate-time-grid button {
+  min-height: 2.25rem;
+  padding: 0;
+  font-variant-numeric: tabular-nums;
+}
+.taskmate-time-grid button.is-active {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
 .taskmate-date-clear {
   grid-column: 3;
   grid-row: 1 / 3;
