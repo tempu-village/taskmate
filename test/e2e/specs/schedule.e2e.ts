@@ -7,7 +7,7 @@ describe("TaskMate schedule", function () {
     const { view } = await openAllTab();
     await view.$(".taskmate-add").click();
     const modal = browser.$(".modal");
-    await expect(modal.$("input[type='time']")).toBeDisabled();
+    await expect(modal.$(".taskmate-time-toggle")).toBeDisabled();
     await expect(modal.$(".taskmate-repeat-setting select")).toBeDisabled();
     await expect(modal.$(".taskmate-schedule-hint")).toBeDisplayed();
     await browser.keys("Escape");
