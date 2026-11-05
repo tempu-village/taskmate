@@ -45,12 +45,15 @@ function daysInMonth(year: number, month: number): number {
   return new Date(Date.UTC(year, month, 0)).getUTCDate();
 }
 
+// A date on the last day of its month stays on the last day, so month-end work keeps landing on the
+// month end (31 Jan → 28 Feb → 31 Mar). Other days clamp only when the target month is shorter.
 function addMonths(dateKey: string, amount: number): string {
   const [year, month, day] = dateKey.split("-").map(Number);
   const index = year * 12 + (month - 1) + amount;
   const nextYear = Math.floor(index / 12);
   const nextMonth = index % 12 + 1;
-  const nextDay = Math.min(day, daysInMonth(nextYear, nextMonth));
+  const lastDay = daysInMonth(nextYear, nextMonth);
+  const nextDay = day === daysInMonth(year, month) ? lastDay : Math.min(day, lastDay);
   return `${String(nextYear).padStart(4, "0")}-${String(nextMonth).padStart(2, "0")}-${String(nextDay).padStart(2, "0")}`;
 }
 

@@ -212,7 +212,8 @@ function addMonths(dateKey, amount) {
   const index2 = year * 12 + (month - 1) + amount;
   const nextYear = Math.floor(index2 / 12);
   const nextMonth = index2 % 12 + 1;
-  const nextDay = Math.min(day, daysInMonth(nextYear, nextMonth));
+  const lastDay = daysInMonth(nextYear, nextMonth);
+  const nextDay = day === daysInMonth(year, month) ? lastDay : Math.min(day, lastDay);
   return `${String(nextYear).padStart(4, "0")}-${String(nextMonth).padStart(2, "0")}-${String(nextDay).padStart(2, "0")}`;
 }
 function addRepeat(dateKey, rule) {

@@ -67,7 +67,7 @@ Deferred to [#123](https://github.com/tempu-village/taskmate/issues/123). A firs
 
 ### Recurrence
 
-The next occurrence adds the interval to the current `date`, not to the completion day. Months and years keep the day of month and clamp to the month's last day (31 January → 28 February); later occurrences continue from the clamped day. Calendar arithmetic is date-only, so daylight-saving changes do not move dates. When a deadline exists, it moves by the same number of days. Steps are reopened. Completing writes the next occurrence instead of `completed: true`. The plugin only advances when the stored `date` still equals the date the caller saw, so a repeated completion is a no-op.
+The next occurrence adds the interval to the current `date`, not to the completion day. Months and years keep the day of month and clamp to the month's last day. A date on the last day of its month stays on the month end (31 January → 28 February → 31 March), so month-end work such as invoicing does not drift. The maintainer chose this during review over continuing from the clamped day (28 March). Only the current `date` is stored, so a 29th or 30th clamped to 28 February is treated as month-end afterwards. Calendar arithmetic is date-only, so daylight-saving changes do not move dates. When a deadline exists, it moves by the same number of days. Steps are reopened. Completing writes the next occurrence instead of `completed: true`. The plugin only advances when the stored `date` still equals the date the caller saw, so a repeated completion is a no-op.
 
 ### Ordering
 
@@ -75,7 +75,7 @@ Date sorting compares `date`, then places untimed Tasks before timed Tasks of th
 
 ## Open questions
 
-- Should weekday-set recurrence (for example Monday, Wednesday, Friday) be added later?
+- Weekday-set recurrence (for example Monday and Wednesday) is deferred to a separate Issue.
 - Should a recurring Task record its last completion time?
 
 ## Decision / status
@@ -101,7 +101,7 @@ Implemented in the pull request linked below. The maintainer delegated the open 
 
 タスクに任意の`time`（端末のローカル時刻`HH:MM`）と`repeat`（`daily`〜`yearly`または`every N days|weeks|months|years`、Nは1〜99）を追加します。時刻は計画の目安で、通知ではありません。未設定の項目は書かないため、日付だけのタスクは変わりません。読めない値は動作に使わず、書かれたまま残します。
 
-繰り返しタスクを完了すると、同じタスクを次の回へ進めます。次の日付は完了した日ではなく現在の`date`から計算し、月末は短い月の末日に丸めます。締め切りも同じ日数だけ動かし、ステップは未完了に戻します。プラグインは呼び出し側が見た日付と保存済みの日付が一致するときだけ進めるため、二重に完了しても一度しか進みません。
+繰り返しタスクを完了すると、同じタスクを次の回へ進めます。次の日付は完了した日ではなく現在の`date`から計算し、月末の日付は次も月末にし（1月31日→2月28日→3月31日）、それ以外の日は短い月の末日に丸めます。締め切りも同じ日数だけ動かし、ステップは未完了に戻します。プラグインは呼び出し側が見た日付と保存済みの日付が一致するときだけ進めるため、二重に完了しても一度しか進みません。
 
 日付の並べ替えでは、同じ日の中で時刻なしのタスクを先に、時刻ありのタスクを時刻順に並べます。手動順は変えません。
 

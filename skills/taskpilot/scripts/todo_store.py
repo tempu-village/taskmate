@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import calendar
 import datetime as dt
 import hashlib
 import json
@@ -63,9 +64,10 @@ def add_repeat(date: str, rule: Tuple[int, str]) -> str:
     index = current.year * 12 + current.month - 1 + months
     year, month = divmod(index, 12)
     month += 1
-    next_month = dt.date(year + (month == 12), month % 12 + 1, 1)
-    last_day = (next_month - dt.timedelta(days=1)).day
-    return dt.date(year, month, min(current.day, last_day)).isoformat()
+    last_day = calendar.monthrange(year, month)[1]
+    # A month-end date stays on the month end (31 Jan -> 28 Feb -> 31 Mar); other days clamp to shorter months.
+    on_month_end = current.day == calendar.monthrange(current.year, current.month)[1]
+    return dt.date(year, month, last_day if on_month_end else min(current.day, last_day)).isoformat()
 
 
 def next_occurrence(task: Dict[str, Any]) -> Optional[Dict[str, Any]]:

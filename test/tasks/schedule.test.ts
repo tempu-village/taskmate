@@ -46,12 +46,17 @@ describe("schedule values", () => {
     expect(formatRepeat({ interval: 2, unit: "week" })).toBe("every 2 weeks");
   });
 
-  it("adds calendar intervals and clamps month ends", () => {
+  it("adds calendar intervals and keeps month ends on the month end", () => {
     expect(addRepeat("2026-10-30", { interval: 3, unit: "day" })).toBe("2026-11-02");
     expect(addRepeat("2026-12-29", { interval: 1, unit: "week" })).toBe("2027-01-05");
     expect(addRepeat("2026-01-31", { interval: 1, unit: "month" })).toBe("2026-02-28");
     expect(addRepeat("2027-11-30", { interval: 3, unit: "month" })).toBe("2028-02-29");
     expect(addRepeat("2028-02-29", { interval: 1, unit: "year" })).toBe("2029-02-28");
+    expect(addRepeat("2026-02-28", { interval: 1, unit: "month" })).toBe("2026-03-31");
+    expect(addRepeat("2026-04-30", { interval: 1, unit: "month" })).toBe("2026-05-31");
+    expect(addRepeat("2029-02-28", { interval: 3, unit: "year" })).toBe("2032-02-29");
+    expect(addRepeat("2026-01-30", { interval: 1, unit: "month" })).toBe("2026-02-28");
+    expect(addRepeat("2026-03-30", { interval: 1, unit: "month" })).toBe("2026-04-30");
   });
 
   it("keeps calendar days across a daylight-saving change", () => {

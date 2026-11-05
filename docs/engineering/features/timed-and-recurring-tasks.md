@@ -22,7 +22,7 @@ Checking a recurring Task does not complete it. It moves to its next occurrence 
 
 - SCHED-01: A Task without time or repeat is written exactly as before.
 - SCHED-02: Time and repeat round-trip through the plugin, direct Markdown editing and Task Pilot. Unreadable values are ignored and preserved as written.
-- SCHED-03: Completing a recurring occurrence advances `date` by the interval from the current `date`, clamps month ends, shifts `deadline` by the same number of days, reopens Steps, and keeps every other field, including ID, rank, Project, Labels, Priority, notes and source note. It creates no file.
+- SCHED-03: Completing a recurring occurrence advances `date` by the interval from the current `date`, keeps a month-end date on the month end and clamps other days to shorter months, shifts `deadline` by the same number of days, reopens Steps, and keeps every other field, including ID, rank, Project, Labels, Priority, notes and source note. It creates no file.
 - SCHED-04: In the plugin, a completion advances the Task only if its stored `date` still equals the date shown, so a repeated request is a no-op.
 - SCHED-05: Date sorting puts untimed Tasks before timed Tasks on the same date and orders timed Tasks by time. Manual rank is never rewritten.
 
@@ -42,7 +42,7 @@ Checking a recurring Task does not complete it. It moves to its next occurrence 
 
 ## Failure handling and limitations
 
-- Month-end clamping continues from the clamped day: a Task on 31 January repeats on 28 February, then 28 March.
+- A Task on the last day of a month stays on month ends: 31 January repeats on 28 February, then 31 March. Because only the current `date` is stored, a Task on 29 or 30 January that is clamped to 28 February becomes a month-end Task from then on.
 - Weekday sets such as "every Monday and Wednesday" are not supported.
 - Task Pilot's `complete` command advances a recurring Task each time it runs; agents should run it once per occurrence.
 - A `reminder` property written by an earlier build is kept as an unknown property and has no effect.
@@ -67,7 +67,7 @@ Manual, pending: set, edit and clear each field with touch and keyboard on deskt
 
 タスクに任意の時刻と繰り返しを設定できます。時刻はその日の作業のおおよその目安で、通知ではありません。編集画面では予定日の横に「時刻」、その下に「締め切り」「繰り返し」が並び、時刻は欄のどこを押しても開閉するパネル（欄に矢印を表示）で、6×4に並んだ「時」と5分刻みの「分」を2回タップして選び、×で消せます。保存済みのそれ以外の分も選べるまま残ります。日付があるときだけ使えます。繰り返しは1〜99の間隔と日・週・月・年から選びます。一覧の行には時刻と繰り返しを表示します。通知は[#123](https://github.com/tempu-village/taskmate/issues/123)に分けて見送りました。
 
-繰り返しタスクにチェックを入れると、完了せず次の回へ進みます。日付は現在の日付から間隔分進め、月末は短い月の末日に丸め、締め切りも同じ日数だけ動かし、ステップは未完了に戻します。ID、手動順、プロジェクト、ラベル、優先度、メモ、元ノートは保ち、ファイルは作りません。プラグインは表示時と同じ日付のときだけ進めるため、二重の完了は一度だけ反映されます。
+繰り返しタスクにチェックを入れると、完了せず次の回へ進みます。日付は現在の日付から間隔分進め、月末の日付は次も月末（1月31日→2月28日→3月31日）にし、それ以外の日は短い月の末日に丸め、締め切りも同じ日数だけ動かし、ステップは未完了に戻します。ID、手動順、プロジェクト、ラベル、優先度、メモ、元ノートは保ち、ファイルは作りません。プラグインは表示時と同じ日付のときだけ進めるため、二重の完了は一度だけ反映されます。
 
 日付の並べ替えでは同じ日の時刻なしを先に、時刻ありを時刻順に並べ、手動順は書き換えません。
 

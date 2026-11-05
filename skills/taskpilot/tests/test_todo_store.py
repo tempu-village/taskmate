@@ -213,6 +213,7 @@ class TodoStoreTest(unittest.TestCase):
         self.assertEqual(advanced["steps"], [{"text": "Transfer", "completed": False, "date": None}])
         text = (self.vault / created["path"]).read_text(encoding="utf-8")
         self.assertIn("custom: keep", text)
+        self.assertEqual(self.run_store("complete", "--id", created["id"])["date"], "2026-03-31")
         self.assertEqual(len(list((self.vault / "TaskMate/Tasks").glob("*.md"))), 1)
 
     def test_steps_round_trip_and_reorder(self):
