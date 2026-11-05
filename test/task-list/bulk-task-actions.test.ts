@@ -13,7 +13,6 @@ function task(id: string, overrides: Partial<Task> = {}): Task {
     deadline: null,
     time: null,
     repeat: null,
-    reminder: null,
     priority: 1,
     labels: ["existing", "remove"],
     projectId: "project-old",

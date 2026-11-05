@@ -155,33 +155,32 @@ class TodoStoreTest(unittest.TestCase):
         self.assertIn("custom: keep", text)
         self.assertTrue(self.run_store("validate")["valid"])
 
-    def test_time_repeat_and_reminder_round_trip_and_clear(self):
+    def test_time_and_repeat_round_trip_and_clear(self):
         created = self.run_store(
             "create", "--title", "Water plants", "--date", "2026-10-14", "--time", "07:30",
-            "--repeat", "Every 2 Weeks", "--reminder", "15",
+            "--repeat", "Every 2 Weeks",
         )
-        self.assertEqual((created["time"], created["repeat"], created["reminder"]), ("07:30", "every 2 weeks", 15))
+        self.assertEqual((created["time"], created["repeat"]), ("07:30", "every 2 weeks"))
         text = (self.vault / created["path"]).read_text(encoding="utf-8")
-        self.assertIn('time: "07:30"\nrepeat: "every 2 weeks"\nreminder: 15', text)
+        self.assertIn('time: "07:30"\nrepeat: "every 2 weeks"', text)
         listed = next(task for task in self.run_store("list") if task["id"] == created["id"])
-        self.assertEqual((listed["time"], listed["repeat"], listed["reminder"]), ("07:30", "every 2 weeks", 15))
+        self.assertEqual((listed["time"], listed["repeat"]), ("07:30", "every 2 weeks"))
 
-        cleared = self.run_store("update", "--id", created["id"], "--reminder", "none", "--time", "none", "--repeat", "none")
-        self.assertEqual((cleared["time"], cleared["repeat"], cleared["reminder"]), (None, None, None))
+        cleared = self.run_store("update", "--id", created["id"], "--time", "none", "--repeat", "none")
+        self.assertEqual((cleared["time"], cleared["repeat"]), (None, None))
         text = (self.vault / cleared["path"]).read_text(encoding="utf-8")
-        self.assertNotRegex(text, r"(?m)^(time|repeat|reminder):")
+        self.assertNotRegex(text, r"(?m)^(time|repeat):")
 
     def test_date_only_task_writes_no_schedule_lines(self):
         created = self.run_store("create", "--title", "Plain", "--date", "2026-10-14")
         text = (self.vault / created["path"]).read_text(encoding="utf-8")
-        self.assertNotRegex(text, r"(?m)^(time|repeat|reminder):")
+        self.assertNotRegex(text, r"(?m)^(time|repeat):")
 
     def test_schedule_values_are_validated(self):
         for arguments, message in [
             (["--time", "07:30"], "time and repeat require a date"),
             (["--date", "2026-10-14", "--time", "7:30"], "time must be HH:MM"),
             (["--date", "2026-10-14", "--repeat", "every weekday"], "repeat must be"),
-            (["--date", "2026-10-14", "--reminder", "15"], "reminder requires a time"),
         ]:
             result = subprocess.run(
                 [sys.executable, str(SCRIPT), "--vault", str(self.vault), "create", "--title", "Invalid", *arguments],

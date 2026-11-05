@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { Task } from "../../src/tasks/domain";
 import { sortTasks } from "../../src/tasks/domain";
 import { encodeTask, encodeTaskPreservingProperties, parseTaskMarkdown } from "../../src/tasks/markdown";
-import { addRepeat, formatRepeat, nextOccurrence, parseReminder, parseRepeat, parseTime, reminderInstant, reminderKey } from "../../src/tasks/schedule";
+import { addRepeat, formatRepeat, nextOccurrence, parseRepeat, parseTime } from "../../src/tasks/schedule";
 
 function task(overrides: Partial<Task> = {}): Task {
   return {
@@ -14,7 +14,6 @@ function task(overrides: Partial<Task> = {}): Task {
     deadline: null,
     time: null,
     repeat: null,
-    reminder: null,
     priority: 2,
     labels: ["home"],
     projectId: "project",
@@ -36,7 +35,7 @@ afterEach(() => {
 });
 
 describe("schedule values", () => {
-  it("accepts only valid local times, bounded repeats and listed reminder offsets", () => {
+  it("accepts only valid local times, and bounded repeats", () => {
     expect(parseTime("09:30")).toBe("09:30");
     for (const invalid of ["9:30", "24:00", "12:60", 930, null]) expect(parseTime(invalid)).toBeNull();
     expect(parseRepeat("weekly")).toEqual({ interval: 1, unit: "week" });
@@ -45,9 +44,6 @@ describe("schedule values", () => {
     for (const invalid of ["every 0 days", "every 100 days", "every weekday", "hourly", 7]) expect(parseRepeat(invalid)).toBeNull();
     expect(formatRepeat({ interval: 1, unit: "year" })).toBe("yearly");
     expect(formatRepeat({ interval: 2, unit: "week" })).toBe("every 2 weeks");
-    expect(parseReminder(15)).toBe(15);
-    expect(parseReminder(10)).toBeNull();
-    expect(parseReminder("15")).toBeNull();
   });
 
   it("adds calendar intervals and clamps month ends", () => {
@@ -62,25 +58,6 @@ describe("schedule values", () => {
     process.env.TZ = "America/New_York";
     expect(addRepeat("2026-11-01", { interval: 1, unit: "day" })).toBe("2026-11-02");
     expect(addRepeat("2026-03-07", { interval: 1, unit: "day" })).toBe("2026-03-08");
-    const before = reminderInstant(task({ date: "2026-10-31", time: "09:00", reminder: 0 }))!;
-    const after = reminderInstant(task({ date: "2026-11-01", time: "09:00", reminder: 0 }))!;
-    expect(after.getTime() - before.getTime()).toBe(25 * 3_600_000);
-    expect(after.getHours()).toBe(9);
-  });
-
-  it("fires a reminder at a skipped local time at the next valid instant", () => {
-    process.env.TZ = "America/New_York";
-    const skipped = reminderInstant(task({ date: "2026-03-08", time: "02:30", reminder: 0 }))!;
-    expect(skipped.getHours()).toBe(3);
-    expect(skipped.getMinutes()).toBe(30);
-  });
-
-  it("computes a reminder only for a dated, timed Task with an offset", () => {
-    expect(reminderInstant(task({ date: "2026-10-14", time: "09:00" }))).toBeNull();
-    expect(reminderInstant(task({ time: "09:00", reminder: 0 }))).toBeNull();
-    const instant = reminderInstant(task({ date: "2026-10-14", time: "09:00", reminder: 1440 }))!;
-    expect(instant.getDate()).toBe(13);
-    expect(reminderKey(task({ date: "2026-10-14", time: "09:00", reminder: 15 }))).toBe("one|2026-10-14T09:00|15");
   });
 });
 
@@ -103,24 +80,23 @@ describe("recurring completion", () => {
 describe("schedule Markdown", () => {
   it("writes no schedule lines for a date-only Task", () => {
     const encoded = encodeTask(task({ date: "2026-10-14" }));
-    expect(encoded).not.toMatch(/^(time|repeat|reminder):/m);
+    expect(encoded).not.toMatch(/^(time|repeat):/m);
   });
 
-  it("round trips time, repeat and reminder", () => {
-    const original = task({ date: "2026-10-14", time: "07:45", repeat: { interval: 2, unit: "month" }, reminder: 30 });
+  it("round trips time and repeat", () => {
+    const original = task({ date: "2026-10-14", time: "07:45", repeat: { interval: 2, unit: "month" } });
     const encoded = encodeTask(original);
-    expect(encoded).toContain('time: "07:45"\nrepeat: "every 2 months"\nreminder: 30');
+    expect(encoded).toContain('time: "07:45"\nrepeat: "every 2 months"');
     expect(parseTaskMarkdown(original.path, encoded)).toEqual(original);
   });
 
   it("removes a cleared value and keeps an unreadable value as written", () => {
-    const content = encodeTask(task({ date: "2026-10-14", time: "07:45" })).replace('time: "07:45"', 'time: "07:45"\nrepeat: "every weekday"\nreminder: 10');
+    const content = encodeTask(task({ date: "2026-10-14", time: "07:45" })).replace('time: "07:45"', 'time: "07:45"\nrepeat: "every weekday"');
     const parsed = parseTaskMarkdown("TaskMate/Tasks/One.md", content)!;
-    expect(parsed).toMatchObject({ time: "07:45", repeat: null, reminder: null });
+    expect(parsed).toMatchObject({ time: "07:45", repeat: null });
     const written = encodeTaskPreservingProperties({ ...parsed, time: null }, content);
     expect(written).not.toContain("time:");
     expect(written).toContain('repeat: "every weekday"');
-    expect(written).toContain("reminder: 10");
   });
 });
 

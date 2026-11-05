@@ -16,7 +16,6 @@ function task(overrides: Partial<Task> = {}): Task {
     deadline: null,
     time: null,
     repeat: null,
-    reminder: null,
     priority: null,
     labels: ["brk", "keep"],
     projectId: null,

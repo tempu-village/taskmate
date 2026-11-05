@@ -1,4 +1,4 @@
-import type { ReminderOffset, RepeatRule } from "./schedule";
+import type { RepeatRule } from "./schedule";
 
 export type SmartView = "scheduled" | "all" | "unplanned";
 
@@ -26,7 +26,6 @@ export interface Task {
   deadline: string | null;
   time: string | null;
   repeat: RepeatRule | null;
-  reminder: ReminderOffset | null;
   priority: Priority | null;
   labels: string[];
   projectId: string | null;
@@ -46,7 +45,6 @@ export interface TaskDraft {
   deadline: string | null;
   time: string | null;
   repeat: RepeatRule | null;
-  reminder: ReminderOffset | null;
   priority: Priority | null;
   labels: string[];
   projectId: string | null;

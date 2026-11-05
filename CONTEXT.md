@@ -32,10 +32,6 @@ _Avoid_: Due date, date
 A Task with a repeat rule. Completing one occurrence moves the same Task to its next occurrence instead of completing it.
 _Avoid_: Recurring series, template task
 
-**Reminder**:
-A notification, set as an offset before a timed Task's local time, that TaskMate delivers on each device only while Obsidian runs. A reminder that came due while TaskMate was not running is a missed reminder.
-_Avoid_: Alarm, push notification
-
 **Scheduled**:
 An incomplete task with a scheduled date. The Scheduled smart view groups these tasks into Overdue, Today, and Later.
 _Avoid_: Upcoming, future tasks

@@ -1,6 +1,6 @@
 import type { Priority, Task, TaskDraft } from "./domain";
 import { encodeTaskBody, parseTaskBody } from "./task-body";
-import { formatRepeat, parseReminder, parseRepeat, parseTime } from "./schedule";
+import { formatRepeat, parseRepeat, parseTime } from "./schedule";
 
 const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
 
@@ -12,7 +12,6 @@ const TASK_PROPERTY_LINES = {
   deadline: (task: Task) => `deadline: ${scalar(task.deadline)}`,
   time: (task: Task) => task.time === null ? null : `time: ${scalar(task.time)}`,
   repeat: (task: Task) => task.repeat === null ? null : `repeat: ${scalar(formatRepeat(task.repeat))}`,
-  reminder: (task: Task) => task.reminder === null ? null : `reminder: ${scalar(task.reminder)}`,
   priority: (task: Task) => `priority: ${scalar(task.priority)}`,
   labels: (task: Task) => `labels: ${JSON.stringify(task.labels)}`,
   project: (task: Task) => `project: ${scalar(task.projectId)}`,
@@ -26,8 +25,7 @@ const TASK_PROPERTY_LINES = {
 // Optional schedule properties are omitted when unset. An unreadable value is ignored and kept as written.
 const SCHEDULE_PROPERTY_PARSERS: Record<string, (value: unknown) => unknown> = {
   time: parseTime,
-  repeat: parseRepeat,
-  reminder: parseReminder
+  repeat: parseRepeat
 };
 
 const LEGACY_TASK_PROPERTIES = new Set(["important"]);
@@ -88,7 +86,6 @@ export function parseTaskMarkdown(path: string, content: string): Task | null {
     deadline: typeof properties.deadline === "string" ? properties.deadline : null,
     time: parseTime(properties.time),
     repeat: parseRepeat(properties.repeat),
-    reminder: parseReminder(properties.reminder),
     priority: properties.priority === 1 || properties.priority === 2 || properties.priority === 3
       ? properties.priority as Priority
       : properties.important === true ? 1 : null,
@@ -159,7 +156,6 @@ export function taskFromDraft(id: string, path: string, draft: TaskDraft, rank: 
     deadline: draft.deadline,
     time: draft.time,
     repeat: draft.repeat,
-    reminder: draft.reminder,
     priority: draft.priority,
     labels: draft.labels,
     projectId: draft.projectId,

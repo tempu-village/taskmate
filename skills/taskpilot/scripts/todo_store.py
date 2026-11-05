@@ -24,9 +24,8 @@ DUE_SUFFIX_RE = re.compile(r"^(.*?)(?:\s+<!-- due: (\d{4}-\d{2}-\d{2}) -->)\s*$"
 TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 REPEAT_RE = re.compile(r"^every ([1-9]\d?) (day|week|month|year)s?$")
 REPEAT_ALIASES = {"daily": (1, "day"), "weekly": (1, "week"), "monthly": (1, "month"), "yearly": (1, "year")}
-REMINDER_OFFSETS = (0, 5, 15, 30, 60, 1440)
 # Optional schedule properties: omitted when unset, kept as written when unreadable.
-SCHEDULE_KEYS = ("time", "repeat", "reminder")
+SCHEDULE_KEYS = ("time", "repeat")
 
 
 def parse_time(value: Any) -> Optional[str]:
@@ -52,11 +51,7 @@ def format_repeat(rule: Optional[Tuple[int, str]]) -> Optional[str]:
     return f"every {interval} {unit}s"
 
 
-def parse_reminder(value: Any) -> Optional[int]:
-    return value if isinstance(value, int) and not isinstance(value, bool) and value in REMINDER_OFFSETS else None
-
-
-SCHEDULE_PARSERS = {"time": parse_time, "repeat": parse_repeat, "reminder": parse_reminder}
+SCHEDULE_PARSERS = {"time": parse_time, "repeat": parse_repeat}
 
 
 def add_repeat(date: str, rule: Tuple[int, str]) -> str:
@@ -251,7 +246,6 @@ def parse_task(path: Path, vault: Path) -> Optional[Dict[str, Any]]:
         "deadline": props.get("deadline") if isinstance(props.get("deadline"), str) else None,
         "time": parse_time(props.get("time")),
         "repeat": format_repeat(parse_repeat(props.get("repeat"))),
-        "reminder": parse_reminder(props.get("reminder")),
         "priority": priority,
         "labels": [label for label in labels if isinstance(label, str)] if isinstance(labels, list) else [],
         "project": props.get("project") if isinstance(props.get("project"), str) else None,
@@ -278,7 +272,7 @@ def quote(value: Any) -> str:
     return json.dumps(str(value), ensure_ascii=False)
 
 
-TASK_KEYS = ["id", "completed", "date", "deadline", "time", "repeat", "reminder", "priority", "labels", "project", "rank", "created-at", "updated-at", "completed-at", "source-note"]
+TASK_KEYS = ["id", "completed", "date", "deadline", "time", "repeat", "priority", "labels", "project", "rank", "created-at", "updated-at", "completed-at", "source-note"]
 
 
 def validate_schedule(task: Dict[str, Any]) -> None:
@@ -289,12 +283,8 @@ def validate_schedule(task: Dict[str, Any]) -> None:
         if rule is None:
             fail("repeat must be daily, weekly, monthly, yearly, or 'every N days|weeks|months|years' with N from 1 to 99")
         task["repeat"] = format_repeat(rule)
-    if task.get("reminder") is not None and parse_reminder(task["reminder"]) is None:
-        fail(f"reminder must be one of {', '.join(str(offset) for offset in REMINDER_OFFSETS)} minutes")
     if (task.get("time") is not None or task.get("repeat") is not None) and task.get("date") is None:
         fail("time and repeat require a date")
-    if task.get("reminder") is not None and task.get("time") is None:
-        fail("reminder requires a time")
 
 
 def encode_task(task: Dict[str, Any]) -> str:
@@ -460,7 +450,6 @@ def create_task(vault: Path, override: Optional[str], draft: Dict[str, Any]) -> 
         "deadline": deadline,
         "time": draft.get("time"),
         "repeat": draft.get("repeat"),
-        "reminder": draft.get("reminder"),
         "priority": priority,
         "labels": normalized_labels(draft.get("labels") or []),
         "project": draft.get("project"),
@@ -484,7 +473,7 @@ def create_task(vault: Path, override: Optional[str], draft: Dict[str, Any]) -> 
 def command_create(args: argparse.Namespace) -> None:
     result = create_task(args.vault, args.task_folder, {
         "title": args.title, "date": args.date, "deadline": args.deadline, "priority": args.priority,
-        "time": args.time, "repeat": args.repeat, "reminder": args.reminder,
+        "time": args.time, "repeat": args.repeat,
         "labels": args.label, "project": args.project,
         "source-note": args.source_note, "steps": args.steps_json or [], "notes": args.notes,
     })
@@ -500,7 +489,7 @@ def find_task(vault: Path, override: Optional[str], identifier: str) -> Tuple[Pa
 
 def update_task(vault: Path, override: Optional[str], identifier: str, patch: Dict[str, Any]) -> Dict[str, Any]:
     path, task = find_task(vault, override, identifier)
-    for key in ("title", "date", "deadline", "time", "repeat", "reminder", "priority", "project", "notes"):
+    for key in ("title", "date", "deadline", "time", "repeat", "priority", "project", "notes"):
         if key in patch:
             task[key] = patch[key]
     if "labels" in patch:
@@ -533,8 +522,6 @@ def command_update(args: argparse.Namespace) -> None:
         patch["time"] = None if args.time == "none" else args.time
     if args.repeat is not None:
         patch["repeat"] = None if args.repeat == "none" else args.repeat
-    if args.reminder is not None:
-        patch["reminder"] = None if args.reminder == "none" else int(args.reminder)
     if args.priority is not None:
         patch["priority"] = None if args.priority == "none" else int(args.priority)
     if args.label is not None:
@@ -679,8 +666,6 @@ def command_validate(args: argparse.Namespace) -> None:
             validate_date(task["date"])
             validate_date(task["deadline"], "deadline")
             validate_priority(task["priority"])
-            if task["reminder"] is not None and (task["time"] is None or task["date"] is None):
-                errors.append(f"{path.name}: reminder requires a date and time")
             if not isinstance(task["labels"], list) or any(not isinstance(label, str) for label in task["labels"]):
                 errors.append(f"{path.name}: labels must be a string array")
     result = {"valid": not errors, "tasks": len(seen), "errors": errors}
@@ -704,7 +689,6 @@ def parser() -> argparse.ArgumentParser:
     create.add_argument("--deadline", help="hard deadline YYYY-MM-DD")
     create.add_argument("--time", help="local time HH:MM; requires --date")
     create.add_argument("--repeat", help="daily, weekly, monthly, yearly, or 'every N days|weeks|months|years'; requires --date")
-    create.add_argument("--reminder", type=int, choices=REMINDER_OFFSETS, help="minutes before the time; requires --time")
     create.add_argument("--priority", type=int, choices=(1, 2, 3))
     create.add_argument("--label", action="append", default=[])
     create.add_argument("--project")
@@ -720,7 +704,6 @@ def parser() -> argparse.ArgumentParser:
     update.add_argument("--deadline", help="hard deadline YYYY-MM-DD or none")
     update.add_argument("--time", help="local time HH:MM or none")
     update.add_argument("--repeat", help="daily, weekly, monthly, yearly, 'every N days|weeks|months|years', or none")
-    update.add_argument("--reminder", choices=("none", *[str(offset) for offset in REMINDER_OFFSETS]), help="minutes before the time, or none")
     update.add_argument("--priority", choices=("1", "2", "3", "none"))
     update.add_argument("--label", action="append", default=None, help="replace labels; repeat for multiple labels")
     update.add_argument("--project", help="project ID or none")

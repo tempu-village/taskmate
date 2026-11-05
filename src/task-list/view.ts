@@ -445,7 +445,6 @@ export class TodoListView extends ItemView {
       deadline: (date) => t("tasks.deadline", { date }),
       deadlineOverdue: (date) => t("tasks.deadlineOverdue", { date }),
       repeat: (rule) => repeatLabel(t, rule),
-      reminder: t("tasks.reminder"),
       sectionTitles: {
         overdue: t("view.overdue"),
         today: t("view.today"),

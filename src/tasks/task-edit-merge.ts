@@ -6,7 +6,6 @@ export const EDITABLE_TASK_FIELDS = [
   "deadline",
   "time",
   "repeat",
-  "reminder",
   "priority",
   "labels",
   "projectId",

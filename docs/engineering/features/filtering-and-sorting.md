@@ -50,7 +50,7 @@ While a Task is being dragged in Manual sorting, holding the pointer near the to
 
 Scheduled keeps its section order fixed as Overdue, Today, and Later. Sections come from Task dates and Manual dragging changes only the manual rank, so a Task can be dragged only within its own section; a drop in another section returns it to its original position. Date sorting changes the task order within each section, and the interface explains this scope while Date sorting is active.
 
-Manual order is one global sequence shared across Smart views and other Task lists. Dragging changes that sequence only in Manual sorting. Within one date, Date sorting puts untimed Tasks first and timed Tasks by time ([Schedules and reminders](schedules-and-reminders.md)). Date, Priority, and Created sorting are display-only and do not rewrite the stored manual rank.
+Manual order is one global sequence shared across Smart views and other Task lists. Dragging changes that sequence only in Manual sorting. Within one date, Date sorting puts untimed Tasks first and timed Tasks by time ([Timed and recurring Tasks](timed-and-recurring-tasks.md)). Date, Priority, and Created sorting are display-only and do not rewrite the stored manual rank.
 
 ## Acceptance and evidence
 

@@ -28,7 +28,6 @@ const copy = {
   deadline: (date: string) => `Deadline ${date}`,
   deadlineOverdue: (date: string) => `Deadline passed ${date}`,
   repeat: (rule: { interval: number; unit: string }) => `Repeats every ${rule.interval} ${rule.unit}`,
-  reminder: "Reminder",
   sectionTitles: { overdue: "Overdue", today: "Today", later: "Later" }
 };
 
@@ -46,7 +45,6 @@ const model: TaskListModel = {
       deadline: null,
       time: null,
       repeat: null,
-      reminder: null,
       deadlineState: "none",
       priority: 1,
       projectName: "Project",

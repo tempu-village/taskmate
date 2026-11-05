@@ -11,8 +11,7 @@ const allowedFolderDependencies: Record<string, readonly string[]> = {
   "task-editor": ["labels", "projects", "tasks"],
   "task-list": ["task-editor", "labels", "projects", "tasks"],
   reviews: ["tasks"],
-  "settings.ts": ["reminders"],
-  reminders: ["tasks"],
+  "settings.ts": [],
   i18n: [],
   shared: []
 };

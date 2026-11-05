@@ -6,9 +6,9 @@ Prerequisite: a Task created with [getting started](../getting-started.md).
 
 Use **Scheduled** for the day you plan to work on the Task and **Deadline** for the hard date it must be finished by. Choose the × in the Deadline field to clear it. They are independent: moving the scheduled date to replan your work keeps the Deadline, and a missed Deadline stays marked as **Deadline passed** in every list until you complete the Task. Clearing one value never removes the other. A Task with only a Deadline stays in Unplanned until you give it a scheduled date.
 
-## Set a time, repeat or reminder
+## Set a time or repeat
 
-After setting a Date, choose a **Time** and, if the work repeats, a **Repeat** interval such as every 2 weeks. With a Time set, choose a **Reminder**. Checking a repeating Task moves it to its next date instead of completing it. Reminders appear only while Obsidian is open on that device; to also get system notifications, enable **System notifications** in TaskMate settings. Reminders missed while Obsidian was closed are listed when it opens. See [Schedules and reminders](../../engineering/features/schedules-and-reminders.md).
+After setting a Date, choose a **Time** and, if the work repeats, a **Repeat** interval such as every 2 weeks. The Time is a guide for planning your day; TaskMate does not send reminders. Checking a repeating Task moves it to its next date instead of completing it. See [Timed and recurring Tasks](../../engineering/features/timed-and-recurring-tasks.md).
 
 ## Add supporting Steps
 

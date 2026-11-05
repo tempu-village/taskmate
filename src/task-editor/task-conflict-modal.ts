@@ -12,7 +12,6 @@ const FIELD_LABEL_KEYS = {
   deadline: "taskModal.deadline",
   time: "taskModal.time",
   repeat: "taskModal.repeat",
-  reminder: "taskModal.reminder",
   priority: "taskModal.priority",
   labels: "taskModal.labels",
   projectId: "taskModal.project",

@@ -27,7 +27,6 @@ export interface TaskListCopy {
   deadline: (date: string) => string;
   deadlineOverdue: (date: string) => string;
   repeat: (rule: RepeatRule) => string;
-  reminder: string;
   sectionTitles: Record<Exclude<TaskListSectionId, "default">, string>;
 }
 
@@ -128,7 +127,6 @@ function renderRow(
     className: `taskmate-deadline is-${row.deadlineState}`
   });
   if (row.repeat) appendElement(metadata, "span", { text: copy.repeat(row.repeat), className: "taskmate-repeat" });
-  if (row.reminder !== null && row.time) appendElement(metadata, "span", { text: copy.reminder, className: "taskmate-reminder" });
   if (row.priority) appendElement(metadata, "span", {
     text: `P${row.priority}`,
     className: `taskmate-priority taskmate-priority-${row.priority}`

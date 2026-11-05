@@ -8,8 +8,6 @@ export interface RepeatRule {
   unit: RepeatUnit;
 }
 
-export const REMINDER_OFFSETS = [0, 5, 15, 30, 60, 1440] as const;
-export type ReminderOffset = (typeof REMINDER_OFFSETS)[number];
 
 export const MAXIMUM_REPEAT_INTERVAL = 99;
 
@@ -41,10 +39,6 @@ export function formatRepeat(rule: RepeatRule | null): string | null {
   if (!rule) return null;
   if (rule.interval === 1) return { day: "daily", week: "weekly", month: "monthly", year: "yearly" }[rule.unit];
   return `every ${rule.interval} ${rule.unit}s`;
-}
-
-export function parseReminder(value: unknown): ReminderOffset | null {
-  return typeof value === "number" && (REMINDER_OFFSETS as readonly number[]).includes(value) ? value as ReminderOffset : null;
 }
 
 function daysInMonth(year: number, month: number): number {
@@ -90,22 +84,4 @@ export function nextOccurrence(task: Pick<Task, "date" | "deadline" | "repeat" |
     deadline: task.deadline && DATE.test(task.deadline) ? shiftDate(task.deadline, task.date, date) : task.deadline,
     steps: task.steps.map((step) => ({ ...step, completed: false }))
   };
-}
-
-/** The local wall-clock instant of a dated, timed Task in the device's current time zone. */
-export function scheduledInstant(date: string, time: string): Date {
-  const [year, month, day] = date.split("-").map(Number);
-  const [hours, minutes] = time.split(":").map(Number);
-  return new Date(year, month - 1, day, hours, minutes, 0, 0);
-}
-
-export function reminderInstant(task: Pick<Task, "date" | "time" | "reminder">): Date | null {
-  if (task.reminder === null || !task.date || !task.time || !DATE.test(task.date)) return null;
-  return new Date(scheduledInstant(task.date, task.time).getTime() - task.reminder * 60_000);
-}
-
-/** A key that changes whenever the reminder would fire at a different moment for a different occurrence. */
-export function reminderKey(task: Pick<Task, "id" | "date" | "time" | "reminder">): string | null {
-  if (task.reminder === null || !task.date || !task.time) return null;
-  return `${task.id}|${task.date}T${task.time}|${task.reminder}`;
 }

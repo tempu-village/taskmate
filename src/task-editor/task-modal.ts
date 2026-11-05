@@ -13,9 +13,9 @@ import { normalizeTaskTitleInput } from "../tasks/task-title";
 import { moveTaskStep, stepDateState } from "../tasks/task-steps";
 import { normalizeTaskSteps } from "../tasks/task-body";
 import { StepModal } from "./step-modal";
-import { MAXIMUM_REPEAT_INTERVAL, REMINDER_OFFSETS } from "../tasks/schedule";
-import type { ReminderOffset, RepeatUnit } from "../tasks/schedule";
-import { reminderLabel, repeatLabel } from "./schedule-labels";
+import { MAXIMUM_REPEAT_INTERVAL } from "../tasks/schedule";
+import type { RepeatUnit } from "../tasks/schedule";
+import { repeatLabel } from "./schedule-labels";
 
 const DATE_SUGGESTION_KEYS = {
   today: "date.today",
@@ -25,12 +25,10 @@ const DATE_SUGGESTION_KEYS = {
 } satisfies Record<ReturnType<typeof taskDateSuggestions>[number]["id"], TranslationKey>;
 
 function normalizeSchedule(draft: TaskDraft): TaskDraft {
-  const time = draft.date ? draft.time : null;
   return {
     ...draft,
-    time,
-    repeat: draft.date ? draft.repeat : null,
-    reminder: time ? draft.reminder : null
+    time: draft.date ? draft.time : null,
+    repeat: draft.date ? draft.repeat : null
   };
 }
 
@@ -107,7 +105,6 @@ export class TaskModal extends Modal {
       deadline: task?.deadline ?? null,
       time: task?.time ?? null,
       repeat: task?.repeat ?? null,
-      reminder: task?.reminder ?? null,
       priority: task?.priority ?? null,
       labels: task?.labels ?? [],
       projectId: task?.projectId ?? defaultProjectId,
@@ -240,31 +237,17 @@ export class TaskModal extends Modal {
     });
     repeatInterval.hidden = !this.draft.repeat;
 
-    const reminderSetting = new Setting(fields).setName(t("taskModal.reminder"));
-    reminderSetting.settingEl.addClass("taskmate-reminder-setting");
-    decorateField(reminderSetting, "bell", t("taskModal.reminder"));
-    let reminderSelect!: HTMLSelectElement;
-    reminderSetting.addDropdown((dropdown) => {
-      dropdown.selectEl.setAttribute("aria-label", t("taskModal.reminder"));
-      reminderSelect = dropdown.selectEl;
-      dropdown.addOption("", t("reminder.none"));
-      for (const offset of REMINDER_OFFSETS) dropdown.addOption(String(offset), reminderLabel(t, offset));
-      dropdown.setValue(this.draft.reminder === null ? "" : String(this.draft.reminder)).onChange((value) => {
-        this.draft.reminder = value === "" ? null : Number(value) as ReminderOffset;
-      });
-    });
     const scheduleHint = fields.createDiv({ cls: "setting-item-description taskmate-schedule-hint" });
 
-    // Time and repeat need a date; a reminder needs a date and a time. Unusable values are kept in the
+    // Time and repeat need a date. Unusable values are kept in the
     // draft while the user edits and dropped on save.
     const refreshScheduleControls = (): void => {
       const hasDate = this.draft.date !== null;
       timeInput.disabled = !hasDate;
       repeatUnit.disabled = !hasDate;
       repeatInterval.disabled = !hasDate;
-      reminderSelect.disabled = !hasDate || this.draft.time === null;
-      scheduleHint.setText(!hasDate ? t("taskModal.scheduleNeedsDate") : this.draft.time === null ? t("taskModal.reminderNeedsTime") : "");
-      scheduleHint.hidden = hasDate && this.draft.time !== null;
+      scheduleHint.setText(hasDate ? "" : t("taskModal.scheduleNeedsDate"));
+      scheduleHint.hidden = hasDate;
     };
     onDateChange = refreshScheduleControls;
     refreshScheduleControls();
