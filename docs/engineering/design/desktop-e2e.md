@@ -11,7 +11,7 @@ Status: Current. These tests drive the real Obsidian desktop app with the built 
 3. Installs this checkout's `main.js`, `manifest.json` and `styles.css` as a plugin.
 4. Opens a sandboxed copy of [the test Vault](../../../test/e2e/vaults/basic) and runs the specs.
 
-`task-list.e2e.ts` opens the TaskMate list, clicks the All tab by position (so it does not depend on UI language), and checks that the Vault's sample Task is shown. `schedule.e2e.ts` covers regressions for time and repeat: both are disabled with a hint while a Task has no date, completing a weekly Task advances its date and deadline by seven days and reopens its Steps, and date sort orders same-day Tasks untimed first, then by time.
+`task-list.e2e.ts` opens the TaskMate list, clicks the All tab by position (so it does not depend on UI language), and checks that the Vault's sample Task is shown. `schedule.e2e.ts` covers regressions for time and repeat: both are disabled with a hint while a Task has no date, completing a weekly Task advances its date and deadline by seven days and reopens its Steps, and date sort orders same-day Tasks untimed first, then by time. `obsidian-ui.e2e.ts` reads computed styles where Obsidian's own view, button and input rules compete with TaskMate's (list padding, task titles, the Label input and Step rows), and checks that deleting a Task asks in an Obsidian modal, keeps the file on Cancel and removes it on Delete.
 
 ## Why Obsidian is downloaded into the cache
 
@@ -55,7 +55,7 @@ The `e2e` job in [CI](../../../.github/workflows/ci.yml) runs on Ubuntu. Linux r
 
 > 翻訳状態：`ai-translated`。英語版が正本です。
 
-`npm run test:e2e`は、ビルド済みプラグインを入れた本物のObsidianデスクトップ版をWebdriverIOで操作します。`task-list.e2e.ts`は一覧を開き、「すべて」タブを位置で選んでクリックし、テスト用Vaultのタスクが表示されることを確かめます。`schedule.e2e.ts`は時刻と繰り返しの回帰テストで、日付なしでは両方が無効で案内が出ること、毎週タスクの完了で予定日と締切が7日進みStepが未完了に戻ること、日付ソートで同じ日のタスクが時刻なし→時刻順に並ぶことを確かめます。
+`npm run test:e2e`は、ビルド済みプラグインを入れた本物のObsidianデスクトップ版をWebdriverIOで操作します。`task-list.e2e.ts`は一覧を開き、「すべて」タブを位置で選んでクリックし、テスト用Vaultのタスクが表示されることを確かめます。`schedule.e2e.ts`は時刻と繰り返しの回帰テストで、日付なしでは両方が無効で案内が出ること、毎週タスクの完了で予定日と締切が7日進みStepが未完了に戻ること、日付ソートで同じ日のタスクが時刻なし→時刻順に並ぶことを確かめます。`obsidian-ui.e2e.ts`は、Obsidian本体のビュー・ボタン・入力欄のスタイルとTaskMateのスタイルが競合する箇所（一覧の余白、タスクのタイトル、ラベル入力欄、ステップ行）の計算済みスタイルを確かめ、タスク削除時にObsidianのモーダルで確認され、キャンセルではファイルが残り、削除で消えることを確かめます。
 
 specを書くときは、各specで`executeObsidian`を直接書かず、`test/e2e/helpers.ts`の共通処理を使います。
 
