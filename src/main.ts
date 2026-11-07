@@ -239,7 +239,7 @@ export default class TaskMatePlugin extends Plugin {
     const file = this.app.workspace.getActiveFile();
     if (!file) return false;
     if (!checking) {
-      void this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+      void this.app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
         frontmatter["taskmate-source"] = value;
       }).then(() => {
         const { t } = this.i18n();

@@ -63,11 +63,7 @@ function appendElement<K extends keyof HTMLElementTagNameMap>(
   tag: K,
   options: { className?: string; text?: string; attributes?: Record<string, string> } = {}
 ): HTMLElementTagNameMap[K] {
-  const element = parent.ownerDocument.createElement(tag);
-  if (options.className) element.className = options.className;
-  if (options.text !== undefined) element.textContent = options.text;
-  Object.entries(options.attributes ?? {}).forEach(([name, value]) => element.setAttribute(name, value));
-  parent.append(element);
+  const element = parent.createEl(tag, { cls: options.className, text: options.text, attr: options.attributes });
   return element;
 }
 
@@ -297,7 +293,7 @@ export function renderTaskList(
       }
       const orderedIds = Array.from(list.querySelectorAll<HTMLElement>(".taskmate-task"))
         .map((element) => element.dataset.taskId ?? "");
-      const taskId = (event.item as HTMLElement).dataset.taskId ?? "";
+      const taskId = event.item.dataset.taskId ?? "";
       const newIndex = orderedIds.indexOf(taskId);
       if (!taskId || newIndex < 0) return;
       void dispatch({
@@ -326,7 +322,7 @@ function restoreDraggedItem(list: HTMLElement, item: HTMLElement, oldIndex: numb
 }
 
 function isSectionHeading(element: Element): element is HTMLElement {
-  return element instanceof HTMLElement && element.classList.contains("taskmate-task-section-heading");
+  return element.instanceOf(HTMLElement) && element.classList.contains("taskmate-task-section-heading");
 }
 
 function precedingSection(element: Element): string | undefined {

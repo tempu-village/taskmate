@@ -24,7 +24,7 @@ From a result list, open the view/task-actions menu and choose **Select tasks**.
 
 ## Delete one Task
 
-Open its editor, use **Delete** in the footer and confirm only if the Task should be removed. TaskMate uses Obsidian's trash behavior. For details, see [Task editing](../../engineering/features/task-editing.md), [Steps](../../engineering/features/task-steps.md) and [Labels](../../engineering/features/labels.md).
+Open its editor, use **Delete** in the footer and confirm only if the Task should be removed. TaskMate deletes the Task file the way Obsidian's **Deleted files** setting (Settings → Files and links) says: to the system trash, to the vault's `.trash` folder, or permanently. Check that setting if you want to be able to recover deleted Tasks. For details, see [Task editing](../../engineering/features/task-editing.md), [Steps](../../engineering/features/task-steps.md) and [Labels](../../engineering/features/labels.md).
 
 ## 日本語参考
 
@@ -56,4 +56,4 @@ Open its editor, use **Delete** in the footer and confirm only if the Task shoul
 
 ### 1件削除する
 
-編集画面の下部にある削除を選び、対象を確認して確定します。Obsidianのゴミ箱動作を利用します。詳しい保証は[編集](../../engineering/features/task-editing.md)、[Steps](../../engineering/features/task-steps.md)、[Labels](../../engineering/features/labels.md)を参照してください。
+編集画面の下部にある削除を選び、対象を確認して確定します。タスクのファイルは、Obsidianの削除の設定（設定 → ファイルとリンク）に従って、システムのゴミ箱、Vaultの`.trash`フォルダのどちらかへ移すか、完全に削除します。削除したタスクを元に戻せるようにしたい場合は、この設定を確認してください。詳しい保証は[編集](../../engineering/features/task-editing.md)、[Steps](../../engineering/features/task-steps.md)、[Labels](../../engineering/features/labels.md)を参照してください。

@@ -55,14 +55,14 @@ function exactDeclarations(selector: string): string {
 
 describe("mobile layout", () => {
   it("keeps navigation outside the scrollable screen body", () => {
-    const view = declarations(".taskmate-view");
+    const view = declarations(".workspace-leaf-content .view-content.taskmate-view");
     const page = declarations(".taskmate-page");
     const content = declarations(".taskmate-content");
     const navigation = declarations(".taskmate-navigation");
 
     expect(view).toMatch(/display\s*:\s*flex\s*;/);
     expect(view).toMatch(/flex-direction\s*:\s*column\s*;/);
-    expect(view).toMatch(/padding\s*:\s*0\s*!important\s*;/);
+    expect(view).toMatch(/padding\s*:\s*0\s*;/);
     expect(page).toMatch(/display\s*:\s*flex\s*;/);
     expect(page).toMatch(/flex\s*:\s*1\s+1\s+auto\s*;/);
     expect(page).toMatch(/min-height\s*:\s*0\s*;/);
@@ -117,14 +117,14 @@ describe("mobile layout", () => {
   });
 
   it("wraps long task titles within their task row", () => {
-    const title = exactDeclarations(".taskmate-title");
+    const title = exactDeclarations(".taskmate-view button.taskmate-title.taskmate-title");
     expect(title).toMatch(/min-width\s*:\s*0\s*;/);
     expect(title).toMatch(/max-width\s*:\s*100%\s*;/);
     expect(title).toMatch(/white-space\s*:\s*normal\s*;/);
     expect(title).toMatch(/overflow-wrap\s*:\s*anywhere\s*;/);
     expect(title).toMatch(/height\s*:\s*auto\s*;/);
     expect(title).toMatch(/appearance\s*:\s*none\s*;/);
-    expect(title).toMatch(/border-radius\s*:\s*0\s*!important\s*;/);
+    expect(title).toMatch(/border-radius\s*:\s*0\s*;/);
     expect(title).toMatch(/overflow\s*:\s*visible\s*;/);
     expect(stylesheet).not.toContain(".taskmate-title-text");
     expect(stylesheet).not.toContain(".taskmate-title-overflow-toggle");
@@ -403,16 +403,16 @@ describe("mobile layout", () => {
   it("uses the chip editor as the only visible Label-input focus boundary", () => {
     const editor = declarations(".taskmate-label-chip-editor");
     const focusedEditor = exactDeclarations(".taskmate-label-chip-editor:focus-within");
-    const input = exactDeclarations(".taskmate-label-chip-editor > input.taskmate-label-chip-input");
-    const focusedInput = exactDeclarations(".taskmate-label-chip-editor > input.taskmate-label-chip-input:focus");
+    const input = exactDeclarations(".taskmate-label-chip-editor > input.taskmate-label-chip-input.taskmate-label-chip-input");
+    const focusedInput = exactDeclarations(".taskmate-label-chip-editor > input.taskmate-label-chip-input.taskmate-label-chip-input:focus");
 
     expect(editor).toMatch(/border\s*:/);
     expect(focusedEditor).toMatch(/box-shadow\s*:/);
     expect(input).toMatch(/appearance\s*:\s*none\s*;/);
-    expect(input).toMatch(/background\s*:\s*transparent\s*!important\s*;/);
-    expect(input).toMatch(/border\s*:\s*0\s*!important\s*;/);
-    expect(input).toMatch(/box-shadow\s*:\s*none\s*!important\s*;/);
-    expect(focusedInput).toMatch(/outline\s*:\s*none\s*!important\s*;/);
+    expect(input).toMatch(/background\s*:\s*transparent\s*;/);
+    expect(input).toMatch(/border\s*:\s*0\s*;/);
+    expect(input).toMatch(/box-shadow\s*:\s*none\s*;/);
+    expect(focusedInput).toMatch(/outline\s*:\s*none\s*;/);
   });
 
   it("keeps the end of phone task lists above Obsidian navigation", () => {
@@ -469,7 +469,7 @@ describe("mobile layout", () => {
     const controls = declarations(".taskmate-review-controls");
 
     // Obsidian's .view-content padding must not replace the padding that the sticky offsets subtract.
-    expect(declarations(".taskmate-review-index")).toMatch(/padding\s*:\s*var\(--taskmate-review-padding\)\s*!important\s*;/);
+    expect(declarations(".workspace-leaf-content .taskmate-review-index.taskmate-review-index")).toMatch(/padding\s*:\s*var\(--taskmate-review-padding\)\s*;/);
     expect(controls).toMatch(/top\s*:\s*calc\(-1 \* var\(--taskmate-review-padding\)\)/);
     expect(controls).toMatch(/min-height\s*:\s*var\(--taskmate-review-controls-height\)/);
     expect(declarations(".taskmate-review-file-header")).toMatch(/top\s*:\s*calc\(var\(--taskmate-review-controls-height\) - var\(--taskmate-review-padding\)\)/);

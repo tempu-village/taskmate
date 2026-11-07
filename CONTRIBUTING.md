@@ -28,7 +28,10 @@ For a behavior change, begin with the applicable product feature specification o
    python3 scripts/validate_skills.py
    npm run validate:localization
    python3 scripts/validate_docs.py
+   npm run lint
    ```
+
+   `npm run lint` runs `eslint-plugin-obsidianmd`'s recommended rules, which the Obsidian Community directory review also reports. The two `keyCode` deprecation warnings are intentional ([ADR 0030](docs/engineering/adr/0030-keep-keycode-229-for-safari-ime-enter.md)).
 
 5. Include the behavior change, validation, and documentation impact in the pull request description.
 

@@ -6,7 +6,8 @@ import { sha256 } from "../../shared/sha256";
 // in text mode, which turns CRLF and CR into LF, so the same happens here first.
 
 const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
-const LINE_BREAK = /\r\n|[\n\r\v\f\x1c\x1d\x1e\x85\u2028\u2029]/;
+// eslint-disable-next-line no-control-regex -- Python str.splitlines() also breaks on the file, group and record separators.
+const LINE_BREAK = /\r\n|[\n\r\v\f\u001c\u001d\u001e\x85\u2028\u2029]/;
 const IMPORT_KEYS = new Set(["taskmate-import-status", "taskmate-imported-at", "taskmate-imported-hash", "taskmate-task-ids"]);
 
 export interface SourceNoteProvenance {

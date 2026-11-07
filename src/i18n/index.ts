@@ -67,7 +67,7 @@ export function createI18n(preference: LanguagePreference | string | undefined, 
   const locale = resolveLocale(preference, detectedLanguage);
   const t = (<Key extends TranslationKey>(key: Key, ...args: TranslationArgs<Key>): string => {
     const message = selectLocalizedMessage(en[key], catalogs[locale][key]);
-    return interpolate(message, args[0] as Record<string, string | number> | undefined);
+    return interpolate(message, args[0]);
   }) as Translate;
   return { locale, t };
 }
