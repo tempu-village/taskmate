@@ -248,4 +248,46 @@ last-used-at: "2026-11-02T09:00:00+09:00"
     expect(await input.getValue()).toBe("");
     await browser.keys("Escape");
   });
+
+  it("deletes permanently when Obsidian's Deleted files setting says so", async function () {
+    await closeModals();
+    await browser.executeObsidian(({ app }) => app.vault.setConfig("trashOption", "none"));
+    const path = await writeTask({ id: "ui-delete-permanent" });
+    await openAllTab();
+    await taskRow("ui-delete-permanent").$(".taskmate-title").click();
+    await browser.$(".modal .taskmate-delete-task").click();
+    await (await confirmButton()).click();
+    await browser.waitUntil(async () => !(await adapterExists(path)));
+    expect(await adapterExists(".trash/ui-delete-permanent.md")).toBe(false);
+    await browser.executeObsidian(({ app }) => app.vault.setConfig("trashOption", "local"));
+  });
+
+  it("asks for confirmation inside a popout window", async function () {
+    await closeModals();
+    const path = await writeTask({ id: "ui-popout" });
+    const mainWindow = await browser.getWindowHandle();
+    await browser.executeObsidian(async ({ app }) => {
+      const leaf = app.workspace.openPopoutLeaf();
+      await leaf.setViewState({ type: "taskmate-list", active: true });
+    });
+    await browser.waitUntil(async () => (await browser.getWindowHandles()).length > 1);
+    const popout = (await browser.getWindowHandles()).find((handle) => handle !== mainWindow)!;
+    await browser.switchToWindow(popout);
+    try {
+      const view = browser.$(".workspace-leaf-content[data-type='taskmate-list']");
+      await view.waitForExist();
+      await view.$$(".taskmate-smart-views [role='tab']")[1].click();
+      await view.$("[data-task-id='ui-popout'] .taskmate-title").click();
+      await browser.$(".modal .taskmate-delete-task").click();
+      // The confirm modal must open in the popout's own document, where the user is looking.
+      await cancelConfirm();
+      expect(await fileExists(path)).toBe(true);
+      await browser.$(".modal .taskmate-delete-task").click();
+      await (await confirmButton()).click();
+      await browser.waitUntil(async () => !(await fileExists(path)));
+    } finally {
+      await browser.closeWindow();
+      await browser.switchToWindow(mainWindow);
+    }
+  });
 });

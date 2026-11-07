@@ -18,7 +18,7 @@ Before this decision, TaskMate deleted Task and Project files with `Vault.trash(
 ## Consequences
 
 - Users whose setting is **Permanently delete** cannot recover Tasks deleted in TaskMate. The confirmation says so before the deletion.
-- The desktop E2E test checks the `.trash` folder option. The system trash and permanent deletion options, and Android, are checked manually.
+- The desktop E2E test checks the `.trash` folder and permanent deletion options. The system trash option and mobile are checked manually.
 - Deleting a Project still unassigns its Tasks and keeps their files ([ADR 0006](0006-unassign-tasks-when-deleting-projects.md)).
 
 ## 日本語参考
