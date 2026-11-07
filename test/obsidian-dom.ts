@@ -23,5 +23,12 @@ if (typeof document !== "undefined") {
     const options = typeof info === "string" ? { cls: info } : info;
     return create(this.ownerDocument ?? document, tag, { ...options, parent: this });
   };
+  proto.createDiv ??= function (this: Node, info: ElementInfo | string = {}) {
+    return (this as unknown as { createEl(tag: "div", info: ElementInfo | string): HTMLDivElement }).createEl("div", info);
+  };
+  proto.createSpan ??= function (this: Node, info: ElementInfo | string = {}) {
+    return (this as unknown as { createEl(tag: "span", info: ElementInfo | string): HTMLSpanElement }).createEl("span", info);
+  };
+  proto.empty ??= function (this: Node) { while (this.firstChild) this.removeChild(this.firstChild); };
   proto.instanceOf ??= function (this: Node, type: new () => unknown) { return this instanceof type; };
 }

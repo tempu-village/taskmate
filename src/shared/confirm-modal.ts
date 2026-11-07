@@ -17,13 +17,15 @@ class ConfirmModal extends Modal {
   onOpen(): void {
     this.contentEl.createEl("p", { text: this.options.message });
     const actions = this.contentEl.createDiv({ cls: "taskmate-modal-actions" });
-    actions.createEl("button", { text: this.options.cancelText }).addEventListener("click", () => this.close());
+    const cancel = actions.createEl("button", { text: this.options.cancelText });
+    cancel.addEventListener("click", () => this.close());
     const confirm = actions.createEl("button", { text: this.options.confirmText, cls: "mod-warning" });
     confirm.addEventListener("click", () => {
       this.confirmed = true;
       this.close();
     });
-    window.setTimeout(() => confirm.focus(), 0);
+    // Focus the safe choice so Enter or an accidental tap does not run a destructive action.
+    window.setTimeout(() => cancel.focus(), 0);
   }
 
   onClose(): void {
