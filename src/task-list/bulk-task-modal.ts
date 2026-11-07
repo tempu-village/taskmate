@@ -14,8 +14,7 @@ const DATE_SUGGESTION_KEYS = { today: "date.today", tomorrow: "date.tomorrow", "
 
 function decorateField(setting: Setting, icon: string, accessibleName: string): void {
   setting.settingEl.addClass("taskmate-compact-setting");
-  const marker = document.createElement("span");
-  marker.addClass("taskmate-field-icon");
+  const marker = createSpan({ cls: "taskmate-field-icon" });
   marker.setAttribute("aria-hidden", "true");
   setIcon(marker, icon);
   setting.settingEl.prepend(marker);
@@ -112,7 +111,7 @@ export class BulkTaskModal extends Modal {
     addEmbeddedLabel(projectSetting, t("taskModal.project"));
     projectSetting.addDropdown((dropdown) => {
       dropdown.addOption("unchanged", t("bulk.unchanged")).addOption("clear", t("taskModal.unassigned"));
-      this.projects.forEach((project) => dropdown.addOption(project.id, project.name));
+      this.projects.forEach((project) => { dropdown.addOption(project.id, project.name); });
       dropdown.onChange((value) => { if (value === "unchanged") delete this.changes.projectId; else this.changes.projectId = value === "clear" ? null : value; });
     });
     const prioritySetting = new Setting(fields).setName(t("taskModal.priority"));
@@ -150,8 +149,7 @@ export class BulkTaskModal extends Modal {
       for (const label of expanded ? labels : summary.visible) {
         const assigned = this.tasks.filter((task) => task.labels.includes(label)).length;
         const partial = assigned > 0 && assigned < this.tasks.length && !this.changes.addLabels.includes(label);
-        const chip = document.createElement("span");
-        chip.addClass("taskmate-editor-label-chip");
+        const chip = createSpan({ cls: "taskmate-editor-label-chip" });
         if (partial) chip.addClass("taskmate-bulk-label-partial");
         chip.dataset.taskmateLabelChip = label;
         chip.createSpan({ text: label });
@@ -174,8 +172,7 @@ export class BulkTaskModal extends Modal {
         editor.insertBefore(chip, input);
       }
       if (summary.hidden.length > 0) {
-        const toggle = document.createElement("button");
-        toggle.addClass("taskmate-label-overflow-toggle"); toggle.type = "button";
+        const toggle = createEl("button", { cls: "taskmate-label-overflow-toggle", type: "button" });
         toggle.textContent = expanded ? t("tasks.hideExtraLabels") : t("tasks.moreLabels", { count: summary.hidden.length });
         toggle.addEventListener("click", () => { expanded = !expanded; refresh(); });
         editor.insertBefore(toggle, input);
@@ -204,7 +201,7 @@ export class BulkTaskModal extends Modal {
     const cancel = actions.createEl("button", { text: t("common.cancel") });
     cancel.addEventListener("click", () => this.close());
     const apply = actions.createEl("button", { text: t("bulk.apply", { count: this.tasks.length }), cls: "mod-cta" });
-    apply.addEventListener("click", async () => { apply.disabled = true; try { await this.onApply(this.changes); this.close(); } finally { apply.disabled = false; } });
+    apply.addEventListener("click", () => void (async () => { apply.disabled = true; try { await this.onApply(this.changes); this.close(); } finally { apply.disabled = false; } })());
     this.keyboardScroller = new MobileKeyboardScroller(fields, this.modalEl, this.availableRegion, this.baselineAvailableHeight);
     this.keyboardScroller.connect();
   }

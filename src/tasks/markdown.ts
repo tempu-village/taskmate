@@ -1,4 +1,4 @@
-import type { Priority, Task, TaskDraft } from "./domain";
+import type { Task, TaskDraft } from "./domain";
 import { encodeTaskBody, parseTaskBody } from "./task-body";
 import { formatRepeat, parseRepeat, parseTime } from "./schedule";
 
@@ -87,7 +87,7 @@ export function parseTaskMarkdown(path: string, content: string): Task | null {
     time: parseTime(properties.time),
     repeat: parseRepeat(properties.repeat),
     priority: properties.priority === 1 || properties.priority === 2 || properties.priority === 3
-      ? properties.priority as Priority
+      ? properties.priority
       : properties.important === true ? 1 : null,
     labels: Array.isArray(properties.labels) ? properties.labels.filter((label): label is string => typeof label === "string") : [],
     projectId: typeof properties.project === "string" ? properties.project : null,

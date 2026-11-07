@@ -590,7 +590,7 @@ function validateCandidate(value: unknown, path: string, format: ImportReviewFor
   if (candidate.mergeTarget !== undefined) validateMergeTarget(candidate.mergeTarget, `${path}.mergeTarget`);
   if (candidate.exclusionReason !== undefined) nonEmpty(candidate.exclusionReason, `${path}.exclusionReason`);
   const required = { create: "taskDraft", merge: "mergeTarget", exclude: "exclusionReason" } as const;
-  const requiredField = required[candidate.operation as Operation];
+  const requiredField = required[candidate.operation];
   if (candidate[requiredField] === undefined) invalid(path, `${candidate.operation} requires ${requiredField}`);
   oneOf(candidate.decision, ["pending", "approved", "hold"], `${path}.decision`);
   optionalRevision(candidate.decisionRevision, `${path}.decisionRevision`);

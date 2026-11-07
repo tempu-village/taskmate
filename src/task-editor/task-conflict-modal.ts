@@ -71,14 +71,14 @@ export class TaskConflictModal extends Modal {
     const cancel = actions.createEl("button", { text: t("common.cancel") });
     cancel.addEventListener("click", () => this.close());
     const save = actions.createEl("button", { text: t("conflict.saveResolved"), cls: "mod-cta" });
-    save.addEventListener("click", async () => {
+    save.addEventListener("click", () => void (async () => {
       save.disabled = true;
       try {
         if (await this.onResolve({ ...this.choices })) this.close();
       } finally {
         save.disabled = false;
       }
-    });
+    })());
   }
 
   onClose(): void {

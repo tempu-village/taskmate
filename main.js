@@ -22,7 +22,7 @@ __export(main_exports, {
   default: () => TaskMatePlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian21 = require("obsidian");
+var import_obsidian22 = require("obsidian");
 
 // src/tasks/repository.ts
 var import_obsidian = require("obsidian");
@@ -447,7 +447,10 @@ var EDITABLE_TASK_FIELDS = [
   "sourceNote"
 ];
 function cloneValue(value) {
-  if (Array.isArray(value)) return value.map((item) => typeof item === "object" && item !== null ? { ...item } : item);
+  if (Array.isArray(value)) {
+    const items = value;
+    return items.map((item) => typeof item === "object" && item !== null ? { ...item } : item);
+  }
   return value;
 }
 function isPlainObject(value) {
@@ -515,7 +518,7 @@ var DuplicateTaskIdError = class extends Error {
   }
 };
 function newId() {
-  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }
 var TaskRepository = class {
@@ -692,7 +695,7 @@ var TaskRepository = class {
   async remove(task) {
     const located = await this.locateTask(task.id, task.path);
     if (located.status === "identity-conflict") throw new DuplicateTaskIdError(located.conflict);
-    if (located.status === "ready") await this.app.vault.trash(located.file, true);
+    if (located.status === "ready") await this.app.fileManager.trashFile(located.file);
   }
   async readReviewedTask(taskId, preferredPath) {
     const located = await this.locateTask(taskId, preferredPath);
@@ -862,7 +865,7 @@ function projectFileName(name, id) {
 
 // src/projects/project-repository.ts
 function newId2() {
-  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }
 var ProjectRepository = class {
@@ -920,7 +923,7 @@ var ProjectRepository = class {
   }
   async remove(project) {
     const file = this.app.vault.getAbstractFileByPath(project.path);
-    if (file instanceof import_obsidian2.TFile) await this.app.vault.trash(file, true);
+    if (file instanceof import_obsidian2.TFile) await this.app.fileManager.trashFile(file);
   }
 };
 
@@ -982,10 +985,39 @@ var TaskMateSettingTab = class extends import_obsidian3.PluginSettingTab {
 };
 
 // src/task-list/view.ts
-var import_obsidian13 = require("obsidian");
+var import_obsidian14 = require("obsidian");
+
+// src/shared/confirm-modal.ts
+var import_obsidian4 = require("obsidian");
+var ConfirmModal = class extends import_obsidian4.Modal {
+  constructor(app, options, resolve) {
+    super(app);
+    this.options = options;
+    this.resolve = resolve;
+  }
+  confirmed = false;
+  onOpen() {
+    this.contentEl.createEl("p", { text: this.options.message });
+    const actions = this.contentEl.createDiv({ cls: "taskmate-modal-actions" });
+    actions.createEl("button", { text: this.options.cancelText }).addEventListener("click", () => this.close());
+    const confirm = actions.createEl("button", { text: this.options.confirmText, cls: "mod-warning" });
+    confirm.addEventListener("click", () => {
+      this.confirmed = true;
+      this.close();
+    });
+    window.setTimeout(() => confirm.focus(), 0);
+  }
+  onClose() {
+    this.contentEl.empty();
+    this.resolve(this.confirmed);
+  }
+};
+function confirmAction(app, options) {
+  return new Promise((resolve) => new ConfirmModal(app, options, resolve).open());
+}
 
 // src/task-list/bulk-task-modal.ts
-var import_obsidian5 = require("obsidian");
+var import_obsidian6 = require("obsidian");
 
 // src/tasks/date-suggestions.ts
 function taskDateSuggestions(today = todayKey()) {
@@ -1040,7 +1072,7 @@ function summarizeLabels(labels2, limit = COMPACT_LABEL_LIMIT) {
 }
 
 // src/labels/label-picker-modal.ts
-var import_obsidian4 = require("obsidian");
+var import_obsidian5 = require("obsidian");
 
 // src/i18n/en.ts
 var en = {
@@ -1864,7 +1896,7 @@ function toggleFavoriteLabel(favoriteLabels, label, limit = FAVORITE_LABEL_LIMIT
 }
 
 // src/labels/label-picker-modal.ts
-var LabelPickerModal = class extends import_obsidian4.Modal {
+var LabelPickerModal = class extends import_obsidian5.Modal {
   constructor(app, options) {
     super(app);
     this.options = options;
@@ -1928,7 +1960,7 @@ var LabelPickerModal = class extends import_obsidian4.Modal {
     const cancel = actions.createEl("button", { text: t("common.cancel") });
     cancel.addEventListener("click", () => this.close());
     const confirm = actions.createEl("button", { text: t("filter.confirmLabelSelection"), cls: "mod-cta" });
-    confirm.addEventListener("click", async () => {
+    confirm.addEventListener("click", () => void (async () => {
       confirm.disabled = true;
       try {
         await this.options.onConfirm([...this.selectedLabels], [...this.favoriteLabels]);
@@ -1936,7 +1968,7 @@ var LabelPickerModal = class extends import_obsidian4.Modal {
       } finally {
         confirm.disabled = false;
       }
-    });
+    })());
     this.renderPicker();
   }
   onClose() {
@@ -2022,7 +2054,7 @@ var LabelPickerModal = class extends import_obsidian4.Modal {
   toggleFavorite(label) {
     const result = toggleFavoriteLabel(this.favoriteLabels, label);
     if (result.atLimit) {
-      new import_obsidian4.Notice(this.options.i18n.t("filter.favoriteLimitNotice", { count: FAVORITE_LABEL_LIMIT }));
+      new import_obsidian5.Notice(this.options.i18n.t("filter.favoriteLimitNotice", { count: FAVORITE_LABEL_LIMIT }));
       return;
     }
     if (!result.changed) return;
@@ -2241,10 +2273,9 @@ var MobileKeyboardScroller = class {
 var DATE_SUGGESTION_KEYS = { today: "date.today", tomorrow: "date.tomorrow", "seven-days": "date.sevenDays", none: "date.none" };
 function decorateField(setting, icon, accessibleName) {
   setting.settingEl.addClass("taskmate-compact-setting");
-  const marker = document.createElement("span");
-  marker.addClass("taskmate-field-icon");
+  const marker = createSpan({ cls: "taskmate-field-icon" });
   marker.setAttribute("aria-hidden", "true");
-  (0, import_obsidian5.setIcon)(marker, icon);
+  (0, import_obsidian6.setIcon)(marker, icon);
   setting.settingEl.prepend(marker);
   setting.controlEl.setAttribute("aria-label", accessibleName);
 }
@@ -2252,7 +2283,7 @@ function addEmbeddedLabel(setting, label) {
   setting.controlEl.addClass("taskmate-embedded-select");
   setting.controlEl.prepend(setting.controlEl.createSpan({ text: label, cls: "taskmate-embedded-field-label", attr: { "aria-hidden": "true" } }));
 }
-var PartialLabelActionsModal = class extends import_obsidian5.Modal {
+var PartialLabelActionsModal = class extends import_obsidian6.Modal {
   constructor(app, label, i18n, onAddToAll, onRemove) {
     super(app);
     this.i18n = i18n;
@@ -2282,7 +2313,7 @@ var PartialLabelActionsModal = class extends import_obsidian5.Modal {
     this.contentEl.empty();
   }
 };
-var BulkTaskModal = class extends import_obsidian5.Modal {
+var BulkTaskModal = class extends import_obsidian6.Modal {
   constructor(app, tasks, projects, labelOptions, availableRegion, i18n, onApply) {
     super(app);
     this.tasks = tasks;
@@ -2303,7 +2334,7 @@ var BulkTaskModal = class extends import_obsidian5.Modal {
     const { t } = this.i18n;
     this.modalEl.addClass("taskmate-task-modal", "taskmate-bulk-task-modal");
     const fields = this.contentEl.createDiv({ cls: "taskmate-task-fields" });
-    const dateSetting = new import_obsidian5.Setting(fields).setName(t("taskModal.date"));
+    const dateSetting = new import_obsidian6.Setting(fields).setName(t("taskModal.date"));
     dateSetting.settingEl.addClass("taskmate-date-setting");
     decorateField(dateSetting, "calendar-days", t("taskModal.date"));
     const datePresets = dateSetting.controlEl.createDiv({ cls: "taskmate-date-presets taskmate-bulk-date-presets" });
@@ -2337,25 +2368,27 @@ var BulkTaskModal = class extends import_obsidian5.Modal {
       dateInput = text3.inputEl;
       text3.onChange((value) => selectDate(value || null));
     });
-    const projectSetting = new import_obsidian5.Setting(fields).setName(t("taskModal.project"));
+    const projectSetting = new import_obsidian6.Setting(fields).setName(t("taskModal.project"));
     decorateField(projectSetting, "folder", t("taskModal.project"));
     addEmbeddedLabel(projectSetting, t("taskModal.project"));
     projectSetting.addDropdown((dropdown) => {
       dropdown.addOption("unchanged", t("bulk.unchanged")).addOption("clear", t("taskModal.unassigned"));
-      this.projects.forEach((project) => dropdown.addOption(project.id, project.name));
+      this.projects.forEach((project) => {
+        dropdown.addOption(project.id, project.name);
+      });
       dropdown.onChange((value) => {
         if (value === "unchanged") delete this.changes.projectId;
         else this.changes.projectId = value === "clear" ? null : value;
       });
     });
-    const prioritySetting = new import_obsidian5.Setting(fields).setName(t("taskModal.priority"));
+    const prioritySetting = new import_obsidian6.Setting(fields).setName(t("taskModal.priority"));
     decorateField(prioritySetting, "flag", t("taskModal.priority"));
     addEmbeddedLabel(prioritySetting, t("taskModal.priority"));
     prioritySetting.addDropdown((dropdown) => dropdown.addOption("unchanged", t("bulk.unchanged")).addOption("clear", t("taskModal.noPriority")).addOption("1", t("filter.priorityValue", { priority: 1 })).addOption("2", t("filter.priorityValue", { priority: 2 })).addOption("3", t("filter.priorityValue", { priority: 3 })).onChange((value) => {
       if (value === "unchanged") delete this.changes.priority;
       else this.changes.priority = value === "clear" ? null : Number(value);
     }));
-    const labelSetting = new import_obsidian5.Setting(fields).setName(t("taskModal.labels")).setDesc(t("bulk.labelsDescription"));
+    const labelSetting = new import_obsidian6.Setting(fields).setName(t("taskModal.labels")).setDesc(t("bulk.labelsDescription"));
     labelSetting.settingEl.addClass("taskmate-label-setting");
     decorateField(labelSetting, "tags", t("taskModal.labels"));
     const entryRow = labelSetting.controlEl.createDiv({ cls: "taskmate-label-entry-row" });
@@ -2385,15 +2418,14 @@ var BulkTaskModal = class extends import_obsidian5.Modal {
       for (const label of expanded ? labels2 : summary.visible) {
         const assigned = this.tasks.filter((task) => task.labels.includes(label)).length;
         const partial = assigned > 0 && assigned < this.tasks.length && !this.changes.addLabels.includes(label);
-        const chip = document.createElement("span");
-        chip.addClass("taskmate-editor-label-chip");
+        const chip = createSpan({ cls: "taskmate-editor-label-chip" });
         if (partial) chip.addClass("taskmate-bulk-label-partial");
         chip.dataset.taskmateLabelChip = label;
         chip.createSpan({ text: label });
         if (partial) {
           chip.createSpan({ text: t("bulk.labelPartial"), cls: "taskmate-bulk-label-partial-status" });
           const more = chip.createEl("button", { cls: "taskmate-label-chip-more", attr: { type: "button", "aria-label": t("bulk.labelActionsAriaLabel", { label }) } });
-          (0, import_obsidian5.setIcon)(more, "ellipsis");
+          (0, import_obsidian6.setIcon)(more, "ellipsis");
           more.addEventListener("click", () => new PartialLabelActionsModal(
             this.app,
             label,
@@ -2409,7 +2441,7 @@ var BulkTaskModal = class extends import_obsidian5.Modal {
           ).open());
         } else {
           const remove = chip.createEl("button", { cls: "taskmate-label-chip-remove", attr: { type: "button", "aria-label": t("bulk.removeLabelAriaLabel", { label }) } });
-          (0, import_obsidian5.setIcon)(remove, "x");
+          (0, import_obsidian6.setIcon)(remove, "x");
           remove.addEventListener("click", () => {
             exclude(label);
             if (labelsNow().length <= 3) expanded = false;
@@ -2419,9 +2451,7 @@ var BulkTaskModal = class extends import_obsidian5.Modal {
         editor.insertBefore(chip, input);
       }
       if (summary.hidden.length > 0) {
-        const toggle = document.createElement("button");
-        toggle.addClass("taskmate-label-overflow-toggle");
-        toggle.type = "button";
+        const toggle = createEl("button", { cls: "taskmate-label-overflow-toggle", type: "button" });
         toggle.textContent = expanded ? t("tasks.hideExtraLabels") : t("tasks.moreLabels", { count: summary.hidden.length });
         toggle.addEventListener("click", () => {
           expanded = !expanded;
@@ -2483,7 +2513,7 @@ var BulkTaskModal = class extends import_obsidian5.Modal {
     const cancel = actions.createEl("button", { text: t("common.cancel") });
     cancel.addEventListener("click", () => this.close());
     const apply = actions.createEl("button", { text: t("bulk.apply", { count: this.tasks.length }), cls: "mod-cta" });
-    apply.addEventListener("click", async () => {
+    apply.addEventListener("click", () => void (async () => {
       apply.disabled = true;
       try {
         await this.onApply(this.changes);
@@ -2491,7 +2521,7 @@ var BulkTaskModal = class extends import_obsidian5.Modal {
       } finally {
         apply.disabled = false;
       }
-    });
+    })());
     this.keyboardScroller = new MobileKeyboardScroller(fields, this.modalEl, this.availableRegion, this.baselineAvailableHeight);
     this.keyboardScroller.connect();
   }
@@ -2527,8 +2557,8 @@ async function applyBulkTaskChanges(repositories, tasks, changes) {
 }
 
 // src/task-list/filter-modal.ts
-var import_obsidian6 = require("obsidian");
-var TaskFilterModal = class extends import_obsidian6.Modal {
+var import_obsidian7 = require("obsidian");
+var TaskFilterModal = class extends import_obsidian7.Modal {
   constructor(app, filters, incompleteTaskLabels, allTaskLabels, recentLabels, favoriteLabels, i18n, onFavoritesChange, onApply) {
     super(app);
     this.incompleteTaskLabels = incompleteTaskLabels;
@@ -2544,20 +2574,22 @@ var TaskFilterModal = class extends import_obsidian6.Modal {
   draft;
   onOpen() {
     const { t } = this.i18n;
-    const priority = new import_obsidian6.Setting(this.contentEl).setName(t("filter.priority"));
-    [1, 2, 3].forEach((value) => priority.addButton((button3) => {
-      const refresh = () => {
-        const selected = this.draft.priorities.includes(value);
-        button3.buttonEl.toggleClass("is-active", selected);
-        button3.buttonEl.toggleClass("mod-cta", selected);
-      };
-      button3.setButtonText(`P${value}`).setTooltip(t("filter.priorityValue", { priority: value })).onClick(() => {
-        this.draft.priorities = this.draft.priorities.includes(value) ? this.draft.priorities.filter((item) => item !== value) : [...this.draft.priorities, value];
+    const priority = new import_obsidian7.Setting(this.contentEl).setName(t("filter.priority"));
+    [1, 2, 3].forEach((value) => {
+      priority.addButton((button3) => {
+        const refresh = () => {
+          const selected = this.draft.priorities.includes(value);
+          button3.buttonEl.toggleClass("is-active", selected);
+          button3.buttonEl.toggleClass("mod-cta", selected);
+        };
+        button3.setButtonText(`P${value}`).setTooltip(t("filter.priorityValue", { priority: value })).onClick(() => {
+          this.draft.priorities = this.draft.priorities.includes(value) ? this.draft.priorities.filter((item) => item !== value) : [...this.draft.priorities, value];
+          refresh();
+        });
         refresh();
       });
-      refresh();
-    }));
-    const labels2 = new import_obsidian6.Setting(this.contentEl).setName(t("filter.labels")).setDesc(t("filter.labelsDescription"));
+    });
+    const labels2 = new import_obsidian7.Setting(this.contentEl).setName(t("filter.labels")).setDesc(t("filter.labelsDescription"));
     const chooseLabels = labels2.controlEl.createEl("button", { cls: "taskmate-label-picker-open" });
     const renderLabelChoice = () => {
       chooseLabels.textContent = this.draft.labels.length > 0 ? t("filter.selectedLabelCount", { count: this.draft.labels.length }) : t("filter.chooseLabels");
@@ -2578,7 +2610,7 @@ var TaskFilterModal = class extends import_obsidian6.Modal {
       }).open();
     });
     renderLabelChoice();
-    new import_obsidian6.Setting(this.contentEl).setName(t("filter.completion")).addToggle((toggle) => toggle.setValue(this.draft.includeCompleted).onChange((value) => {
+    new import_obsidian7.Setting(this.contentEl).setName(t("filter.completion")).addToggle((toggle) => toggle.setValue(this.draft.includeCompleted).onChange((value) => {
       this.draft.includeCompleted = value;
     })).setDesc(t("filter.includeCompleted"));
     const actions = this.contentEl.createDiv({ cls: "taskmate-modal-actions" });
@@ -2599,8 +2631,8 @@ var TaskFilterModal = class extends import_obsidian6.Modal {
 };
 
 // src/projects/project-modal.ts
-var import_obsidian7 = require("obsidian");
-var ProjectModal = class extends import_obsidian7.Modal {
+var import_obsidian8 = require("obsidian");
+var ProjectModal = class extends import_obsidian8.Modal {
   constructor(app, i18n, onSave) {
     super(app);
     this.i18n = i18n;
@@ -2610,7 +2642,7 @@ var ProjectModal = class extends import_obsidian7.Modal {
   name = "";
   onOpen() {
     const { t } = this.i18n;
-    new import_obsidian7.Setting(this.contentEl).setName(t("projectModal.name")).addText((text3) => {
+    new import_obsidian8.Setting(this.contentEl).setName(t("projectModal.name")).addText((text3) => {
       text3.setPlaceholder(t("projectModal.namePlaceholder")).onChange((value) => {
         this.name = value;
       });
@@ -2619,7 +2651,7 @@ var ProjectModal = class extends import_obsidian7.Modal {
     const actions = this.contentEl.createDiv({ cls: "taskmate-modal-actions" });
     actions.createEl("button", { text: t("common.cancel") }).addEventListener("click", () => this.close());
     const save2 = actions.createEl("button", { text: t("common.add"), cls: "mod-cta" });
-    save2.addEventListener("click", async () => {
+    save2.addEventListener("click", () => void (async () => {
       if (!this.name.trim()) return;
       save2.disabled = true;
       try {
@@ -2628,7 +2660,7 @@ var ProjectModal = class extends import_obsidian7.Modal {
       } finally {
         save2.disabled = false;
       }
-    });
+    })());
   }
   onClose() {
     this.contentEl.empty();
@@ -2636,7 +2668,7 @@ var ProjectModal = class extends import_obsidian7.Modal {
 };
 
 // src/labels/label-manager-modal.ts
-var import_obsidian8 = require("obsidian");
+var import_obsidian9 = require("obsidian");
 
 // src/labels/label-management.ts
 function buildManagedLabels(tasks, recentLabels, favoriteLabels) {
@@ -2663,7 +2695,7 @@ function removeLabelValue(labels2, label) {
 }
 
 // src/labels/label-manager-modal.ts
-var LabelManagerModal = class extends import_obsidian8.Modal {
+var LabelManagerModal = class extends import_obsidian9.Modal {
   constructor(app, options) {
     super(app);
     this.options = options;
@@ -2726,7 +2758,7 @@ var LabelManagerModal = class extends import_obsidian8.Modal {
         this.editingLabel = null;
         this.renderResults();
       });
-      confirm.addEventListener("click", async () => {
+      confirm.addEventListener("click", () => void (async () => {
         const normalized = normalizeManagedLabel(input.value);
         if (!normalized || normalized === item.label) return;
         confirm.disabled = true;
@@ -2736,7 +2768,7 @@ var LabelManagerModal = class extends import_obsidian8.Modal {
         } finally {
           confirm.disabled = false;
         }
-      });
+      })());
       refreshValidity();
       window.setTimeout(() => input.focus(), 0);
       return;
@@ -2748,7 +2780,7 @@ var LabelManagerModal = class extends import_obsidian8.Modal {
       cls: "taskmate-label-manager-count"
     });
     const rename = row.createEl("button", { attr: { "aria-label": t("labelManager.renameAriaLabel", { label: item.label }) } });
-    (0, import_obsidian8.setIcon)(rename, "pencil");
+    (0, import_obsidian9.setIcon)(rename, "pencil");
     rename.addEventListener("click", () => {
       this.editingLabel = item.label;
       this.renderResults();
@@ -2757,10 +2789,10 @@ var LabelManagerModal = class extends import_obsidian8.Modal {
       cls: "taskmate-label-manager-delete",
       attr: { "aria-label": t("labelManager.deleteAriaLabel", { label: item.label }) }
     });
-    (0, import_obsidian8.setIcon)(remove, "trash-2");
-    remove.addEventListener("click", async () => {
+    (0, import_obsidian9.setIcon)(remove, "trash-2");
+    remove.addEventListener("click", () => void (async () => {
       const message = item.storedOnly ? t("labelManager.deleteStoredOnlyConfirm", { label: item.label }) : item.taskCount === 1 ? t("labelManager.deleteConfirmOne", { label: item.label, count: item.taskCount }) : t("labelManager.deleteConfirm", { label: item.label, count: item.taskCount });
-      if (!window.confirm(message)) return;
+      if (!await confirmAction(this.app, { message, confirmText: t("common.delete"), cancelText: t("common.cancel") })) return;
       remove.disabled = true;
       try {
         await this.options.onDelete(item.label);
@@ -2768,7 +2800,7 @@ var LabelManagerModal = class extends import_obsidian8.Modal {
       } finally {
         remove.disabled = false;
       }
-    });
+    })());
   }
 };
 
@@ -5116,11 +5148,7 @@ function taskListTitleText(title, limit = TASK_LIST_TITLE_CHARACTER_LIMIT) {
   return title;
 }
 function appendElement(parent, tag, options = {}) {
-  const element4 = parent.ownerDocument.createElement(tag);
-  if (options.className) element4.className = options.className;
-  if (options.text !== void 0) element4.textContent = options.text;
-  Object.entries(options.attributes ?? {}).forEach(([name, value]) => element4.setAttribute(name, value));
-  parent.append(element4);
+  const element4 = parent.createEl(tag, { cls: options.className, text: options.text, attr: options.attributes });
   return element4;
 }
 function renderRow(list, row, selectionMode, copy, signal, dispatch) {
@@ -5339,7 +5367,7 @@ function restoreDraggedItem(list, item, oldIndex2) {
   list.insertBefore(item, siblings[oldIndex2] ?? null);
 }
 function isSectionHeading(element4) {
-  return element4 instanceof HTMLElement && element4.classList.contains("taskmate-task-section-heading");
+  return element4.instanceOf(HTMLElement) && element4.classList.contains("taskmate-task-section-heading");
 }
 function precedingSection(element4) {
   for (let sibling = element4.previousElementSibling; sibling; sibling = sibling.previousElementSibling) {
@@ -5359,10 +5387,10 @@ function sectionAtPoint(list, item, point) {
 }
 
 // src/task-editor/task-editing-flow.ts
-var import_obsidian12 = require("obsidian");
+var import_obsidian13 = require("obsidian");
 
 // src/task-editor/task-conflict-modal.ts
-var import_obsidian9 = require("obsidian");
+var import_obsidian10 = require("obsidian");
 var FIELD_LABEL_KEYS = {
   title: "taskModal.title",
   date: "taskModal.date",
@@ -5376,7 +5404,7 @@ var FIELD_LABEL_KEYS = {
   notes: "taskModal.notes",
   sourceNote: "conflict.sourceNote"
 };
-var TaskConflictModal = class extends import_obsidian9.Modal {
+var TaskConflictModal = class extends import_obsidian10.Modal {
   constructor(app, conflict, projects, i18n, onResolve) {
     super(app);
     this.conflict = conflict;
@@ -5419,14 +5447,14 @@ var TaskConflictModal = class extends import_obsidian9.Modal {
     const cancel = actions.createEl("button", { text: t("common.cancel") });
     cancel.addEventListener("click", () => this.close());
     const save2 = actions.createEl("button", { text: t("conflict.saveResolved"), cls: "mod-cta" });
-    save2.addEventListener("click", async () => {
+    save2.addEventListener("click", () => void (async () => {
       save2.disabled = true;
       try {
         if (await this.onResolve({ ...this.choices })) this.close();
       } finally {
         save2.disabled = false;
       }
-    });
+    })());
   }
   onClose() {
     this.contentEl.empty();
@@ -5463,7 +5491,7 @@ var TaskConflictModal = class extends import_obsidian9.Modal {
 };
 
 // src/task-editor/task-modal.ts
-var import_obsidian11 = require("obsidian");
+var import_obsidian12 = require("obsidian");
 
 // src/tasks/task-title.ts
 function normalizeTaskTitleInput(value) {
@@ -5486,8 +5514,8 @@ function stepDateState(date, today) {
 }
 
 // src/task-editor/step-modal.ts
-var import_obsidian10 = require("obsidian");
-var StepModal = class extends import_obsidian10.Modal {
+var import_obsidian11 = require("obsidian");
+var StepModal = class extends import_obsidian11.Modal {
   constructor(app, step, availableRegion, i18n, onSave, onDelete = null) {
     super(app);
     this.availableRegion = availableRegion;
@@ -5505,7 +5533,7 @@ var StepModal = class extends import_obsidian10.Modal {
     const { t } = this.i18n;
     this.modalEl.addClass("taskmate-step-modal");
     const fields = this.contentEl.createDiv({ cls: "taskmate-step-modal-fields" });
-    const titleSetting = new import_obsidian10.Setting(fields).setName(t("stepModal.title"));
+    const titleSetting = new import_obsidian11.Setting(fields).setName(t("stepModal.title"));
     titleSetting.addText((text3) => {
       text3.inputEl.setAttribute("aria-label", t("stepModal.title"));
       text3.setPlaceholder(t("stepModal.titlePlaceholder")).setValue(this.draft.text).onChange((value) => {
@@ -5513,7 +5541,7 @@ var StepModal = class extends import_obsidian10.Modal {
       });
       window.setTimeout(() => text3.inputEl.focus(), 0);
     });
-    const dateSetting = new import_obsidian10.Setting(fields).setName(t("stepModal.date"));
+    const dateSetting = new import_obsidian11.Setting(fields).setName(t("stepModal.date"));
     dateSetting.addText((text3) => {
       text3.inputEl.type = "date";
       text3.inputEl.setAttribute("aria-label", t("stepModal.date"));
@@ -5524,7 +5552,7 @@ var StepModal = class extends import_obsidian10.Modal {
     const actions = this.contentEl.createDiv({ cls: "taskmate-modal-actions" });
     if (this.onDelete) {
       const remove = actions.createEl("button", { cls: "taskmate-delete-task" });
-      (0, import_obsidian10.setIcon)(remove, "trash-2");
+      (0, import_obsidian11.setIcon)(remove, "trash-2");
       remove.createSpan({ text: t("common.delete") });
       remove.addEventListener("click", () => {
         this.onDelete?.();
@@ -5587,10 +5615,9 @@ function normalizeSchedule(draft) {
 }
 function decorateField2(setting, icon, accessibleName) {
   setting.settingEl.addClass("taskmate-compact-setting");
-  const marker = document.createElement("span");
-  marker.addClass("taskmate-field-icon");
+  const marker = createSpan({ cls: "taskmate-field-icon" });
   marker.setAttribute("aria-hidden", "true");
-  (0, import_obsidian11.setIcon)(marker, icon);
+  (0, import_obsidian12.setIcon)(marker, icon);
   setting.settingEl.prepend(marker);
   setting.controlEl.setAttribute("aria-label", accessibleName);
 }
@@ -5604,7 +5631,7 @@ function addEmbeddedLabel2(setting, label) {
   setting.controlEl.prepend(labelEl);
 }
 var DEADLINE_ICON = "taskmate-calendar-target";
-(0, import_obsidian11.addIcon)(DEADLINE_ICON, `<g transform="scale(4.1667)" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 9V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h4"/><path d="M15 2v4"/><path d="M8 2v4"/><path d="M3 10h6"/><circle cx="17" cy="17" r="6"/><circle cx="17" cy="17" r="2.5"/><circle cx="17" cy="17" r="0.5" fill="currentColor"/></g>`);
+(0, import_obsidian12.addIcon)(DEADLINE_ICON, `<g transform="scale(4.1667)" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 9V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h4"/><path d="M15 2v4"/><path d="M8 2v4"/><path d="M3 10h6"/><circle cx="17" cy="17" r="6"/><circle cx="17" cy="17" r="2.5"/><circle cx="17" cy="17" r="0.5" fill="currentColor"/></g>`);
 var MONTH_END_CHOICE = "month-end";
 var FIVE_MINUTES = Array.from({ length: 12 }, (_, index2) => String(index2 * 5).padStart(2, "0"));
 var HOURS = Array.from({ length: 24 }, (_, hour) => String(hour).padStart(2, "0"));
@@ -5618,7 +5645,7 @@ function embedDateLabel(input, label) {
   input.replaceWith(wrapper);
   wrapper.createSpan({ text: label, cls: "taskmate-embedded-field-label", attr: { "aria-hidden": "true" } });
   const marker = wrapper.createSpan({ cls: "taskmate-embedded-date-icon", attr: { "aria-hidden": "true" } });
-  (0, import_obsidian11.setIcon)(marker, "calendar");
+  (0, import_obsidian12.setIcon)(marker, "calendar");
   wrapper.appendChild(input);
   wrapper.addEventListener("click", (event) => {
     if (event.target.closest("button")) return;
@@ -5630,7 +5657,7 @@ function embedDateLabel(input, label) {
   });
   return wrapper;
 }
-var TaskModal = class extends import_obsidian11.Modal {
+var TaskModal = class extends import_obsidian12.Modal {
   constructor(app, task, projects, labelOptions, defaultProjectId, availableRegion, i18n, onSave, onDelete = null) {
     super(app);
     this.projects = projects;
@@ -5664,7 +5691,7 @@ var TaskModal = class extends import_obsidian11.Modal {
     const { t } = this.i18n;
     this.modalEl.addClass("taskmate-task-modal");
     const fields = contentEl.createDiv({ cls: "taskmate-task-fields" });
-    const titleSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.title"));
+    const titleSetting = new import_obsidian12.Setting(fields).setName(t("taskModal.title"));
     titleSetting.settingEl.addClass("taskmate-title-setting");
     decorateField2(titleSetting, "circle-check", t("taskModal.title"));
     titleSetting.addTextArea((text3) => {
@@ -5690,7 +5717,7 @@ var TaskModal = class extends import_obsidian11.Modal {
         window.setTimeout(() => titleInput.focus(), 0);
       }
     });
-    const dateSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.date"));
+    const dateSetting = new import_obsidian12.Setting(fields).setName(t("taskModal.date"));
     dateSetting.settingEl.addClass("taskmate-date-setting");
     decorateField2(dateSetting, "calendar-days", t("taskModal.date"));
     const datePresets = dateSetting.controlEl.createDiv({ cls: "taskmate-date-presets" });
@@ -5736,18 +5763,18 @@ var TaskModal = class extends import_obsidian11.Modal {
     refreshDateSelection();
     const timeField = dateTimeRow.createDiv({ cls: "taskmate-embedded-date taskmate-time-field" });
     timeField.createSpan({ text: t("taskModal.time"), cls: "taskmate-embedded-field-label", attr: { "aria-hidden": "true" } });
-    (0, import_obsidian11.setIcon)(timeField.createSpan({ cls: "taskmate-embedded-date-icon", attr: { "aria-hidden": "true" } }), "clock");
+    (0, import_obsidian12.setIcon)(timeField.createSpan({ cls: "taskmate-embedded-date-icon", attr: { "aria-hidden": "true" } }), "clock");
     const timeToggle = timeField.createEl("button", {
       cls: "taskmate-time-toggle",
       attr: { type: "button", "aria-label": t("taskModal.time"), "aria-expanded": "false" }
     });
     const timeValue = timeToggle.createSpan({ cls: "taskmate-time-value" });
-    (0, import_obsidian11.setIcon)(timeToggle.createSpan({ cls: "taskmate-time-chevron", attr: { "aria-hidden": "true" } }), "chevron-down");
+    (0, import_obsidian12.setIcon)(timeToggle.createSpan({ cls: "taskmate-time-chevron", attr: { "aria-hidden": "true" } }), "chevron-down");
     const removeTime = timeField.createEl("button", {
       cls: "taskmate-date-clear clickable-icon",
       attr: { type: "button", "aria-label": t("taskModal.removeTime") }
     });
-    (0, import_obsidian11.setIcon)(removeTime, "x");
+    (0, import_obsidian12.setIcon)(removeTime, "x");
     const timePanel = dateSetting.controlEl.createDiv({ cls: "taskmate-time-panel" });
     timePanel.hidden = true;
     timePanel.createDiv({ text: t("taskModal.hour"), cls: "taskmate-time-panel-label" });
@@ -5795,7 +5822,7 @@ var TaskModal = class extends import_obsidian11.Modal {
       refreshScheduleControls();
       timeToggle.focus();
     });
-    const deadlineSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.deadline"));
+    const deadlineSetting = new import_obsidian12.Setting(fields).setName(t("taskModal.deadline"));
     deadlineSetting.settingEl.addClass("taskmate-deadline-setting");
     decorateField2(deadlineSetting, DEADLINE_ICON, t("taskModal.deadline"));
     let deadlineInput;
@@ -5810,7 +5837,7 @@ var TaskModal = class extends import_obsidian11.Modal {
         cls: "taskmate-date-clear clickable-icon",
         attr: { type: "button", "aria-label": t("taskModal.removeDeadline") }
       });
-      (0, import_obsidian11.setIcon)(removeDeadline, "x");
+      (0, import_obsidian12.setIcon)(removeDeadline, "x");
       text3.setValue(this.draft.deadline ?? "").onChange((value) => {
         this.draft.deadline = value || null;
         removeDeadline.toggle(this.draft.deadline !== null);
@@ -5823,7 +5850,7 @@ var TaskModal = class extends import_obsidian11.Modal {
       deadlineInput.focus();
     });
     removeDeadline.toggle(this.draft.deadline !== null);
-    const repeatSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.repeat"));
+    const repeatSetting = new import_obsidian12.Setting(fields).setName(t("taskModal.repeat"));
     repeatSetting.settingEl.addClass("taskmate-repeat-setting");
     decorateField2(repeatSetting, "repeat", t("taskModal.repeat"));
     repeatSetting.controlEl.createSpan({
@@ -5885,7 +5912,7 @@ var TaskModal = class extends import_obsidian11.Modal {
       refreshScheduleControls();
     };
     refreshScheduleControls();
-    const projectSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.project"));
+    const projectSetting = new import_obsidian12.Setting(fields).setName(t("taskModal.project"));
     decorateField2(projectSetting, "folder", t("taskModal.project"));
     addEmbeddedLabel2(projectSetting, t("taskModal.project"));
     projectSetting.addDropdown((dropdown) => {
@@ -5896,7 +5923,7 @@ var TaskModal = class extends import_obsidian11.Modal {
         this.draft.projectId = value || null;
       });
     });
-    const prioritySetting = new import_obsidian11.Setting(fields).setName(t("taskModal.priority"));
+    const prioritySetting = new import_obsidian12.Setting(fields).setName(t("taskModal.priority"));
     decorateField2(prioritySetting, "flag", t("taskModal.priority"));
     addEmbeddedLabel2(prioritySetting, t("taskModal.priority"));
     prioritySetting.addDropdown((dropdown) => {
@@ -5905,7 +5932,7 @@ var TaskModal = class extends import_obsidian11.Modal {
         this.draft.priority = value ? Number(value) : null;
       });
     });
-    const labelSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.labels")).setDesc(t("taskModal.labelsDescription"));
+    const labelSetting = new import_obsidian12.Setting(fields).setName(t("taskModal.labels")).setDesc(t("taskModal.labelsDescription"));
     labelSetting.settingEl.addClass("taskmate-label-setting");
     decorateField2(labelSetting, "tags", t("taskModal.labels"));
     const labelEntryRow = labelSetting.controlEl.createDiv({ cls: "taskmate-label-entry-row" });
@@ -5937,8 +5964,7 @@ var TaskModal = class extends import_obsidian11.Modal {
       const summary = summarizeLabels(this.draft.labels);
       const visible = labelsExpanded ? this.draft.labels : summary.visible;
       for (const label of visible) {
-        const chip = document.createElement("span");
-        chip.addClass("taskmate-editor-label-chip");
+        const chip = createSpan({ cls: "taskmate-editor-label-chip" });
         chip.dataset.taskmateLabelChip = label;
         chip.createSpan({ text: label });
         const remove = chip.createEl("button", {
@@ -5948,7 +5974,7 @@ var TaskModal = class extends import_obsidian11.Modal {
             "aria-label": t("taskModal.removeLabelAriaLabel", { label })
           }
         });
-        (0, import_obsidian11.setIcon)(remove, "x");
+        (0, import_obsidian12.setIcon)(remove, "x");
         remove.addEventListener("click", () => {
           this.draft.labels = this.draft.labels.filter((item) => item !== label);
           if (this.draft.labels.length <= 3) labelsExpanded = false;
@@ -5957,9 +5983,7 @@ var TaskModal = class extends import_obsidian11.Modal {
         labelEditor.insertBefore(chip, labelInput);
       }
       if (summary.hidden.length > 0) {
-        const toggle = document.createElement("button");
-        toggle.addClass("taskmate-label-overflow-toggle");
-        toggle.type = "button";
+        const toggle = createEl("button", { cls: "taskmate-label-overflow-toggle", type: "button" });
         toggle.textContent = labelsExpanded ? t("tasks.hideExtraLabels") : t("tasks.moreLabels", { count: summary.hidden.length });
         toggle.setAttribute("aria-expanded", String(labelsExpanded));
         toggle.setAttribute("aria-label", labelsExpanded ? t("tasks.hideExtraLabels") : t("tasks.moreLabelsAriaLabel", { count: summary.hidden.length }));
@@ -6026,7 +6050,7 @@ var TaskModal = class extends import_obsidian11.Modal {
       }).open();
     });
     refreshLabelEditor();
-    const stepsSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.steps"));
+    const stepsSetting = new import_obsidian12.Setting(fields).setName(t("taskModal.steps"));
     stepsSetting.settingEl.addClass("taskmate-steps-setting");
     decorateField2(stepsSetting, "list-checks", t("taskModal.steps"));
     const stepsEditor = stepsSetting.controlEl.createDiv({ cls: "taskmate-steps-editor" });
@@ -6071,7 +6095,7 @@ var TaskModal = class extends import_obsidian11.Modal {
           }).open();
         });
         const disclosure = row.createSpan({ cls: "taskmate-step-disclosure", attr: { "aria-hidden": "true" } });
-        (0, import_obsidian11.setIcon)(disclosure, "chevron-right");
+        (0, import_obsidian12.setIcon)(disclosure, "chevron-right");
       });
       if (this.draft.steps.length > 1) {
         this.stepSortable = sortable_esm_default.create(stepsList, {
@@ -6096,7 +6120,7 @@ var TaskModal = class extends import_obsidian11.Modal {
       }).open();
     });
     renderSteps();
-    const notesSetting = new import_obsidian11.Setting(fields).setName(t("taskModal.notes"));
+    const notesSetting = new import_obsidian12.Setting(fields).setName(t("taskModal.notes"));
     notesSetting.settingEl.addClass("taskmate-notes-setting");
     decorateField2(notesSetting, "notebook-pen", t("taskModal.notes"));
     notesSetting.addTextArea((area) => {
@@ -6110,23 +6134,23 @@ var TaskModal = class extends import_obsidian11.Modal {
     const actions = contentEl.createDiv({ cls: "taskmate-modal-actions" });
     if (this.onDelete) {
       const remove = actions.createEl("button", { cls: "taskmate-delete-task" });
-      (0, import_obsidian11.setIcon)(remove, "trash-2");
+      (0, import_obsidian12.setIcon)(remove, "trash-2");
       remove.createSpan({ text: t("common.delete") });
-      remove.addEventListener("click", async () => {
-        if (!window.confirm(t("tasks.deleteConfirm", { title: this.draft.title }))) return;
+      remove.addEventListener("click", () => void (async () => {
+        if (!await confirmAction(this.app, { message: t("tasks.deleteConfirm", { title: this.draft.title }), confirmText: t("common.delete"), cancelText: t("common.cancel") })) return;
         remove.disabled = true;
         try {
           if (await this.onDelete?.()) this.close();
         } finally {
           remove.disabled = false;
         }
-      });
+      })());
     }
     const ordinaryActions = actions.createDiv({ cls: "taskmate-modal-primary-actions" });
     const cancel = ordinaryActions.createEl("button", { text: t("common.cancel") });
     cancel.addEventListener("click", () => this.close());
     const save2 = ordinaryActions.createEl("button", { text: t("common.save"), cls: "mod-cta" });
-    save2.addEventListener("click", async () => {
+    save2.addEventListener("click", () => void (async () => {
       if (!this.draft.title.trim()) return;
       updateFromInput(true, false);
       this.draft.steps = normalizeTaskSteps(this.draft.steps);
@@ -6136,7 +6160,7 @@ var TaskModal = class extends import_obsidian11.Modal {
       } finally {
         save2.disabled = false;
       }
-    });
+    })());
     this.keyboardScroller = new MobileKeyboardScroller(
       fields,
       this.modalEl,
@@ -6179,7 +6203,7 @@ var TaskEditingFlow = class {
       return;
     }
     if (start.status === "missing") {
-      new import_obsidian12.Notice(this.context.i18n().t("conflict.missing"));
+      new import_obsidian13.Notice(this.context.i18n().t("conflict.missing"));
       this.context.refresh();
       return;
     }
@@ -6190,7 +6214,7 @@ var TaskEditingFlow = class {
     }, async () => {
       try {
         await repository.remove(start.task);
-        new import_obsidian12.Notice(this.context.i18n().t("tasks.deletedNotice"));
+        new import_obsidian13.Notice(this.context.i18n().t("tasks.deletedNotice"));
         if (afterAction) afterAction();
         else this.context.refresh();
         return true;
@@ -6209,8 +6233,8 @@ var TaskEditingFlow = class {
     if (result.status === "saved") {
       await this.context.rememberLabels(result.task.labels);
       await this.touchProject(projects, result.task.projectId);
-      if (savedNotice) new import_obsidian12.Notice(t(savedNotice));
-      else if (result.externalChangesPreserved) new import_obsidian12.Notice(t("conflict.externalPreserved"));
+      if (savedNotice) new import_obsidian13.Notice(t(savedNotice));
+      else if (result.externalChangesPreserved) new import_obsidian13.Notice(t("conflict.externalPreserved"));
       if (afterAction) afterAction();
       else this.context.refresh();
       return true;
@@ -6223,7 +6247,7 @@ var TaskEditingFlow = class {
       this.showIdentityConflict(result.conflict.paths);
       return false;
     }
-    new import_obsidian12.Notice(t(result.status === "review-stale" ? "conflict.changedAgain" : "conflict.missing"));
+    new import_obsidian13.Notice(t(result.status === "review-stale" ? "conflict.changedAgain" : "conflict.missing"));
     this.context.refresh();
     return false;
   }
@@ -6236,7 +6260,7 @@ var TaskEditingFlow = class {
         return true;
       }
       if (result.status === "conflict") {
-        new import_obsidian12.Notice(this.context.i18n().t("conflict.changedAgain"));
+        new import_obsidian13.Notice(this.context.i18n().t("conflict.changedAgain"));
         window.setTimeout(() => this.openConflict(result, projects, taskModal, afterAction), 0);
         return true;
       }
@@ -6245,7 +6269,7 @@ var TaskEditingFlow = class {
     }).open();
   }
   showIdentityConflict(paths) {
-    new import_obsidian12.Notice(this.context.i18n().t("conflict.identityNotice", { paths: paths.join(", ") }), 0);
+    new import_obsidian13.Notice(this.context.i18n().t("conflict.identityNotice", { paths: paths.join(", ") }), 0);
     this.context.refresh();
   }
   async touchProject(projects, projectId) {
@@ -6366,7 +6390,7 @@ var NAV_ITEMS = [
   { screen: "search", icon: "\u2315", labelKey: "nav.search" },
   { screen: "projects", icon: "\u25A3", labelKey: "nav.projects" }
 ];
-var TodoListView = class extends import_obsidian13.ItemView {
+var TodoListView = class extends import_obsidian14.ItemView {
   constructor(leaf, plugin) {
     super(leaf);
     this.plugin = plugin;
@@ -6534,11 +6558,11 @@ var TodoListView = class extends import_obsidian13.ItemView {
       const heading = section.createDiv({ cls: "taskmate-section-heading" });
       heading.createEl("h3", { text: t("search.recent") });
       const clear = heading.createEl("button", { text: t("common.clear") });
-      clear.addEventListener("click", async () => {
+      clear.addEventListener("click", () => void (async () => {
         this.plugin.settings.recentSearches = [];
         await this.plugin.saveSettings();
         this.requestRender();
-      });
+      })());
       const words = section.createDiv({ cls: "taskmate-recent-searches" });
       recent.forEach((word) => {
         const button3 = words.createEl("button", { text: word });
@@ -6615,12 +6639,12 @@ var TodoListView = class extends import_obsidian13.ItemView {
         text: taskCount === 1 ? t("projects.taskCountOne", { count: taskCount }) : t("projects.taskCount", { count: taskCount }),
         cls: "taskmate-project-count"
       });
-      open.addEventListener("click", async () => {
+      open.addEventListener("click", () => void (async () => {
         await this.plugin.projects.touch(project);
         this.activeProjectId = project.id;
         this.projectScreen = "detail";
         this.requestRender();
-      });
+      })());
       const edit = row.createEl("button", { text: t("common.edit"), cls: "taskmate-project-edit" });
       edit.addEventListener("click", () => {
         this.activeProjectId = project.id;
@@ -6635,22 +6659,22 @@ var TodoListView = class extends import_obsidian13.ItemView {
     const label = panel.createEl("label", { text: t("projects.name") });
     const input = label.createEl("input", { type: "text", value: project.name });
     const save2 = panel.createEl("button", { text: t("projects.saveName"), cls: "mod-cta" });
-    save2.addEventListener("click", async () => {
+    save2.addEventListener("click", () => void (async () => {
       if (!input.value.trim()) return;
       await this.plugin.projects.update(project, { name: input.value.trim() });
       this.projectScreen = "detail";
       this.requestRender();
-    });
+    })());
     const remove = panel.createEl("button", { text: t("projects.delete"), cls: "mod-warning" });
-    remove.addEventListener("click", async () => {
-      if (!window.confirm(t("projects.deleteConfirm", { project: project.name }))) return;
+    remove.addEventListener("click", () => void (async () => {
+      if (!await confirmAction(this.app, { message: t("projects.deleteConfirm", { project: project.name }), confirmText: t("common.delete"), cancelText: t("common.cancel") })) return;
       await this.plugin.repository.clearProject(project.id);
       await this.plugin.projects.remove(project);
       this.activeProjectId = null;
       this.projectScreen = "index";
-      new import_obsidian13.Notice(t("projects.deletedNotice"));
+      new import_obsidian14.Notice(t("projects.deletedNotice"));
       this.requestRender();
-    });
+    })());
   }
   renderSortControl(container) {
     const { t } = this.plugin.i18n();
@@ -6803,10 +6827,10 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
       cls: `taskmate-adjust${count > 0 ? " is-active" : ""}`,
       attr: { "aria-label": count > 0 ? t("adjust.ariaLabelActive", { count }) : t("adjust.ariaLabel") }
     });
-    (0, import_obsidian13.setIcon)(button3, "sliders-horizontal");
+    (0, import_obsidian14.setIcon)(button3, "sliders-horizontal");
     if (count > 0) button3.createSpan({ text: String(count), cls: "taskmate-adjust-count" });
     button3.addEventListener("click", (event) => {
-      const menu = new import_obsidian13.Menu();
+      const menu = new import_obsidian14.Menu();
       const scope = selectionScope();
       menu.addItem((item) => item.setTitle(t("selection.start")).setIcon("list-checks").setDisabled(scope.length === 0).onClick(() => {
         this.selection.start(scope.map((task) => task.id));
@@ -6891,7 +6915,7 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
     this.filterState.replace({ ...filters, labels: renameLabelValues(filters.labels, from, to) });
     await this.plugin.saveSettings();
     const { t } = this.plugin.i18n();
-    new import_obsidian13.Notice(result.affected === 1 ? t("labelManager.renamedNoticeOne", { from, to, count: result.affected }) : t("labelManager.renamedNotice", { from, to, count: result.affected }));
+    new import_obsidian14.Notice(result.affected === 1 ? t("labelManager.renamedNoticeOne", { from, to, count: result.affected }) : t("labelManager.renamedNotice", { from, to, count: result.affected }));
     this.requestRender();
   }
   async deleteManagedLabel(tasks, label) {
@@ -6903,7 +6927,7 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
     this.filterState.replace({ ...filters, labels: removeLabelValue(filters.labels, label) });
     await this.plugin.saveSettings();
     const { t } = this.plugin.i18n();
-    new import_obsidian13.Notice(result.affected === 1 ? t("labelManager.deletedNoticeOne", { label, count: result.affected }) : t("labelManager.deletedNotice", { label, count: result.affected }));
+    new import_obsidian14.Notice(result.affected === 1 ? t("labelManager.deletedNoticeOne", { label, count: result.affected }) : t("labelManager.deletedNotice", { label, count: result.affected }));
     this.requestRender();
   }
   labelPreferences() {
@@ -6913,7 +6937,7 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
     };
   }
   reportLabelWriteFailures(result) {
-    new import_obsidian13.Notice(this.plugin.i18n().t("labelManager.partialFailure", {
+    new import_obsidian14.Notice(this.plugin.i18n().t("labelManager.partialFailure", {
       failed: result.failed.length,
       total: result.affected,
       paths: result.failed.map((task) => task.path).join(", ")
@@ -6922,7 +6946,7 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
   }
   clearActiveFilters() {
     this.filterState.clear();
-    new import_obsidian13.Notice(this.plugin.i18n().t("filter.clearedNotice"));
+    new import_obsidian14.Notice(this.plugin.i18n().t("filter.clearedNotice"));
     this.requestRender();
   }
   async editSelectedTasks(tasks) {
@@ -6945,19 +6969,20 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
   async deleteSelectedTasks(tasks) {
     const { t } = this.plugin.i18n();
     const selected = this.selection.selectedTasks(tasks);
-    if (selected.length === 0 || !window.confirm(t("selection.deleteConfirm", { count: selected.length }))) return;
+    if (selected.length === 0) return;
+    if (!await confirmAction(this.app, { message: t("selection.deleteConfirm", { count: selected.length }), confirmText: t("common.delete"), cancelText: t("common.cancel") })) return;
     const failed = await failedTaskWrites(selected, (task) => this.plugin.repository.remove(task));
     this.finishBulkAction(selected, failed, "selection.deletedNotice");
   }
   finishBulkAction(tasks, failed, successKey) {
     const { t } = this.plugin.i18n();
     if (failed.length === 0) {
-      new import_obsidian13.Notice(t(successKey, { count: tasks.length }));
+      new import_obsidian14.Notice(t(successKey, { count: tasks.length }));
       this.exitSelectionMode();
       return;
     }
     this.selection.restrictTo(failed.map((task) => task.id));
-    new import_obsidian13.Notice(t("selection.partialFailure", { failed: failed.length, total: tasks.length }));
+    new import_obsidian14.Notice(t("selection.partialFailure", { failed: failed.length, total: tasks.length }));
     this.requestRender();
   }
   addBackButton(header, action) {
@@ -7006,20 +7031,20 @@ ${projectNames.get(task.projectId ?? "") ?? ""}`.toLocaleLowerCase();
 };
 
 // src/i18n/obsidian-locale.ts
-var import_obsidian14 = require("obsidian");
+var import_obsidian15 = require("obsidian");
 function detectObsidianLanguage() {
   try {
-    return typeof import_obsidian14.getLanguage === "function" ? (0, import_obsidian14.getLanguage)() : void 0;
+    return typeof import_obsidian15.getLanguage === "function" ? (0, import_obsidian15.getLanguage)() : void 0;
   } catch {
     return void 0;
   }
 }
 function isDesktopObsidian() {
-  return import_obsidian14.Platform.isDesktopApp;
+  return import_obsidian15.Platform.isDesktopApp;
 }
 
 // src/reviews/task-change/proposal-repository.ts
-var import_obsidian15 = require("obsidian");
+var import_obsidian16 = require("obsidian");
 
 // node_modules/diff/libesm/diff/base.js
 var Diff = class {
@@ -7715,7 +7740,7 @@ function splitLines(text3) {
 // src/shared/sha256.ts
 async function sha256(content) {
   const bytes = new TextEncoder().encode(content);
-  const digest = await globalThis.crypto.subtle.digest("SHA-256", bytes);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
   return [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, "0")).join("");
 }
 
@@ -8042,11 +8067,11 @@ var TaskChangeProposalRepository = class {
   async save(proposal) {
     parseTaskChangeProposal(JSON.stringify(proposal));
     await this.ensureFolder(this.folder());
-    const path = (0, import_obsidian15.normalizePath)(`${this.folder()}/${proposal.id}.json`);
+    const path = (0, import_obsidian16.normalizePath)(`${this.folder()}/${proposal.id}.json`);
     const content = `${JSON.stringify(proposal, null, 2)}
 `;
     const existing = this.app.vault.getAbstractFileByPath(path);
-    if (existing instanceof import_obsidian15.TFile) await this.app.vault.modify(existing, content);
+    if (existing instanceof import_obsidian16.TFile) await this.app.vault.modify(existing, content);
     else await this.app.vault.create(path, content);
   }
   async apply(proposalId, approvedChangeIds, now = (/* @__PURE__ */ new Date()).toISOString()) {
@@ -8134,20 +8159,20 @@ var TaskChangeProposalRepository = class {
     return regenerated.followUp?.tasks[0] ?? null;
   }
   folder() {
-    return (0, import_obsidian15.normalizePath)(this.proposalFolder().trim() || "TaskMate/Proposals");
+    return (0, import_obsidian16.normalizePath)(this.proposalFolder().trim() || "TaskMate/Proposals");
   }
   historyFolder() {
-    return (0, import_obsidian15.normalizePath)(`${this.folder()}/History`);
+    return (0, import_obsidian16.normalizePath)(`${this.folder()}/History`);
   }
   proposalFile(proposalId) {
     if (!/^proposal-[A-Za-z0-9._-]+$/.test(proposalId)) throw new Error("Invalid Proposal id");
-    const file = this.app.vault.getAbstractFileByPath((0, import_obsidian15.normalizePath)(`${this.folder()}/${proposalId}.json`));
-    return file instanceof import_obsidian15.TFile ? file : null;
+    const file = this.app.vault.getAbstractFileByPath((0, import_obsidian16.normalizePath)(`${this.folder()}/${proposalId}.json`));
+    return file instanceof import_obsidian16.TFile ? file : null;
   }
   historyProposalFile(proposalId) {
     if (!/^proposal-[A-Za-z0-9._-]+$/.test(proposalId)) throw new Error("Invalid Proposal id");
-    const file = this.app.vault.getAbstractFileByPath((0, import_obsidian15.normalizePath)(`${this.historyFolder()}/${proposalId}.json`));
-    return file instanceof import_obsidian15.TFile ? file : null;
+    const file = this.app.vault.getAbstractFileByPath((0, import_obsidian16.normalizePath)(`${this.historyFolder()}/${proposalId}.json`));
+    return file instanceof import_obsidian16.TFile ? file : null;
   }
   async archive(proposal) {
     const source = this.proposalFile(proposal.id);
@@ -8155,10 +8180,10 @@ var TaskChangeProposalRepository = class {
     await this.app.vault.modify(source, `${JSON.stringify(proposal, null, 2)}
 `);
     await this.ensureFolder(this.historyFolder());
-    await this.app.fileManager.renameFile(source, (0, import_obsidian15.normalizePath)(`${this.historyFolder()}/${proposal.id}.json`));
+    await this.app.fileManager.renameFile(source, (0, import_obsidian16.normalizePath)(`${this.historyFolder()}/${proposal.id}.json`));
   }
   async ensureFolder(path) {
-    const segments = (0, import_obsidian15.normalizePath)(path).split("/").filter(Boolean);
+    const segments = (0, import_obsidian16.normalizePath)(path).split("/").filter(Boolean);
     let current = "";
     for (const segment of segments) {
       current = current ? `${current}/${segment}` : segment;
@@ -8188,7 +8213,7 @@ function summarize(proposal) {
 }
 
 // src/reviews/task-change/review-view.ts
-var import_obsidian16 = require("obsidian");
+var import_obsidian17 = require("obsidian");
 
 // src/reviews/shared/review-index.ts
 function buildReviewIndex(entries, details) {
@@ -8252,10 +8277,7 @@ function renderNoOpenReview(container, message, openList) {
   open.addEventListener("click", openList.onClick);
 }
 function element(tag, className, parent) {
-  const value = document.createElement(tag);
-  if (className) value.className = className;
-  parent.append(value);
-  return value;
+  return parent.createEl(tag, { cls: className || void 0 });
 }
 function text(parent, tag, content, className = "") {
   const value = element(tag, className, parent);
@@ -8329,8 +8351,7 @@ function renderTaskChangeReview(container, review, state, copy, dispatch, option
         if (options.readOnly) row.classList.add("is-read-only");
         row.dataset.reviewAnchor = change.id;
         if (!options.readOnly) {
-          const checkbox = document.createElement("input");
-          checkbox.type = "checkbox";
+          const checkbox = createEl("input", { type: "checkbox" });
           checkbox.checked = state.approvedChangeIds.has(change.id);
           checkbox.addEventListener("change", () => dispatch({ type: "set-approved", changeId: change.id, approved: checkbox.checked }));
           row.append(checkbox);
@@ -8386,22 +8407,14 @@ function renderSummary(container, review, copy, sections) {
   }
 }
 function element2(tag, className, parent) {
-  const value = document.createElement(tag);
-  value.className = className;
-  parent?.append(value);
-  return value;
+  return createEl(tag, { cls: className || void 0, parent });
 }
 function appendTextElement(parent, tag, text3, className) {
-  const value = document.createElement(tag);
-  if (className) value.className = className;
-  value.textContent = text3;
-  parent.append(value);
+  const value = parent.createEl(tag, { cls: className, text: text3 });
   return value;
 }
 function button(text3, activate, active = false) {
-  const value = document.createElement("button");
-  value.type = "button";
-  value.textContent = text3;
+  const value = createEl("button", { type: "button", text: text3 });
   if (active) value.classList.add("is-active");
   value.addEventListener("click", activate);
   return value;
@@ -8477,7 +8490,7 @@ function taskChangeIndexDetails(summary, i18n) {
     lines: [t(`review.status.${summary.status}`), t("review.historyCounts", { succeeded: summary.succeededCount, failed: summary.failedCount }), counts]
   };
 }
-var TaskChangeReviewView = class extends import_obsidian16.ItemView {
+var TaskChangeReviewView = class extends import_obsidian17.ItemView {
   constructor(leaf, plugin) {
     super(leaf);
     this.plugin = plugin;
@@ -8549,7 +8562,7 @@ var TaskChangeReviewView = class extends import_obsidian16.ItemView {
       const succeeded = result.closedProposal.result?.succeededChangeIds.length ?? 0;
       const failed = result.closedProposal.result?.failed.reduce((count, failure) => count + failure.changeIds.length, 0) ?? 0;
       const notice = applyNoticeKind({ succeeded, failed, hasFollowUp: result.followUp !== null });
-      new import_obsidian16.Notice(notice === "stale-regenerated" ? this.plugin.i18n().t("review.staleRegenerated", { failed }) : this.plugin.i18n().t("review.applied", { count: succeeded }));
+      new import_obsidian17.Notice(notice === "stale-regenerated" ? this.plugin.i18n().t("review.staleRegenerated", { failed }) : this.plugin.i18n().t("review.applied", { count: succeeded }));
       this.proposalId = result.followUp?.id ?? null;
       this.state = createTaskChangeReviewState();
       preserve = void 0;
@@ -8559,10 +8572,11 @@ var TaskChangeReviewView = class extends import_obsidian16.ItemView {
       }
     }
     if (action.type === "reject" && this.proposalId) {
-      if (!window.confirm(this.plugin.i18n().t("review.rejectConfirm"))) return;
+      const { t } = this.plugin.i18n();
+      if (!await confirmAction(this.app, { message: t("review.rejectConfirm"), confirmText: t("review.reject"), cancelText: t("common.cancel") })) return;
       await this.plugin.proposals.reject(this.proposalId);
       this.proposalId = null;
-      new import_obsidian16.Notice(this.plugin.i18n().t("review.rejected"));
+      new import_obsidian17.Notice(this.plugin.i18n().t("review.rejected"));
       await this.plugin.openReviewIndex("pending", this.leaf);
       return;
     }
@@ -8604,7 +8618,7 @@ function reviewCopy(plugin) {
 }
 
 // src/reviews/import/review-repository.ts
-var import_obsidian17 = require("obsidian");
+var import_obsidian18 = require("obsidian");
 
 // src/reviews/import/proposal.ts
 var CURRENT_SCHEMA_VERSION = 2;
@@ -9146,7 +9160,7 @@ function invalid(path, message) {
 
 // src/reviews/import/source-note-provenance.ts
 var FRONTMATTER3 = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
-var LINE_BREAK = /\r\n|[\n\r\v\f\x1c\x1d\x1e\x85\u2028\u2029]/;
+var LINE_BREAK = /\r\n|[\n\r\v\f\u001c\u001d\u001e\x85\u2028\u2029]/;
 var IMPORT_KEYS = /* @__PURE__ */ new Set(["taskmate-import-status", "taskmate-imported-at", "taskmate-imported-hash", "taskmate-task-ids"]);
 async function sourceNoteHash(text3) {
   const { lines, body } = splitDocument(universalNewlines(text3));
@@ -9275,7 +9289,7 @@ var ImportReviewRepository = class {
     if (file) await this.app.vault.modify(file, content);
     else {
       await this.ensureFolder(this.folder());
-      await this.app.vault.create((0, import_obsidian17.normalizePath)(`${this.folder()}/${review.reviewId}.json`), content);
+      await this.app.vault.create((0, import_obsidian18.normalizePath)(`${this.folder()}/${review.reviewId}.json`), content);
     }
   }
   async formalApply(reviewId, options) {
@@ -9363,15 +9377,15 @@ var ImportReviewRepository = class {
     if (source.type === "conversation") {
       return await sha256(source.snapshot) === source.sha256 ? null : `Conversation Source ${source.localSourceId} does not match its recorded hash`;
     }
-    const file = this.app.vault.getAbstractFileByPath((0, import_obsidian17.normalizePath)(source.path));
-    if (!(file instanceof import_obsidian17.TFile)) return `Source note ${source.path} is missing`;
+    const file = this.app.vault.getAbstractFileByPath((0, import_obsidian18.normalizePath)(source.path));
+    if (!(file instanceof import_obsidian18.TFile)) return `Source note ${source.path} is missing`;
     return await sourceNoteHash(await this.app.vault.read(file)) === source.sha256 ? null : `Source note ${source.path} changed after staging`;
   }
   async writeProvenance(review, now, result) {
     for (const completion of noteSourceCompletion(review)) {
       if (!completion.complete) continue;
-      const file = this.app.vault.getAbstractFileByPath((0, import_obsidian17.normalizePath)(completion.path));
-      if (!(file instanceof import_obsidian17.TFile)) {
+      const file = this.app.vault.getAbstractFileByPath((0, import_obsidian18.normalizePath)(completion.path));
+      if (!(file instanceof import_obsidian18.TFile)) {
         result.provenance.failed.push({ path: completion.path, error: "Source note is missing" });
         continue;
       }
@@ -9413,7 +9427,7 @@ var ImportReviewRepository = class {
     if (!source) throw new Error(`Import review not found: ${review.reviewId}`);
     await this.app.vault.modify(source, serialize(review));
     await this.ensureFolder(this.historyFolder());
-    await this.app.fileManager.renameFile(source, (0, import_obsidian17.normalizePath)(`${this.historyFolder()}/${review.reviewId}.json`));
+    await this.app.fileManager.renameFile(source, (0, import_obsidian18.normalizePath)(`${this.historyFolder()}/${review.reviewId}.json`));
   }
   pendingFiles() {
     return this.filesIn(this.folder());
@@ -9427,22 +9441,22 @@ var ImportReviewRepository = class {
   }
   reviewFile(reviewId) {
     if (!REVIEW_ID.test(reviewId)) throw new Error("Invalid Import review id");
-    const file = this.app.vault.getAbstractFileByPath((0, import_obsidian17.normalizePath)(`${this.folder()}/${reviewId}.json`));
-    return file instanceof import_obsidian17.TFile ? file : null;
+    const file = this.app.vault.getAbstractFileByPath((0, import_obsidian18.normalizePath)(`${this.folder()}/${reviewId}.json`));
+    return file instanceof import_obsidian18.TFile ? file : null;
   }
   historyFile(reviewId) {
     if (!REVIEW_ID.test(reviewId)) throw new Error("Invalid Import review id");
-    const file = this.app.vault.getAbstractFileByPath((0, import_obsidian17.normalizePath)(`${this.historyFolder()}/${reviewId}.json`));
-    return file instanceof import_obsidian17.TFile ? file : null;
+    const file = this.app.vault.getAbstractFileByPath((0, import_obsidian18.normalizePath)(`${this.historyFolder()}/${reviewId}.json`));
+    return file instanceof import_obsidian18.TFile ? file : null;
   }
   folder() {
-    return (0, import_obsidian17.normalizePath)(this.proposalFolder().trim() || "TaskMate/Proposals");
+    return (0, import_obsidian18.normalizePath)(this.proposalFolder().trim() || "TaskMate/Proposals");
   }
   historyFolder() {
-    return (0, import_obsidian17.normalizePath)(`${this.folder()}/History`);
+    return (0, import_obsidian18.normalizePath)(`${this.folder()}/History`);
   }
   async ensureFolder(path) {
-    const segments = (0, import_obsidian17.normalizePath)(path).split("/").filter(Boolean);
+    const segments = (0, import_obsidian18.normalizePath)(path).split("/").filter(Boolean);
     let current = "";
     for (const segment of segments) {
       current = current ? `${current}/${segment}` : segment;
@@ -9471,7 +9485,7 @@ function summarize2(review) {
 }
 
 // src/reviews/import/review-view.ts
-var import_obsidian18 = require("obsidian");
+var import_obsidian19 = require("obsidian");
 
 // src/reviews/import/candidate-edit-form.ts
 var TASK_FIELDS = ["title", "date", "priority", "labels", "project", "steps", "notes"];
@@ -9840,8 +9854,7 @@ function renderApply(container, plan, state, copy, dispatch) {
     const unviewed = element3("ul", "taskmate-import-review-unviewed", panel);
     for (const item of plan.unviewedMerges) text2(unviewed, "li", `${item.candidateId}: ${item.targetTitle}`);
     const label = element3("label", "taskmate-import-review-acknowledge", panel);
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
+    const checkbox = createEl("input", { type: "checkbox" });
     checkbox.checked = state.acknowledged;
     checkbox.addEventListener("change", () => dispatch({ type: "set-acknowledged", acknowledged: checkbox.checked }));
     label.append(checkbox, document.createTextNode(copy.acknowledge(plan.unviewedMerges.length)));
@@ -9920,19 +9933,18 @@ function editField(form, id, label, control, help, error) {
   if (describedBy.length > 0) control.setAttribute("aria-describedby", describedBy.join(" "));
 }
 function textInput(type, value) {
-  const input = document.createElement("input");
-  input.type = type;
+  const input = createEl("input", { type });
   input.value = value;
   return input;
 }
 function textArea(value) {
-  const area = document.createElement("textarea");
+  const area = createEl("textarea");
   area.rows = 3;
   area.value = value;
   return area;
 }
 function select(options, value) {
-  const control = document.createElement("select");
+  const control = createEl("select");
   for (const [optionValue, label] of options) {
     const option2 = element3("option", "", control);
     option2.value = optionValue;
@@ -9949,10 +9961,7 @@ function projectName(id, projects) {
   return projects.find((project) => project.id === id)?.name ?? id;
 }
 function element3(tag, className, parent) {
-  const value = document.createElement(tag);
-  if (className) value.className = className;
-  parent?.append(value);
-  return value;
+  return createEl(tag, { cls: className || void 0, parent });
 }
 function text2(parent, tag, content, className) {
   const value = element3(tag, className ?? "", parent);
@@ -9960,9 +9969,7 @@ function text2(parent, tag, content, className) {
   return value;
 }
 function button2(label, activate, active = false) {
-  const value = document.createElement("button");
-  value.type = "button";
-  value.textContent = label;
+  const value = createEl("button", { type: "button", text: label });
   if (active) value.classList.add("is-active");
   value.addEventListener("click", activate);
   return value;
@@ -9998,7 +10005,7 @@ function importReviewIndexDetails(summary, i18n) {
     ]
   };
 }
-var ImportReviewView = class extends import_obsidian18.ItemView {
+var ImportReviewView = class extends import_obsidian19.ItemView {
   constructor(leaf, plugin) {
     super(leaf);
     this.plugin = plugin;
@@ -10073,11 +10080,11 @@ var ImportReviewView = class extends import_obsidian18.ItemView {
       } else if (action.type === "confirm-apply") {
         const result = await this.plugin.importReviews.formalApply(reviewId, { acknowledgeUnviewedMerges: previous.acknowledged });
         this.state = createImportReviewUiState();
-        new import_obsidian18.Notice(formalApplyMessage(result, this.plugin.i18n()), 1e4);
+        new import_obsidian19.Notice(formalApplyMessage(result, this.plugin.i18n()), 1e4);
       }
     } catch (error) {
       console.error("TaskMate could not update Import review", error);
-      new import_obsidian18.Notice(this.plugin.i18n().t("importReview.actionFailed", { error: error instanceof Error ? error.message : String(error) }), 0);
+      new import_obsidian19.Notice(this.plugin.i18n().t("importReview.actionFailed", { error: error instanceof Error ? error.message : String(error) }), 0);
     }
     await this.render(true);
   }
@@ -10085,7 +10092,7 @@ var ImportReviewView = class extends import_obsidian18.ItemView {
     const i18n = this.plugin.i18n();
     const result = saveCandidateEdit(await this.plugin.importReviews.load(reviewId), editing, (/* @__PURE__ */ new Date()).toISOString(), i18n.t("importReview.editedReason"));
     if (result.kind === "conflict") {
-      new import_obsidian18.Notice(i18n.t("importReview.editConflict"), 1e4);
+      new import_obsidian19.Notice(i18n.t("importReview.editConflict"), 1e4);
       return;
     }
     if (result.kind === "invalid") {
@@ -10191,7 +10198,7 @@ function importReviewCopy(i18n) {
 }
 
 // src/reviews/shared/review-catalog.ts
-var import_obsidian19 = require("obsidian");
+var import_obsidian20 = require("obsidian");
 var TASK_CHANGE_ID = /^proposal-[A-Za-z0-9._-]+$/;
 var IMPORT_REVIEW_ID = /^import-review-[A-Za-z0-9._-]+$/;
 var LEGACY_IMPORT_REVIEW_ID = /^source-review-[A-Za-z0-9._-]+$/;
@@ -10240,17 +10247,17 @@ var ReviewCatalog = class {
     return entries;
   }
   folder() {
-    return (0, import_obsidian19.normalizePath)(this.proposalFolder().trim() || "TaskMate/Proposals");
+    return (0, import_obsidian20.normalizePath)(this.proposalFolder().trim() || "TaskMate/Proposals");
   }
   historyFolder() {
-    return (0, import_obsidian19.normalizePath)(`${this.folder()}/History`);
+    return (0, import_obsidian20.normalizePath)(`${this.folder()}/History`);
   }
 };
 
 // src/reviews/shared/review-index-view.ts
-var import_obsidian20 = require("obsidian");
+var import_obsidian21 = require("obsidian");
 var REVIEW_INDEX_VIEW_TYPE = "taskmate-reviews";
-var ReviewIndexView = class extends import_obsidian20.ItemView {
+var ReviewIndexView = class extends import_obsidian21.ItemView {
   constructor(leaf, plugin) {
     super(leaf);
     this.plugin = plugin;
@@ -10305,7 +10312,7 @@ function reviewIndexCopy(i18n) {
 }
 
 // src/main.ts
-var TaskMatePlugin = class extends import_obsidian21.Plugin {
+var TaskMatePlugin = class extends import_obsidian22.Plugin {
   settings = DEFAULT_SETTINGS;
   repository;
   projects;
@@ -10324,10 +10331,10 @@ var TaskMatePlugin = class extends import_obsidian21.Plugin {
     this.reviewCatalog = new ReviewCatalog(this.app, () => this.settings.proposalFolder);
     try {
       const migrated = await this.repository.migrateLegacyFileNames();
-      if (migrated > 0) new import_obsidian21.Notice(t("notice.migratedTaskNames", { count: migrated }));
+      if (migrated > 0) new import_obsidian22.Notice(t("notice.migratedTaskNames", { count: migrated }));
     } catch (error) {
       console.error("TaskMate could not migrate legacy task filenames", error);
-      new import_obsidian21.Notice(t("notice.migrationFailed"));
+      new import_obsidian22.Notice(t("notice.migrationFailed"));
     }
     this.registerView(TODO_VIEW_TYPE, (leaf) => new TodoListView(leaf, this));
     this.registerView(TASK_CHANGE_REVIEW_VIEW_TYPE, (leaf) => new TaskChangeReviewView(leaf, this));
@@ -10340,7 +10347,7 @@ var TaskMatePlugin = class extends import_obsidian21.Plugin {
     this.registerObsidianProtocolHandler("taskmate-review", async (params) => {
       const proposalId = params.proposal;
       if (!proposalId || !/^proposal-[A-Za-z0-9._-]+$/.test(proposalId)) {
-        new import_obsidian21.Notice(this.i18n().t("review.invalidLink"));
+        new import_obsidian22.Notice(this.i18n().t("review.invalidLink"));
         return;
       }
       const taskId = typeof params.task === "string" && /^[A-Za-z0-9._-]+$/.test(params.task) ? params.task : void 0;
@@ -10350,7 +10357,7 @@ var TaskMatePlugin = class extends import_obsidian21.Plugin {
     this.registerObsidianProtocolHandler("taskmate-import-review", async (params) => {
       const reviewId = importReviewIdFromLink(params);
       if (!reviewId) {
-        new import_obsidian21.Notice(this.i18n().t("importReview.invalidLink"));
+        new import_obsidian22.Notice(this.i18n().t("importReview.invalidLink"));
         return;
       }
       await this.openImportReview(reviewId);
@@ -10371,9 +10378,9 @@ var TaskMatePlugin = class extends import_obsidian21.Plugin {
       checkCallback: (checking) => this.includeCurrentFolder(checking)
     });
     const scheduleRefresh = (file) => {
-      const taskPrefix = `${(0, import_obsidian21.normalizePath)(this.settings.taskFolder)}/`;
-      const projectPrefix = `${(0, import_obsidian21.normalizePath)(this.settings.projectFolder)}/`;
-      const proposalPrefix = `${(0, import_obsidian21.normalizePath)(this.settings.proposalFolder)}/`;
+      const taskPrefix = `${(0, import_obsidian22.normalizePath)(this.settings.taskFolder)}/`;
+      const projectPrefix = `${(0, import_obsidian22.normalizePath)(this.settings.projectFolder)}/`;
+      const proposalPrefix = `${(0, import_obsidian22.normalizePath)(this.settings.proposalFolder)}/`;
       if (!file.path.startsWith(taskPrefix) && !file.path.startsWith(projectPrefix) && !file.path.startsWith(proposalPrefix)) return;
       if (this.refreshTimer !== null) window.clearTimeout(this.refreshTimer);
       this.refreshTimer = window.setTimeout(() => {
@@ -10390,16 +10397,16 @@ var TaskMatePlugin = class extends import_obsidian21.Plugin {
       }, 100);
     };
     this.registerEvent(this.app.vault.on("create", (file) => {
-      if (file instanceof import_obsidian21.TFile) scheduleRefresh(file);
+      if (file instanceof import_obsidian22.TFile) scheduleRefresh(file);
     }));
     this.registerEvent(this.app.vault.on("modify", (file) => {
-      if (file instanceof import_obsidian21.TFile) scheduleRefresh(file);
+      if (file instanceof import_obsidian22.TFile) scheduleRefresh(file);
     }));
     this.registerEvent(this.app.vault.on("delete", (file) => {
-      if (file instanceof import_obsidian21.TFile) scheduleRefresh(file);
+      if (file instanceof import_obsidian22.TFile) scheduleRefresh(file);
     }));
     this.registerEvent(this.app.vault.on("rename", (file) => {
-      if (file instanceof import_obsidian21.TFile) scheduleRefresh(file);
+      if (file instanceof import_obsidian22.TFile) scheduleRefresh(file);
     }));
   }
   onunload() {
@@ -10516,7 +10523,7 @@ var TaskMatePlugin = class extends import_obsidian21.Plugin {
         frontmatter["taskmate-source"] = value;
       }).then(() => {
         const { t } = this.i18n();
-        new import_obsidian21.Notice(value ? t("notice.noteIncluded") : t("notice.noteExcluded"));
+        new import_obsidian22.Notice(value ? t("notice.noteIncluded") : t("notice.noteExcluded"));
       });
     }
     return true;
@@ -10526,9 +10533,9 @@ var TaskMatePlugin = class extends import_obsidian21.Plugin {
     const folder = file?.parent?.path;
     if (!file || !folder || folder === "/") return false;
     if (!checking) {
-      const normalized = (0, import_obsidian21.normalizePath)(folder);
+      const normalized = (0, import_obsidian22.normalizePath)(folder);
       if (!this.settings.sourceFolders.includes(normalized)) this.settings.sourceFolders.push(normalized);
-      void this.saveSettings().then(() => new import_obsidian21.Notice(this.i18n().t("notice.folderIncluded", { folder: normalized })));
+      void this.saveSettings().then(() => new import_obsidian22.Notice(this.i18n().t("notice.folderIncluded", { folder: normalized })));
     }
     return true;
   }

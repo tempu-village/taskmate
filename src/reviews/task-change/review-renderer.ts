@@ -109,8 +109,7 @@ export function renderTaskChangeReview(
         if (options.readOnly) row.classList.add("is-read-only");
         row.dataset.reviewAnchor = change.id;
         if (!options.readOnly) {
-          const checkbox = document.createElement("input");
-          checkbox.type = "checkbox";
+          const checkbox = createEl("input", { type: "checkbox" });
           checkbox.checked = state.approvedChangeIds.has(change.id);
           checkbox.addEventListener("change", () => dispatch({ type: "set-approved", changeId: change.id, approved: checkbox.checked }));
           row.append(checkbox);
@@ -168,24 +167,16 @@ function renderSummary(container: HTMLElement, review: ProposalReview, copy: Tas
 }
 
 function element<Tag extends keyof HTMLElementTagNameMap>(tag: Tag, className: string, parent?: HTMLElement): HTMLElementTagNameMap[Tag] {
-  const value = document.createElement(tag);
-  value.className = className;
-  parent?.append(value);
-  return value;
+  return createEl(tag, { cls: className || undefined, parent });
 }
 
 function appendTextElement(parent: HTMLElement, tag: keyof HTMLElementTagNameMap, text: string, className?: string): HTMLElement {
-  const value = document.createElement(tag);
-  if (className) value.className = className;
-  value.textContent = text;
-  parent.append(value);
+  const value = parent.createEl(tag, { cls: className, text });
   return value;
 }
 
 function button(text: string, activate: () => void, active = false): HTMLButtonElement {
-  const value = document.createElement("button");
-  value.type = "button";
-  value.textContent = text;
+  const value = createEl("button", { type: "button", text });
   if (active) value.classList.add("is-active");
   value.addEventListener("click", activate);
   return value;

@@ -104,7 +104,8 @@ function repositoryWith(vault: MemoryVault): TaskRepository {
         vault.files.delete(file.path);
         file.path = desiredPath;
         vault.files.set(desiredPath, entry);
-      }
+      },
+      trashFile: async (file: TFile) => vault.trash(file)
     }
   } as unknown as App;
   return new TaskRepository(app, () => "TaskMate/Tasks");

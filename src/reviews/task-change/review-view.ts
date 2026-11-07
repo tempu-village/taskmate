@@ -1,4 +1,5 @@
 import { ItemView, Notice, WorkspaceLeaf } from "obsidian";
+import { confirmAction } from "../../shared/confirm-modal";
 import type { I18n } from "../../i18n";
 import type TaskMatePlugin from "../../main";
 import { renderNoOpenReview } from "../shared/review-index";
@@ -119,7 +120,8 @@ export class TaskChangeReviewView extends ItemView {
       }
     }
     if (action.type === "reject" && this.proposalId) {
-      if (!window.confirm(this.plugin.i18n().t("review.rejectConfirm"))) return;
+      const { t } = this.plugin.i18n();
+      if (!await confirmAction(this.app, { message: t("review.rejectConfirm"), confirmText: t("review.reject"), cancelText: t("common.cancel") })) return;
       await this.plugin.proposals.reject(this.proposalId);
       this.proposalId = null;
       new Notice(this.plugin.i18n().t("review.rejected"));

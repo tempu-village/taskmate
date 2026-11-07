@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
 
 jobs:
   release:
@@ -28,6 +30,12 @@ jobs:
       - run: python3 scripts/validate_skills.py
       - run: npm run validate:localization
       - run: npm run validate:release -- --tag "$GITHUB_REF_NAME"
+      - name: Attest release assets
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            main.js
+            styles.css
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
