@@ -999,13 +999,14 @@ var ConfirmModal = class extends import_obsidian4.Modal {
   onOpen() {
     this.contentEl.createEl("p", { text: this.options.message });
     const actions = this.contentEl.createDiv({ cls: "taskmate-modal-actions" });
-    actions.createEl("button", { text: this.options.cancelText }).addEventListener("click", () => this.close());
+    const cancel = actions.createEl("button", { text: this.options.cancelText });
+    cancel.addEventListener("click", () => this.close());
     const confirm = actions.createEl("button", { text: this.options.confirmText, cls: "mod-warning" });
     confirm.addEventListener("click", () => {
       this.confirmed = true;
       this.close();
     });
-    window.setTimeout(() => confirm.focus(), 0);
+    window.setTimeout(() => cancel.focus(), 0);
   }
   onClose() {
     this.contentEl.empty();
@@ -1310,16 +1311,16 @@ var en = {
   "selection.exit": "Exit",
   "selection.count": "{count} selected",
   "selection.selectAll": "Select all",
-  "selection.deleteConfirm": "Move {count} tasks to the Obsidian trash?",
-  "selection.deletedNotice": "Moved {count} tasks to the trash",
+  "selection.deleteConfirm": "Delete {count} tasks? Their files are handled by Obsidian's Deleted files setting (Settings \u2192 Files and links), which may delete them permanently.",
+  "selection.deletedNotice": "Deleted {count} tasks",
   "selection.updatedNotice": "Updated {count} tasks",
   "selection.partialFailure": "{failed} of {total} tasks could not be changed",
   "tasks.empty": "No tasks",
   "tasks.completeAriaLabel": "Complete {title}",
   "tasks.moreAriaLabel": "More actions",
   "tasks.selectAriaLabel": "Select {title}",
-  "tasks.deleteConfirm": "Move \u201C{title}\u201D to the trash?",
-  "tasks.deletedNotice": "Task moved to the trash",
+  "tasks.deleteConfirm": "Delete \u201C{title}\u201D? Its file is handled by Obsidian's Deleted files setting (Settings \u2192 Files and links), which may delete it permanently.",
+  "tasks.deletedNotice": "Task deleted",
   "tasks.moreLabels": "{count} more",
   "tasks.moreLabelsAriaLabel": "Show {count} more labels",
   "tasks.hideExtraLabels": "Hide extra labels",
@@ -1672,16 +1673,16 @@ var ja = {
   "selection.exit": "\u89E3\u9664",
   "selection.count": "{count}\u4EF6\u9078\u629E",
   "selection.selectAll": "\u3059\u3079\u3066\u9078\u629E",
-  "selection.deleteConfirm": "{count}\u4EF6\u306E\u30BF\u30B9\u30AF\u3092Obsidian\u306E\u30B4\u30DF\u7BB1\u3078\u79FB\u52D5\u3057\u307E\u3059\u304B\uFF1F",
-  "selection.deletedNotice": "{count}\u4EF6\u306E\u30BF\u30B9\u30AF\u3092\u30B4\u30DF\u7BB1\u3078\u79FB\u52D5\u3057\u307E\u3057\u305F",
+  "selection.deleteConfirm": "{count}\u4EF6\u306E\u30BF\u30B9\u30AF\u3092\u524A\u9664\u3057\u307E\u3059\u304B\uFF1F\u30D5\u30A1\u30A4\u30EB\u306FObsidian\u306E\u524A\u9664\u306E\u8A2D\u5B9A\uFF08\u8A2D\u5B9A \u2192 \u30D5\u30A1\u30A4\u30EB\u3068\u30EA\u30F3\u30AF\uFF09\u306B\u5F93\u3063\u3066\u51E6\u7406\u3055\u308C\u3001\u8A2D\u5B9A\u306B\u3088\u3063\u3066\u306F\u5B8C\u5168\u306B\u524A\u9664\u3055\u308C\u307E\u3059\u3002",
+  "selection.deletedNotice": "{count}\u4EF6\u306E\u30BF\u30B9\u30AF\u3092\u524A\u9664\u3057\u307E\u3057\u305F",
   "selection.updatedNotice": "{count}\u4EF6\u306E\u30BF\u30B9\u30AF\u3092\u66F4\u65B0\u3057\u307E\u3057\u305F",
   "selection.partialFailure": "{total}\u4EF6\u4E2D{failed}\u4EF6\u3092\u5909\u66F4\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F",
   "tasks.empty": "\u30BF\u30B9\u30AF\u306F\u3042\u308A\u307E\u305B\u3093",
   "tasks.completeAriaLabel": "{title}\u3092\u5B8C\u4E86",
   "tasks.moreAriaLabel": "\u305D\u306E\u4ED6",
   "tasks.selectAriaLabel": "{title}\u3092\u9078\u629E",
-  "tasks.deleteConfirm": "\u300C{title}\u300D\u3092\u30B4\u30DF\u7BB1\u3078\u79FB\u52D5\u3057\u307E\u3059\u304B\uFF1F",
-  "tasks.deletedNotice": "\u30BF\u30B9\u30AF\u3092\u30B4\u30DF\u7BB1\u3078\u79FB\u52D5\u3057\u307E\u3057\u305F",
+  "tasks.deleteConfirm": "\u300C{title}\u300D\u3092\u524A\u9664\u3057\u307E\u3059\u304B\uFF1F\u30D5\u30A1\u30A4\u30EB\u306FObsidian\u306E\u524A\u9664\u306E\u8A2D\u5B9A\uFF08\u8A2D\u5B9A \u2192 \u30D5\u30A1\u30A4\u30EB\u3068\u30EA\u30F3\u30AF\uFF09\u306B\u5F93\u3063\u3066\u51E6\u7406\u3055\u308C\u3001\u8A2D\u5B9A\u306B\u3088\u3063\u3066\u306F\u5B8C\u5168\u306B\u524A\u9664\u3055\u308C\u307E\u3059\u3002",
+  "tasks.deletedNotice": "\u30BF\u30B9\u30AF\u3092\u524A\u9664\u3057\u307E\u3057\u305F",
   "tasks.moreLabels": "\u307B\u304B{count}\u4EF6",
   "tasks.moreLabelsAriaLabel": "\u6B8B\u308A{count}\u4EF6\u306E\u30E9\u30D9\u30EB\u3092\u8868\u793A",
   "tasks.hideExtraLabels": "\u8FFD\u52A0\u306E\u30E9\u30D9\u30EB\u3092\u9589\u3058\u308B",
