@@ -177,4 +177,75 @@ describe("TaskMate in the Obsidian UI", function () {
     await (await confirmButton()).click();
     await browser.waitUntil(async () => !(await fileExists(proposalPath)));
   });
+
+  it("asks before deleting a project and keeps its tasks", async function () {
+    await closeModals();
+    const projectPath = "TaskMate/Projects/ui-project--e2e.md";
+    await browser.executeObsidian(async ({ app }) => {
+      if (!app.vault.getFolderByPath("TaskMate/Projects")) await app.vault.createFolder("TaskMate/Projects");
+    });
+    await writeVaultFile(projectPath, `---
+type: taskmate-project
+id: "ui-project"
+name: "ui-project"
+created-at: "2026-11-02T09:00:00+09:00"
+updated-at: "2026-11-02T09:00:00+09:00"
+last-used-at: "2026-11-02T09:00:00+09:00"
+---
+`);
+    const taskFile = taskPath("ui-project-task");
+    await writeVaultFile(taskFile, taskMarkdown({ id: "ui-project-task" }).replace("project: null", 'project: "ui-project"'));
+    await openAllTab();
+    // Navigation is Date, Search, Projects.
+    await taskListView().$$(".taskmate-navigation button")[2].click();
+    const openDelete = async () => {
+      const row = taskListView().$(".taskmate-project-row*=ui-project");
+      await row.waitForExist();
+      await row.$(".taskmate-project-edit").click();
+      await taskListView().$(".taskmate-project-editor .mod-warning").click();
+      return confirmButton();
+    };
+
+    await openDelete();
+    await cancelConfirm();
+    expect(await fileExists(projectPath)).toBe(true);
+    await taskListView().$$(".taskmate-navigation button")[2].click();
+
+    await (await openDelete()).click();
+    await browser.waitUntil(async () => !(await fileExists(projectPath)));
+    await browser.waitUntil(async () => (await readVaultFile(taskFile)).includes("project: null"));
+    await taskListView().$$(".taskmate-navigation button")[0].click();
+  });
+
+  it("does not commit a label while the IME is composing, including Safari's Enter with keyCode 229", async function () {
+    await closeModals();
+    await writeTask({ id: "ui-ime" });
+    await openAllTab();
+    await taskRow("ui-ime").$(".taskmate-title").click();
+    const input = browser.$(".modal .taskmate-label-chip-input");
+    await input.waitForExist();
+    const chips = () => browser.execute(() => [...document.querySelectorAll(".modal [data-taskmate-label-chip]")].map((chip) => chip.textContent?.trim() ?? ""));
+    const before = await chips();
+
+    // WebDriver cannot drive a real IME, so this replays the event sequence a Japanese IME produces.
+    await browser.execute(() => {
+      const field = document.querySelector<HTMLInputElement>(".modal .taskmate-label-chip-input")!;
+      field.focus();
+      field.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true }));
+      field.value = "にほんご";
+      field.dispatchEvent(new InputEvent("input", { bubbles: true, isComposing: true, data: "にほんご" }));
+      // Chrome reports isComposing; Safari reports the confirming Enter as keyCode 229 after composition ends.
+      field.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Enter", isComposing: true, keyCode: 229 }));
+      field.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true, data: "にほんご" }));
+      field.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Enter", keyCode: 229 }));
+    });
+    expect(await chips()).toEqual(before);
+    expect(await input.getValue()).toBe("にほんご");
+
+    await input.click();
+    await browser.keys("Enter");
+    await browser.waitUntil(async () => (await chips()).includes("にほんご"));
+    expect(await input.getValue()).toBe("");
+    await browser.keys("Escape");
+  });
 });
