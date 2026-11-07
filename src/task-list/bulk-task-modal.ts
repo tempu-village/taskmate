@@ -187,7 +187,7 @@ export class BulkTaskModal extends Modal {
     input.addEventListener("compositionstart", () => { composing = true; });
     input.addEventListener("compositionend", () => { composing = false; commitInput(false, false); });
     input.addEventListener("input", (event) => { pending = input.value; add.disabled = !pending.trim(); if (!composing && !(event as InputEvent).isComposing) commitInput(false, false); });
-    // keyCode is deprecated, but Safari sends the Enter that confirms IME conversion after compositionend with isComposing false; 229 is its only marker. See ADR 0030.
+    // keyCode is deprecated, but on iPhone and iPad Obsidian runs in Capacitor's WKWebView (WebKit), which sends the IME-confirming Enter after compositionend with isComposing false; 229 is its only marker. See ADR 0030.
     input.addEventListener("keydown", (event) => { if (shouldCommitLabelOnEnter(event.key, composing || event.isComposing, event.keyCode)) { event.preventDefault(); commitInput(true, true); } });
     add.addEventListener("pointerdown", (event) => event.preventDefault());
     add.addEventListener("click", () => commitInput(true, true));

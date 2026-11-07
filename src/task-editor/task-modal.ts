@@ -492,7 +492,7 @@ export class TaskModal extends Modal {
       updateFromInput(false, false);
     });
     labelInput.addEventListener("keydown", (event) => {
-      // keyCode is deprecated, but Safari sends the Enter that confirms IME conversion after compositionend with isComposing false; 229 is its only marker. See ADR 0030.
+      // keyCode is deprecated, but on iPhone and iPad Obsidian runs in Capacitor's WKWebView (WebKit), which sends the IME-confirming Enter after compositionend with isComposing false; 229 is its only marker. See ADR 0030.
       if (!shouldCommitLabelOnEnter(event.key, labelInputComposing || event.isComposing, event.keyCode)) return;
       event.preventDefault();
       updateFromInput(true, true);

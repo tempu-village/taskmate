@@ -4,7 +4,9 @@ Status: Accepted
 
 ## Context
 
-The Label input in the Task editor and in bulk editing adds a Label when the user presses Enter. While an IME such as Japanese input is converting text, Enter confirms the conversion and must not add a Label. Chromium, which Obsidian desktop and Android use, marks that Enter with `isComposing`. Safari's WebKit, which Obsidian on iPhone and iPad uses, sends the confirming Enter after `compositionend` with `isComposing` false. Its only distinguishing value is `keyCode` 229.
+The Label input in the Task editor and in bulk editing adds a Label when the user presses Enter. While an IME such as Japanese input is converting text, Enter confirms the conversion and must not add a Label.
+
+The problem affects only iPhone and iPad. Obsidian desktop, including on macOS, is an Electron app and renders with Chromium. Obsidian mobile is a Capacitor app instead of an Electron app, so it renders inside the operating system's WebView: Android's WebView, which is Chromium, and on iOS and iPadOS WebKit's `WKWebView`, the engine behind Safari. Chromium marks the confirming Enter with `isComposing`. WebKit sends it after `compositionend` with `isComposing` false, and its only distinguishing value is `keyCode` 229.
 
 `keyCode` is deprecated, and the Obsidian Community directory review reports its two uses (#120). The project's lint configuration does not allow disabling that rule in code.
 
@@ -30,6 +32,8 @@ The Label input in the Task editor and in bulk editing adds a Label when the use
 
 英語版が正本です。
 
-ラベル入力欄はEnterでラベルを追加しますが、日本語入力の変換を確定するEnterではラベルを追加してはいけません。Chromium（デスクトップ版とAndroid）はこのEnterに`isComposing`を付けますが、iPhoneとiPadのSafari（WebKit）は変換終了後に`isComposing`なしで送り、区別できるのは`keyCode`の229だけです。そのため、非推奨の`keyCode`による229の判定を残し、各使用箇所のコメントに理由を書き、Communityディレクトリの2件の警告は意図的なものとして受け入れます。
+ラベル入力欄はEnterでラベルを追加しますが、日本語入力の変換を確定するEnterではラベルを追加してはいけません。
+
+この問題が起きるのはiPhoneとiPadだけです。デスクトップ版のObsidianはmacOSでもElectronアプリで、Chromiumで表示します。モバイル版はElectronではなくCapacitorで作られており、OSのWebViewの中で表示します。AndroidのWebViewはChromiumですが、iOSとiPadOSではSafariと同じWebKitの`WKWebView`です。Chromiumは変換確定のEnterに`isComposing`を付けますが、WebKitは変換終了後に`isComposing`なしで送り、区別できるのは`keyCode`の229だけです。そのため、非推奨の`keyCode`による229の判定を残し、各使用箇所のコメントに理由を書き、Communityディレクトリの2件の警告は意図的なものとして受け入れます。
 
 `compositionend`直後の最初のEnterを次の`keyup`まで無視する方法なら`keyCode`を使わずに済みますが、ブラウザごとのイベント順に依存し、Apple実機でしか確かめられないため、今回は採りませんでした。WebKitが確定のEnterに`isComposing`を付けるようになった場合や、ディレクトリが`keyCode`を認めなくなった場合は見直します。
