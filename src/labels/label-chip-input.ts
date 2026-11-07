@@ -20,6 +20,7 @@ export function updateLabelChipInput(
   };
 }
 
+// keyCode 229 marks Safari's IME-confirming Enter, which arrives after compositionend with isComposing false (ADR 0030).
 export function shouldCommitLabelOnEnter(key: string, composing: boolean, keyCode = 0): boolean {
   return key === "Enter" && !composing && keyCode !== 229;
 }
