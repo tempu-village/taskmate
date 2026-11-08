@@ -1,6 +1,7 @@
 import * as path from "node:path";
 import { env } from "node:process";
 import { parseObsidianVersions } from "wdio-obsidian-service";
+import { assertSandboxVault } from "./test/e2e/sandbox-vault";
 import { assertFixtureVault, E2E_VAULT } from "./test/e2e/vault-guard";
 
 // Obsidian builds are downloaded here; the service runs them against a sandboxed copy of the vault.
@@ -28,6 +29,8 @@ export const config: WebdriverIO.Config = {
       vault: E2E_VAULT
     }
   })),
+  // Runs once per spec file, after Obsidian opens its Vault and before any test: stop unless it is a temporary copy.
+  before: (_capabilities, _specs, browser) => assertSandboxVault(browser),
   services: ["obsidian"],
   reporters: ["obsidian"],
   mochaOpts: { ui: "bdd", timeout: 60 * 1000 },

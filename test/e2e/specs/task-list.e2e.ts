@@ -1,10 +1,8 @@
 import { expect } from "@wdio/globals";
-import { before, describe, it } from "mocha";
-import { assertSandboxVault, openAllTab } from "../helpers";
+import { describe, it } from "mocha";
+import { openAllTab } from "../helpers";
 
 describe("TaskMate task list", function () {
-  before(assertSandboxVault);
-
   it("shows an undated vault task after switching to the All tab", async function () {
     const { view, allTab } = await openAllTab();
     await expect(allTab).toHaveAttribute("aria-selected", "true");

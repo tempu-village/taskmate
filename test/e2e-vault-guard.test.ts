@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -51,30 +51,5 @@ describe("E2E sandbox Vault guard", () => {
 
   it("rejects an unmarked copy", () => {
     expect(() => assertSandboxPath(vault(scratch(), "copy", false), E2E_VAULT)).toThrow(/marker/);
-  });
-});
-
-// Specs change Vault files only through test/e2e/helpers.ts, which checks the sandbox, and never delete files.
-const forbiddenInSpecs: [RegExp, string][] = [
-  [/\bapp\s*\.\s*vault\b/, "app.vault"],
-  [/\badapter\b/, "adapter"],
-  [/["'](node:)?fs(\/promises)?["']/, "node:fs"],
-  [/\brm(dir|Sync)?\b/, "rm"],
-  [/\bdelete\b/i, "delete"],
-  [/\btrash\b/i, "trash"]
-];
-
-describe("E2E spec rules", () => {
-  const specsDir = resolve("test/e2e/specs");
-  const specs = readdirSync(specsDir, { recursive: true, encoding: "utf8" }).filter((file) => file.endsWith(".ts"));
-
-  it("finds the spec files", () => {
-    expect(specs.length).toBeGreaterThan(0);
-  });
-
-  it.each(specs)("%s does not touch the Vault directly or delete files", (file) => {
-    const source = readFileSync(join(specsDir, file), "utf8");
-    const found = forbiddenInSpecs.filter(([pattern]) => pattern.test(source)).map(([, name]) => name);
-    expect(found).toEqual([]);
   });
 });
