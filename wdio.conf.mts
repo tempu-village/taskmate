@@ -1,8 +1,12 @@
 import * as path from "node:path";
 import { env } from "node:process";
 import { parseObsidianVersions } from "wdio-obsidian-service";
+import { assertFixtureVault, E2E_VAULT } from "./test/e2e/vault-guard";
 
 // Obsidian builds are downloaded here; the service runs them against a sandboxed copy of the vault.
+// Stop before Obsidian starts unless the Vault is a marked fixture inside test/e2e/vaults.
+assertFixtureVault(E2E_VAULT);
+
 const cacheDir = path.resolve(".obsidian-cache");
 const versions = await parseObsidianVersions(env.OBSIDIAN_VERSIONS ?? "latest/latest", { cacheDir });
 if (env.CI) {
@@ -21,7 +25,7 @@ export const config: WebdriverIO.Config = {
       appVersion,
       installerVersion,
       plugins: ["."],
-      vault: "test/e2e/vaults/basic"
+      vault: E2E_VAULT
     }
   })),
   services: ["obsidian"],

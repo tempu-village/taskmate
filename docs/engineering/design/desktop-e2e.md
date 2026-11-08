@@ -13,6 +13,16 @@ Status: Current. These tests drive the real Obsidian desktop app with the built 
 
 `task-list.e2e.ts` opens the TaskMate list, clicks the All tab by position (so it does not depend on UI language), and checks that the Vault's sample Task is shown. `schedule.e2e.ts` covers regressions for time and repeat: both are disabled with a hint while a Task has no date, completing a weekly Task advances its date and deadline by seven days and reopens its Steps, and date sort orders same-day Tasks untimed first, then by time.
 
+## Vault safety
+
+E2E runs must never read, change or delete files in a real Vault, including the Vaults of other developers who run them. Each spec file opens a fresh temporary copy of the fixture Vault, and `wdio-obsidian-service` removes it afterwards, so test code never needs to delete files. Code enforces this in [test/e2e/vault-guard.ts](../../../test/e2e/vault-guard.ts):
+
+1. **Before Obsidian starts**, `wdio.conf.mts` calls `assertFixtureVault`. The Vault path is fixed in code (no environment variable can change it), must stay inside `test/e2e/vaults/` after `realpath` (so a symbolic link cannot lead outside), and must contain the `.taskmate-e2e-fixture` marker. Otherwise the run stops.
+2. **While Obsidian runs**, `assertSandboxVault()` in `helpers.ts` resolves the opened Vault's `getBasePath()` with `realpath` and requires it to be inside `os.tmpdir()`, not the fixture Vault itself, and marked. Every spec calls it in `before`, and `writeVaultFile` calls it before each write.
+3. **In `npm test`**, [test/e2e-vault-guard.test.ts](../../../test/e2e-vault-guard.test.ts) checks both guards and fails if any file under `test/e2e/specs/` uses `app.vault`, `adapter`, `node:fs`, `rm`, `delete` or `trash` directly. Specs change files only through `writeVaultFile` and read them through `readVaultFile`; `helpers.ts` has no delete helper.
+
+If a future test covers TaskMate's own delete feature, it runs the deletion through the TaskMate UI rather than from test code. It changes Obsidian's `trashOption` only after `assertSandboxVault` passes, and a test that uses the system trash is skipped locally by default, because it would fill the developer's own trash.
+
 ## Why Obsidian is downloaded into the cache
 
 The test does not use the installed `/Applications/Obsidian.app`. A separately downloaded copy lets the test pin an exact Obsidian version, run the same version on every machine and in CI, and start with its own settings instead of the user's Vault list, Sync sign-in or other Vaults. Keeping the download in `.obsidian-cache/` avoids downloading it again on every run; the folder is ignored by Git and cached by CI.
@@ -35,9 +45,11 @@ The `e2e` job in [CI](../../../.github/workflows/ci.yml) runs on Ubuntu. Linux r
 - Import `browser`/`expect` from `@wdio/globals` and `describe`/`it` from `mocha`; globals are not injected.
 - Use `browser.executeObsidianCommand("taskmate:<command-id>")` to open UI, and `browser.executeObsidian(({ app }) => ...)` to read state. Functions passed to `executeObsidian` are serialized, so pass values as arguments instead of capturing them.
 - Select by stable class, role or attribute, not by translated text. WebdriverIO's `*=text` selector matches links only; assert on an element's text instead.
+- Call `before(assertSandboxVault)` at the top of each spec's `describe`, and never delete files from a spec (see [Vault safety](#vault-safety)).
 - Prefer the shared helpers in [test/e2e/helpers.ts](../../../test/e2e/helpers.ts) over writing `executeObsidian` calls in each spec:
   - `taskMarkdown(fixture)` builds schema-valid task Markdown; `writeTask(fixture)` writes it to `TaskMate/Tasks/<id>.md` and returns the path.
-  - `writeVaultFile(path, content)` creates or overwrites any Vault file, and `readVaultFile(path)` reads one, through the Obsidian vault API.
+  - `assertSandboxVault()` fails unless the open Vault is a temporary copy of the fixture.
+  - `writeVaultFile(path, content)` checks the sandbox, then creates or overwrites any Vault file, and `readVaultFile(path)` reads one, through the Obsidian vault API.
   - `openAllTab()` opens the TaskMate list and selects the All tab by position; `taskListView()` returns the list view.
   - `taskRow(id)` finds a row by `data-task-id`, and `taskRowIds(prefix)` returns the displayed order of rows whose id starts with `prefix`.
 - When a new spec needs a setup, read or navigation step that other specs could reuse, add it to `helpers.ts` (and to the list above) instead of writing it inside the spec. Keep one-off assertions in the spec.
@@ -64,9 +76,21 @@ specを書くときは、各specで`executeObsidian`を直接書かず、`test/e
 - `openAllTab()`は一覧を開いて「すべて」タブを位置で選び、`taskListView()`は一覧のビューを返します。
 - `taskRow(id)`は`data-task-id`で行を探し、`taskRowIds(prefix)`は`prefix`で始まるIDの行を表示順で返します。
 
+各specの`describe`の先頭で`before(assertSandboxVault)`を呼びます。`assertSandboxVault()`は、開いているVaultがテスト用Vaultの一時コピーでなければ失敗します。
+
 新しいspecで、ほかのspecでも使えそうな準備・読み取り・画面操作が必要になったら、spec内に書かず`helpers.ts`に追加し、上の一覧にも加えます。そのspecだけの確認はspec内に残します。
 
 テスト用Vaultはspecファイルごとに新しく複製されますが、同じファイル内のテストでは共有されるため、テストごとにタスクIDを変えてください。実行前に`npm run build`が必要です。
+
+### Vaultの安全性
+
+E2Eは、他の開発者のものを含め、実際のVaultのファイルを読み書き・削除してはいけません。specファイルごとにテスト用Vaultの一時コピーが作られ、実行後は`wdio-obsidian-service`が片付けるため、テストコードがファイルを削除する場面はありません。これを[test/e2e/vault-guard.ts](../../../test/e2e/vault-guard.ts)のコードで強制します。
+
+1. **Obsidianの起動前**：`wdio.conf.mts`が`assertFixtureVault`を呼びます。Vaultのパスはコードに固定し（環境変数では変えられません）、`realpath`で解決したあとも`test/e2e/vaults/`の下にあり、目印ファイル`.taskmate-e2e-fixture`があることを確かめます。満たさなければ実行を止めます。
+2. **実行中**：`helpers.ts`の`assertSandboxVault()`が、開いているVaultの`getBasePath()`を`realpath`で正規化し、`os.tmpdir()`の下にあること、元のテスト用Vaultそのものではないこと、目印ファイルがあることを確かめます。各specの`before`と、`writeVaultFile`の書き込み前に毎回呼びます。
+3. **`npm test`**：[test/e2e-vault-guard.test.ts](../../../test/e2e-vault-guard.test.ts)が2つの守りを検査し、`test/e2e/specs/`の中で`app.vault`・`adapter`・`node:fs`・`rm`・`delete`・`trash`を直接使うと失敗します。specは`writeVaultFile`と`readVaultFile`だけでファイルを扱い、`helpers.ts`に削除用の処理はありません。
+
+将来TaskMateの削除機能をテストするときは、テストコードで消さず、TaskMateのUIから削除を実行します。Obsidianの`trashOption`の切り替えは`assertSandboxVault`の確認後だけに行い、システムのゴミ箱を使うテストは開発者自身のゴミ箱に溜まるため、手元では既定で飛ばします。
 
 インストール済みのObsidianは使わず、テスト用のObsidianを`.obsidian-cache/`へダウンロードします。こうすると、バージョンを固定して手元とCIで同じものを使え、普段のVault一覧・Syncのログイン・他のVaultに触れない独立した設定で起動できます。毎回ダウンロードし直さないよう保存しておき、このフォルダはGit管理外で、CIではキャッシュします。
 

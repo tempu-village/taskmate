@@ -1,8 +1,10 @@
 import { browser, expect } from "@wdio/globals";
-import { describe, it } from "mocha";
-import { openAllTab, readVaultFile, taskListView, taskRow, taskRowIds, writeTask } from "../helpers";
+import { before, describe, it } from "mocha";
+import { assertSandboxVault, openAllTab, readVaultFile, taskListView, taskRow, taskRowIds, writeTask } from "../helpers";
 
 describe("TaskMate schedule", function () {
+  before(assertSandboxVault);
+
   it("disables time and repeat with a hint while the task has no date", async function () {
     const { view } = await openAllTab();
     await view.$(".taskmate-add").click();

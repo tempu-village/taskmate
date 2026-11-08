@@ -1,4 +1,5 @@
 import { browser } from "@wdio/globals";
+import { assertSandboxPath, E2E_VAULT } from "./vault-guard";
 
 export const TASKS_FOLDER = "TaskMate/Tasks";
 
@@ -33,8 +34,15 @@ ${body}`;
 
 export const taskPath = (id: string) => `${TASKS_FOLDER}/${id}.md`;
 
+/** Fails unless the open Vault is a temporary copy of the fixture. Call it in each spec's `before`. */
+export async function assertSandboxVault(): Promise<void> {
+  const basePath = await browser.executeObsidian(({ app }) => (app.vault.adapter as unknown as { getBasePath(): string }).getBasePath());
+  assertSandboxPath(basePath, E2E_VAULT);
+}
+
 /** Creates or overwrites a vault file through the Obsidian vault API so TaskMate sees the change. */
 export async function writeVaultFile(path: string, content: string): Promise<void> {
+  await assertSandboxVault();
   await browser.executeObsidian(async ({ app }, path, content) => {
     const file = app.vault.getFileByPath(path);
     if (file) await app.vault.modify(file, content);
