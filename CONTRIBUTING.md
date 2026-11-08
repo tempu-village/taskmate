@@ -31,7 +31,7 @@ For a behavior change, begin with the applicable product feature specification o
    npm run lint
    ```
 
-   `npm run lint` runs `eslint-plugin-obsidianmd`'s recommended rules, which the Obsidian Community directory review also reports. It also keeps E2E specs from touching the Vault directly or deleting files ([Desktop E2E tests](docs/engineering/design/desktop-e2e.md#vault-safety)). The two `keyCode` deprecation warnings are intentional ([ADR 0030](docs/engineering/adr/0030-keep-keycode-229-for-safari-ime-enter.md)).
+   `npm run lint` runs `eslint-plugin-obsidianmd`'s recommended rules, which the Obsidian Community directory review also reports. It also keeps E2E specs from touching the Vault directly or deleting files ([Desktop E2E tests](docs/engineering/design/desktop-e2e.md#vault-safety)). CI runs it in the `verify` job, and only errors fail the build. The two `keyCode` deprecation warnings are intentional ([ADR 0030](docs/engineering/adr/0030-keep-keycode-229-for-safari-ime-enter.md)).
 
 5. Include the behavior change, validation, and documentation impact in the pull request description.
 

@@ -7,6 +7,7 @@ Status: Current verification map. Test success is evidence for the exercised cas
 From the repository root after installing dependencies with `npm ci`:
 
 ```bash
+npm run lint
 npm run typecheck
 npm test
 npm run build
@@ -18,7 +19,7 @@ npm run validate:release
 git diff --check
 ```
 
-[package.json](../../../package.json) owns scripts and dependencies; [CI](../../../.github/workflows/ci.yml) selects Node 22 and Python 3.11. These are CI choices, not a newly declared minimum runtime policy. Builds produce `main.js`; never edit it manually. For manual installation into a disposable Vault, follow [Install a development build](../../operations/development-install.md), which also links Task Pilot. UI automation is optional evidence, not a plugin dependency.
+[package.json](../../../package.json) owns scripts and dependencies; [CI](../../../.github/workflows/ci.yml) selects Node 22 and Python 3.11. These are CI choices, not a newly declared minimum runtime policy. CI runs all of these checks except `git diff --check` in the `verify` job; lint fails it only on errors. Builds produce `main.js`; never edit it manually. For manual installation into a disposable Vault, follow [Install a development build](../../operations/development-install.md), which also links Task Pilot. UI automation is optional evidence, not a plugin dependency.
 
 ## Desktop E2E
 
@@ -67,7 +68,7 @@ In a disposable Vault, follow [getting started](../../user/getting-started.md), 
 
 > 翻訳状態：`ai-translated`。英語版が正本です。
 
-テスト成功は実行したケースの根拠であり、製品判断の承認や全端末の保証ではありません。上のコマンドで型、TypeScript、Python、build、Skill、翻訳、文書、releaseを検証します。依存はpackage.json、CI環境はNode 22/Python 3.11を参照し、最小対応版と混同しません。使い捨てVaultへの導入は開発ビルドの手順へリンクし、UI自動操作は任意です。
+テスト成功は実行したケースの根拠であり、製品判断の承認や全端末の保証ではありません。上のコマンドでlint、型、TypeScript、Python、build、Skill、翻訳、文書、releaseを検証します。依存はpackage.json、CI環境はNode 22/Python 3.11を参照し、最小対応版と混同しません。使い捨てVaultへの導入は開発ビルドの手順へリンクし、UI自動操作は任意です。
 
 受け入れIDとテスト・手動確認の対応は表を正本にします。Project削除、実キーボード、同期など、自動テストだけでは確認できない範囲を明記します。
 

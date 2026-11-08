@@ -23,4 +23,4 @@ When changing Module structure, follow [Module boundaries](docs/engineering/desi
 
 When implementing an RFC that changes product behavior, confirm the landed behavior from code, tests and review; create or update the applicable Feature; add reciprocal RFC/Feature links and the implementation PR or verified release when available; then mark the RFC `implemented`. Keep proposal-only discussion and alternatives in the RFC, and do not rewrite implemented RFC history into a current specification.
 
-Before finishing a change, run `npm run typecheck`, `npm test`, `npm run build`, the Python behavior tests, `python3 scripts/validate_skills.py`, `npm run validate:localization`, and `python3 scripts/validate_docs.py`.
+Before finishing a change, run `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, the Python behavior tests, `python3 scripts/validate_skills.py`, `npm run validate:localization`, and `python3 scripts/validate_docs.py`.
