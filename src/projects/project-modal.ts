@@ -21,7 +21,7 @@ export class ProjectModal extends Modal {
     const actions = this.contentEl.createDiv({ cls: "taskmate-modal-actions" });
     actions.createEl("button", { text: t("common.cancel") }).addEventListener("click", () => this.close());
     const save = actions.createEl("button", { text: t("common.add"), cls: "mod-cta" });
-    save.addEventListener("click", async () => {
+    save.addEventListener("click", () => void (async () => {
       if (!this.name.trim()) return;
       save.disabled = true;
       try {
@@ -30,7 +30,7 @@ export class ProjectModal extends Modal {
       } finally {
         save.disabled = false;
       }
-    });
+    })());
   }
 
   onClose(): void {

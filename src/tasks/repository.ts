@@ -68,7 +68,7 @@ export class DuplicateTaskIdError extends Error {
 }
 
 function newId(): string {
-  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }
 
@@ -271,7 +271,7 @@ export class TaskRepository {
   async remove(task: Task): Promise<void> {
     const located = await this.locateTask(task.id, task.path);
     if (located.status === "identity-conflict") throw new DuplicateTaskIdError(located.conflict);
-    if (located.status === "ready") await this.app.vault.trash(located.file, true);
+    if (located.status === "ready") await this.app.fileManager.trashFile(located.file);
   }
 
   async readReviewedTask(taskId: string, preferredPath: string): Promise<ReviewedTaskSource> {

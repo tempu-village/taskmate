@@ -48,6 +48,8 @@ Pushing the tag starts `.github/workflows/release.yml`. The workflow repeats all
 
 The workflow builds `main.js` instead of trusting a previously generated file. TaskMate currently keeps the generated file in source history for local distribution and review, but the release asset always comes from the tagged workflow build.
 
+Before creating the Release, the workflow publishes a GitHub build provenance attestation for each of the three assets.
+
 ## Inspect the GitHub Release
 
 After the workflow succeeds:
@@ -57,6 +59,13 @@ After the workflow succeeds:
 3. Download the three assets into an empty `.obsidian/plugins/taskmate/` folder in a test vault.
 4. Enable TaskMate and verify opening the view, adding a task, editing it, completing it, and deleting it.
 5. Confirm the installed TaskMate version in Obsidian matches the Release.
+6. Verify that each downloaded asset was built by this repository's workflow:
+
+   ```bash
+   gh attestation verify main.js --repo tempu-village/taskmate
+   gh attestation verify manifest.json --repo tempu-village/taskmate
+   gh attestation verify styles.css --repo tempu-village/taskmate
+   ```
 
 Do not submit to the Obsidian Community directory merely because the workflow succeeds. Community submission remains a separate publication decision after the public-release checks are complete.
 
@@ -123,6 +132,8 @@ git push origin 0.6.1
 
 ワークフローは、以前生成されたファイルを信用せずに`main.js`をビルドします。TaskMateは現在、ローカル配布と確認のため生成済みファイルをソース履歴に保持していますが、Release成果物には必ずタグからワークフローでビルドしたものを使います。
 
+ワークフローはReleaseを作る前に、3つの成果物それぞれについてGitHubのビルド出自証明（attestation）を発行します。
+
 ## GitHub Releaseを確認する
 
 ワークフローの成功後、次を確認します。
@@ -132,6 +143,13 @@ git push origin 0.6.1
 3. 3ファイルをテスト用Vaultの空の`.obsidian/plugins/taskmate/`フォルダへダウンロードする。
 4. TaskMateを有効にし、画面を開く、タスクを追加する、編集する、完了する、削除する操作を確認する。
 5. Obsidianに表示されるTaskMateのバージョンがReleaseと一致することを確認する。
+6. ダウンロードした各ファイルが、このリポジトリのワークフローでビルドされたことを検証する。
+
+   ```bash
+   gh attestation verify main.js --repo tempu-village/taskmate
+   gh attestation verify manifest.json --repo tempu-village/taskmate
+   gh attestation verify styles.css --repo tempu-village/taskmate
+   ```
 
 ワークフローが成功したという理由だけで、Obsidian Community directoryへ申請しないでください。Community申請は、公開Releaseの検査が完了した後に別途判断します。
 

@@ -31,13 +31,16 @@ export interface TaskEditComparison {
 }
 
 function cloneValue<Value>(value: Value): Value {
-  if (Array.isArray(value)) return value.map((item) => typeof item === "object" && item !== null ? { ...item } : item) as Value;
+  if (Array.isArray(value)) {
+    const items: unknown[] = value;
+    return items.map((item) => typeof item === "object" && item !== null ? { ...item } : item) as Value;
+  }
   return value;
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   if (typeof value !== "object" || value === null) return false;
-  const prototype = Object.getPrototypeOf(value);
+  const prototype: unknown = Object.getPrototypeOf(value);
   return prototype === Object.prototype || prototype === null;
 }
 
@@ -60,7 +63,7 @@ function draftValue<Field extends EditableTaskField>(draft: TaskDraft, base: Tas
 }
 
 function assignEditableField<Field extends EditableTaskField>(task: Task, field: Field, value: Task[Field]): void {
-  task[field] = cloneValue(value) as Task[Field];
+  task[field] = cloneValue<Task[Field]>(value);
 }
 
 export function compareTaskEdit(base: Task, draft: TaskDraft, current: Task): TaskEditComparison {

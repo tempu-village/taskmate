@@ -25,7 +25,7 @@ export class TaskFilterModal extends Modal {
   onOpen(): void {
     const { t } = this.i18n;
     const priority = new Setting(this.contentEl).setName(t("filter.priority"));
-    ([1, 2, 3] as Priority[]).forEach((value) => priority.addButton((button) => {
+    ([1, 2, 3] as Priority[]).forEach((value) => { priority.addButton((button) => {
       const refresh = () => {
         const selected = this.draft.priorities.includes(value);
         button.buttonEl.toggleClass("is-active", selected);
@@ -38,7 +38,7 @@ export class TaskFilterModal extends Modal {
         refresh();
       });
       refresh();
-    }));
+    }); });
 
     const labels = new Setting(this.contentEl)
       .setName(t("filter.labels"))

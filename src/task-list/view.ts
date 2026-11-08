@@ -1,4 +1,5 @@
 import { ItemView, Menu, Notice, setIcon, WorkspaceLeaf } from "obsidian";
+import { confirmAction } from "../shared/confirm-modal";
 import { BulkTaskModal } from "./bulk-task-modal";
 import { applyBulkTaskChanges } from "./bulk-task-actions";
 import type { BulkTaskChanges } from "./bulk-task-actions";
@@ -241,11 +242,11 @@ export class TodoListView extends ItemView {
       const heading = section.createDiv({ cls: "taskmate-section-heading" });
       heading.createEl("h3", { text: t("search.recent") });
       const clear = heading.createEl("button", { text: t("common.clear") });
-      clear.addEventListener("click", async () => {
+      clear.addEventListener("click", () => void (async () => {
         this.plugin.settings.recentSearches = [];
         await this.plugin.saveSettings();
         this.requestRender();
-      });
+      })());
       const words = section.createDiv({ cls: "taskmate-recent-searches" });
       recent.forEach((word) => {
         const button = words.createEl("button", { text: word });
@@ -331,12 +332,12 @@ export class TodoListView extends ItemView {
         text: taskCount === 1 ? t("projects.taskCountOne", { count: taskCount }) : t("projects.taskCount", { count: taskCount }),
         cls: "taskmate-project-count"
       });
-      open.addEventListener("click", async () => {
+      open.addEventListener("click", () => void (async () => {
         await this.plugin.projects.touch(project);
         this.activeProjectId = project.id;
         this.projectScreen = "detail";
         this.requestRender();
-      });
+      })());
       const edit = row.createEl("button", { text: t("common.edit"), cls: "taskmate-project-edit" });
       edit.addEventListener("click", () => {
         this.activeProjectId = project.id;
@@ -352,22 +353,22 @@ export class TodoListView extends ItemView {
     const label = panel.createEl("label", { text: t("projects.name") });
     const input = label.createEl("input", { type: "text", value: project.name });
     const save = panel.createEl("button", { text: t("projects.saveName"), cls: "mod-cta" });
-    save.addEventListener("click", async () => {
+    save.addEventListener("click", () => void (async () => {
       if (!input.value.trim()) return;
       await this.plugin.projects.update(project, { name: input.value.trim() });
       this.projectScreen = "detail";
       this.requestRender();
-    });
+    })());
     const remove = panel.createEl("button", { text: t("projects.delete"), cls: "mod-warning" });
-    remove.addEventListener("click", async () => {
-      if (!window.confirm(t("projects.deleteConfirm", { project: project.name }))) return;
+    remove.addEventListener("click", () => void (async () => {
+      if (!await confirmAction(this.app, { message: t("projects.deleteConfirm", { project: project.name }), confirmText: t("common.delete"), cancelText: t("common.cancel") })) return;
       await this.plugin.repository.clearProject(project.id);
       await this.plugin.projects.remove(project);
       this.activeProjectId = null;
       this.projectScreen = "index";
       new Notice(t("projects.deletedNotice"));
       this.requestRender();
-    });
+    })());
   }
 
   private renderSortControl(container: HTMLElement): void {
@@ -702,7 +703,8 @@ export class TodoListView extends ItemView {
   private async deleteSelectedTasks(tasks: Task[]): Promise<void> {
     const { t } = this.plugin.i18n();
     const selected = this.selection.selectedTasks(tasks);
-    if (selected.length === 0 || !window.confirm(t("selection.deleteConfirm", { count: selected.length }))) return;
+    if (selected.length === 0) return;
+    if (!await confirmAction(this.app, { message: t("selection.deleteConfirm", { count: selected.length }), confirmText: t("common.delete"), cancelText: t("common.cancel") })) return;
     const failed = await failedTaskWrites(selected, (task) => this.plugin.repository.remove(task));
     this.finishBulkAction(selected, failed, "selection.deletedNotice");
   }

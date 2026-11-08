@@ -10,6 +10,7 @@ Do not place feature introductions, background narratives or implementation hist
 | [Source note property format](source-note-properties.md) | Source eligibility, import provenance and TaskMate-unowned note properties |
 | [Task change Proposal format](task-change-proposal-format.md) | Proposal JSON schema, identifiers, evidence, lifecycle and URI security |
 | [Import review format](import-review-format.md) | Import review JSON schema, coverage, decisions, formal apply, provenance timing and URI security |
+| [Desktop E2E test surface](desktop-e2e-test-surface.md) | Plugin names, internal members and DOM markers the desktop E2E specs depend on |
 
 ## 日本語参考
 

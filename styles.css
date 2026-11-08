@@ -1,22 +1,23 @@
-.taskmate-view {
+/* Doubled and leaf-scoped selectors outrank Obsidian's own .view-content, button and input rules without. */
+.workspace-leaf-content .view-content.taskmate-view {
   --taskmate-gap: 0.75rem;
   position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 0 !important;
+  padding: 0;
   overflow: hidden;
 }
 
-.taskmate-review,
-.taskmate-review-index {
+.workspace-leaf-content .taskmate-review.taskmate-review,
+.workspace-leaf-content .taskmate-review-index.taskmate-review-index {
   --taskmate-review-padding: 1rem;
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
   /* The review renders into Obsidian's .view-content, whose own padding would otherwise win. The sticky offsets
      below rely on this padding. */
-  padding: var(--taskmate-review-padding) !important;
+  padding: var(--taskmate-review-padding);
 }
 .taskmate-review {
   /* One row of controls: 0.6rem toolbar padding and 0.2rem display-switch padding around each button. */
@@ -143,7 +144,7 @@
 .taskmate-import-evidence-source p { margin: 0; overflow-wrap: anywhere; }
 .taskmate-import-evidence-kind,
 .taskmate-import-evidence-summary-label { color: var(--text-muted); font-size: var(--font-ui-smaller); }
-.taskmate-import-evidence-summary-label { margin-top: 0.3rem !important; }
+.taskmate-import-evidence-source p.taskmate-import-evidence-summary-label { margin-top: 0.3rem; }
 .taskmate-import-evidence-summary.is-missing { color: var(--text-muted); font-style: italic; }
 .taskmate-import-evidence-toggle { margin-top: 0.35rem; }
 .taskmate-import-evidence-statements { margin-top: 0.35rem; }
@@ -466,7 +467,7 @@
   -webkit-touch-callout: none;
 }
 .taskmate-list.is-reorder-enabled .taskmate-task-body:active { cursor: grabbing; }
-.taskmate-title {
+.taskmate-view button.taskmate-title.taskmate-title {
   display: block;
   appearance: none;
   width: 100%;
@@ -478,10 +479,10 @@
   box-sizing: border-box;
   padding: 0.15rem 0.35rem;
   color: var(--text-normal);
-  background: var(--background-modifier-hover) !important;
-  border: 1px solid var(--background-modifier-border) !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
+  background: var(--background-modifier-hover);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 0;
+  box-shadow: none;
   text-align: left;
   white-space: normal;
   overflow-wrap: anywhere;
@@ -904,17 +905,17 @@
   border-color: var(--background-modifier-border-focus);
   box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
 }
-.taskmate-label-chip-editor > input.taskmate-label-chip-input {
+.taskmate-label-chip-editor > input.taskmate-label-chip-input.taskmate-label-chip-input {
   flex: 1 1 7rem;
   min-width: 5rem;
   min-height: 34px;
   padding: 0.2rem;
   appearance: none;
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
 }
-.taskmate-label-chip-editor > input.taskmate-label-chip-input:focus { outline: none !important; }
+.taskmate-label-chip-editor > input.taskmate-label-chip-input.taskmate-label-chip-input:focus { outline: none; }
 .taskmate-label-add {
   flex: 0 0 auto;
   min-width: 52px;
@@ -969,17 +970,17 @@
 }
 .taskmate-step-row:last-child { border-bottom: 0; }
 .taskmate-step-completed { width: 20px; height: 20px; margin: 0; }
-.taskmate-step-body {
+.modal-container button.taskmate-step-body.taskmate-step-body {
   display: block;
   width: 100%;
   min-width: 0;
   min-height: 50px;
   padding: 6px 8px;
   text-align: left;
-  background: transparent !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
