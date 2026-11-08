@@ -4,13 +4,16 @@ import { defineConfig } from "eslint/config";
 import obsidianmd from "eslint-plugin-obsidianmd";
 import tseslint from "typescript-eslint";
 
-// The scorecard rules target plugin code; specs get only the E2E rules below.
+// The scorecard rules check shipped plugin code for the Obsidian Community review, not tests,
+// so specs get only the E2E rules below.
 const scorecardRulesOff = Object.fromEntries(
   obsidianmd.configs.recommended.flatMap((config) => Object.keys(config.rules ?? {})).map((rule) => [rule, "off"])
 );
 const deletionCall = "^(delete|trash|trashFile|remove|rm|rmSync|rmdir|rmdirSync|unlink|unlinkSync)$";
 
 export default defineConfig([
+  // test/ stays ignored except test/e2e/specs/. ESLint cannot re-include a file whose parent folder is ignored,
+  // so each level is ignored with "/*" and the next folder on the path is un-ignored. "test/**" would hide the specs.
   { ignores: ["main.js", "node_modules/**", "test/*", "!test/e2e/", "test/e2e/*", "!test/e2e/specs/", "skills/**", "scripts/**", "*.config.*", "wdio.conf.mts"] },
   ...obsidianmd.configs.recommended,
   {
