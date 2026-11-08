@@ -27,8 +27,8 @@ jobs:
         with:
           python-version: "3.11"
       - run: npm ci
-      - run: npm run lint
       - run: npm run typecheck
+      - run: npm run lint
       - run: npm test
       - run: npm run build
       - run: python3 -m unittest discover -s skills/taskpilot/tests -v

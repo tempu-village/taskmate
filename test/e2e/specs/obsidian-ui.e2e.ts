@@ -1,6 +1,9 @@
 import { browser, expect } from "@wdio/globals";
 import { describe, it } from "mocha";
-import { openAllTab, readVaultFile, taskListView, taskMarkdown, taskPath, taskRow, writeTask, writeVaultFile } from "../helpers";
+import {
+  closeModals, openAllTab, readVaultFile, setTrashOption, taskListView, taskMarkdown, taskPath, taskRow, vaultFileExists, writePriorityProposal,
+  writeTask, writeVaultFile
+} from "../helpers";
 
 // TaskMate overrides some Obsidian defaults with higher-specificity selectors instead of !important.
 // These checks read the computed style in the real app, where Obsidian's own rules compete.
@@ -13,9 +16,6 @@ function computed(selector: string, properties: string[]): Promise<Record<string
   }, selector, properties);
 }
 
-const fileExists = (path: string) => browser.executeObsidian(({ app }, path) => app.vault.getFileByPath(path) !== null, path);
-const adapterExists = (path: string) => browser.executeObsidian(({ app }, path) => app.vault.adapter.exists(path), path);
-const closeModals = () => browser.executeObsidian(() => document.querySelectorAll(".modal-container").forEach((modal) => modal.remove()));
 
 /** Waits for TaskMate's confirm modal and returns its warning button. The Cancel button is its first sibling. */
 async function confirmButton() {
@@ -79,7 +79,7 @@ describe("TaskMate in the Obsidian UI", function () {
   it("asks in an Obsidian modal before deleting a task, keeps it on cancel, and follows the trash setting", async function () {
     // Start without modals left open by an earlier failed test.
     await closeModals();
-    await browser.executeObsidian(({ app }) => app.vault.setConfig("trashOption", "local"));
+    await setTrashOption("local");
     const path = await writeTask({ id: "ui-delete" });
     await openAllTab();
     const openEditor = async () => {
@@ -90,14 +90,14 @@ describe("TaskMate in the Obsidian UI", function () {
 
     await openEditor();
     await cancelConfirm();
-    expect(await fileExists(path)).toBe(true);
+    expect(await vaultFileExists(path)).toBe(true);
     await browser.keys("Escape");
 
     await (await openEditor()).click();
-    await browser.waitUntil(async () => !(await fileExists(taskPath("ui-delete"))));
+    await browser.waitUntil(async () => !(await vaultFileExists(taskPath("ui-delete"))));
     await taskListView().$("[data-task-id='ui-delete']").waitForExist({ reverse: true });
     // FileManager.trashFile honours "Deleted files: Move to Obsidian trash".
-    await browser.waitUntil(() => adapterExists(".trash/ui-delete.md"));
+    await browser.waitUntil(() => vaultFileExists(".trash/ui-delete.md"));
   });
 
   it("asks before deleting selected tasks", async function () {
@@ -114,11 +114,11 @@ describe("TaskMate in the Obsidian UI", function () {
 
     await remove.click();
     await cancelConfirm();
-    for (const path of paths) expect(await fileExists(path)).toBe(true);
+    for (const path of paths) expect(await vaultFileExists(path)).toBe(true);
 
     await remove.click();
     await (await confirmButton()).click();
-    await browser.waitUntil(async () => !(await fileExists(paths[0])) && !(await fileExists(paths[1])));
+    await browser.waitUntil(async () => !(await vaultFileExists(paths[0])) && !(await vaultFileExists(paths[1])));
   });
 
   it("asks before deleting a label from Manage labels", async function () {
@@ -146,20 +146,7 @@ describe("TaskMate in the Obsidian UI", function () {
   it("pads the Proposal review and asks before rejecting it", async function () {
     await closeModals();
     const taskFile = await writeTask({ id: "ui-review" });
-    const proposalPath = "TaskMate/Proposals/proposal-ui-review.json";
-    await browser.executeObsidian(async ({ app }, taskFile, proposalPath) => {
-      const before = await app.vault.adapter.read(taskFile);
-      const after = before.replace("priority: null", "priority: 1");
-      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(before));
-      const beforeSha256 = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-      const proposal = {
-        schemaVersion: 1, id: "proposal-ui-review", status: "pending", createdAt: "2026-11-02T00:00:00.000Z",
-        tasks: [{ taskId: "ui-review", path: taskFile, title: "ui-review", beforeMarkdown: before, afterMarkdown: after, beforeSha256,
-          changes: [{ id: "C-01", field: "priority", before: null, after: 1, reason: "E2E" }] }]
-      };
-      if (!app.vault.getFolderByPath("TaskMate/Proposals")) await app.vault.createFolder("TaskMate/Proposals");
-      await app.vault.create(proposalPath, JSON.stringify(proposal));
-    }, taskFile, proposalPath);
+    const proposalPath = await writePriorityProposal("proposal-ui-review", "ui-review", taskFile);
     await browser.executeObsidian(async ({ plugins }) => {
       await (plugins.taskmate as unknown as { openProposalReview(id: string): Promise<void> }).openProposalReview("proposal-ui-review");
     });
@@ -171,19 +158,16 @@ describe("TaskMate in the Obsidian UI", function () {
 
     await reject.click();
     await cancelConfirm();
-    expect(await fileExists(proposalPath)).toBe(true);
+    expect(await vaultFileExists(proposalPath)).toBe(true);
 
     await reject.click();
     await (await confirmButton()).click();
-    await browser.waitUntil(async () => !(await fileExists(proposalPath)));
+    await browser.waitUntil(async () => !(await vaultFileExists(proposalPath)));
   });
 
   it("asks before deleting a project and keeps its tasks", async function () {
     await closeModals();
     const projectPath = "TaskMate/Projects/ui-project--e2e.md";
-    await browser.executeObsidian(async ({ app }) => {
-      if (!app.vault.getFolderByPath("TaskMate/Projects")) await app.vault.createFolder("TaskMate/Projects");
-    });
     await writeVaultFile(projectPath, `---
 type: taskmate-project
 id: "ui-project"
@@ -208,11 +192,11 @@ last-used-at: "2026-11-02T09:00:00+09:00"
 
     await openDelete();
     await cancelConfirm();
-    expect(await fileExists(projectPath)).toBe(true);
+    expect(await vaultFileExists(projectPath)).toBe(true);
     await taskListView().$$(".taskmate-navigation button")[2].click();
 
     await (await openDelete()).click();
-    await browser.waitUntil(async () => !(await fileExists(projectPath)));
+    await browser.waitUntil(async () => !(await vaultFileExists(projectPath)));
     await browser.waitUntil(async () => (await readVaultFile(taskFile)).includes("project: null"));
     await taskListView().$$(".taskmate-navigation button")[0].click();
   });
@@ -251,15 +235,15 @@ last-used-at: "2026-11-02T09:00:00+09:00"
 
   it("deletes permanently when Obsidian's Deleted files setting says so", async function () {
     await closeModals();
-    await browser.executeObsidian(({ app }) => app.vault.setConfig("trashOption", "none"));
+    await setTrashOption("none");
     const path = await writeTask({ id: "ui-delete-permanent" });
     await openAllTab();
     await taskRow("ui-delete-permanent").$(".taskmate-title").click();
     await browser.$(".modal .taskmate-delete-task").click();
     await (await confirmButton()).click();
-    await browser.waitUntil(async () => !(await adapterExists(path)));
-    expect(await adapterExists(".trash/ui-delete-permanent.md")).toBe(false);
-    await browser.executeObsidian(({ app }) => app.vault.setConfig("trashOption", "local"));
+    await browser.waitUntil(async () => !(await vaultFileExists(path)));
+    expect(await vaultFileExists(".trash/ui-delete-permanent.md")).toBe(false);
+    await setTrashOption("local");
   });
 
   it("asks for confirmation inside a popout window", async function () {
@@ -281,10 +265,10 @@ last-used-at: "2026-11-02T09:00:00+09:00"
       await browser.$(".modal .taskmate-delete-task").click();
       // The confirm modal must open in the popout's own document, where the user is looking.
       await cancelConfirm();
-      expect(await fileExists(path)).toBe(true);
+      expect(await vaultFileExists(path)).toBe(true);
       await browser.$(".modal .taskmate-delete-task").click();
       await (await confirmButton()).click();
-      await browser.waitUntil(async () => !(await fileExists(path)));
+      await browser.waitUntil(async () => !(await vaultFileExists(path)));
     } finally {
       await browser.closeWindow();
       await browser.switchToWindow(mainWindow);
