@@ -15,6 +15,8 @@ For every task, read the smallest relevant record first:
 
 Keep the Obsidian plugin mobile-compatible by using public Obsidian and browser APIs. Keep task Markdown compatible with [the task schema](skills/taskpilot/references/task-schema.md). Preserve one global manual rank; automatic sorting is display-only. Treat source folders and `taskmate-source` as a strict allowlist, and complete a coverage review before any candidate is excluded.
 
+When verifying in Obsidian, use only Vaults you created for the task, such as the desktop E2E sandbox copied from `test/e2e/vaults/` or a new Vault in your scratch directory. Do not open, install the plugin into, or write to any of the user's existing Vaults unless the user asks for that Vault by name.
+
 Record domain terms only in [CONTEXT.md](CONTEXT.md). Record hard-to-reverse trade-offs in [ADRs](docs/engineering/adr/). Before an ADR-worthy UI or navigation decision, establish the user's goal or constraint and record the accepted rationale. Use the shared `write-github-issues` skill for Issue work.
 
 When changing Module structure, follow [Module boundaries](docs/engineering/design/module-boundaries.md). Keep UI Adapter, Application, Domain and Persistence Adapter dependencies one-way, and introduce an interface only at a seam with justified variation.

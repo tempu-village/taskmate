@@ -94,7 +94,7 @@ export class LabelPickerModal extends Modal {
     const cancel = actions.createEl("button", { text: t("common.cancel") });
     cancel.addEventListener("click", () => this.close());
     const confirm = actions.createEl("button", { text: t("filter.confirmLabelSelection"), cls: "mod-cta" });
-    confirm.addEventListener("click", async () => {
+    confirm.addEventListener("click", () => void (async () => {
       confirm.disabled = true;
       try {
         await this.options.onConfirm([...this.selectedLabels], [...this.favoriteLabels]);
@@ -102,7 +102,7 @@ export class LabelPickerModal extends Modal {
       } finally {
         confirm.disabled = false;
       }
-    });
+    })());
     this.renderPicker();
   }
 

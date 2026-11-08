@@ -108,10 +108,7 @@ export function renderNoOpenReview(container: HTMLElement, message: string, open
 }
 
 function element<Tag extends keyof HTMLElementTagNameMap>(tag: Tag, className: string, parent: HTMLElement): HTMLElementTagNameMap[Tag] {
-  const value = document.createElement(tag);
-  if (className) value.className = className;
-  parent.append(value);
-  return value;
+  return parent.createEl(tag, { cls: className || undefined });
 }
 
 function text(parent: HTMLElement, tag: keyof HTMLElementTagNameMap, content: string, className = ""): HTMLElement {

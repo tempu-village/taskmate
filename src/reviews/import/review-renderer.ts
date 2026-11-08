@@ -422,8 +422,7 @@ function renderApply(
     const unviewed = element("ul", "taskmate-import-review-unviewed", panel);
     for (const item of plan.unviewedMerges) text(unviewed, "li", `${item.candidateId}: ${item.targetTitle}`);
     const label = element("label", "taskmate-import-review-acknowledge", panel);
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
+    const checkbox = createEl("input", { type: "checkbox" });
     checkbox.checked = state.acknowledged;
     checkbox.addEventListener("change", () => dispatch({ type: "set-acknowledged", acknowledged: checkbox.checked }));
     label.append(checkbox, document.createTextNode(copy.acknowledge(plan.unviewedMerges.length)));
@@ -516,21 +515,20 @@ function editField(form: HTMLElement, id: string, label: string, control: HTMLEl
 }
 
 function textInput(type: "text" | "date", value: string): HTMLInputElement {
-  const input = document.createElement("input");
-  input.type = type;
+  const input = createEl("input", { type });
   input.value = value;
   return input;
 }
 
 function textArea(value: string): HTMLTextAreaElement {
-  const area = document.createElement("textarea");
+  const area = createEl("textarea");
   area.rows = 3;
   area.value = value;
   return area;
 }
 
 function select(options: Array<[string, string]>, value: string): HTMLSelectElement {
-  const control = document.createElement("select");
+  const control = createEl("select");
   for (const [optionValue, label] of options) {
     const option = element("option", "", control);
     option.value = optionValue;
@@ -550,10 +548,7 @@ function projectName(id: string, projects: readonly ImportReviewProject[]): stri
 }
 
 function element<Tag extends keyof HTMLElementTagNameMap>(tag: Tag, className: string, parent?: HTMLElement): HTMLElementTagNameMap[Tag] {
-  const value = document.createElement(tag);
-  if (className) value.className = className;
-  parent?.append(value);
-  return value;
+  return createEl(tag, { cls: className || undefined, parent });
 }
 
 function text(parent: HTMLElement, tag: keyof HTMLElementTagNameMap, content: string, className?: string): HTMLElement {
@@ -563,9 +558,7 @@ function text(parent: HTMLElement, tag: keyof HTMLElementTagNameMap, content: st
 }
 
 function button(label: string, activate: () => void, active = false): HTMLButtonElement {
-  const value = document.createElement("button");
-  value.type = "button";
-  value.textContent = label;
+  const value = createEl("button", { type: "button", text: label });
   if (active) value.classList.add("is-active");
   value.addEventListener("click", activate);
   return value;

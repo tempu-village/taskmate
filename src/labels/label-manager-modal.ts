@@ -1,4 +1,5 @@
 import { App, Modal, setIcon } from "obsidian";
+import { confirmAction } from "../shared/confirm-modal";
 import { compareDisplayText } from "../i18n";
 import type { I18n } from "../i18n";
 import type { ManagedLabel } from "./label-management";
@@ -84,7 +85,7 @@ export class LabelManagerModal extends Modal {
         this.editingLabel = null;
         this.renderResults();
       });
-      confirm.addEventListener("click", async () => {
+      confirm.addEventListener("click", () => void (async () => {
         const normalized = normalizeManagedLabel(input.value);
         if (!normalized || normalized === item.label) return;
         confirm.disabled = true;
@@ -94,7 +95,7 @@ export class LabelManagerModal extends Modal {
         } finally {
           confirm.disabled = false;
         }
-      });
+      })());
       refreshValidity();
       window.setTimeout(() => input.focus(), 0);
       return;
@@ -121,13 +122,13 @@ export class LabelManagerModal extends Modal {
       attr: { "aria-label": t("labelManager.deleteAriaLabel", { label: item.label }) }
     });
     setIcon(remove, "trash-2");
-    remove.addEventListener("click", async () => {
+    remove.addEventListener("click", () => void (async () => {
       const message = item.storedOnly
         ? t("labelManager.deleteStoredOnlyConfirm", { label: item.label })
         : item.taskCount === 1
           ? t("labelManager.deleteConfirmOne", { label: item.label, count: item.taskCount })
           : t("labelManager.deleteConfirm", { label: item.label, count: item.taskCount });
-      if (!window.confirm(message)) return;
+      if (!await confirmAction(this.app, { message, confirmText: t("common.delete"), cancelText: t("common.cancel") })) return;
       remove.disabled = true;
       try {
         await this.options.onDelete(item.label);
@@ -135,6 +136,6 @@ export class LabelManagerModal extends Modal {
       } finally {
         remove.disabled = false;
       }
-    });
+    })());
   }
 }

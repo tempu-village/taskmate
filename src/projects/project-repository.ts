@@ -3,7 +3,7 @@ import type { Project } from "../tasks/domain";
 import { encodeProject, parseProjectMarkdown, projectFileName } from "./project-markdown";
 
 function newId(): string {
-  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }
 
@@ -66,6 +66,6 @@ export class ProjectRepository {
 
   async remove(project: Project): Promise<void> {
     const file = this.app.vault.getAbstractFileByPath(project.path);
-    if (file instanceof TFile) await this.app.vault.trash(file, true);
+    if (file instanceof TFile) await this.app.fileManager.trashFile(file);
   }
 }

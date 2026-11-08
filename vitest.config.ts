@@ -8,6 +8,7 @@ export default defineConfig({
     }
   },
   test: {
+    setupFiles: ["test/obsidian-dom.ts"],
     // Local agent worktrees live inside the checkout; keep their copies of the tests out.
     exclude: [...configDefaults.exclude, ".claude/**", ".codex/**", ".worktrees/**"]
   }

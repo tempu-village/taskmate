@@ -1,4 +1,5 @@
 import { App, Modal, Setting, addIcon, setIcon } from "obsidian";
+import { confirmAction } from "../shared/confirm-modal";
 import Sortable from "sortablejs";
 import type { Project, Task, TaskDraft } from "../tasks/domain";
 import { todayKey } from "../tasks/domain";
@@ -34,8 +35,7 @@ function normalizeSchedule(draft: TaskDraft): TaskDraft {
 
 function decorateField(setting: Setting, icon: string, accessibleName: string): void {
   setting.settingEl.addClass("taskmate-compact-setting");
-  const marker = document.createElement("span");
-  marker.addClass("taskmate-field-icon");
+  const marker = createSpan({ cls: "taskmate-field-icon" });
   marker.setAttribute("aria-hidden", "true");
   setIcon(marker, icon);
   setting.settingEl.prepend(marker);
@@ -437,8 +437,7 @@ export class TaskModal extends Modal {
       const summary = summarizeLabels(this.draft.labels);
       const visible = labelsExpanded ? this.draft.labels : summary.visible;
       for (const label of visible) {
-        const chip = document.createElement("span");
-        chip.addClass("taskmate-editor-label-chip");
+        const chip = createSpan({ cls: "taskmate-editor-label-chip" });
         chip.dataset.taskmateLabelChip = label;
         chip.createSpan({ text: label });
         const remove = chip.createEl("button", {
@@ -457,9 +456,7 @@ export class TaskModal extends Modal {
         labelEditor.insertBefore(chip, labelInput);
       }
       if (summary.hidden.length > 0) {
-        const toggle = document.createElement("button");
-        toggle.addClass("taskmate-label-overflow-toggle");
-        toggle.type = "button";
+        const toggle = createEl("button", { cls: "taskmate-label-overflow-toggle", type: "button" });
         toggle.textContent = labelsExpanded
           ? t("tasks.hideExtraLabels")
           : t("tasks.moreLabels", { count: summary.hidden.length });
@@ -495,6 +492,7 @@ export class TaskModal extends Modal {
       updateFromInput(false, false);
     });
     labelInput.addEventListener("keydown", (event) => {
+      // keyCode is deprecated, but on iPhone and iPad Obsidian runs in Capacitor's WKWebView (WebKit), which sends the IME-confirming Enter after compositionend with isComposing false; 229 is its only marker. See ADR 0030.
       if (!shouldCommitLabelOnEnter(event.key, labelInputComposing || event.isComposing, event.keyCode)) return;
       event.preventDefault();
       updateFromInput(true, true);
@@ -619,21 +617,21 @@ export class TaskModal extends Modal {
       const remove = actions.createEl("button", { cls: "taskmate-delete-task" });
       setIcon(remove, "trash-2");
       remove.createSpan({ text: t("common.delete") });
-      remove.addEventListener("click", async () => {
-        if (!window.confirm(t("tasks.deleteConfirm", { title: this.draft.title }))) return;
+      remove.addEventListener("click", () => void (async () => {
+        if (!await confirmAction(this.app, { message: t("tasks.deleteConfirm", { title: this.draft.title }), confirmText: t("common.delete"), cancelText: t("common.cancel") })) return;
         remove.disabled = true;
         try {
           if (await this.onDelete?.()) this.close();
         } finally {
           remove.disabled = false;
         }
-      });
+      })());
     }
     const ordinaryActions = actions.createDiv({ cls: "taskmate-modal-primary-actions" });
     const cancel = ordinaryActions.createEl("button", { text: t("common.cancel") });
     cancel.addEventListener("click", () => this.close());
     const save = ordinaryActions.createEl("button", { text: t("common.save"), cls: "mod-cta" });
-    save.addEventListener("click", async () => {
+    save.addEventListener("click", () => void (async () => {
       if (!this.draft.title.trim()) return;
       updateFromInput(true, false);
       this.draft.steps = normalizeTaskSteps(this.draft.steps);
@@ -643,7 +641,7 @@ export class TaskModal extends Modal {
       } finally {
         save.disabled = false;
       }
-    });
+    })());
 
     this.keyboardScroller = new MobileKeyboardScroller(
       fields,

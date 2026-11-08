@@ -11,6 +11,7 @@
     "validate:localization": "python3 scripts/validate_localization.py",
     "validate:release": "node scripts/validate-release.mjs",
     "version:bump": "node scripts/bump-version.mjs",
+    "lint": "eslint src",
     "typecheck": "tsc --noEmit --skipLibCheck && tsc -p test/e2e --noEmit",
     "test": "vitest run",
     "test:e2e": "wdio run ./wdio.conf.mts"
@@ -20,6 +21,7 @@
     "sortablejs": "^1.15.6"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/mocha": "^10.0.10",
     "@types/node": "^24.3.0",
     "@types/sortablejs": "^1.15.8",
@@ -30,12 +32,15 @@
     "@wdio/spec-reporter": "^9.32.0",
     "ajv": "^8.20.0",
     "esbuild": "^0.25.9",
+    "eslint": "^10.14.0",
+    "eslint-plugin-obsidianmd": "^0.4.2",
     "jsdom": "^26.1.0",
     "mocha": "^10.8.2",
     "obsidian": "^1.8.7",
     "obsidian-launcher": "^3.5.0",
     "tsx": "^4.23.15",
     "typescript": "^5.9.2",
+    "typescript-eslint": "^8.72.1",
     "vitest": "^3.2.4",
     "wdio-obsidian-reporter": "^3.5.0",
     "wdio-obsidian-service": "^3.5.0"
