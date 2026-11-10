@@ -102,6 +102,8 @@ Backlog changes are also shown before writing. A plan is always a rolling plan s
 
 Change the proposal location under **Settings → TaskMate → Proposal folder** when needed. The proposal folder is an approval boundary, not a security sandbox, and does not expand the source-note allowlist.
 
+If you use Obsidian Sync, turn on **Settings → Sync → Selective sync → Sync all other types** on every device. Reviews are JSON files in the proposal folder, and Obsidian Sync skips JSON files unless that option is on, so a review created on your computer would never reach your phone.
+
 ### Select notes for Task Pilot
 
 Run **TaskMate: Include current folder as an AI source**, or add one vault-relative folder per line under **Settings → TaskMate → AI source folders**.
