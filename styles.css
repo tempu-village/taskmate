@@ -233,6 +233,12 @@
   );
   padding-bottom: max(0.7rem, var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
 }
+/* The open confirmation is the last content in the scroller, so it needs its own clearance below the toolbar. */
+.is-phone .taskmate-import-review-apply.is-open {
+  padding-bottom: calc(
+    var(--mobile-toolbar-height, 0px) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 0.7rem
+  );
+}
 .is-phone .taskmate-review-index-item { grid-template-columns: minmax(0, 1fr); gap: 0.35rem; }
 
 @media (max-width: 360px) {

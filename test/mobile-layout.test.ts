@@ -464,6 +464,14 @@ describe("mobile layout", () => {
     expect(declarations(".taskmate-import-review-apply.is-open")).toMatch(/position\s*:\s*static\s*;/);
   });
 
+  it("keeps the open Import confirmation actions above Obsidian's phone toolbar at the end of the review", () => {
+    const phoneOpen = declarations(".is-phone .taskmate-import-review-apply.is-open");
+
+    expect(phoneOpen).toMatch(/padding-bottom\s*:\s*calc\(/);
+    expect(phoneOpen).toContain("--mobile-toolbar-height");
+    expect(phoneOpen).toContain("--safe-area-inset-bottom");
+  });
+
   it("keeps Task change review sticky boxes at the visible edges and headers under the toolbar", () => {
     const phone = stylesheet.slice(stylesheet.indexOf("@media (max-width: 600px)"), stylesheet.indexOf("@media (max-width: 360px)"));
     const controls = declarations(".taskmate-review-controls");
