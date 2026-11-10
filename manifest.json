@@ -1,7 +1,7 @@
 {
   "id": "taskmate",
   "name": "TaskMate",
-  "version": "0.7.2",
+  "version": "0.8.0",
   "minAppVersion": "1.8.7",
   "description": "A simple local-first task list with manual ordering and agent-friendly Markdown.",
   "author": "Masashi (Tempu Village)",
