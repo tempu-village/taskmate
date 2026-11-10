@@ -13,6 +13,8 @@ TaskMate does not run AI by itself. Task Pilot in Codex reads the notes and prep
 
 You need TaskMate in the Vault, [Task Pilot in Codex](../../../README.md#install-and-use-task-pilot), and a Codex workspace authorized to read and write that Vault. Open the Vault as the workspace or include its absolute path in the request. Automatic Vault registration is [not implemented](../../engineering/features/agent-vault-setup.md).
 
+To review on your phone a review created on your computer with Obsidian Sync, turn on **Settings → Sync → Selective sync → Sync all other types** on both devices. Reviews are JSON files in the proposal folder (`TaskMate/Proposals` by default), and Obsidian Sync skips JSON files unless that option is on.
+
 ## Complete flow
 
 | Step | Where | Input | Output |
@@ -108,6 +110,8 @@ Opening a review applies nothing, and selecting a source does not create a revie
 | Codex | Task Pilotにノートを読んでレビューを作るよう依頼する |
 
 TaskMateプラグイン単体ではAIを実行しません。CodexのTask Pilotがノートを読んで候補を用意し、判断はすべてTaskMateで行います。
+
+PCで作ったレビューをObsidian Sync経由でスマホで確認するには、両方の端末で**設定 → 同期 → 選択的同期 → 他のすべてのタイプのファイルを同期**をオンにしてください。レビューは提案フォルダ（初期値は`TaskMate/Proposals`）内のJSONファイルで、この設定がオフだとObsidian SyncはJSONファイルを同期しません。
 
 ### 全体の流れ
 
