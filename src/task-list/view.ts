@@ -27,6 +27,7 @@ import { repeatLabel } from "../task-editor/schedule-labels";
 import { TaskFilterState } from "./task-filter-state";
 import { TaskSelection } from "./task-selection";
 import { captureTaskListScrollTop, restoreTaskListScrollTop } from "./scroll-position";
+import { isComposingInput } from "../shared/input-composition";
 
 export const TODO_VIEW_TYPE = "taskmate-list";
 
@@ -224,7 +225,7 @@ export class TodoListView extends ItemView {
     });
     input.addEventListener("input", (event) => {
       this.searchQuery = input.value;
-      if (!composing && !(event as InputEvent).isComposing) updateResults();
+      if (!composing && !isComposingInput(event)) updateResults();
     });
     input.addEventListener("keydown", (event) => {
       if (event.key === "Enter" && this.searchQuery.trim()) void this.rememberSearch(this.searchQuery);

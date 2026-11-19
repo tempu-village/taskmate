@@ -9,6 +9,7 @@ import { LabelPickerModal } from "../labels/label-picker-modal";
 import type { LabelEditingOptions } from "../labels/label-picker-modal";
 import { MobileKeyboardScroller } from "../shared/mobile-keyboard-layout";
 import type { BulkTaskChanges } from "./bulk-task-actions";
+import { isComposingInput } from "../shared/input-composition";
 
 const DATE_SUGGESTION_KEYS = { today: "date.today", tomorrow: "date.tomorrow", "seven-days": "date.sevenDays", none: "date.none" } satisfies Record<ReturnType<typeof taskDateSuggestions>[number]["id"], TranslationKey>;
 
@@ -186,7 +187,7 @@ export class BulkTaskModal extends Modal {
     };
     input.addEventListener("compositionstart", () => { composing = true; });
     input.addEventListener("compositionend", () => { composing = false; commitInput(false, false); });
-    input.addEventListener("input", (event) => { pending = input.value; add.disabled = !pending.trim(); if (!composing && !(event as InputEvent).isComposing) commitInput(false, false); });
+    input.addEventListener("input", (event) => { pending = input.value; add.disabled = !pending.trim(); if (!composing && !isComposingInput(event)) commitInput(false, false); });
     // keyCode is deprecated, but on iPhone and iPad Obsidian runs in Capacitor's WKWebView (WebKit), which sends the IME-confirming Enter after compositionend with isComposing false; 229 is its only marker. See ADR 0030.
     input.addEventListener("keydown", (event) => { if (shouldCommitLabelOnEnter(event.key, composing || event.isComposing, event.keyCode)) { event.preventDefault(); commitInput(true, true); } });
     add.addEventListener("pointerdown", (event) => event.preventDefault());

@@ -1056,7 +1056,7 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  column-gap: 0.5rem;
+  gap: 0 0.5rem;
   width: 100%;
   min-height: 54px;
   margin-top: 0.35rem;
@@ -1118,7 +1118,7 @@ body .modal .taskmate-embedded-date input[type="date"].taskmate-date-input:not([
 }
 .taskmate-time-chevron svg { width: 18px; height: 18px; }
 .taskmate-time-field.is-open .taskmate-time-chevron { transform: rotate(180deg); }
-.taskmate-time-field:has(.taskmate-time-toggle:disabled) { cursor: default; }
+.taskmate-time-field.is-disabled { cursor: default; }
 .taskmate-time-panel {
   flex: 1 0 100%;
   width: 100%;

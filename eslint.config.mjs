@@ -23,7 +23,12 @@ export default defineConfig([
       // Not reported by the scorecard; "TaskMate" is a product name, not sentence-case UI text.
       "obsidianmd/ui/sentence-case": "off",
       "@typescript-eslint/no-base-to-string": "off",
-      "@typescript-eslint/no-redundant-type-constituents": "off"
+      "@typescript-eslint/no-redundant-type-constituents": "off",
+      // The scorecard's newer DOM types make this cast redundant and report it; our older types still need it.
+      "no-restricted-syntax": ["error", {
+        selector: "TSAsExpression[typeAnnotation.typeName.name='InputEvent']",
+        message: "Use isComposingInput() from src/shared/input-composition.ts instead of casting to InputEvent."
+      }]
     }
   },
   {

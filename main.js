@@ -1896,6 +1896,11 @@ function toggleFavoriteLabel(favoriteLabels, label, limit = FAVORITE_LABEL_LIMIT
   return { favorites: [label, ...normalized], changed: true, atLimit: false };
 }
 
+// src/shared/input-composition.ts
+function isComposingInput(event) {
+  return "isComposing" in event && event.isComposing === true;
+}
+
 // src/labels/label-picker-modal.ts
 var LabelPickerModal = class extends import_obsidian5.Modal {
   constructor(app, options) {
@@ -1941,7 +1946,7 @@ var LabelPickerModal = class extends import_obsidian5.Modal {
     });
     search.addEventListener("input", (event) => {
       this.query = search.value;
-      if (composing || event.isComposing) return;
+      if (composing || isComposingInput(event)) return;
       this.renderPicker();
     });
     const tabs = controls.createDiv({ cls: "taskmate-label-picker-tabs", attr: { role: "tablist" } });
@@ -2480,7 +2485,7 @@ var BulkTaskModal = class extends import_obsidian6.Modal {
     input.addEventListener("input", (event) => {
       pending = input.value;
       add.disabled = !pending.trim();
-      if (!composing && !event.isComposing) commitInput(false, false);
+      if (!composing && !isComposingInput(event)) commitInput(false, false);
     });
     input.addEventListener("keydown", (event) => {
       if (shouldCommitLabelOnEnter(event.key, composing || event.isComposing, event.keyCode)) {
@@ -5894,6 +5899,7 @@ var TaskModal = class extends import_obsidian12.Modal {
     const refreshScheduleControls = () => {
       const hasDate = this.draft.date !== null;
       timeToggle.disabled = !hasDate;
+      timeField.toggleClass("is-disabled", !hasDate);
       if (!hasDate) setTimePanelOpen(false);
       removeTime.toggle(hasDate && this.draft.time !== null);
       renderTime();
@@ -6014,7 +6020,7 @@ var TaskModal = class extends import_obsidian12.Modal {
     labelInput.addEventListener("input", (event) => {
       pendingLabelInput = labelInput.value;
       addLabel.disabled = pendingLabelInput.trim().length === 0;
-      if (labelInputComposing || event.isComposing) return;
+      if (labelInputComposing || isComposingInput(event)) return;
       updateFromInput(false, false);
     });
     labelInput.addEventListener("keydown", (event) => {
@@ -6542,7 +6548,7 @@ var TodoListView = class extends import_obsidian14.ItemView {
     });
     input.addEventListener("input", (event) => {
       this.searchQuery = input.value;
-      if (!composing && !event.isComposing) updateResults();
+      if (!composing && !isComposingInput(event)) updateResults();
     });
     input.addEventListener("keydown", (event) => {
       if (event.key === "Enter" && this.searchQuery.trim()) void this.rememberSearch(this.searchQuery);
