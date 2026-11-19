@@ -493,3 +493,12 @@ describe("mobile layout", () => {
     expect(exactDeclarations(".taskmate-review button")).toMatch(/(?:^|[;\s])user-select\s*:\s*none\s*;/);
   });
 });
+
+describe("Community scorecard CSS lint", () => {
+  // The scorecard warns that :has can cause broad selector invalidation, and reads column-gap as the partially
+  // supported multicolumn feature even on a grid; use a state class and the gap shorthand instead.
+  it("avoids :has and column-gap", () => {
+    expect(stylesheet).not.toMatch(/:has\(/);
+    expect(stylesheet).not.toMatch(/(^|[\s;{])column-gap\s*:/m);
+  });
+});

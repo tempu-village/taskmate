@@ -17,6 +17,7 @@ import { StepModal } from "./step-modal";
 import { MAXIMUM_REPEAT_INTERVAL, anchorRepeat } from "../tasks/schedule";
 import type { RepeatUnit } from "../tasks/schedule";
 import { repeatLabel } from "./schedule-labels";
+import { isComposingInput } from "../shared/input-composition";
 
 const DATE_SUGGESTION_KEYS = {
   today: "date.today",
@@ -353,6 +354,7 @@ export class TaskModal extends Modal {
     const refreshScheduleControls = (): void => {
       const hasDate = this.draft.date !== null;
       timeToggle.disabled = !hasDate;
+      timeField.toggleClass("is-disabled", !hasDate);
       if (!hasDate) setTimePanelOpen(false);
       removeTime.toggle(hasDate && this.draft.time !== null);
       renderTime();
@@ -488,7 +490,7 @@ export class TaskModal extends Modal {
     labelInput.addEventListener("input", (event) => {
       pendingLabelInput = labelInput.value;
       addLabel.disabled = pendingLabelInput.trim().length === 0;
-      if (labelInputComposing || (event as InputEvent).isComposing) return;
+      if (labelInputComposing || isComposingInput(event)) return;
       updateFromInput(false, false);
     });
     labelInput.addEventListener("keydown", (event) => {

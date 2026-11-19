@@ -9,6 +9,7 @@ import {
   toggleFavoriteLabel
 } from "./label-picker-model";
 import { normalizeLabels } from "./label-suggestions";
+import { isComposingInput } from "../shared/input-composition";
 
 type PickerTab = "suggested" | "all";
 
@@ -73,7 +74,7 @@ export class LabelPickerModal extends Modal {
     });
     search.addEventListener("input", (event) => {
       this.query = search.value;
-      if (composing || (event as InputEvent).isComposing) return;
+      if (composing || isComposingInput(event)) return;
       this.renderPicker();
     });
 
